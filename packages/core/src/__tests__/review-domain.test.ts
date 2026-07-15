@@ -183,6 +183,29 @@ describe("source usefulness outcome feedback", () => {
       evidenceRefs: ["evidence-1"],
       doesNotProve: "Noise feedback does not delete knowledge without review."
     }]);
+    expect(knowledgeUsefulnessOutcomesFromMetadata({
+      ...admittedPacketAuthority,
+      knowledgeUsefulnessOutcomes: [{
+        ...knowledgeUsefulnessOutcomes[0],
+        applicationId: "application-1",
+        appliedAt: "not-an-iso-timestamp"
+      }, {
+        ...knowledgeUsefulnessOutcomes[0],
+        appliedAt: "2026-07-15T00:00:00.000Z"
+      }]
+    })).toEqual([]);
+    expect(knowledgeUsefulnessOutcomesFromMetadata({
+      ...admittedPacketAuthority,
+      knowledgeUsefulnessOutcomes: [{
+        ...knowledgeUsefulnessOutcomes[0],
+        applicationId: "application-1",
+        appliedAt: "2026-07-15T00:00:00.000Z"
+      }]
+    })).toEqual([{
+      ...knowledgeUsefulnessOutcomes[0],
+      applicationId: "application-1",
+      appliedAt: "2026-07-15T00:00:00.000Z"
+    }]);
   });
 
 });

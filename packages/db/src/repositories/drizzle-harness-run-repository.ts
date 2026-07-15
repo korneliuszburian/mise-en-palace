@@ -27,12 +27,16 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   TaskContract,
+  UsefulnessApplicationEvidence,
+  UsefulnessApplicationEvidenceIdentity,
   ExecutionRunStatus,
   UpdateExecutionRunStatusResult
 } from "@krn/core";
 import {
   assessCommandOutputArtifactIntegrity,
+  assessEvidenceBundleHelpedProof,
   authorizeDecisionPacketUsefulness,
+  decideEvidenceContractActivation,
   decisionPacketAuthorityAdmissionCurrent,
   executionRunLifecycleCreatedEvent,
   executionRunLifecycleCreatedEventType,
@@ -41,6 +45,8 @@ import {
   ExecutionRunLifecycleConflictError,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
   projectDecisionPacketUsefulnessSubjects,
+  parseUsefulnessApplicationEvidenceIdentity,
+  parseUsefulnessApplicationEvidenceForIdentity,
   stampCurrentDecisionPacketAuthorityMetadata,
   stampUnboundDecisionPacketAuthorityMetadata,
   toEvidenceCommandReadback,
@@ -70,6 +76,7 @@ import type {
   HarnessRunAggregate,
   HarnessRunRepository,
   ListFeedbackDeltasForSubjectsInput,
+  RecordUsefulnessApplicationOnceResult,
   UpdateExecutionRunStatusInput
 } from "@krn/core/repositories/internal";
 
@@ -89,7 +96,8 @@ import {
   retrievalRuns,
   runEvents,
   sourceClaims,
-  taskContracts
+  taskContracts,
+  usefulnessApplications
 } from "../schema/index.js";
 import {
   activationDecisions,
@@ -1090,7 +1098,10 @@ const lockHarnessRunAuthority = async (
     executionRunId: string;
     projectId: ProjectId;
   },
-  operation: "createEvidenceFeedbackOnce" | "createEvalFeedbackDeltaOnce"
+  operation:
+    | "createEvidenceFeedbackOnce"
+    | "createEvalFeedbackDeltaOnce"
+    | "recordUsefulnessApplicationOnce"
 ): Promise<LockedHarnessRunAuthority> => {
   const linkedRun = await tx
     .select({
@@ -1118,7 +1129,10 @@ const lockHarnessRunAuthority = async (
 };
 
 const assertSourceRunLifecycleRevision = (
-  operation: "createEvidenceFeedbackOnce" | "createEvalFeedbackDeltaOnce",
+  operation:
+    | "createEvidenceFeedbackOnce"
+    | "createEvalFeedbackDeltaOnce"
+    | "recordUsefulnessApplicationOnce",
   executionRunId: string,
   expectedLifecycleRevision: number,
   lockedRun: LockedHarnessRunAuthority
@@ -1147,34 +1161,156 @@ const evidenceFeedbackAuthoritySnapshot = (
   input: CreateEvidenceFeedbackOnceInput
 ): CreateEvidenceFeedbackOnceInput => snapshotRepositoryInput(input);
 
-const evidenceFeedbackInputWithRepositoryAuthority = (
+type ApplicationBoundOutcome = {
+  applicationId?: string;
+  appliedAt?: string;
+  outcome: string;
+  reason: string;
+};
+
+interface UsefulnessSubjectIdentity {
+  kind: UsefulnessApplicationEvidence["subjectKind"];
+  id: string;
+}
+
+const downgradeUnprovedHelped = <TOutcome extends ApplicationBoundOutcome>(
+  outcome: TOutcome,
+  reason: string
+): TOutcome => ({
+  ...outcome,
+  outcome: "unknown",
+  reason: `${reason} Original reason: ${outcome.reason}`
+});
+
+const verificationFollowsApplication = (input: {
+  evidence: CreateEvidenceFeedbackOnceInput["evidence"];
+  requiredCommands: ReadonlySet<string>;
+  appliedAt: string;
+}): boolean => input.evidence.commands
+  .map(toEvidenceCommandReadback)
+  .filter((command): command is Extract<EvidenceCommandReadback, { kind: "command_runner" }> =>
+    command.kind === "command_runner" && input.requiredCommands.has(command.command)
+  )
+  .every((command) => Date.parse(command.capturedAt) > Date.parse(input.appliedAt));
+
+const applicationForHelpedOutcome = async (
+  tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
-  aggregate: HarnessRunAggregate
-): CreateEvidenceFeedbackOnceInput => {
-  const claim = input.decisionPacketClaim;
-
-  if (claim === undefined) {
-    const { maintenance: _maintenance, ...unboundInput } = input;
-
-    return {
-      ...unboundInput,
-      evidence: {
-        ...input.evidence,
-        metadata: stampUnboundDecisionPacketAuthorityMetadata(
-          stripRepositoryAuthorityMetadata(input.evidence.metadata),
-          "No DecisionPacket claim was admitted by the repository."
-        )
-      },
-      feedback: {
-        ...input.feedback,
-        metadata: stampUnboundDecisionPacketAuthorityMetadata(
-          stripRepositoryAuthorityMetadata(input.feedback.metadata),
-          "No DecisionPacket claim was admitted by the repository."
-        )
-      }
-    };
+  aggregate: HarnessRunAggregate,
+  outcome: ApplicationBoundOutcome,
+  subject: UsefulnessSubjectIdentity
+): Promise<UsefulnessApplicationEvidence | undefined> => {
+  if (outcome.applicationId === undefined || outcome.appliedAt === undefined) {
+    return undefined;
   }
+  const row = await tx.query.usefulnessApplications.findFirst({
+    where: eq(usefulnessApplications.applicationId, outcome.applicationId)
+  });
+  if (row === undefined || input.decisionPacketClaim === undefined) {
+    return undefined;
+  }
+  const application = mapUsefulnessApplication(row);
+  const parsed = parseUsefulnessApplicationEvidenceForIdentity(application, {
+    applicationId: outcome.applicationId,
+    subjectKind: subject.kind,
+    subjectId: subject.id,
+    projectId: input.projectId,
+    executionRunId: input.executionRunId,
+    taskContractId: aggregate.taskContract.id,
+    packetChecksum: input.decisionPacketClaim.checksum,
+    packetGeneratedAt: input.decisionPacketClaim.generatedAt,
+    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+  });
 
+  return parsed !== undefined &&
+    Date.parse(parsed.appliedAt) === Date.parse(outcome.appliedAt)
+    ? parsed
+    : undefined;
+};
+
+const admitHelpedOutcome = async <TOutcome extends ApplicationBoundOutcome>(input: {
+  tx: KrnDatabaseTransaction;
+  capture: CreateEvidenceFeedbackOnceInput;
+  aggregate: HarnessRunAggregate;
+  outcome: TOutcome;
+  subject: UsefulnessSubjectIdentity;
+  strictProofEligible: boolean;
+  requiredCommands: ReadonlySet<string>;
+}): Promise<TOutcome> => {
+  if (input.outcome.outcome !== "helped") {
+    return { ...input.outcome };
+  }
+  const application = await applicationForHelpedOutcome(
+    input.tx,
+    input.capture,
+    input.aggregate,
+    input.outcome,
+    input.subject
+  );
+  if (application === undefined) {
+    return downgradeUnprovedHelped(
+      input.outcome,
+      "Helped was downgraded because exact persisted application evidence is missing."
+    );
+  }
+  if (!input.strictProofEligible || !verificationFollowsApplication({
+    evidence: input.capture.evidence,
+    requiredCommands: input.requiredCommands,
+    appliedAt: application.appliedAt
+  })) {
+    return downgradeUnprovedHelped(
+      input.outcome,
+      "Helped was downgraded because strict verification after application is missing."
+    );
+  }
+  return { ...input.outcome };
+};
+
+const hasHelpedOutcome = (outcomes: readonly { outcome: string }[]): boolean =>
+  outcomes.some((outcome) => outcome.outcome === "helped");
+
+interface AdmittedDecisionPacketIdentity {
+  checksum: string;
+  generatedAt: string;
+  sourceRunLifecycleRevision: number;
+}
+
+interface HelpedProofContext {
+  eligible: boolean;
+  requiredCommands: ReadonlySet<string>;
+}
+
+const unboundEvidenceFeedbackInput = (
+  input: CreateEvidenceFeedbackOnceInput,
+): CreateEvidenceFeedbackOnceInput => {
+  const { maintenance: _maintenance, ...unboundInput } = input;
+
+  return {
+    ...unboundInput,
+    evidence: {
+      ...input.evidence,
+      metadata: stampUnboundDecisionPacketAuthorityMetadata(
+        stripRepositoryAuthorityMetadata(input.evidence.metadata),
+        "No DecisionPacket claim was admitted by the repository."
+      )
+    },
+    feedback: {
+      ...input.feedback,
+      metadata: stampUnboundDecisionPacketAuthorityMetadata(
+        stripRepositoryAuthorityMetadata(input.feedback.metadata),
+        "No DecisionPacket claim was admitted by the repository."
+      )
+    }
+  };
+};
+
+const admitDecisionPacketIdentity = (
+  input: CreateEvidenceFeedbackOnceInput & {
+    decisionPacketClaim: NonNullable<CreateEvidenceFeedbackOnceInput["decisionPacketClaim"]>;
+  },
+  aggregate: HarnessRunAggregate
+): AdmittedDecisionPacketIdentity => {
+  const claim = input.decisionPacketClaim;
   const authorization = authorizeDecisionPacketUsefulness({
     aggregate,
     runId: input.executionRunId,
@@ -1192,16 +1328,120 @@ const evidenceFeedbackInputWithRepositoryAuthority = (
     throw new Error(`createEvidenceFeedbackOnce rejected: ${authorization.reason}`);
   }
 
-  const authorityIdentity = {
+  return {
     checksum: authorization.packetChecksum,
     generatedAt: authorization.packetGeneratedAt,
     sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision
   };
-  const sourceUsefulnessOutcomes = input.sourceUsefulnessOutcomes ?? [];
-  const knowledgeUsefulnessOutcomes = input.knowledgeUsefulnessOutcomes ?? [];
+};
+
+const helpedProofContext = (
+  input: CreateEvidenceFeedbackOnceInput,
+  aggregate: HarnessRunAggregate,
+  authorityIdentity: AdmittedDecisionPacketIdentity
+): HelpedProofContext => {
+  const activation = decideEvidenceContractActivation({
+    evidenceContract: aggregate.harnessPlan.metadata.evidenceContract,
+    taskContract: aggregate.taskContract,
+    harnessPlan: aggregate.harnessPlan,
+    executionRun: aggregate.executionRun
+  });
+  const evidenceContract = activation.status === "active"
+    ? activation.evidenceContract
+    : undefined;
+  const strictProof = assessEvidenceBundleHelpedProof({
+    bundle: {
+      status: input.evidence.status ?? "captured",
+      commands: input.evidence.commands,
+      ...(input.evidence.commandOutputArtifacts === undefined
+        ? {}
+        : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
+      metadata: stampCurrentDecisionPacketAuthorityMetadata(
+        input.evidence.metadata ?? {},
+        authorityIdentity
+      ),
+      createdAt: new Date().toISOString()
+    },
+    evidenceContract,
+    packetChecksum: authorityIdentity.checksum,
+    packetGeneratedAt: authorityIdentity.generatedAt,
+    sourceRunLifecycleRevision: authorityIdentity.sourceRunLifecycleRevision,
+    sha256Hex
+  });
 
   return {
-    ...input,
+    eligible: strictProof.status === "eligible",
+    requiredCommands: new Set(evidenceContract?.commands
+      .filter((command) => command.required)
+      .map((command) => command.command) ?? [])
+  };
+};
+
+type SourceUsefulnessInput = NonNullable<
+  CreateEvidenceFeedbackOnceInput["sourceUsefulnessOutcomes"]
+>[number];
+
+const sourceUsefulnessSubject = (
+  outcome: SourceUsefulnessInput
+): UsefulnessSubjectIdentity => {
+  if (outcome.sourceDecisionId !== undefined) {
+    return { kind: "source_decision", id: outcome.sourceDecisionId };
+  }
+  if (outcome.sourceClaimId !== undefined) {
+    return { kind: "source_claim", id: outcome.sourceClaimId };
+  }
+  throw new Error("createEvidenceFeedbackOnce source outcome has no subject identity");
+};
+
+const admitUsefulnessOutcomes = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateEvidenceFeedbackOnceInput,
+  aggregate: HarnessRunAggregate,
+  proof: HelpedProofContext
+) => {
+  const sourceUsefulnessOutcomes = await Promise.all(
+    (input.sourceUsefulnessOutcomes ?? []).map((outcome) => admitHelpedOutcome({
+      tx,
+      capture: input,
+      aggregate,
+      outcome,
+      subject: sourceUsefulnessSubject(outcome),
+      strictProofEligible: proof.eligible,
+      requiredCommands: proof.requiredCommands
+    }))
+  );
+  const knowledgeUsefulnessOutcomes = await Promise.all(
+    (input.knowledgeUsefulnessOutcomes ?? []).map((outcome) => admitHelpedOutcome({
+      tx,
+      capture: input,
+      aggregate,
+      outcome,
+      subject: { kind: "knowledge", id: outcome.knowledgeId },
+      strictProofEligible: proof.eligible,
+      requiredCommands: proof.requiredCommands
+    }))
+  );
+
+  return { sourceUsefulnessOutcomes, knowledgeUsefulnessOutcomes };
+};
+
+const applicationBoundEvidenceFeedbackInput = (
+  input: CreateEvidenceFeedbackOnceInput,
+  authorityIdentity: AdmittedDecisionPacketIdentity,
+  admitted: Awaited<ReturnType<typeof admitUsefulnessOutcomes>>
+): CreateEvidenceFeedbackOnceInput => {
+  const { sourceUsefulnessOutcomes, knowledgeUsefulnessOutcomes } = admitted;
+  const keepMaintenance = hasHelpedOutcome([
+    ...sourceUsefulnessOutcomes,
+    ...knowledgeUsefulnessOutcomes
+  ]);
+  const { maintenance: _maintenance, ...applicationBoundInput } = input;
+
+  return {
+    ...applicationBoundInput,
+    ...(keepMaintenance && input.maintenance !== undefined
+      ? { maintenance: input.maintenance }
+      : {}),
     evidence: {
       ...input.evidence,
       metadata: stampCurrentDecisionPacketAuthorityMetadata(
@@ -1225,6 +1465,25 @@ const evidenceFeedbackInputWithRepositoryAuthority = (
       }
     }
   };
+};
+
+const evidenceFeedbackInputWithRepositoryAuthority = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateEvidenceFeedbackOnceInput,
+  aggregate: HarnessRunAggregate
+): Promise<CreateEvidenceFeedbackOnceInput> => {
+  if (input.decisionPacketClaim === undefined) {
+    return unboundEvidenceFeedbackInput(input);
+  }
+  const boundInput = {
+    ...input,
+    decisionPacketClaim: input.decisionPacketClaim
+  };
+  const authorityIdentity = admitDecisionPacketIdentity(boundInput, aggregate);
+  const proof = helpedProofContext(input, aggregate, authorityIdentity);
+  const admitted = await admitUsefulnessOutcomes(tx, input, aggregate, proof);
+
+  return applicationBoundEvidenceFeedbackInput(input, authorityIdentity, admitted);
 };
 
 const insertEvidenceReviewAssessment = async (
@@ -1373,6 +1632,28 @@ const insertEvidenceFeedbackChain = async (
     created: true
   };
 };
+
+type UsefulnessApplicationRow = typeof usefulnessApplications.$inferSelect;
+
+const mapUsefulnessApplication = (
+  row: UsefulnessApplicationRow
+): UsefulnessApplicationEvidence => ({
+  applicationId: row.applicationId,
+  subjectKind: row.subjectKind,
+  subjectId: row.subjectId,
+  projectId: row.projectId,
+  executionRunId: row.executionRunId,
+  taskContractId: row.taskContractId,
+  packetChecksum: row.packetChecksum,
+  packetGeneratedAt: row.packetGeneratedAt.toISOString(),
+  sourceRunLifecycleRevision: row.sourceRunLifecycleRevision,
+  appliedAt: row.appliedAt.toISOString()
+});
+
+const sameUsefulnessApplication = (
+  left: UsefulnessApplicationEvidence,
+  right: UsefulnessApplicationEvidenceIdentity
+): boolean => parseUsefulnessApplicationEvidenceForIdentity(left, right) !== undefined;
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(
@@ -1808,6 +2089,98 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     });
   }
 
+  async recordUsefulnessApplicationOnce(
+    input: UsefulnessApplicationEvidenceIdentity
+  ): Promise<RecordUsefulnessApplicationOnceResult> {
+    const authorityInput = parseUsefulnessApplicationEvidenceIdentity(
+      snapshotRepositoryInput(input)
+    );
+    if (authorityInput === undefined) {
+      throw new Error("recordUsefulnessApplicationOnce requires valid application evidence");
+    }
+
+    return this.db.transaction(async (tx) => {
+      const lockedRun = await lockHarnessRunAuthority(
+        tx,
+        authorityInput,
+        "recordUsefulnessApplicationOnce"
+      );
+      assertSourceRunLifecycleRevision(
+        "recordUsefulnessApplicationOnce",
+        authorityInput.executionRunId,
+        authorityInput.sourceRunLifecycleRevision,
+        lockedRun
+      );
+      const aggregate = requireLinkedRow(
+        await this.findHarnessRunAggregate(tx, authorityInput.executionRunId, true),
+        "recordUsefulnessApplicationOnce.harnessRunAggregate"
+      );
+      if (aggregate.taskContract.id !== authorityInput.taskContractId) {
+        throw new Error(
+          "recordUsefulnessApplicationOnce rejected: task contract does not match the execution run"
+        );
+      }
+
+      const authorization = authorizeDecisionPacketUsefulness({
+        aggregate,
+        runId: authorityInput.executionRunId,
+        runtimeProjectId: authorityInput.projectId,
+        callerPacketChecksum: authorityInput.packetChecksum,
+        callerPacketGeneratedAt: authorityInput.packetGeneratedAt,
+        subjects: [{
+          kind: authorityInput.subjectKind,
+          id: authorityInput.subjectId,
+          evidenceRefs: [`packet:${authorityInput.packetChecksum}`]
+        }],
+        sha256Hex
+      });
+      if (!authorization.authorized) {
+        throw new Error(`recordUsefulnessApplicationOnce rejected: ${authorization.reason}`);
+      }
+      if (authorization.sourceRunLifecycleRevision !== authorityInput.sourceRunLifecycleRevision) {
+        throw new Error(
+          "recordUsefulnessApplicationOnce rejected: packet lifecycle revision mismatch"
+        );
+      }
+
+      const [inserted] = await tx
+        .insert(usefulnessApplications)
+        .values({
+          applicationId: authorityInput.applicationId,
+          subjectKind: authorityInput.subjectKind,
+          subjectId: authorityInput.subjectId,
+          projectId: authorityInput.projectId,
+          executionRunId: authorityInput.executionRunId,
+          taskContractId: authorityInput.taskContractId,
+          packetChecksum: authorityInput.packetChecksum,
+          packetGeneratedAt: fromIsoTimestamp(authorityInput.packetGeneratedAt),
+          sourceRunLifecycleRevision: authorityInput.sourceRunLifecycleRevision
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (inserted !== undefined) {
+        return { application: mapUsefulnessApplication(inserted), created: true };
+      }
+
+      const existing = await tx.query.usefulnessApplications.findFirst({
+        where: eq(usefulnessApplications.applicationId, authorityInput.applicationId)
+      });
+      if (existing === undefined) {
+        throw new Error(
+          "recordUsefulnessApplicationOnce rejected: packet subject already has another application identity"
+        );
+      }
+      const application = mapUsefulnessApplication(existing);
+      if (!sameUsefulnessApplication(application, authorityInput)) {
+        throw new Error(
+          "recordUsefulnessApplicationOnce rejected: application identity collision"
+        );
+      }
+
+      return { application, created: false };
+    });
+  }
+
   async createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle> {
     const evidenceInput = validateEvidenceBundleInputForPersistence({
       ...input,
@@ -1925,7 +2298,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         ),
         "createEvidenceFeedbackOnce.harnessRunAggregate"
       );
-      const admittedInput = evidenceFeedbackInputWithRepositoryAuthority(
+      const admittedInput = await evidenceFeedbackInputWithRepositoryAuthority(
+        tx,
         authorityInput,
         aggregate
       );

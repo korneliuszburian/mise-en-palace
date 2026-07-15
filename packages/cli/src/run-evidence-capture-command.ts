@@ -22,7 +22,9 @@ import type {
   SourceDecision,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidence,
-  TargetEvidenceInput
+  TargetEvidenceInput,
+  UsefulnessApplicationEvidence,
+  UsefulnessApplicationEvidenceIdentity
 } from "@krn/core";
 import {
   authorizeDecisionPacketBinding,
@@ -52,6 +54,9 @@ import {
   defaultWorkspaceSlug,
   defaultProjectSlug,
   createDatabaseRuntime
+} from "./database-runtime.js";
+import type {
+  DatabaseRuntime
 } from "./database-runtime.js";
 import {
   postgresPersistedLabel,
@@ -134,6 +139,7 @@ interface PersistedEvidenceIdentity {
   decisionPacketGeneratedAt?: string;
   packetBindingRejectionReason?: string;
   usefulnessAuthorizationReason?: string;
+  usefulnessApplications?: readonly UsefulnessApplicationEvidence[];
 }
 
 interface EvidencePersistenceConfig {
@@ -1262,6 +1268,101 @@ interface EvidenceBackedUsefulnessOutcomes {
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
 }
 
+const explicitUsefulnessApplications = (input: {
+  aggregate: HarnessRunAggregate;
+  binding: DecisionPacketBinding;
+  projectId: string;
+  runId: string;
+  sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+}): UsefulnessApplicationEvidenceIdentity[] => [
+  ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
+    const subjectId = outcome.sourceDecisionId ?? outcome.sourceClaimId;
+    if (
+      subjectId === undefined ||
+      outcome.applicationId === undefined ||
+      outcome.appliedAt !== undefined
+    ) {
+      return [];
+    }
+    return [{
+      applicationId: outcome.applicationId,
+      subjectKind: outcome.sourceDecisionId === undefined
+        ? "source_claim" as const
+        : "source_decision" as const,
+      subjectId,
+      projectId: input.projectId,
+      executionRunId: input.runId,
+      taskContractId: input.aggregate.taskContract.id,
+      packetChecksum: input.binding.packetChecksum,
+      packetGeneratedAt: input.binding.packetGeneratedAt,
+      sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision
+    }];
+  }),
+  ...(input.knowledgeOutcomes ?? []).flatMap((outcome) =>
+    outcome.applicationId === undefined || outcome.appliedAt !== undefined
+      ? []
+      : [{
+          applicationId: outcome.applicationId,
+          subjectKind: "knowledge" as const,
+          subjectId: outcome.knowledgeId,
+          projectId: input.projectId,
+          executionRunId: input.runId,
+          taskContractId: input.aggregate.taskContract.id,
+          packetChecksum: input.binding.packetChecksum,
+          packetGeneratedAt: input.binding.packetGeneratedAt,
+          sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision
+        }]
+  )
+];
+
+const persistExplicitUsefulnessApplications = async (
+  repository: DatabaseRuntime["harnessRunRepository"],
+  applications: readonly UsefulnessApplicationEvidenceIdentity[]
+): Promise<UsefulnessApplicationEvidence[]> => {
+  if (applications.length === 0) {
+    return [];
+  }
+  const recordOnce = repository.recordUsefulnessApplicationOnce;
+  if (recordOnce === undefined) {
+    throw new Error("Packet-bound usefulness application persistence is required");
+  }
+  return Promise.all(applications.map(async (application) =>
+    (await recordOnce.call(repository, application)).application
+  ));
+};
+
+const admitEvidenceBackedUsefulness = (
+  authorization: UsefulnessAuthorization | undefined,
+  usefulness: EvidenceBackedUsefulnessOutcomes
+): EvidenceBackedUsefulnessOutcomes => authorization?.authorized === true
+  ? usefulness
+  : {
+      sourceOutcomes: undefined,
+      knowledgeOutcomes: undefined
+    };
+
+const usefulnessApplicationsForPersistence = (input: {
+  aggregate: HarnessRunAggregate;
+  binding: DecisionPacketBinding | undefined;
+  projectId: string;
+  runId: string;
+  usefulness: EvidenceBackedUsefulnessOutcomes;
+}): UsefulnessApplicationEvidenceIdentity[] => {
+  if (input.binding === undefined) {
+    return [];
+  }
+
+  return explicitUsefulnessApplications({
+    aggregate: input.aggregate,
+    binding: input.binding,
+    projectId: input.projectId,
+    runId: input.runId,
+    sourceOutcomes: input.usefulness.sourceOutcomes,
+    knowledgeOutcomes: input.usefulness.knowledgeOutcomes
+  });
+};
+
 const evidenceBackedUsefulnessOutcomesFor = (input: {
   readonly captureIdentity: string;
   readonly changedFiles: readonly ChangedFile[];
@@ -1394,6 +1495,7 @@ const usefulnessOutcomesIdentityFor = (input: {
 
 const buildPersistedEvidenceIdentity = (input: {
   readonly atomicResult: CreateEvidenceFeedbackOnceResult;
+  readonly applications: readonly UsefulnessApplicationEvidence[];
   readonly authorization: UsefulnessAuthorization | undefined;
   readonly packetAuthorization: DecisionPacketAuthorization | undefined;
   readonly captureIdentity: string;
@@ -1414,6 +1516,9 @@ const buildPersistedEvidenceIdentity = (input: {
     evidenceBundleId: input.atomicResult.evidenceBundle.id,
     reviewAssessmentId: input.atomicResult.reviewAssessment.id,
     feedbackDeltaId: input.atomicResult.feedbackDelta.id,
+    ...(input.applications.length === 0
+      ? {}
+      : { usefulnessApplications: [...input.applications] }),
     ...feedbackMaintenanceQueueIdentityFor(
       input.atomicResult.feedbackMaintenanceQueueRecordId
     ),
@@ -1465,6 +1570,12 @@ const renderPersistedEvidenceIdentity = (
 
   if (identity.decisionPacketGeneratedAt !== undefined) {
     lines.push(`decisionPacketGeneratedAt: ${identity.decisionPacketGeneratedAt}`);
+  }
+
+  for (const application of identity.usefulnessApplications ?? []) {
+    lines.push(
+      `usefulnessApplication: ${application.applicationId}|${application.appliedAt}`
+    );
   }
 
   return lines;
@@ -1698,12 +1809,21 @@ const persistEvidenceCapture = async (
       sourceOutcomes: usefulness.sourceOutcomes,
       targetEvidence
     });
-    const admittedUsefulness = usefulness.authorization?.authorized === true
-      ? evidenceBackedUsefulness
-      : {
-          sourceOutcomes: undefined,
-          knowledgeOutcomes: undefined
-        };
+    const admittedUsefulness = admitEvidenceBackedUsefulness(
+      usefulness.authorization,
+      evidenceBackedUsefulness
+    );
+    const applications = usefulnessApplicationsForPersistence({
+      aggregate,
+      binding: packet.binding,
+      projectId,
+      runId,
+      usefulness: admittedUsefulness
+    });
+    const persistedApplications = await persistExplicitUsefulnessApplications(
+      databaseRuntime.harnessRunRepository,
+      applications
+    );
     const createEvidenceFeedbackOnce = requireEvidenceFeedbackPersistence(
       databaseRuntime.harnessRunRepository.createEvidenceFeedbackOnce
     );
@@ -1746,6 +1866,7 @@ const persistEvidenceCapture = async (
 
     return buildPersistedEvidenceIdentity({
       atomicResult,
+      applications: persistedApplications,
       captureIdentity,
       authorization: usefulness.authorization,
       packetAuthorization: packet.authorization

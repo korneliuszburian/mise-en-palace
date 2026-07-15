@@ -19,7 +19,9 @@ import type {
   ReviewAssessment,
   ReviewFinding,
   SourceUsefulnessOutcomeFeedback,
-  TaskContract
+  TaskContract,
+  UsefulnessApplicationEvidence,
+  UsefulnessApplicationEvidenceIdentity
 } from "@krn/core";
 
 import type {
@@ -139,6 +141,11 @@ export interface DecisionPacketClaim {
   generatedAt: IsoTimestamp;
 }
 
+export interface RecordUsefulnessApplicationOnceResult {
+  application: UsefulnessApplicationEvidence;
+  created: boolean;
+}
+
 export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
   executionRunId: ExecutionRunId;
   sourceRunLifecycleRevision: number;
@@ -195,6 +202,9 @@ export interface HarnessRunRepository {
   createEvidenceFeedbackOnce?(
     input: CreateEvidenceFeedbackOnceInput
   ): Promise<CreateEvidenceFeedbackOnceResult>;
+  recordUsefulnessApplicationOnce?(
+    input: UsefulnessApplicationEvidenceIdentity
+  ): Promise<RecordUsefulnessApplicationOnceResult>;
   createEvalFeedbackDeltaOnce?(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;

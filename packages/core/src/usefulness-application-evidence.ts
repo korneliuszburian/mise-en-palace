@@ -37,7 +37,7 @@ export type UsefulnessApplicationEvidenceIdentity = Omit<
 const packetChecksumPattern = /^[a-f0-9]{64}$/u;
 const requiredTextSchema = z.string().trim().min(1);
 const isoTimestampSchema = requiredTextSchema.refine(isIsoTimestamp);
-const usefulnessApplicationEvidenceSchema = z.object({
+const usefulnessApplicationEvidenceIdentitySchema = z.object({
   applicationId: requiredTextSchema,
   subjectKind: z.enum(usefulnessApplicationSubjectKinds),
   subjectId: requiredTextSchema,
@@ -46,7 +46,9 @@ const usefulnessApplicationEvidenceSchema = z.object({
   taskContractId: requiredTextSchema,
   packetChecksum: requiredTextSchema.regex(packetChecksumPattern),
   packetGeneratedAt: isoTimestampSchema,
-  sourceRunLifecycleRevision: z.number().int().safe().positive(),
+  sourceRunLifecycleRevision: z.number().int().safe().positive()
+});
+const usefulnessApplicationEvidenceSchema = usefulnessApplicationEvidenceIdentitySchema.extend({
   appliedAt: isoTimestampSchema
 }).refine((evidence) =>
   Date.parse(evidence.appliedAt) >= Date.parse(evidence.packetGeneratedAt),
@@ -54,6 +56,13 @@ const usefulnessApplicationEvidenceSchema = z.object({
   message: "application cannot precede packet generation",
   path: ["appliedAt"]
 });
+
+export const parseUsefulnessApplicationEvidenceIdentity = (
+  value: unknown
+): UsefulnessApplicationEvidenceIdentity | undefined => {
+  const result = usefulnessApplicationEvidenceIdentitySchema.safeParse(value);
+  return result.success ? result.data : undefined;
+};
 
 export const parseUsefulnessApplicationEvidence = (
   value: unknown

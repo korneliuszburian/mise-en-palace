@@ -182,7 +182,7 @@ describe("runCli", () => {
       { label: "migrations", status: "verified (3/3 applied)" }
     ];
     const smokeCommandsAvailable = [
-      { label: "Harness persistence schema", status: "ready (10/10 tables present)" },
+      { label: "Harness persistence schema", status: "ready (11/11 tables present)" },
       { label: "Project repository smoke", status: "available (pnpm db:smoke)" },
       { label: "Harness plan smoke", status: "available (pnpm db:smoke:harness-plan)" },
       {

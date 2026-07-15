@@ -21,7 +21,8 @@ import {
   harnessPlanStatuses,
   operatorIntentStatuses,
   reviewAssessmentStatuses,
-  taskContractStatuses
+  taskContractStatuses,
+  usefulnessApplicationSubjectKinds
 } from "@krn/core";
 
 import {
@@ -48,6 +49,11 @@ export const evidenceBundleStatus = pgEnum("evidence_bundle_status", evidenceBun
 export const reviewAssessmentStatus = pgEnum("review_assessment_status", reviewAssessmentStatuses);
 
 export const feedbackDeltaStatus = pgEnum("feedback_delta_status", feedbackDeltaStatuses);
+
+export const usefulnessApplicationSubjectKind = pgEnum(
+  "usefulness_application_subject_kind",
+  usefulnessApplicationSubjectKinds
+);
 
 export const workspaces = pgTable(
   "workspaces",
@@ -241,6 +247,51 @@ export const executionRuns = pgTable(
     index("execution_runs_status_idx").on(table.status),
     index("execution_runs_adapter_idx").on(table.adapter),
     check("execution_runs_lifecycle_revision_positive", sql`${table.lifecycleRevision} > 0`)
+  ]
+);
+
+export const usefulnessApplications = pgTable(
+  "usefulness_applications",
+  {
+    applicationId: text("application_id").primaryKey(),
+    subjectKind: usefulnessApplicationSubjectKind("subject_kind").notNull(),
+    subjectId: text("subject_id").notNull(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id")
+      .notNull()
+      .references(() => executionRuns.id, { onDelete: "cascade" }),
+    taskContractId: uuid("task_contract_id")
+      .notNull()
+      .references(() => taskContracts.id, { onDelete: "cascade" }),
+    packetChecksum: text("packet_checksum").notNull(),
+    packetGeneratedAt: timestamp("packet_generated_at", { withTimezone: true }).notNull(),
+    sourceRunLifecycleRevision: integer("source_run_lifecycle_revision").notNull(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAtColumn()
+  },
+  (table) => [
+    uniqueIndex("usefulness_applications_packet_subject_unique").on(
+      table.executionRunId,
+      table.packetChecksum,
+      table.subjectKind,
+      table.subjectId
+    ),
+    index("usefulness_applications_project_id_idx").on(table.projectId),
+    index("usefulness_applications_task_contract_id_idx").on(table.taskContractId),
+    check(
+      "usefulness_applications_packet_checksum_sha256",
+      sql`${table.packetChecksum} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "usefulness_applications_lifecycle_revision_positive",
+      sql`${table.sourceRunLifecycleRevision} > 0`
+    ),
+    check(
+      "usefulness_applications_applied_after_packet",
+      sql`${table.appliedAt} >= ${table.packetGeneratedAt}`
+    )
   ]
 );
 

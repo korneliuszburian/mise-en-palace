@@ -29,7 +29,9 @@ import {
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
 import type {
-  DecisionPacketAuthorization
+  DecisionPacketAuthorization,
+  UsefulnessApplicationEvidence,
+  UsefulnessApplicationEvidenceIdentity
 } from "@krn/core";
 
 import { createNoStoreCompilerDependencies } from "../no-store-repositories.js";
@@ -153,6 +155,8 @@ interface EvidencePersistenceCapture {
   memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
   feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
   maintenanceQueueInputs?: EnqueueMaintenanceQueueInput[];
+  usefulnessApplications?: UsefulnessApplicationEvidence[];
+  persistenceOrder?: string[];
 }
 
 type NoStoreCompilerDependencies = ReturnType<typeof createNoStoreCompilerDependencies>;
@@ -423,7 +427,15 @@ const createCapturingEvidenceHarnessRunRepository = (
       updatedAt: now
     };
   },
+  async recordUsefulnessApplicationOnce(input: UsefulnessApplicationEvidenceIdentity) {
+    const application = { ...input, appliedAt: "2026-06-21T12:00:30.000Z" };
+    capture.usefulnessApplications = [...(capture.usefulnessApplications ?? []), application];
+    capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "application"];
+
+    return { application, created: true };
+  },
   async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+    capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "feedback"];
     capture.sourceRunLifecycleRevision = input.sourceRunLifecycleRevision;
     capture.decisionPacketClaim = input.decisionPacketClaim;
     capture.sourceUsefulnessOutcomes = input.sourceUsefulnessOutcomes;
@@ -664,7 +676,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
@@ -960,6 +972,135 @@ describe("runCli", () => {
     expectDefaultTemplateCommands(capture.commands);
     expect(capture.sourceRunLifecycleRevision).toBe(aggregate.executionRun.lifecycleRevision);
     expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
+  it("persists explicit application evidence before packet-bound helped feedback", async () => {
+    const verificationCommand = "pnpm typecheck";
+    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
+    const appliedAt = "2026-06-21T12:00:30.000Z";
+    const verificationArtifact = createCommandOutputArtifact({
+      command: verificationCommand,
+      exitCode: 0,
+      startedAt: "2026-06-21T12:00:40.000Z",
+      completedAt: "2026-06-21T12:01:00.000Z",
+      stdout: new Uint8Array(),
+      stderr: new Uint8Array()
+    }, sha256Hex);
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    aggregate.harnessPlan.metadata = {
+      evidenceContract: {
+        taskContractId: aggregate.taskContract.id,
+        commands: [{ command: verificationCommand, required: true }],
+        diffRisk: "low",
+        reviewBurden: "review",
+        rollbackPath: "revert",
+        metadata: {}
+      }
+    };
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const createRuntime = async () => ({
+      workspaceId: "workspace-1",
+      projectId: "project-1",
+      compilerDependencies: { ...dependencies, harnessRunRepository },
+      harnessRunRepository,
+      sourceRepository: unusedSourceRepository,
+      memoryRepository: unusedMemoryRepository,
+      async close() {
+        return undefined;
+      }
+    });
+
+    const applicationCapture = await runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      intendedFiles: [applicationPath],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        applicationId: "application-1",
+        outcome: "selected",
+        reason: "Record application before running verification.",
+        evidenceRefs: [packetBinding.packetEvidenceRef],
+        doesNotProve: "Application does not prove help."
+      }],
+      now: () => "2026-06-21T12:00:30.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ` M ${applicationPath}\n`,
+      createDatabaseRuntime: createRuntime
+    });
+
+    expect(capture.persistenceOrder).toEqual(["application", "feedback"]);
+    expect(applicationCapture.stdout).toContain(
+      `usefulnessApplication: application-1|${appliedAt}`
+    );
+    capture.persistenceOrder = [];
+
+    await runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      intendedFiles: [applicationPath],
+      commandOutcomes: [{
+        command: verificationCommand,
+        status: "passed",
+        provenance: "command_runner",
+        exitCode: 0,
+        capturedAt: "2026-06-21T12:01:00.000Z",
+        outputRef: verificationArtifact.outputRef
+      }],
+      commandOutputArtifacts: [verificationArtifact],
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        applicationId: "application-1",
+        appliedAt,
+        outcome: "helped",
+        reason: "The selected knowledge shaped the changed implementation.",
+        evidenceRefs: [
+          packetBinding.packetEvidenceRef,
+          applicationPath,
+          verificationCommand,
+          verificationArtifact.outputRef
+        ],
+        doesNotProve: "Ordered evidence does not establish semantic causality."
+      }],
+      now: () => "2026-06-21T12:10:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ` M ${applicationPath}\n`,
+      createDatabaseRuntime: createRuntime
+    });
+
+    expect(capture.persistenceOrder).toEqual(["feedback"]);
+    expect(capture.usefulnessApplications).toEqual([{
+      applicationId: "application-1",
+      subjectKind: "knowledge",
+      subjectId: "knowledge:ts-boundary-unknown-first-result-state",
+      projectId: "project-1",
+      executionRunId: aggregate.executionRun.id,
+      taskContractId: aggregate.taskContract.id,
+      packetChecksum: packetBinding.packetChecksum,
+      packetGeneratedAt: packetBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
+      appliedAt
+    }]);
+    expect(capture.knowledgeUsefulnessOutcomes).toEqual([
+      expect.objectContaining({ applicationId: "application-1", outcome: "helped" })
+    ]);
   });
 
   it("downgrades observation-only helped feedback to selected without target application proof", async () => {

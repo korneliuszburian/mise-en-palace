@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseUsefulnessApplicationEvidence,
-  parseUsefulnessApplicationEvidenceForIdentity
+  parseUsefulnessApplicationEvidenceForIdentity,
+  parseUsefulnessApplicationEvidenceIdentity
 } from "../usefulness-application-evidence.js";
 
 const evidence = {
@@ -21,6 +22,8 @@ const evidence = {
 describe("UsefulnessApplicationEvidence", () => {
   it("parses exact packet-bound application evidence from unknown input", () => {
     expect(parseUsefulnessApplicationEvidence(evidence)).toEqual(evidence);
+    const { appliedAt: _appliedAt, ...identity } = evidence;
+    expect(parseUsefulnessApplicationEvidenceIdentity(identity)).toEqual(identity);
   });
 
   it("rejects selected-only, malformed, stale-order, and storage-vocabulary input", () => {

@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import {
   buildDecisionPacketAuthorityProjection,
+  createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
   decisionPacketBindingReadbackFromMetadata,
   evidenceBundleProvesHelped,
@@ -27,6 +28,7 @@ import {
 } from "../../dev/smoke/db-smoke-support.js";
 import {
   contextAssemblies,
+  maintenanceQueues,
   outboxEvents,
   runEvents
 } from "../../schema/index.js";
@@ -1496,7 +1498,14 @@ describe("DrizzleHarnessRunRepository", () => {
         },
         harnessPlan: {
           summary: "Capture authority race smoke",
-          nextAction: "Race two canonical captures derived from the same packet."
+          nextAction: "Race two canonical captures derived from the same packet.",
+          evidenceContract: {
+            commands: [{ command: "pnpm typecheck", required: true }],
+            diffRisk: "low",
+            reviewBurden: "Verify application-before-helped authority.",
+            rollbackPath: "Delete marker-scoped smoke rows.",
+            metadata: { smokeId: marker }
+          }
         }
       });
       const captureBClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
@@ -1835,6 +1844,246 @@ describe("DrizzleHarnessRunRepository", () => {
           outcome: "hurt",
           evidenceRefs: [packetOne.packetEvidenceRef]
         })]);
+
+        const aggregateBeforeUnprovedHelped = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        if (aggregateBeforeUnprovedHelped === undefined) {
+          throw new Error("unproved helped aggregate was not persisted");
+        }
+        const packetBeforeUnprovedHelped = currentDecisionPacketBindingForHarnessRun({
+          aggregate: aggregateBeforeUnprovedHelped,
+          packetGeneratedAt: "2026-07-14T20:01:00.000Z",
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        const unprovedHelped = await scaffold.harnessRunRepository.createEvidenceFeedbackOnce({
+          ...captureInput(`capture-authority-race:${marker}:unproved-helped`, [{
+            knowledgeId: selectedKnowledge.id,
+            applicationId: `missing-application:${marker}`,
+            appliedAt: "2026-07-14T20:00:30.000Z",
+            outcome: "helped",
+            reason: "A caller declaration must not substitute for application and verification.",
+            evidenceRefs: [packetBeforeUnprovedHelped.packetEvidenceRef],
+            doesNotProve: "Selection and packet membership do not prove use or help."
+          }]),
+          decisionPacketClaim: {
+            checksum: packetBeforeUnprovedHelped.packetChecksum,
+            generatedAt: packetBeforeUnprovedHelped.packetGeneratedAt
+          },
+          sourceUsefulnessOutcomes: [{
+            sourceClaimId: selectedSourceClaim.id,
+            applicationId: `missing-source-application:${marker}`,
+            appliedAt: "2026-07-14T20:00:30.000Z",
+            outcome: "helped",
+            reason: "Packet membership must not substitute for source application evidence.",
+            evidenceRefs: [packetBeforeUnprovedHelped.packetEvidenceRef],
+            doesNotProve: "Selection does not prove source use or help."
+          }],
+          maintenance: {
+            reason: "This queue record must not survive an unproved helped outcome."
+          }
+        });
+
+        expect(knowledgeUsefulnessOutcomesFromMetadata(
+          unprovedHelped.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          knowledgeId: selectedKnowledge.id,
+          outcome: "unknown"
+        })]);
+        expect(sourceUsefulnessOutcomesFromMetadata(
+          unprovedHelped.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          sourceClaimId: selectedSourceClaim.id,
+          outcome: "unknown"
+        })]);
+        expect(unprovedHelped.feedbackMaintenanceQueueRecordId).toBeUndefined();
+
+        const aggregateBeforeProvedHelped = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        if (aggregateBeforeProvedHelped === undefined) {
+          throw new Error("proved helped aggregate was not persisted");
+        }
+        const packetBeforeProvedHelped = currentDecisionPacketBindingForHarnessRun({
+          aggregate: aggregateBeforeProvedHelped,
+          packetGeneratedAt: "2026-07-14T20:02:00.000Z",
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        const applicationIdentity = {
+          applicationId: `application:${marker}:knowledge`,
+          subjectKind: "knowledge" as const,
+          subjectId: selectedKnowledge.id,
+          projectId: scaffold.project.id,
+          executionRunId: executionRun.id,
+          taskContractId: scaffold.taskContract.id,
+          packetChecksum: packetBeforeProvedHelped.packetChecksum,
+          packetGeneratedAt: packetBeforeProvedHelped.packetGeneratedAt,
+          sourceRunLifecycleRevision: executionRun.lifecycleRevision
+        };
+        const application = await scaffold.harnessRunRepository
+          .recordUsefulnessApplicationOnce(applicationIdentity);
+        const applicationRetry = await scaffold.harnessRunRepository
+          .recordUsefulnessApplicationOnce(applicationIdentity);
+        expect(application).toMatchObject({
+          created: true,
+          application: { ...applicationIdentity, appliedAt: expect.any(String) }
+        });
+        expect(applicationRetry).toMatchObject({
+          created: false,
+          application: {
+            applicationId: applicationIdentity.applicationId,
+            appliedAt: application.application.appliedAt
+          }
+        });
+
+        const preApplicationArtifact = createCommandOutputArtifact({
+          command: "pnpm typecheck",
+          exitCode: 0,
+          startedAt: "2026-07-14T20:02:01.000Z",
+          completedAt: "2026-07-14T20:02:05.000Z",
+          stdout: new Uint8Array(),
+          stderr: new Uint8Array()
+        }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
+        const preApplicationVerification = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce({
+            ...captureInput(`capture-authority-race:${marker}:pre-application`, [{
+              knowledgeId: selectedKnowledge.id,
+              applicationId: applicationIdentity.applicationId,
+              appliedAt: application.application.appliedAt,
+              outcome: "helped",
+              reason: "Strict verification existed, but preceded application.",
+              evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+              doesNotProve: "Pre-application verification does not prove help."
+            }]),
+            decisionPacketClaim: {
+              checksum: packetBeforeProvedHelped.packetChecksum,
+              generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+            },
+            evidence: {
+              ...captureInput(
+                `capture-authority-race:${marker}:pre-application`,
+                undefined
+              ).evidence,
+              commands: [{
+                command: "pnpm typecheck",
+                status: "passed",
+                provenance: "command_runner",
+                exitCode: 0,
+                capturedAt: "2026-07-14T20:02:05.000Z",
+                outputRef: preApplicationArtifact.outputRef,
+                doesNotProve: "Typecheck does not prove runtime behavior."
+              }],
+              commandOutputArtifacts: [preApplicationArtifact]
+            },
+            maintenance: {
+              reason: "This queue record must not survive pre-application verification."
+            }
+          });
+        expect(knowledgeUsefulnessOutcomesFromMetadata(
+          preApplicationVerification.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          applicationId: applicationIdentity.applicationId,
+          knowledgeId: selectedKnowledge.id,
+          outcome: "unknown"
+        })]);
+        expect(preApplicationVerification.feedbackMaintenanceQueueRecordId).toBeUndefined();
+
+        const typecheckArtifact = createCommandOutputArtifact({
+          command: "pnpm typecheck",
+          exitCode: 0,
+          startedAt: new Date(
+            Date.parse(application.application.appliedAt) + 1_000
+          ).toISOString(),
+          completedAt: new Date(
+            Date.parse(application.application.appliedAt) + 2_000
+          ).toISOString(),
+          stdout: new Uint8Array(),
+          stderr: new Uint8Array()
+        }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
+
+        const provedHelpedInput = {
+          ...captureInput(`capture-authority-race:${marker}:proved-helped`, [{
+            knowledgeId: selectedKnowledge.id,
+            applicationId: applicationIdentity.applicationId,
+            appliedAt: application.application.appliedAt,
+            outcome: "helped" as const,
+            reason: "Persisted application preceded strict verification.",
+            evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+            doesNotProve: "The ordered proof does not establish semantic causality."
+          }]),
+          decisionPacketClaim: {
+            checksum: packetBeforeProvedHelped.packetChecksum,
+            generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+          },
+          evidence: {
+            ...captureInput(`capture-authority-race:${marker}:proved-helped`, undefined).evidence,
+            commands: [{
+              command: "pnpm typecheck",
+              status: "passed" as const,
+              provenance: "command_runner" as const,
+              exitCode: 0,
+              capturedAt: new Date(
+                Date.parse(application.application.appliedAt) + 2_000
+              ).toISOString(),
+              outputRef: typecheckArtifact.outputRef,
+              doesNotProve: "Typecheck does not prove runtime behavior."
+            }],
+            commandOutputArtifacts: [typecheckArtifact],
+            event: {
+              type: "smoke.capture_authority_race.proved_helped",
+              message: "ordered application and verification persisted",
+              payload: { smokeId: marker }
+            }
+          },
+          maintenance: {
+            reason: "Review the repository-admitted helped outcome."
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        const beforeFault = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        if (beforeFault === undefined) {
+          throw new Error("fault proof aggregate was not persisted");
+        }
+        const faultReason = `application feedback rollback ${marker}`;
+        const faultRepository = new DrizzleHarnessRunRepository(scaffold.db, {
+          faultAfterStage: (stage) => {
+            if (stage === "after_feedback_delta") {
+              throw new Error(faultReason);
+            }
+          }
+        });
+        await expect(faultRepository.createEvidenceFeedbackOnce({
+          ...provedHelpedInput,
+          captureIdentity: `capture-authority-race:${marker}:fault`,
+          maintenance: { reason: faultReason }
+        })).rejects.toThrow(faultReason);
+        const afterFault = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        expect(afterFault).toMatchObject({
+          evidenceBundles: { length: beforeFault.evidenceBundles.length },
+          reviewAssessments: { length: beforeFault.reviewAssessments.length },
+          feedbackDeltas: { length: beforeFault.feedbackDeltas.length }
+        });
+        const faultMaintenanceRows = await scaffold.db
+          .select({ id: maintenanceQueues.id })
+          .from(maintenanceQueues)
+          .where(sql`${maintenanceQueues.payload}->>'reason' = ${faultReason}`);
+        expect(faultMaintenanceRows).toEqual([]);
+        expect(await scaffold.harnessRunRepository.recordUsefulnessApplicationOnce(
+          applicationIdentity
+        )).toMatchObject({
+          created: false,
+          application: { applicationId: applicationIdentity.applicationId }
+        });
+
+        const provedHelped = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce(provedHelpedInput);
+        expect(knowledgeUsefulnessOutcomesFromMetadata(
+          provedHelped.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          applicationId: applicationIdentity.applicationId,
+          knowledgeId: selectedKnowledge.id,
+          outcome: "helped"
+        })]);
+        expect(provedHelped.feedbackMaintenanceQueueRecordId).toEqual(expect.any(String));
       } finally {
         if (blockerTransactionOpen) {
           await blockerClient.unsafe("rollback");

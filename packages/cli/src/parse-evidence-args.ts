@@ -20,10 +20,12 @@ import type {
 } from "./parse-args.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve[|application-id[|applied-at]]\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
+  "Application phase 1: pass application-id without applied-at; persisted output returns the database-issued application-id|applied-at token.",
+  "Application phase 2: after verification, pass the returned application-id|applied-at pair on the helped outcome.",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"git diff --check=passed\" --persist",
   "Note: evidence capture records operator/captured evidence; it does not run commands."
@@ -261,6 +263,8 @@ type SourceUsefulnessBody = {
   reason: string;
   evidenceRefs: string[];
   doesNotProve: string;
+  applicationId?: string;
+  appliedAt?: string;
 };
 
 type SourceUsefulnessParseResult<T> =
@@ -338,41 +342,93 @@ const parseEvidenceRefs = (value: string): string[] =>
     .map((ref) => ref.trim())
     .filter((ref) => ref.length > 0);
 
-const parseSourceUsefulnessBody = (
-  body: string
-): SourceUsefulnessParseResult<SourceUsefulnessBody> => {
-  const [outcomeToken, reasonToken, evidenceRefsToken, doesNotProveToken] =
-    body.split("|").map((part) => part.trim());
+const parseUsefulnessOutcomeToken = (
+  value: string | undefined
+): SourceUsefulnessParseResult<SourceUsefulnessOutcome> =>
+  value !== undefined && isSourceUsefulnessOutcome(value)
+    ? { ok: true, value }
+    : {
+        ok: false,
+        error: "--source-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"
+      };
 
-  if (outcomeToken === undefined || !isSourceUsefulnessOutcome(outcomeToken)) {
-    return {
+const parseRequiredUsefulnessText = (
+  value: string | undefined,
+  field: "reason" | "doesNotProve"
+): SourceUsefulnessParseResult<string> => value !== undefined && value.length > 0
+  ? { ok: true, value }
+  : {
       ok: false,
-      error:
-        "--source-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"
+      error: `--source-usefulness requires a non-empty ${field}${field === "reason" ? "" : " field"}`
+    };
+
+const parseUsefulnessApplicationReference = (
+  applicationId: string | undefined,
+  appliedAt: string | undefined
+): SourceUsefulnessParseResult<Pick<SourceUsefulnessBody, "applicationId" | "appliedAt">> => {
+  const normalizedApplicationId = nonEmptyTrimmed(applicationId);
+  const normalizedAppliedAt = nonEmptyTrimmed(appliedAt);
+
+  if (normalizedAppliedAt === undefined) {
+    return {
+      ok: true,
+      value: normalizedApplicationId === undefined
+        ? {}
+        : { applicationId: normalizedApplicationId }
     };
   }
-
-  if (reasonToken === undefined || reasonToken.length === 0) {
+  if (normalizedApplicationId === undefined) {
     return {
       ok: false,
-      error: "--source-usefulness requires a non-empty reason"
+      error: "--source-usefulness appliedAt requires applicationId"
     };
   }
-
-  if (doesNotProveToken === undefined || doesNotProveToken.length === 0) {
+  if (!isIsoTimestamp(normalizedAppliedAt)) {
     return {
       ok: false,
-      error: "--source-usefulness requires a non-empty doesNotProve field"
+      error: "--source-usefulness appliedAt must be an ISO timestamp"
     };
   }
 
   return {
     ok: true,
     value: {
-      outcome: outcomeToken,
-      reason: reasonToken,
+      applicationId: normalizedApplicationId,
+      appliedAt: normalizedAppliedAt
+    }
+  };
+};
+
+const parseSourceUsefulnessBody = (
+  body: string
+): SourceUsefulnessParseResult<SourceUsefulnessBody> => {
+  const [
+    outcomeToken,
+    reasonToken,
+    evidenceRefsToken,
+    doesNotProveToken,
+    applicationIdToken,
+    appliedAtToken
+  ] =
+    body.split("|").map((part) => part.trim());
+
+  const outcome = parseUsefulnessOutcomeToken(outcomeToken);
+  if (!outcome.ok) return outcome;
+  const reason = parseRequiredUsefulnessText(reasonToken, "reason");
+  if (!reason.ok) return reason;
+  const doesNotProve = parseRequiredUsefulnessText(doesNotProveToken, "doesNotProve");
+  if (!doesNotProve.ok) return doesNotProve;
+  const application = parseUsefulnessApplicationReference(applicationIdToken, appliedAtToken);
+  if (!application.ok) return application;
+
+  return {
+    ok: true,
+    value: {
+      outcome: outcome.value,
+      reason: reason.value,
       evidenceRefs: parseEvidenceRefs(evidenceRefsToken ?? ""),
-      doesNotProve: doesNotProveToken
+      doesNotProve: doesNotProve.value,
+      ...application.value
     }
   };
 };
@@ -400,7 +456,9 @@ const buildSourceUsefulnessOutcome = (
   outcome: body.outcome,
   reason: body.reason,
   evidenceRefs: body.evidenceRefs,
-  doesNotProve: body.doesNotProve
+  doesNotProve: body.doesNotProve,
+  ...(body.applicationId === undefined ? {} : { applicationId: body.applicationId }),
+  ...(body.appliedAt === undefined ? {} : { appliedAt: body.appliedAt })
 });
 
 const parseSourceUsefulness = (
@@ -468,7 +526,11 @@ const parseKnowledgeUsefulness = (
       outcome: body.value.outcome,
       reason: body.value.reason,
       evidenceRefs: body.value.evidenceRefs,
-      doesNotProve: body.value.doesNotProve
+      doesNotProve: body.value.doesNotProve,
+      ...(body.value.applicationId === undefined
+        ? {}
+        : { applicationId: body.value.applicationId }),
+      ...(body.value.appliedAt === undefined ? {} : { appliedAt: body.value.appliedAt })
     }
   };
 };

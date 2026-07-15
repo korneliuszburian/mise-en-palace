@@ -13,6 +13,7 @@ import {
   readMetadataStringList
 } from "./metadata.js";
 import type { SourceDecision } from "./source.js";
+import { isIsoTimestamp } from "./time.js";
 import type { IsoTimestamp } from "./time.js";
 import {
   parseReviewOutcome,
@@ -98,6 +99,8 @@ export type SourceUsefulnessOutcome =
 export interface SourceUsefulnessOutcomeFeedback {
   sourceClaimId?: SourceClaimId;
   sourceDecisionId?: SourceDecisionId;
+  applicationId?: string;
+  appliedAt?: IsoTimestamp;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
@@ -106,6 +109,8 @@ export interface SourceUsefulnessOutcomeFeedback {
 
 export interface KnowledgeUsefulnessOutcomeFeedback {
   knowledgeId: string;
+  applicationId?: string;
+  appliedAt?: IsoTimestamp;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];
@@ -260,6 +265,89 @@ const sourceUsefulnessOutcomeField = (
     : "unknown";
 };
 
+type UsefulnessApplicationMetadataReference =
+  | { valid: false }
+  | {
+      valid: true;
+      applicationId?: string;
+      appliedAt?: IsoTimestamp;
+    };
+
+const usefulnessApplicationReferenceFromMetadata = (
+  item: Record<string, unknown>
+): UsefulnessApplicationMetadataReference => {
+  const applicationId = readMetadataString(item, "applicationId");
+  const appliedAt = readMetadataString(item, "appliedAt");
+
+  if (appliedAt !== undefined && (applicationId === undefined || !isIsoTimestamp(appliedAt))) {
+    return { valid: false };
+  }
+
+  return {
+    valid: true,
+    ...(applicationId === undefined ? {} : { applicationId }),
+    ...(appliedAt === undefined ? {} : { appliedAt })
+  };
+};
+
+const sourceUsefulnessOutcomeFromMetadata = (
+  item: Record<string, unknown>
+): SourceUsefulnessOutcomeFeedback | undefined => {
+  const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
+  const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
+  const reason = readMetadataString(item, "reason");
+  const doesNotProve = readMetadataString(item, "doesNotProve");
+  const application = usefulnessApplicationReferenceFromMetadata(item);
+
+  if (
+    (sourceClaimId === undefined && sourceDecisionId === undefined) ||
+    reason === undefined ||
+    doesNotProve === undefined ||
+    !application.valid
+  ) {
+    return undefined;
+  }
+  const { valid: _valid, ...applicationFields } = application;
+
+  return {
+    ...(sourceClaimId === undefined ? {} : { sourceClaimId }),
+    ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
+    ...applicationFields,
+    outcome: sourceUsefulnessOutcomeField(item),
+    reason,
+    evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
+    doesNotProve
+  };
+};
+
+const knowledgeUsefulnessOutcomeFromMetadata = (
+  item: Record<string, unknown>
+): KnowledgeUsefulnessOutcomeFeedback | undefined => {
+  const knowledgeId = readMetadataString(item, "knowledgeId");
+  const reason = readMetadataString(item, "reason");
+  const doesNotProve = readMetadataString(item, "doesNotProve");
+  const application = usefulnessApplicationReferenceFromMetadata(item);
+
+  if (
+    knowledgeId === undefined ||
+    reason === undefined ||
+    doesNotProve === undefined ||
+    !application.valid
+  ) {
+    return undefined;
+  }
+  const { valid: _valid, ...applicationFields } = application;
+
+  return {
+    knowledgeId,
+    ...applicationFields,
+    outcome: sourceUsefulnessOutcomeField(item),
+    reason,
+    evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
+    doesNotProve
+  };
+};
+
 export const sourceUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
 ): SourceUsefulnessOutcomeFeedback[] => {
@@ -267,29 +355,11 @@ export const sourceUsefulnessOutcomesFromMetadata = (
     return [];
   }
 
-  return readMetadataObjectList(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
-    const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
-    const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
-    const reason = readMetadataString(item, "reason");
-    const doesNotProve = readMetadataString(item, "doesNotProve");
-
-    if (sourceClaimId === undefined && sourceDecisionId === undefined) {
-      return [];
-    }
-
-    if (reason === undefined || doesNotProve === undefined) {
-      return [];
-    }
-
-    return [{
-      ...(sourceClaimId === undefined ? {} : { sourceClaimId }),
-      ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
-      outcome: sourceUsefulnessOutcomeField(item),
-      reason,
-      evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
-      doesNotProve
-    }];
-  });
+  return readMetadataObjectList(metadata, "sourceUsefulnessOutcomes")
+    .flatMap((item) => {
+      const outcome = sourceUsefulnessOutcomeFromMetadata(item);
+      return outcome === undefined ? [] : [outcome];
+    });
 };
 
 export const knowledgeUsefulnessOutcomesFromMetadata = (
@@ -299,23 +369,11 @@ export const knowledgeUsefulnessOutcomesFromMetadata = (
     return [];
   }
 
-  return readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes").flatMap((item) => {
-    const knowledgeId = readMetadataString(item, "knowledgeId");
-    const reason = readMetadataString(item, "reason");
-    const doesNotProve = readMetadataString(item, "doesNotProve");
-
-    if (knowledgeId === undefined || reason === undefined || doesNotProve === undefined) {
-      return [];
-    }
-
-    return [{
-      knowledgeId,
-      outcome: sourceUsefulnessOutcomeField(item),
-      reason,
-      evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
-      doesNotProve
-    }];
-  });
+  return readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes")
+    .flatMap((item) => {
+      const outcome = knowledgeUsefulnessOutcomeFromMetadata(item);
+      return outcome === undefined ? [] : [outcome];
+    });
 };
 
 const metadataCandidateRefs = (

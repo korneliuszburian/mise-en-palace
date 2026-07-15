@@ -21,6 +21,7 @@ const requiredHarnessPersistenceTables = [
   "harness_plans",
   "context_assemblies",
   "execution_runs",
+  "usefulness_applications",
   "evidence_bundles",
   "review_assessments",
   "feedback_deltas",

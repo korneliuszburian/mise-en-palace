@@ -10,10 +10,12 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp>] [--persist] [--intended-file <path>] [--verification <command=status>] [--source-usefulness \"claim:<id>|decision:<id>=helped|reason|evidence-ref[,ref]|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence-ref[,ref]|doesNotProve[|application-id[|applied-at]]\"] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--started-at <iso-timestamp>] [--captured-at <iso-timestamp>] [--stdout-file <path>] [--stderr-file <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
     "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
+    "Application phase 1: pass application-id without applied-at; persisted output returns the database-issued application-id|applied-at token.",
+    "Application phase 2: after verification, pass the returned application-id|applied-at pair on the helped outcome.",
     "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
     "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"git diff --check=passed\" --persist",
     "Note: evidence capture records operator/captured evidence; it does not run commands."
@@ -245,17 +247,37 @@ describe("parseEvidenceArgs", () => {
     expect(parseEvidenceArgs([
       "capture",
       "--memory-usefulness",
-      "knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1,run-show-1|Does not prove future memory recall quality"
+      "knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1,run-show-1|Does not prove future memory recall quality|application-1|2026-07-15T00:00:00.000Z"
     ])).toEqual({
       command: {
         kind: "evidenceCapture",
         persist: false,
         knowledgeUsefulnessOutcomes: [{
           knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+          applicationId: "application-1",
+          appliedAt: "2026-07-15T00:00:00.000Z",
           outcome: "helped",
           reason: "Memory selected the unknown-first parser shape",
           evidenceRefs: ["evidence-1", "run-show-1"],
           doesNotProve: "Does not prove future memory recall quality"
+        }]
+      }
+    });
+    expect(parseEvidenceArgs([
+      "capture",
+      "--memory-usefulness",
+      "knowledge:ts-boundary-unknown-first-result-state=selected|Record application before verification|packet-1|Does not prove help|application-1"
+    ])).toEqual({
+      command: {
+        kind: "evidenceCapture",
+        persist: false,
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+          applicationId: "application-1",
+          outcome: "selected",
+          reason: "Record application before verification",
+          evidenceRefs: ["packet-1"],
+          doesNotProve: "Does not prove help"
         }]
       }
     });
