@@ -25,7 +25,7 @@ const sha256Hex = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
 
 const bindFixtureIdentity = <T extends {
-  request: { runId: string };
+  request: { runId: string; taskId: string; projectId: string | null };
   packet: unknown;
   packetIdentity: {
     generatedAt: string;
@@ -61,7 +61,9 @@ const packetJson = bindFixtureIdentity({
   mutation: "none",
   surface: "headless_cli",
   request: {
-    runId: "run-agent-1"
+    runId: "run-agent-1",
+    taskId: "task-agent-1",
+    projectId: "project-1"
   },
   packetIdentity: {
     packetId: `decision-packet:run-agent-1:${"a".repeat(16)}`,
@@ -81,6 +83,7 @@ const packetJson = bindFixtureIdentity({
     formatVersion: "krn.decisionPacket.v1",
     task: {
       id: "task-agent-1",
+      projectId: "project-1",
       title: "Build the governed frontend",
       objective: "Use the governed frontend bootstrap standard.",
       constraints: [],
@@ -204,6 +207,7 @@ const packetJson = bindFixtureIdentity({
 const weakPacketJson = bindFixtureIdentity({
   ...packetJson,
   request: {
+    ...packetJson.request,
     runId: "run-agent-weak"
   },
   packetIdentity: {
@@ -259,6 +263,7 @@ const unresolvedSourceDissentEvidenceGapId =
 const unresolvedSourceDissentPacketJson = bindFixtureIdentity({
   ...weakPacketJson,
   request: {
+    ...packetJson.request,
     runId: "run-agent-source-dissent"
   },
   packetIdentity: {
@@ -303,6 +308,7 @@ const unresolvedSourceDissentPacketJson = bindFixtureIdentity({
 const noFormalNegativePacketJson = bindFixtureIdentity({
   ...packetJson,
   request: {
+    ...packetJson.request,
     runId: "run-agent-unsafe"
   },
   packetIdentity: {
@@ -858,6 +864,7 @@ describe("DecisionPacket MCP wrapper", () => {
       output: {
         ...packetJson,
         request: {
+          ...packetJson.request,
           runId: "run-agent-other"
         }
       }

@@ -64,6 +64,15 @@ const readModel = {
     lifecycleRevision: 1,
     updatedAt: now
   },
+  task: {
+    id: "task-run-decision-packet-1",
+    projectId: "project-decision-packet",
+    title: "Build the governed packet",
+    objective: "Return governed task context.",
+    constraints: [],
+    nonGoals: [],
+    acceptance: []
+  },
   ...activeEvidenceContractResourcesFor("run-decision-packet-1", [{
     command: "pnpm --filter frontend test",
     required: true
@@ -212,6 +221,15 @@ const relationReadModel = (
     status: "planned",
     lifecycleRevision: 1,
     updatedAt: now
+  },
+  task: {
+    id: "task-run-relation-consensus",
+    projectId: "project-decision-packet",
+    title: "Build the relation packet",
+    objective: "Evaluate relation support.",
+    constraints: [],
+    nonGoals: [],
+    acceptance: []
   },
   ...activeEvidenceContractResourcesFor("run-relation-consensus"),
   context: {
@@ -363,6 +381,15 @@ const sourceClaimExclusionReadModel = (input: {
     status: "planned",
     lifecycleRevision: 1,
     updatedAt: now
+  },
+  task: {
+    id: `task-source-claim-exclusion-${input.reason}`,
+    projectId: "project-decision-packet",
+    title: "Evaluate source exclusion",
+    objective: "Keep non-formal exclusions non-governing.",
+    constraints: [],
+    nonGoals: [],
+    acceptance: []
   },
   ...activeEvidenceContractResourcesFor(`run-source-claim-exclusion-${input.reason}`),
   context: {
@@ -961,6 +988,15 @@ describe("DecisionPacket builder", () => {
         lifecycleRevision: 1,
         updatedAt: now
       },
+      task: {
+        id: "task-governing-rejected-feedback",
+        projectId: "project-decision-packet",
+        title: "Evaluate rejected feedback",
+        objective: "Keep feedback diagnostic until formal review.",
+        constraints: [],
+        nonGoals: [],
+        acceptance: []
+      },
       ...activeEvidenceContractResourcesFor("run-governing-rejected-feedback"),
       context: {
         inclusions: 1,
@@ -1353,6 +1389,62 @@ describe("DecisionPacket builder", () => {
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
+  });
+
+  it("exposes complete packet scope and abstains without project identity", () => {
+    const { task: _task, ...projectlessReadModel } = readModel;
+    const projectless = buildDecisionPacketContractReadback({
+      readModel: projectlessReadModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+
+    expect(projectless.request).toEqual({
+      runId: "run-decision-packet-1",
+      taskId: "run-decision-packet-1",
+      projectId: null
+    });
+    expect(projectless.packet.task).toMatchObject({
+      id: "run-decision-packet-1",
+      projectId: null
+    });
+    expect(projectless.packet.abstentionScore).toMatchObject({
+      status: "abstain",
+      reasons: expect.arrayContaining(["missing_project_identity"])
+    });
+  });
+
+  it("binds task and project identity into the packet checksum", () => {
+    const task = {
+      id: "task-decision-packet-1",
+      projectId: "project-a",
+      title: "Build the scoped packet",
+      objective: "Bind the packet to one task and project.",
+      constraints: [],
+      nonGoals: [],
+      acceptance: []
+    };
+    const first = buildDecisionPacketContractReadback({
+      readModel: { ...readModel, task },
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+    const otherProject = buildDecisionPacketContractReadback({
+      readModel: {
+        ...readModel,
+        task: { ...task, projectId: "project-b" }
+      },
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+
+    expect(first.request).toEqual({
+      runId: "run-decision-packet-1",
+      taskId: "task-decision-packet-1",
+      projectId: "project-a"
+    });
+    expect(first.packet.abstentionScore.reasons).not.toContain("missing_project_identity");
+    expect(otherProject.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
   });
 
   it("gives each packet issuance its own checksum", () => {

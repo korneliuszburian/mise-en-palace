@@ -467,6 +467,7 @@ export const projectDecisionPacketTask = (
   taskContract: HarnessRunAggregate["taskContract"]
 ) => ({
   id: taskContract.id,
+  projectId: taskContract.projectId ?? null,
   title: taskContract.title,
   objective: taskContract.objective,
   constraints: [...taskContract.constraints],

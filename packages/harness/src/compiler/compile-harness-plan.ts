@@ -145,6 +145,7 @@ export const decisionPacketForCompiledPlan = (
     formatVersion: decisionPacketFormatVersion,
     task: {
       id: result.taskContract.id,
+      projectId: result.taskContract.projectId ?? null,
       title: result.taskContract.title,
       objective: result.taskContract.objective,
       constraints: result.taskContract.constraints,
@@ -194,7 +195,10 @@ export const decisionPacketForCompiledPlan = (
     abstentionScore: {
       status: "abstain",
       score: 0,
-      reasons: ["missing_governing_decision"],
+      reasons: [
+        ...(result.taskContract.projectId === undefined ? ["missing_project_identity" as const] : []),
+        "missing_governing_decision"
+      ],
       evidenceGapIds: [],
       doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
     },

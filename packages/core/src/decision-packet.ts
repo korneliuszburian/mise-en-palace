@@ -97,6 +97,7 @@ export interface DecisionPacketSourceDecisionTarget {
 
 export interface DecisionPacketTask {
   id: string;
+  projectId: string | null;
   title: string;
   objective: string;
   constraints: readonly string[];
@@ -137,6 +138,7 @@ export type DecisionPacketAbstentionStatus =
   | "abstain";
 
 export type DecisionPacketAbstentionReason =
+  | "missing_project_identity"
   | "missing_governing_decision"
   | "missing_decision_linked_source"
   | "caveated_source_authority"
@@ -256,12 +258,26 @@ export const buildDecisionPacketSourceConsensus = (input: {
 
 const scoreFloor = (value: number): number => Math.max(0, value);
 
+const hardAbstentionReasons = new Set<DecisionPacketAbstentionReason>([
+  "missing_project_identity",
+  "missing_governing_decision",
+  "evidence_gap",
+  "missing_decision_linked_source",
+  "unresolved_accepted_source_dissent"
+]);
+
 export const buildDecisionPacketAbstentionScore = (input: {
+  readonly projectId: string | null;
   readonly governingDecisionIds: readonly string[];
   readonly sourceConsensus: DecisionPacketSourceConsensus;
 }): DecisionPacketAbstentionScore => {
   const reasons: DecisionPacketAbstentionReason[] = [];
   let score = 100;
+
+  if (input.projectId === null) {
+    reasons.push("missing_project_identity");
+    score -= 100;
+  }
 
   if (input.governingDecisionIds.length === 0) {
     reasons.push("missing_governing_decision");
@@ -320,15 +336,13 @@ export const buildDecisionPacketAbstentionScore = (input: {
   }
 
   const boundedScore = scoreFloor(score);
-  const status: DecisionPacketAbstentionStatus =
-    reasons.includes("missing_governing_decision") ||
-    reasons.includes("evidence_gap") ||
-    reasons.includes("missing_decision_linked_source") ||
-    reasons.includes("unresolved_accepted_source_dissent")
-      ? "abstain"
-      : reasons.length > 0
-        ? "weak_context"
-        : "ready";
+  const status: DecisionPacketAbstentionStatus = reasons.some((reason) =>
+    hardAbstentionReasons.has(reason)
+  )
+    ? "abstain"
+    : reasons.length > 0
+      ? "weak_context"
+      : "ready";
 
   return {
     status,
@@ -521,6 +535,8 @@ export interface DecisionPacketContractReadback {
   surface: "headless_cli";
   request: {
     runId: string;
+    taskId: string;
+    projectId: string | null;
   };
   packetIdentity: DecisionPacketIdentity;
   packet: DecisionPacket;
@@ -538,6 +554,8 @@ export interface DecisionPacketChecksumInput {
   readonly packet: DecisionPacket;
   readonly request: {
     readonly runId: string;
+    readonly taskId: string;
+    readonly projectId: string | null;
   };
   readonly sourceRunStatus: ExecutionRunStatus;
   readonly sourceRunLifecycleRevision: number;
@@ -1087,6 +1105,15 @@ export const buildDecisionPacketFromReadModel = (
     governingDecisionIds,
     staleDecisionIds
   });
+  const task = readModel.task ?? {
+    id: readModel.run.id,
+    projectId: null,
+    title: "Task contract unavailable",
+    objective: "The persisted task objective is unavailable in this packet.",
+    constraints: [],
+    nonGoals: ["Do not execute Codex without a task-bound packet."],
+    acceptance: []
+  };
   const evidenceGaps = uniqueEvidenceGaps([
     ...inactiveEvidenceContractGapFor(readModel.evidenceContractActivation),
     ...evidenceGapsFor({
@@ -1128,14 +1155,7 @@ export const buildDecisionPacketFromReadModel = (
 
   return {
     formatVersion: decisionPacketFormatVersion,
-    task: readModel.task ?? {
-      id: readModel.run.id,
-      title: "Task contract unavailable",
-      objective: "The persisted task objective is unavailable in this packet.",
-      constraints: [],
-      nonGoals: ["Do not execute Codex without a task-bound packet."],
-      acceptance: []
-    },
+    task,
     contextInclusions: inclusions.map((inclusion) => ({
       subjectType: inclusion.subjectType,
       subjectId: inclusion.subjectId,
@@ -1187,6 +1207,7 @@ export const buildDecisionPacketFromReadModel = (
     evidenceGaps,
     sourceConsensus,
     abstentionScore: buildDecisionPacketAbstentionScore({
+      projectId: task.projectId,
       governingDecisionIds,
       sourceConsensus
     }),
@@ -1225,7 +1246,9 @@ export const buildDecisionPacketIdentity = (input: {
     generatedAt: input.generatedAt,
     packet: input.packet,
     request: {
-      runId: input.runId
+      runId: input.runId,
+      taskId: input.packet.task.id,
+      projectId: input.packet.task.projectId
     },
     sourceRunStatus: input.readModel.run.status,
     sourceRunLifecycleRevision: input.readModel.run.lifecycleRevision,
@@ -1303,7 +1326,9 @@ export const buildDecisionPacketContractReadback = (input: {
     mutation: "none",
     surface: "headless_cli",
     request: {
-      runId
+      runId,
+      taskId: packet.task.id,
+      projectId: packet.task.projectId
     },
     packetIdentity,
     packet,

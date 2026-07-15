@@ -916,6 +916,7 @@ const runShowSmokeTarget: DbSmokeTargetHandler = async (
       `Terminal EvidenceContract history visible: ${yesNo(report.terminalContractHistoryVisible)}`,
       `Terminal verification commands suppressed: ${yesNo(report.terminalCommandsSuppressed)}`,
       `Terminal EvidenceContract gap present: ${yesNo(report.terminalEvidenceGapPresent)}`,
+      `Terminal DecisionPacket scope matched: ${yesNo(report.terminalPacketScopeMatched)}`,
       `Terminal DecisionPacket abstained: ${yesNo(report.terminalPacketAbstained)}`,
       `Packet binding counts: evidence=${report.evidenceBundleCount} review=${report.reviewAssessmentCount} feedback=${report.feedbackDeltaCount} events=${report.runEventCount}`,
       `Readback kind: ${report.readbackKind}`,

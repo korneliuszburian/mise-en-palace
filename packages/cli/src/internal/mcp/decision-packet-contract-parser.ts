@@ -70,13 +70,15 @@ const isTask = (value: unknown): boolean => {
     return false;
   }
 
-  const required = ["id", "title", "objective", "constraints", "nonGoals", "acceptance"];
+  const required = ["id", "projectId", "title", "objective", "constraints", "nonGoals", "acceptance"];
   const status = value["status"];
+  const projectId = value["projectId"];
 
   return hasFields(value, required) &&
     hasOnlyFields(value, [...required, "status"]) &&
-    required.slice(0, 3).every((field) => isString(value[field])) &&
-    required.slice(3).every((field) => isStringArray(value[field])) &&
+    ["id", "title", "objective"].every((field) => isString(value[field])) &&
+    (projectId === null || isString(projectId)) &&
+    ["constraints", "nonGoals", "acceptance"].every((field) => isStringArray(value[field])) &&
     (status === undefined || ["draft", "active", "superseded", "closed"].includes(String(status)));
 };
 
@@ -285,7 +287,7 @@ const isPacketIdentity = (
 const hasExpectedChecksum = (
   identity: unknown,
   packet: unknown,
-  runId: string
+  request: Record<string, unknown>
 ): boolean => {
   if (!isRecord(identity)) {
     return false;
@@ -294,13 +296,38 @@ const hasExpectedChecksum = (
   const expected = decisionPacketChecksum({
     generatedAt: identity["generatedAt"] as string,
     packet: packet as DecisionPacket,
-    request: { runId },
+    request: {
+      runId: request["runId"] as string,
+      taskId: request["taskId"] as string,
+      projectId: request["projectId"] as string | null
+    },
     sourceRunStatus: identity["sourceRunStatus"] as DecisionPacketIdentity["sourceRunStatus"],
     sourceRunLifecycleRevision: identity["sourceRunLifecycleRevision"] as number,
     sourceRunUpdatedAt: identity["sourceRunUpdatedAt"] as string
   }, sha256Hex);
 
   return identity["checksum"] === expected;
+};
+
+const isPacketRequest = (
+  value: unknown,
+  requestedRunId: string,
+  packet: unknown
+): value is Record<string, unknown> => {
+  if (!isRecord(value) || !isRecord(packet) || !isRecord(packet["task"])) {
+    return false;
+  }
+
+  const projectId = value["projectId"];
+
+  return all([
+    hasFields(value, ["runId", "taskId", "projectId"]),
+    hasOnlyFields(value, ["runId", "taskId", "projectId"]),
+    value["runId"] === requestedRunId,
+    value["taskId"] === packet["task"]["id"],
+    projectId === packet["task"]["projectId"],
+    projectId === null || isString(projectId)
+  ]);
 };
 
 const isReturnChannels = (value: unknown): boolean => {
@@ -349,12 +376,10 @@ export const parseDecisionPacketContractReadback = (
     value["access"] !== "read_only" ||
     value["mutation"] !== "none" ||
     value["surface"] !== "headless_cli" ||
-    !isRecord(request) ||
-    !hasOnlyFields(request, ["runId"]) ||
-    request["runId"] !== requestedRunId ||
     !isDecisionPacket(value["packet"]) ||
+    !isPacketRequest(request, requestedRunId, value["packet"]) ||
     !isPacketIdentity(value["packetIdentity"], requestedRunId) ||
-    !hasExpectedChecksum(value["packetIdentity"], value["packet"], requestedRunId) ||
+    !hasExpectedChecksum(value["packetIdentity"], value["packet"], request) ||
     !isReturnChannels(value["returnChannels"]) ||
     !isProof(value["proof"])
   ) {

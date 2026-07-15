@@ -178,6 +178,7 @@ export interface DecisionPacketReadModel {
   };
   task: {
     id: string;
+    projectId: string | null;
     title: string;
     objective: string;
     constraints: string[];

@@ -277,6 +277,7 @@ const packetForBriefInput = (input: {
     formatVersion: decisionPacketFormatVersion,
     task: {
       id: input.taskContract.id,
+      projectId: input.taskContract.projectId ?? null,
       title: input.taskContract.title,
       objective: input.taskContract.objective,
       constraints: input.taskContract.constraints,
@@ -309,6 +310,7 @@ const packetForBriefInput = (input: {
     evidenceGaps,
     sourceConsensus,
     abstentionScore: buildDecisionPacketAbstentionScore({
+      projectId: input.taskContract.projectId ?? null,
       governingDecisionIds: [],
       sourceConsensus
     }),
@@ -735,6 +737,7 @@ export const buildDecisionPacketWithEngine = async (
     formatVersion: decisionPacketFormatVersion,
     task: {
       id: briefInput.taskContract.id,
+      projectId: briefInput.taskContract.projectId ?? null,
       title: briefInput.taskContract.title,
       objective: briefInput.taskContract.objective,
       constraints: briefInput.taskContract.constraints,
@@ -781,6 +784,7 @@ export const buildDecisionPacketWithEngine = async (
     evidenceGaps,
     sourceConsensus,
     abstentionScore: buildDecisionPacketAbstentionScore({
+      projectId: briefInput.taskContract.projectId ?? null,
       governingDecisionIds: supportedGoverningDecisionIds,
       sourceConsensus
     }),

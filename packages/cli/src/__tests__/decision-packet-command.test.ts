@@ -746,7 +746,9 @@ describe("decision packet CLI", () => {
       mutation: "none",
       surface: "headless_cli",
       request: {
-        runId: "run-agent-1"
+        runId: "run-agent-1",
+        taskId: "task-agent-1",
+        projectId: "project-1"
       },
       packetIdentity: {
         packetId: expect.stringMatching(/^decision-packet:run-agent-1:[a-f0-9]{16}$/u),
@@ -762,6 +764,10 @@ describe("decision packet CLI", () => {
       },
       packet: {
         formatVersion: "krn.decisionPacket.v1",
+        task: {
+          id: "task-agent-1",
+          projectId: "project-1"
+        },
         governingDecisionIds: ["frontend-bootstrap-standard"],
         governingStatements: expect.arrayContaining([
           "Use the refreshed frontend bootstrap standard for matching new frontend projects."

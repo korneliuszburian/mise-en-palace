@@ -58,6 +58,7 @@ export interface RunShowDbSmokeReport {
   terminalContractHistoryVisible: boolean;
   terminalCommandsSuppressed: boolean;
   terminalEvidenceGapPresent: boolean;
+  terminalPacketScopeMatched: boolean;
   terminalPacketAbstained: boolean;
   evidenceBundleCount: number;
   reviewAssessmentCount: number;
@@ -182,8 +183,28 @@ interface TerminalEvidenceContractReadback {
   commandsSuppressed: boolean;
   evidenceGapPresent: boolean;
   packetIdentityMatched: boolean;
+  packetScopeMatched: boolean;
   packetAbstained: boolean;
 }
+
+const packetScopeMatches = (
+  value: Record<string, unknown>,
+  expected: {
+    runId: string;
+    taskId: string;
+    projectId: string;
+  }
+): boolean => {
+  const request = value.request;
+  const packet = value.packet;
+  const task = isRecord(packet) ? packet.task : undefined;
+
+  return recordHasStrings(request, expected) &&
+    recordHasStrings(task, {
+      id: expected.taskId,
+      projectId: expected.projectId
+    });
+};
 
 const readPacketIdentity = (value: Record<string, unknown>): PacketIdentity => {
   const packetIdentity = value.packetIdentity;
@@ -240,7 +261,12 @@ const terminalEvidenceContractReadback = (
   value: Record<string, unknown>,
   evidenceContract: EvidenceContract,
   terminalRun: HarnessRunAggregate["executionRun"],
-  firstPacketIdentity: PacketIdentity
+  firstPacketIdentity: PacketIdentity,
+  expectedScope: {
+    runId: string;
+    taskId: string;
+    projectId: string;
+  }
 ): TerminalEvidenceContractReadback => {
   const readModel = value.readModel;
   const packet = value.packet;
@@ -279,6 +305,7 @@ const terminalEvidenceContractReadback = (
       packetIdentity.sourceRunLifecycleRevision === terminalRun.lifecycleRevision,
       packetIdentity.sourceRunUpdatedAt === terminalRun.updatedAt
     ].every(Boolean),
+    packetScopeMatched: packetScopeMatches(value, expectedScope),
     packetAbstained: recordHasStrings(abstentionScore, { status: "abstain" })
   };
 };
@@ -512,6 +539,9 @@ const assertTerminalEvidenceContractReadback = (
     label: "terminal packet identity",
     passed: readback.packetIdentityMatched
   }, {
+    label: "terminal packet scope",
+    passed: readback.packetScopeMatched
+  }, {
     label: "terminal packet abstention",
     passed: readback.packetAbstained
   }].find((check) => !check.passed);
@@ -643,7 +673,12 @@ export const runRunShowDbSmokeCheck = async (
       })).stdout),
       result.evidenceContract,
       succeededRun,
-      capture.packetIdentity
+      capture.packetIdentity,
+      {
+        runId: executionRun.id,
+        taskId: result.taskContract.id,
+        projectId: project.id
+      }
     );
     assertTerminalEvidenceContractReadback(terminalContractReadback);
 
@@ -663,6 +698,7 @@ export const runRunShowDbSmokeCheck = async (
       terminalContractHistoryVisible: terminalContractReadback.contractHistoryVisible,
       terminalCommandsSuppressed: terminalContractReadback.commandsSuppressed,
       terminalEvidenceGapPresent: terminalContractReadback.evidenceGapPresent,
+      terminalPacketScopeMatched: terminalContractReadback.packetScopeMatched,
       terminalPacketAbstained: terminalContractReadback.packetAbstained,
       evidenceBundleCount: capture.retryCapture.aggregate.evidenceBundles.length,
       reviewAssessmentCount: capture.retryCapture.aggregate.reviewAssessments.length,
