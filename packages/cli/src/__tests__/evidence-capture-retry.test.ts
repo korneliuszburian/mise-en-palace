@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
+import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -67,6 +68,7 @@ const runEvidenceCaptureCli = async (input: {
   readonly packetChecksum: string;
   readonly packetGeneratedAt: string;
   readonly sourceUsefulness: string;
+  readonly intendedFile: string;
 }) => execFileAsync("pnpm", [
   "--silent",
   "--filter",
@@ -83,7 +85,7 @@ const runEvidenceCaptureCli = async (input: {
   "--source-usefulness",
   input.sourceUsefulness,
   "--intended-file",
-  "packages/cli/src/run-evidence-capture-command.ts",
+  input.intendedFile,
   "--verification",
   "pnpm typecheck=passed",
   "--persist"
@@ -125,8 +127,13 @@ describe("evidence capture retry boundary", () => {
         max: 1,
         onnotice: () => undefined
       });
+      const intendedFile = `.krn-evidence-capture-retry-${crypto.randomUUID()}.tmp`;
 
       try {
+        await writeFile(
+          path.join(repoRoot, intendedFile),
+          "evidence capture retry changed-file fixture\n"
+        );
         await migrateDatabase({
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
@@ -222,6 +229,7 @@ describe("evidence capture retry boundary", () => {
           runId: compiled.executionRun.id,
           packetChecksum: packetBinding.packetChecksum,
           packetGeneratedAt: packetBinding.packetGeneratedAt,
+          intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
         const retry = await runEvidenceCaptureCli({
@@ -229,6 +237,7 @@ describe("evidence capture retry boundary", () => {
           runId: compiled.executionRun.id,
           packetChecksum: packetBinding.packetChecksum,
           packetGeneratedAt: packetBinding.packetGeneratedAt,
+          intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
         const counts = await client<{
@@ -268,6 +277,7 @@ describe("evidence capture retry boundary", () => {
           maintenanceCount: 1
         });
       } finally {
+        await rm(path.join(repoRoot, intendedFile), { force: true });
         await client.end();
         await disposableDatabase.cleanup();
       }
