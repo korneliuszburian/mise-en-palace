@@ -16,7 +16,6 @@ import {
   DrizzleMaintenanceQueueRepository
 } from "@krn/db/adapters";
 import {
-  decisionPacketMissingActiveEvidenceContractGapId,
   parseEvidenceContract
 } from "@krn/core";
 import type {
@@ -56,8 +55,8 @@ export interface RunShowDbSmokeReport {
   packetBindingRetryStable: boolean;
   terminalActivationInactive: boolean;
   terminalContractHistoryVisible: boolean;
-  terminalCommandsSuppressed: boolean;
-  terminalEvidenceGapPresent: boolean;
+  terminalIssuedContractRetained: boolean;
+  terminalPacketIdentityRetained: boolean;
   terminalPacketScopeMatched: boolean;
   terminalPacketAbstained: boolean;
   evidenceBundleCount: number;
@@ -109,14 +108,6 @@ const recordHasStrings = (
   ([key, expectedValue]) => readString(value, key) === expectedValue
 );
 
-const arrayHasRecordWithString = (
-  value: unknown,
-  key: string,
-  expectedValue: string
-): boolean => Array.isArray(value) && value.some((item) =>
-  isRecord(item) && readString(item, key) === expectedValue
-);
-
 const evidenceContractProofShape = (contract: EvidenceContract) => ({
   taskContractId: contract.taskContractId,
   commands: contract.commands,
@@ -135,6 +126,15 @@ const evidenceContractHistoryMatches = (
     JSON.stringify(evidenceContractProofShape(parsed)) ===
       JSON.stringify(evidenceContractProofShape(expected));
 };
+
+const issuedEvidenceContractMatches = (
+  value: unknown,
+  expected: EvidenceContract
+): boolean => isRecord(value) &&
+  JSON.stringify(value.commands) === JSON.stringify(expected.commands) &&
+  readString(value, "diffRisk") === expected.diffRisk &&
+  readString(value, "reviewBurden") === expected.reviewBurden &&
+  readString(value, "rollbackPath") === expected.rollbackPath;
 
 interface PacketIdentity {
   packetId: string;
@@ -180,9 +180,8 @@ interface PacketBindingReadback {
 interface TerminalEvidenceContractReadback {
   activationInactive: boolean;
   contractHistoryVisible: boolean;
-  commandsSuppressed: boolean;
-  evidenceGapPresent: boolean;
-  packetIdentityMatched: boolean;
+  issuedContractRetained: boolean;
+  packetIdentityRetained: boolean;
   packetScopeMatched: boolean;
   packetAbstained: boolean;
 }
@@ -279,7 +278,6 @@ const terminalEvidenceContractReadback = (
   const historicalContract = readModel.evidenceContract;
   const abstentionScore = packet.abstentionScore;
   const verificationCommands = packet.verificationCommands;
-  const evidenceGaps = packet.evidenceGaps;
   const packetIdentity = readPacketIdentity(value);
 
   return {
@@ -289,21 +287,20 @@ const terminalEvidenceContractReadback = (
       executionRunId: terminalRun.id
     }),
     contractHistoryVisible: evidenceContractHistoryMatches(historicalContract, evidenceContract),
-    commandsSuppressed: Array.isArray(verificationCommands) &&
-      verificationCommands.length === 0 &&
-      packet.evidenceContract === undefined,
-    evidenceGapPresent: arrayHasRecordWithString(
-      evidenceGaps,
-      "id",
-      decisionPacketMissingActiveEvidenceContractGapId
-    ),
-    packetIdentityMatched: [
+    issuedContractRetained:
+      issuedEvidenceContractMatches(packet.evidenceContract, evidenceContract) &&
+      Array.isArray(verificationCommands) &&
+      JSON.stringify(verificationCommands) ===
+        JSON.stringify(evidenceContract.commands.map((command) => command.command)),
+    packetIdentityRetained: [
       firstPacketIdentity.sourceRunStatus === "planned",
-      packetIdentity.packetId !== firstPacketIdentity.packetId,
-      packetIdentity.checksum !== firstPacketIdentity.checksum,
-      packetIdentity.sourceRunStatus === terminalRun.status,
-      packetIdentity.sourceRunLifecycleRevision === terminalRun.lifecycleRevision,
-      packetIdentity.sourceRunUpdatedAt === terminalRun.updatedAt
+      packetIdentity.packetId === firstPacketIdentity.packetId,
+      packetIdentity.checksum === firstPacketIdentity.checksum,
+      packetIdentity.generatedAt === firstPacketIdentity.generatedAt,
+      packetIdentity.sourceRunStatus === firstPacketIdentity.sourceRunStatus,
+      packetIdentity.sourceRunLifecycleRevision ===
+        firstPacketIdentity.sourceRunLifecycleRevision,
+      packetIdentity.sourceRunUpdatedAt === firstPacketIdentity.sourceRunUpdatedAt
     ].every(Boolean),
     packetScopeMatched: packetScopeMatches(value, expectedScope),
     packetAbstained: recordHasStrings(abstentionScore, { status: "abstain" })
@@ -530,14 +527,11 @@ const assertTerminalEvidenceContractReadback = (
     label: "historical contract visibility",
     passed: readback.contractHistoryVisible
   }, {
-    label: "terminal command suppression",
-    passed: readback.commandsSuppressed
+    label: "issued contract retention",
+    passed: readback.issuedContractRetained
   }, {
-    label: "inactive-contract evidence gap",
-    passed: readback.evidenceGapPresent
-  }, {
-    label: "terminal packet identity",
-    passed: readback.packetIdentityMatched
+    label: "issued packet identity retention",
+    passed: readback.packetIdentityRetained
   }, {
     label: "terminal packet scope",
     passed: readback.packetScopeMatched
@@ -599,6 +593,7 @@ export const runRunShowDbSmokeCheck = async (
       workspaceSlug
     });
     retrievalRunId = compiledRetrievalRunId;
+    await harnessRunRepository.issueDecisionPacketForExecutionRun(executionRun.id);
 
     const commandRuntime = {
       workspaceId: workspace.id,
@@ -696,8 +691,8 @@ export const runRunShowDbSmokeCheck = async (
       packetBindingRetryStable: retryStable,
       terminalActivationInactive: terminalContractReadback.activationInactive,
       terminalContractHistoryVisible: terminalContractReadback.contractHistoryVisible,
-      terminalCommandsSuppressed: terminalContractReadback.commandsSuppressed,
-      terminalEvidenceGapPresent: terminalContractReadback.evidenceGapPresent,
+      terminalIssuedContractRetained: terminalContractReadback.issuedContractRetained,
+      terminalPacketIdentityRetained: terminalContractReadback.packetIdentityRetained,
       terminalPacketScopeMatched: terminalContractReadback.packetScopeMatched,
       terminalPacketAbstained: terminalContractReadback.packetAbstained,
       evidenceBundleCount: capture.retryCapture.aggregate.evidenceBundles.length,

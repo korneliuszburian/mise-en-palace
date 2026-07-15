@@ -105,11 +105,12 @@ export interface DecisionPacketReturnLoopSmokeReport {
   mismatchedFeedbackDeltaId: string;
   mismatchedFeedbackOutcome: string;
   mismatchedFeedbackStripped: boolean;
-  mismatchedFeedbackStayedOutOfNextPacket: boolean;
-  nextPacketGoverningDecisionIds: readonly string[];
-  nextPacketStaleDecisionIds: readonly string[];
-  nextPacketCaveatedSourceClaimIds: readonly string[];
-  nextPacketRetainsActivatedDecision: boolean;
+  mismatchedFeedbackStayedOutOfIssuedPacket: boolean;
+  issuedPacketGoverningDecisionIds: readonly string[];
+  issuedPacketStaleDecisionIds: readonly string[];
+  issuedPacketCaveatedSourceClaimIds: readonly string[];
+  issuedPacketRetainsActivatedDecision: boolean;
+  issuedPacketIdentityRetained: boolean;
   selectorProofRunId: string;
   selectorRetainedMemoryRecordId: string;
   selectorStaleMemoryRecordId: string;
@@ -351,6 +352,19 @@ interface SourceConsensusProofInput extends SourcePacketProofInput {
     readonly memoryRepository: MemoryRepository;
   };
 }
+
+const issueDecisionPacket = async (
+  repository: HarnessRunRepository,
+  executionRunId: string
+): Promise<void> => {
+  const issue = repository.issueDecisionPacketForExecutionRun;
+
+  if (issue === undefined) {
+    throw new Error("DecisionPacket return-loop smoke requires persisted issuance");
+  }
+
+  await issue.call(repository, executionRunId);
+};
 
 interface SourceDissentProofInput extends SourcePacketProofInput {
   readonly client: Sql;
@@ -1485,6 +1499,7 @@ const runSourceConsensusProof = async (
       evidenceContract: noFormalRejectionCompile.evidenceContract
     }
   });
+  await issueDecisionPacket(harnessRunRepository, noFormalRejectionRun.id);
   const noFormalRejectionPacket = parseDecisionPacket((await runDecisionPacketCommand({
     ...input.baseRuntime,
     runId: noFormalRejectionRun.id,
@@ -1563,6 +1578,7 @@ const runSourceConsensusProof = async (
       evidenceContract: sourceConsensusCompile.evidenceContract
     }
   });
+  await issueDecisionPacket(harnessRunRepository, proofRun.id);
   const packet = parseDecisionPacket((await runDecisionPacketCommand({
     ...input.baseRuntime,
     runId: proofRun.id,
@@ -1932,6 +1948,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     completedAt: "2026-07-07T12:00:00.000Z",
     metadata: smokeMetadata
   });
+  await issueDecisionPacket(harnessRunRepository, proofRun.id);
   const readOnlyUsefulnessRowsBefore = await countReadOnlyUsefulnessRows({
     client: input.client,
     executionRunId: proofRun.id
@@ -2351,6 +2368,7 @@ const runSelectorFeedbackProof = async (
       evidenceContract: selectorCompile.evidenceContract
     }
   });
+  await issueDecisionPacket(harnessRunRepository, selectorExecutionRun.id);
   const selectorPacket = parseDecisionPacket((await runDecisionPacketCommand({
     ...input.baseRuntime,
     runId: selectorExecutionRun.id,
@@ -2584,6 +2602,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       now: () => "2026-07-07T12:00:00.000Z",
       createId: (prefix: string) => `${prefix}-${marker}`
     };
+    await issueDecisionPacket(harnessRunRepository, executionRun.id);
     const firstPacket = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
       runId: executionRun.id,
@@ -2801,26 +2820,40 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       mismatchedFeedbackOutcome === undefined &&
       decisionPacketBindingReadbackFromMetadata(mismatchedFeedbackDelta.metadata).status ===
         "unbound";
-    const nextPacket = parseDecisionPacket((await runDecisionPacketCommand({
+    const issuedPacketReadback = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
       runId: executionRun.id,
       createDatabaseRuntime: async () => commandRuntime
     })).stdout);
-    const nextPacketRetainsActivatedDecision =
-      nextPacket.packet.governingDecisionIds.includes(helpedFeedbackSource.decisionTargetId) &&
-      nextPacket.packet.governingDecisionIds.includes(staleFeedbackSource.decisionTargetId);
-    const nextPacketCaveatedSourceClaimIds = nextPacket.packet.sourceConsensus.caveatedSourceClaimIds;
+    const issuedPacketRetainsActivatedDecision =
+      issuedPacketReadback.packet.governingDecisionIds.includes(
+        helpedFeedbackSource.decisionTargetId
+      ) &&
+      issuedPacketReadback.packet.governingDecisionIds.includes(
+        staleFeedbackSource.decisionTargetId
+      );
+    const issuedPacketCaveatedSourceClaimIds =
+      issuedPacketReadback.packet.sourceConsensus.caveatedSourceClaimIds;
+    const issuedPacketIdentityRetained =
+      issuedPacketReadback.packetIdentity.checksum === firstPacket.packetIdentity.checksum &&
+      issuedPacketReadback.packetIdentity.generatedAt === firstPacket.packetIdentity.generatedAt &&
+      issuedPacketReadback.packetIdentity.sourceRunLifecycleRevision ===
+        firstPacket.packetIdentity.sourceRunLifecycleRevision;
     const staleFeedbackStayedDiagnostic =
       staleFeedbackOutcome === "stale" &&
-      nextPacketCaveatedSourceClaimIds.includes(staleFeedbackSource.claimId) &&
-      nextPacket.packet.governingDecisionIds.includes(staleFeedbackSource.decisionTargetId);
-    const mismatchedFeedbackStayedOutOfNextPacket =
-      !nextPacket.packet.governingDecisionIds.includes(unseenDecisionId) &&
-      !nextPacket.packet.staleDecisionIds.includes(unseenDecisionId);
+      issuedPacketIdentityRetained &&
+      !issuedPacketCaveatedSourceClaimIds.includes(staleFeedbackSource.claimId) &&
+      issuedPacketReadback.packet.governingDecisionIds.includes(
+        staleFeedbackSource.decisionTargetId
+      );
+    const mismatchedFeedbackStayedOutOfIssuedPacket =
+      !issuedPacketReadback.packet.governingDecisionIds.includes(unseenDecisionId) &&
+      !issuedPacketReadback.packet.staleDecisionIds.includes(unseenDecisionId);
     const matchingFeedbackStayedDiagnostic =
       matchingFeedbackWasAccepted &&
-      nextPacketRetainsActivatedDecision &&
-      !nextPacket.packet.governingDecisionIds.includes(helpedFeedbackSource.claimId);
+      issuedPacketIdentityRetained &&
+      issuedPacketRetainsActivatedDecision &&
+      !issuedPacketReadback.packet.governingDecisionIds.includes(helpedFeedbackSource.claimId);
 
     await client`
       insert into feedback_deltas (
@@ -2923,8 +2956,9 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "stale feedback packet binding", passed: staleFeedbackBoundToPacket },
       { label: "stale feedback stayed diagnostic", passed: staleFeedbackStayedDiagnostic },
       { label: "mismatched feedback stripped", passed: mismatchedFeedbackStripped },
-      { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfNextPacket },
-      { label: "next packet retains activated decisions", passed: nextPacketRetainsActivatedDecision },
+      { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfIssuedPacket },
+      { label: "issued packet retains activated decisions", passed: issuedPacketRetainsActivatedDecision },
+      { label: "issued packet identity retained", passed: issuedPacketIdentityRetained },
       {
         label: "selector packet includes retained neutral control memory",
         passed: selectorProof.includesRetainedMemory
@@ -3055,11 +3089,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       mismatchedFeedbackDeltaId: mismatchedFeedbackDelta.id,
       mismatchedFeedbackOutcome: mismatchedFeedbackOutcome ?? "absent",
       mismatchedFeedbackStripped,
-      mismatchedFeedbackStayedOutOfNextPacket,
-      nextPacketGoverningDecisionIds: nextPacket.packet.governingDecisionIds,
-      nextPacketStaleDecisionIds: nextPacket.packet.staleDecisionIds,
-      nextPacketCaveatedSourceClaimIds,
-      nextPacketRetainsActivatedDecision,
+      mismatchedFeedbackStayedOutOfIssuedPacket,
+      issuedPacketGoverningDecisionIds: issuedPacketReadback.packet.governingDecisionIds,
+      issuedPacketStaleDecisionIds: issuedPacketReadback.packet.staleDecisionIds,
+      issuedPacketCaveatedSourceClaimIds,
+      issuedPacketRetainsActivatedDecision,
+      issuedPacketIdentityRetained,
       selectorProofRunId: selectorProof.proofRunId,
       selectorRetainedMemoryRecordId: selectorProof.retainedMemoryRecordId,
       selectorStaleMemoryRecordId: selectorProof.staleMemoryRecordId,
