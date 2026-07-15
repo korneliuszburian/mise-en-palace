@@ -727,6 +727,7 @@ describe("repository policy boundaries", () => {
 
     expect(baseline.allowedLicenses).toEqual([
       "Apache-2.0",
+      "BSD-2-Clause",
       "BSD-3-Clause",
       "ISC",
       "MIT",

@@ -73,6 +73,8 @@ jobs:
         run: pnpm --filter @krn/codex-adapter test
       - name: Database tests
         run: pnpm --filter @krn/db test
+      - name: Official MCP client compatibility
+        run: pnpm test:mcp:compat
       - name: CLI tests
         run: pnpm --filter @krn/cli exec vitest run --no-file-parallelism
       - name: KRN doctor

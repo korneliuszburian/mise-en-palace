@@ -47,6 +47,7 @@
     "eval:real-recall": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli eval:real-recall",
     "eval:determinism": "pnpm --filter @krn/cli eval:determinism",
     "mcp:decision-packet": "pnpm --silent --filter @krn/cli mcp:decision-packet",
+    "test:mcp:compat": "pnpm --filter @krn/cli test:mcp:compat",
     "eval:required:behavior-gates": "pnpm --filter @krn/harness exec vitest run src/__tests__/krn-behavior-gate.test.ts src/__tests__/typescript-boundary-invariants.test.ts",
     "eval:required:type-boundary": "pnpm --filter @krn/cli typecheck:tests:clean",
     "eval:required:readback-falsifiers": "pnpm --filter @krn/cli exec vitest run src/__tests__/run-run-show-command.test.ts src/__tests__/evidence-capture-behavior.test.ts src/__tests__/run-brain-search-command.test.ts src/__tests__/brain-ranking-eval.test.ts src/__tests__/source-graph-ranking-eval.test.ts src/__tests__/memory-advantage-eval.test.ts src/__tests__/decision-packet-eval.test.ts src/__tests__/codex-decision-packet-obedience-eval.test.ts src/__tests__/second-repo-decision-packet-eval.test.ts src/__tests__/decision-corpus-import.test.ts",
