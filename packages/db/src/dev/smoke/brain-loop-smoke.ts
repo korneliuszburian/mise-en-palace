@@ -164,8 +164,9 @@ const packetSelectionCheckpoint = (input: {
   readonly executionRunId: string;
   readonly memoryRecordId: string;
   readonly packetChecksum: string;
+  readonly after: string;
 }) => {
-  const observedAt = Date.now();
+  const observedAt = Math.max(Date.now(), Date.parse(input.after) + 1);
   const artifact = createCommandOutputArtifact({
     command: requiredEvidenceCommands[0],
     exitCode: input.selected ? 0 : 1,
@@ -710,11 +711,31 @@ export const runBrainLoopSmokeCheck = async (
       );
     }
 
+    const recordUsefulnessApplicationOnce =
+      harnessRunRepository.recordUsefulnessApplicationOnce;
+    if (recordUsefulnessApplicationOnce === undefined) {
+      throw new Error("Memory loop smoke requires usefulness application persistence");
+    }
+    const usefulnessApplication = await recordUsefulnessApplicationOnce.call(
+      harnessRunRepository,
+      {
+        applicationId: `memory-loop:${marker}:knowledge-application`,
+        subjectKind: "knowledge",
+        subjectId: memoryRecord.id,
+        projectId: project.id,
+        executionRunId: executionRun.id,
+        taskContractId: taskContract.id,
+        packetChecksum: packetBinding.packetChecksum,
+        packetGeneratedAt: packetBinding.packetGeneratedAt,
+        sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision
+      }
+    );
     const checkpoint = packetSelectionCheckpoint({
       selected: decisionPacketSelectedMemory,
       executionRunId: packetAggregate.executionRun.id,
       memoryRecordId: memoryRecord.id,
-      packetChecksum: packetBinding.packetChecksum
+      packetChecksum: packetBinding.packetChecksum,
+      after: usefulnessApplication.application.appliedAt
     });
 
     const admittedPacketFeedbackInput = {
@@ -728,6 +749,8 @@ export const runBrainLoopSmokeCheck = async (
       },
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: memoryRecord.id,
+        applicationId: usefulnessApplication.application.applicationId,
+        appliedAt: usefulnessApplication.application.appliedAt,
         outcome: "helped" as const,
         reason:
           "The MemoryRecord selected by the current DecisionPacket anchored the reviewed memory-loop proof.",
