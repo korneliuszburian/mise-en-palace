@@ -562,6 +562,8 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
       `Excluded decisions: ${report.excludedDecisionCount}`,
       `Conflict decisions: ${report.conflictDecisionCount}`,
       `Stale decisions: ${report.staleDecisionCount}`,
+      `Stale memory warning persisted: ${report.staleMemoryWarningPersisted ? "yes" : "no"}`,
+      `Stale source warning persisted: ${report.staleSourceWarningPersisted ? "yes" : "no"}`,
       `Context items: ${report.contextItemCount}`,
       `Context exclusions: ${report.contextExclusionCount}`,
       `Observation prefix items: ${report.observationPrefixItemCount}`,

@@ -102,7 +102,6 @@ export interface SourceDecisionKnowledgeSource {
 export interface SourceClaimSelectionOptions {
   terms?: readonly string[];
   now?: string;
-  includeHistorical?: boolean;
 }
 
 export interface RejectedSourceDecisionKnowledgeSource {
@@ -122,6 +121,11 @@ export interface SourceRepository {
     id: SourceClaim["id"]
   ): Promise<SourceClaim | undefined>;
   listClaimsForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: SourceClaimSelectionOptions
+  ): Promise<SourceClaim[]>;
+  listHistoricalClaimWarningsForProject(
     projectId: ProjectId,
     limit: number,
     options?: SourceClaimSelectionOptions

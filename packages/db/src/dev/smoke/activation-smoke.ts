@@ -92,6 +92,8 @@ export interface ActivationSmokeReport {
   excludedDecisionCount: number;
   conflictDecisionCount: number;
   staleDecisionCount: number;
+  staleMemoryWarningPersisted: boolean;
+  staleSourceWarningPersisted: boolean;
   contextItemCount: number;
   contextExclusionCount: number;
   observationPrefixItemCount: number;
@@ -201,6 +203,13 @@ export const runActivationSmokeCheck = async (
       marker,
       now
     );
+    const sourceEvidenceMetadata = {
+      smokeId: marker,
+      evidenceRef: `operator://activation-smoke/${marker}/captured`,
+      evidenceStatus: "captured",
+      evidenceContentHash: `activation-smoke-${marker}-captured-evidence`,
+      evidenceFreshness: "current"
+    };
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",
@@ -208,9 +217,14 @@ export const runActivationSmokeCheck = async (
       uri: `operator://activation-smoke/${marker}`,
       title: "Activation smoke source",
       contentHash: `activation-smoke-${marker}`,
-      metadata: {
-        smokeId: marker
-      }
+      metadata: sourceEvidenceMetadata
+    });
+    const sourceChunk = await sourceRepository.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: 0,
+      content: "Captured evidence for the activation smoke historical warning boundary.",
+      contentHash: `activation-smoke-${marker}-chunk-bytes`,
+      metadata: sourceEvidenceMetadata
     });
     const activationClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
@@ -263,6 +277,45 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
+    const expiredSourceClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      executionRunId: executionRun.id,
+      claim: "Expired activation guidance should remain visible as a bounded warning.",
+      mechanism: "Historical source evidence explains why current activation must not reuse stale guidance.",
+      krnImplication: "Task-relevant stale source claims belong in warning provenance, never governing context.",
+      doesNotProve: "Historical visibility does not make the source claim current or true.",
+      sourceAuthority: "project-decision",
+      supportType: "risk",
+      consumer: "M25 activation smoke",
+      falsifier: "The persisted stale source claim disappears before activation trace.",
+      revisitWhen: expiredValidUntil,
+      status: "proposed",
+      metadata: {
+        ...sourceEvidenceMetadata,
+        temporalCase: "expired-source-warning"
+      }
+    });
+    const expiredSourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: expiredSourceClaim.id,
+      status: "adopt",
+      decision: "Retain expired activation guidance only as bounded warning history.",
+      rationale: "The historical path explains a stale alternative without restoring authority.",
+      falsifier: "The expired guidance becomes current authority or disappears from the warning trace.",
+      consumer: "M25 activation smoke",
+      metadata: { smokeId: marker }
+    });
+    await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: expiredSourceClaim.id,
+      sourceDecisionId: expiredSourceDecision.id,
+      targetType: "harness_run",
+      targetId: executionRun.id,
+      supportType: "risk",
+      confidence: "high",
+      notes: "Expired guidance remains warning-only.",
+      metadata: { smokeId: marker }
+    });
     const baselineMemory = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `activation-smoke:${marker}:high-signal`,
@@ -281,7 +334,7 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
-    await memoryRepository.createMemoryRecord({
+    const expiredMemory = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `activation-smoke:${marker}:expired`,
       kind: "preference",
@@ -516,6 +569,14 @@ export const runActivationSmokeCheck = async (
       minimumSourceAuthority: "medium",
       now
     });
+    const staleMemoryWarningRetrieved = filterResult.candidates.some(
+      (candidate) =>
+        candidate.subjectId === expiredMemory.id && candidate.exclusion?.reason === "stale"
+    );
+    const staleSourceWarningRetrieved = filterResult.candidates.some(
+      (candidate) =>
+        candidate.subjectId === expiredSourceClaim.id && candidate.exclusion?.reason === "stale"
+    );
     const filteredCandidates = applyContextROI(
       filterResult.candidates,
       {
@@ -687,7 +748,7 @@ export const runActivationSmokeCheck = async (
 
     const readBackContextAssembly = readBackContextAssemblyRows[0];
     const readBackRetrievalRun = readBackRetrievalRunRows[0];
-    const sourceClaimCount = [activationClaim, crawlerClaim].length + 1;
+    const sourceClaimCount = [activationClaim, crawlerClaim, expiredSourceClaim].length + 1;
     const memoryRecordCount = 2 + relevanceDistractorCount + 1;
     const relevantMemoryCandidateCount = candidates.filter(
       (candidate) => candidate.subjectId === relevantMemory.id
@@ -750,6 +811,12 @@ export const runActivationSmokeCheck = async (
     const excludedDecisionCount = countByDecision(activationRecords, "excluded");
     const conflictDecisionCount = countByDecision(activationRecords, "conflict");
     const staleDecisionCount = countByDecision(activationRecords, "stale");
+    const staleMemoryWarningPersisted = activationRecords.some(
+      (decision) => decision.subjectId === expiredMemory.id && decision.decision === "stale"
+    );
+    const staleSourceWarningPersisted = activationRecords.some(
+      (decision) => decision.subjectId === expiredSourceClaim.id && decision.decision === "stale"
+    );
     const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
     const prefixItemCount = observationPrefixItemCount(readBackContextAssembly?.metadata);
     const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
@@ -759,7 +826,7 @@ export const runActivationSmokeCheck = async (
         { label: "context assembly exists", passed: readBackContextAssembly !== undefined },
         { label: "context assembly retrieval run", passed: readBackContextAssembly?.retrievalRunId === retrievalRun.id },
         { label: "retrieval run exists", passed: readBackRetrievalRun !== undefined },
-        { label: "source claims", passed: sourceClaimCount === 3 },
+        { label: "source claims", passed: sourceClaimCount === 4 },
         { label: "memory records", passed: memoryRecordCount === 2 + relevanceDistractorCount + 1 },
         { label: "no-term memory fallback remains bounded", passed: noTermFallbackRecords.length === 1 },
         { label: "relevant memory before bounded limit", passed: relevantMemoryRetrieved },
@@ -805,15 +872,19 @@ export const runActivationSmokeCheck = async (
         { label: "search documents", passed: searchDocumentCount === 3 },
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
         { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
+        { label: "persisted stale source retrieved as warning", passed: staleSourceWarningRetrieved },
+        { label: "persisted stale memory retrieved as warning", passed: staleMemoryWarningRetrieved },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
-        { label: "retrieval candidates", passed: retrievalCandidateCount === 32 },
-        { label: "activation decisions", passed: activationDecisionCount === 32 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 34 },
+        { label: "activation decisions", passed: activationDecisionCount === 34 },
         { label: "included decisions", passed: includedDecisionCount === 2 },
         { label: "excluded decisions", passed: excludedDecisionCount === 29 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
-        { label: "stale decisions are filtered before activation", passed: staleDecisionCount === 0 },
+        { label: "stale warning decisions", passed: staleDecisionCount === 2 },
+        { label: "stale memory warning persisted", passed: staleMemoryWarningPersisted },
+        { label: "stale source warning persisted", passed: staleSourceWarningPersisted },
         { label: "context items", passed: contextItemCount === 2 },
-        { label: "context exclusions", passed: contextExclusionCount === 30 },
+        { label: "context exclusions", passed: contextExclusionCount === 32 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
         { label: "raw recall trigger readback", passed: rawRecallTriggerCount >= 0 }
       ],
@@ -872,6 +943,8 @@ export const runActivationSmokeCheck = async (
       excludedDecisionCount,
       conflictDecisionCount,
       staleDecisionCount,
+      staleMemoryWarningPersisted,
+      staleSourceWarningPersisted,
       contextItemCount,
       contextExclusionCount,
       observationPrefixItemCount: prefixItemCount,

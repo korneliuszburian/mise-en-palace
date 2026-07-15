@@ -1020,6 +1020,16 @@ export const cleanupActivationSmokeRows = async (
     beforeSourceClaimDeleteTasks: [
       async () => {
         await input.db
+          .delete(sourceDecisionEdges)
+          .where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(sourceDecisions)
+          .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
           .delete(antiMemoryRecords)
           .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`);
       },

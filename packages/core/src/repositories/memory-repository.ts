@@ -238,6 +238,11 @@ export interface ActiveMemorySelectionOptions {
   now?: string;
 }
 
+export interface HistoricalMemoryWarningSelectionOptions {
+  terms?: readonly string[];
+  now?: string;
+}
+
 export interface AntiMemorySelectionOptions {
   terms?: readonly string[];
   now?: string;
@@ -264,6 +269,11 @@ export interface MemoryRepository {
     projectId: ProjectId,
     limit: number,
     options?: ActiveMemorySelectionOptions
+  ): Promise<MemoryRecord[]>;
+  listHistoricalMemoryWarnings(
+    projectId: ProjectId,
+    limit: number,
+    options?: HistoricalMemoryWarningSelectionOptions
   ): Promise<MemoryRecord[]>;
   createMemoryCandidate(input: CreateMemoryCandidateInput): Promise<MemoryCandidate>;
   getMemoryCandidateById(id: string): Promise<MemoryCandidate | undefined>;

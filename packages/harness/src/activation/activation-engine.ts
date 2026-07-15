@@ -81,11 +81,17 @@ export interface ActivationCandidateRepositories {
   memoryRepository: Pick<
     MemoryRepository,
     "listActiveMemory" | "listAntiMemoryForProject"
-  > & Partial<Pick<MemoryRepository, "getMemoryRecordById" | "listAntiMemoryCandidates">>;
+  > & Partial<Pick<
+    MemoryRepository,
+    "getMemoryRecordById" | "listAntiMemoryCandidates" | "listHistoricalMemoryWarnings"
+  >>;
   sourceRepository: Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  > & Partial<Pick<SourceRepository, "getSourceClaimForProject" | "listSourceRejectionsForClaim">>;
+  > & Partial<Pick<
+    SourceRepository,
+    "getSourceClaimForProject" | "listSourceRejectionsForClaim" | "listHistoricalClaimWarningsForProject"
+  >>;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -639,16 +645,31 @@ export const retrieveActivationCandidates = async (
     };
   }
 
-  const initialMemoryRecords = await input.repositories.memoryRepository.listActiveMemory(
-    input.taskContract.projectId,
-    input.limits.memory,
-    { terms: memoryQuery.terms, now: activationNow }
-  );
-  const initialSourceClaims = await input.repositories.sourceRepository.listClaimsForProject(
-    input.taskContract.projectId,
-    input.limits.source,
-    { terms: sourceQuery.terms, now: activationNow, includeHistorical: true }
-  );
+  const [currentMemoryRecords, historicalMemoryWarnings, currentSourceClaims, historicalSourceWarnings] =
+    await Promise.all([
+      input.repositories.memoryRepository.listActiveMemory(
+        input.taskContract.projectId,
+        input.limits.memory,
+        { terms: memoryQuery.terms, now: activationNow }
+      ),
+      input.repositories.memoryRepository.listHistoricalMemoryWarnings?.(
+        input.taskContract.projectId,
+        input.limits.memory,
+        { terms: memoryQuery.terms, now: activationNow }
+      ) ?? [],
+      input.repositories.sourceRepository.listClaimsForProject(
+        input.taskContract.projectId,
+        input.limits.source,
+        { terms: sourceQuery.terms, now: activationNow }
+      ),
+      input.repositories.sourceRepository.listHistoricalClaimWarningsForProject?.(
+        input.taskContract.projectId,
+        input.limits.source,
+        { terms: sourceQuery.terms, now: activationNow }
+      ) ?? []
+    ]);
+  const initialMemoryRecords = appendUniqueById(currentMemoryRecords, historicalMemoryWarnings);
+  const initialSourceClaims = appendUniqueById(currentSourceClaims, historicalSourceWarnings);
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery, activationNow);
   const searchDocumentResolutions = await resolveSearchDocumentAuthority({
     documents: searchResults,

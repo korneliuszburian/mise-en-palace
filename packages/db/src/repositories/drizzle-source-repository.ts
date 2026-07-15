@@ -151,10 +151,7 @@ const sourceRelevanceScore = (
       sql` + `
     )})`;
 
-const sourceLifecycleFilter = (includeHistorical: boolean | undefined) =>
-  includeHistorical === true
-    ? undefined
-    : inArray(sourceClaims.status, ["proposed", "accepted"]);
+const sourceLifecycleFilter = () => inArray(sourceClaims.status, ["proposed", "accepted"]);
 
 const sourceTemporalFilter = (nowIso: string) => sql`CASE
   WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
@@ -162,6 +159,16 @@ const sourceTemporalFilter = (nowIso: string) => sql`CASE
     THEN ${sourceClaims.revisitWhen} > ${nowIso}
   ELSE false
 END`;
+
+const sourceHistoricalWarningFilter = (nowIso: string) => or(
+  inArray(sourceClaims.status, ["rejected", "deprecated"]),
+  sql`CASE
+    WHEN ${sourceClaims.revisitWhen} IS NULL THEN false
+    WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
+      THEN ${sourceClaims.revisitWhen} <= ${nowIso}
+    ELSE false
+  END`
+);
 
 const sourceDecisionEdgeProjection = {
   id: sourceDecisionEdges.id,
@@ -932,9 +939,42 @@ export class DrizzleSourceRepository implements SourceRepository {
       .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .where(and(
         eq(sourceArtifacts.projectId, projectId),
-        sourceLifecycleFilter(options?.includeHistorical),
+        sourceLifecycleFilter(),
         relevanceFilter,
         sourceTemporalFilter(nowIso)
+      ))
+      .orderBy(
+        ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),
+        desc(sourceClaims.updatedAt),
+        asc(sourceClaims.id)
+      )
+      .limit(limit);
+
+    return rows.map(mapSourceClaim);
+  }
+
+  async listHistoricalClaimWarningsForProject(
+    projectId: ProjectId,
+    limit: number,
+    options?: SourceClaimSelectionOptions
+  ): Promise<SourceClaim[]> {
+    const now = selectionDate(options?.now);
+    if (now === undefined) {
+      return [];
+    }
+    const nowIso = now.toISOString();
+    const terms = normalizedSelectionTerms(options?.terms);
+    const searchableText = sourceSearchableText();
+    const relevanceFilter = sourceRelevanceFilter(terms, searchableText);
+    const relevanceScore = sourceRelevanceScore(terms, searchableText);
+    const rows = await this.db
+      .select(sourceClaimProjection)
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(and(
+        eq(sourceArtifacts.projectId, projectId),
+        relevanceFilter,
+        sourceHistoricalWarningFilter(nowIso)
       ))
       .orderBy(
         ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),

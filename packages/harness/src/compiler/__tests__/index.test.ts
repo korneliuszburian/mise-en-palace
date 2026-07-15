@@ -251,6 +251,10 @@ class FakeMemoryRepository implements MemoryRepository {
     return [...this.records];
   }
 
+  async listHistoricalMemoryWarnings(): Promise<MemoryRecord[]> {
+    return [];
+  }
+
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<MemoryCandidate> {
     throw new Error("not used by compiler");
   }

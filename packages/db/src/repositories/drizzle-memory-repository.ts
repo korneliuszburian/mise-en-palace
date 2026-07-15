@@ -42,6 +42,7 @@ import type {
   ApplyReviewedMemoryRevisionInput,
   ApplyReviewedMemoryRevisionResult,
   CreateMemoryRecordInput,
+  HistoricalMemoryWarningSelectionOptions,
   InvalidateMemoryRecordInput,
   MemoryRepository,
   PromoteAntiMemoryCandidateInput,
@@ -224,6 +225,38 @@ const selectionDate = (value: string | undefined): Date | undefined => {
 
   return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
 };
+
+const normalizedMemorySelectionTerms = (terms: readonly string[] | undefined): string[] => [
+  ...new Set((terms ?? [])
+    .map((term) => term.trim().toLowerCase())
+    .filter((term) => term.length > 0))
+];
+
+const memorySearchableText = () => sql`lower(concat_ws(' ',
+  ${memoryRecords.key},
+  ${memoryRecords.summary},
+  ${memoryRecords.body},
+  ${memoryRecords.owner},
+  ${memoryRecords.applicationGuidance},
+  ${memoryRecords.invalidationRule}
+))`;
+
+const memoryRelevanceFilter = (
+  terms: readonly string[],
+  searchableText: ReturnType<typeof memorySearchableText>
+) => terms.length === 0
+  ? undefined
+  : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
+
+const memoryRelevanceScore = (
+  terms: readonly string[],
+  searchableText: ReturnType<typeof memorySearchableText>
+) => terms.length === 0
+  ? undefined
+  : sql<number>`(${sql.join(
+      terms.map((term) => sql`CASE WHEN strpos(${searchableText}, ${term}) > 0 THEN 1 ELSE 0 END`),
+      sql` + `
+    )})`;
 
 interface MemoryCoreInvariantInput {
   summary: string;
@@ -733,28 +766,10 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return [];
     }
 
-    const terms = [...new Set(
-      (options?.terms ?? [])
-        .map((term) => term.trim().toLowerCase())
-        .filter((term) => term.length > 0)
-    )];
-    const searchableText = sql`lower(concat_ws(' ',
-      ${memoryRecords.key},
-      ${memoryRecords.summary},
-      ${memoryRecords.body},
-      ${memoryRecords.owner},
-      ${memoryRecords.applicationGuidance},
-      ${memoryRecords.invalidationRule}
-    ))`;
-    const relevanceFilter = terms.length === 0
-      ? undefined
-      : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
-    const relevanceScore = terms.length === 0
-      ? undefined
-      : sql<number>`(${sql.join(
-          terms.map((term) => sql`CASE WHEN strpos(${searchableText}, ${term}) > 0 THEN 1 ELSE 0 END`),
-          sql` + `
-        )})`;
+    const terms = normalizedMemorySelectionTerms(options?.terms);
+    const searchableText = memorySearchableText();
+    const relevanceFilter = memoryRelevanceFilter(terms, searchableText);
+    const relevanceScore = memoryRelevanceScore(terms, searchableText);
     const rows = await this.db.query.memoryRecords.findMany({
       where: and(
         eq(memoryRecords.projectId, projectId),
@@ -767,6 +782,47 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       orderBy: [
         ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),
         ...activeMemorySelectionOrder()
+      ],
+      limit
+    });
+
+    return rows.map(mapMemoryRecord);
+  }
+
+  async listHistoricalMemoryWarnings(
+    projectId: ProjectId,
+    limit: number,
+    options?: HistoricalMemoryWarningSelectionOptions
+  ): Promise<MemoryRecord[]> {
+    const now = selectionDate(options?.now);
+    if (now === undefined) {
+      return [];
+    }
+
+    const terms = normalizedMemorySelectionTerms(options?.terms);
+    const searchableText = memorySearchableText();
+    const relevanceFilter = memoryRelevanceFilter(terms, searchableText);
+    const relevanceScore = memoryRelevanceScore(terms, searchableText);
+    const rows = await this.db.query.memoryRecords.findMany({
+      where: and(
+        eq(memoryRecords.projectId, projectId),
+        lte(memoryRecords.validFrom, now),
+        or(
+          inArray(memoryRecords.status, ["deprecated", "stale", "invalidated", "superseded"]),
+          and(
+            eq(memoryRecords.status, "active"),
+            or(
+              and(isNotNull(memoryRecords.validUntil), lte(memoryRecords.validUntil, now)),
+              and(isNotNull(memoryRecords.invalidatedAt), lte(memoryRecords.invalidatedAt, now))
+            )
+          )
+        ),
+        relevanceFilter
+      ),
+      orderBy: [
+        ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),
+        desc(memoryRecords.updatedAt),
+        asc(memoryRecords.id)
       ],
       limit
     });
