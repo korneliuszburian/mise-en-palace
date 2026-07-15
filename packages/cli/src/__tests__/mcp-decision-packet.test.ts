@@ -1,4 +1,12 @@
 import {
+  createHash
+} from "node:crypto";
+import {
+  decisionPacketChecksum,
+  type DecisionPacket,
+  type DecisionPacketIdentity
+} from "@krn/core";
+import {
   describe,
   expect,
   it
@@ -13,7 +21,41 @@ import {
 const now = "2026-07-07T22:00:00.000Z";
 const weakContextEvidenceGapId = "evidence-gap:run-agent-weak:no-governing-decision";
 
-const packetJson = {
+const sha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
+
+const bindFixtureIdentity = <T extends {
+  request: { runId: string };
+  packet: unknown;
+  packetIdentity: {
+    generatedAt: string;
+    sourceRunStatus: string;
+    sourceRunLifecycleRevision: number;
+    sourceRunUpdatedAt: string;
+  };
+}>(value: T): T => {
+  const checksum = decisionPacketChecksum({
+    generatedAt: value.packetIdentity.generatedAt,
+    packet: value.packet as DecisionPacket,
+    request: value.request,
+    sourceRunStatus: value.packetIdentity.sourceRunStatus as DecisionPacketIdentity["sourceRunStatus"],
+    sourceRunLifecycleRevision: value.packetIdentity.sourceRunLifecycleRevision,
+    sourceRunUpdatedAt: value.packetIdentity.sourceRunUpdatedAt
+  }, sha256Hex);
+
+  return {
+    ...value,
+    packetIdentity: {
+      ...value.packetIdentity,
+      packetId: `decision-packet:${value.request.runId}:${checksum.slice(0, 16)}`,
+      checksumAlgorithm: "sha256",
+      checksum,
+      evidenceRef: `packet:${checksum}`
+    }
+  } as T;
+};
+
+const packetJson = bindFixtureIdentity({
   kind: "krn.decisionPacketReadback.v1",
   access: "read_only",
   mutation: "none",
@@ -22,11 +64,13 @@ const packetJson = {
     runId: "run-agent-1"
   },
   packetIdentity: {
-    packetId: "decision-packet:run-agent-1:abc",
+    packetId: `decision-packet:run-agent-1:${"a".repeat(16)}`,
     checksumAlgorithm: "sha256",
     checksum: "a".repeat(64),
     evidenceRef: `packet:${"a".repeat(64)}`,
     generatedAt: now,
+    sourceRunStatus: "succeeded",
+    sourceRunLifecycleRevision: 2,
     sourceRunUpdatedAt: now,
     freshness: {
       status: "current_read_model_snapshot",
@@ -35,6 +79,19 @@ const packetJson = {
   },
   packet: {
     formatVersion: "krn.decisionPacket.v1",
+    task: {
+      id: "task-agent-1",
+      title: "Build the governed frontend",
+      objective: "Use the governed frontend bootstrap standard.",
+      constraints: [],
+      nonGoals: [],
+      acceptance: ["The governed standard is selected."],
+      status: "active"
+    },
+    contextInclusions: [],
+    contextExclusions: [],
+    toolBoundaries: ["read_only"],
+    nextAction: "Use the governed frontend bootstrap standard.",
     governingDecisionIds: ["frontend-project-standard-packet"],
     governingStatements: ["Use the governed frontend bootstrap standard."],
     taskStandardDecisions: [{
@@ -69,6 +126,9 @@ const packetJson = {
     sourceConsensus: {
       decisionLinkedSourceClaimIds: ["source-claim:frontend-project-standard-packet"],
       caveatedSourceClaimIds: [],
+      unsupportedSourceClaimIds: [],
+      conflictingSourceClaimIds: [],
+      unknownSourceClaimIds: [],
       sourceDecisionEdgeIds: ["source-decision-edge:frontend-project-standard-packet"],
       sourceDecisionTargets: [{
         targetType: "architecture_decision",
@@ -94,6 +154,10 @@ const packetJson = {
     },
     doesNotProve: ["live Codex obedience"],
     nonProofs: ["live Codex obedience"],
+    caveatedMemoryRefs: [],
+    staleKnowledgeIds: [],
+    noiseKnowledgeIds: [],
+    unknownKnowledgeIds: [],
     noiseDecisionIds: [],
     severeStaleAuthorityIds: [],
     brief: {
@@ -135,16 +199,16 @@ const packetJson = {
     proves: ["a headless consumer can request a read-only DecisionPacket contract through CLI JSON"],
     doesNotProve: ["MCP integration", "live Codex obedience", "memory/source promotion"]
   }
-};
+});
 
-const weakPacketJson = {
+const weakPacketJson = bindFixtureIdentity({
   ...packetJson,
   request: {
     runId: "run-agent-weak"
   },
   packetIdentity: {
     ...packetJson.packetIdentity,
-    packetId: "decision-packet:run-agent-weak:def",
+    packetId: `decision-packet:run-agent-weak:${"b".repeat(16)}`,
     checksum: "b".repeat(64),
     evidenceRef: `packet:${"b".repeat(64)}`
   },
@@ -187,19 +251,19 @@ const weakPacketJson = {
       evidenceGapIds: [weakContextEvidenceGapId]
     }
   }
-};
+});
 
 const unresolvedSourceDissentEvidenceGapId =
   "evidence-gap:run-agent-source-dissent:unresolved-accepted-source-dissent:claim-candidate";
 
-const unresolvedSourceDissentPacketJson = {
+const unresolvedSourceDissentPacketJson = bindFixtureIdentity({
   ...weakPacketJson,
   request: {
     runId: "run-agent-source-dissent"
   },
   packetIdentity: {
     ...packetJson.packetIdentity,
-    packetId: "decision-packet:run-agent-source-dissent:jkl",
+    packetId: `decision-packet:run-agent-source-dissent:${"d".repeat(16)}`,
     checksum: "d".repeat(64),
     evidenceRef: `packet:${"d".repeat(64)}`
   },
@@ -234,16 +298,16 @@ const unresolvedSourceDissentPacketJson = {
       evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
     }
   }
-};
+});
 
-const noFormalNegativePacketJson = {
+const noFormalNegativePacketJson = bindFixtureIdentity({
   ...packetJson,
   request: {
     runId: "run-agent-unsafe"
   },
   packetIdentity: {
     ...packetJson.packetIdentity,
-    packetId: "decision-packet:run-agent-unsafe:ghi",
+    packetId: `decision-packet:run-agent-unsafe:${"c".repeat(16)}`,
     checksum: "c".repeat(64),
     evidenceRef: `packet:${"c".repeat(64)}`
   },
@@ -273,7 +337,7 @@ const noFormalNegativePacketJson = {
       evidenceGapIds: []
     }
   }
-};
+});
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -738,8 +802,8 @@ describe("DecisionPacket MCP wrapper", () => {
         structuredContent: {
           kind: "krn.decisionPacketReadback.v1",
           packetIdentity: {
-            checksum: "a".repeat(64),
-            evidenceRef: `packet:${"a".repeat(64)}`
+            checksum: packetJson.packetIdentity.checksum,
+            evidenceRef: packetJson.packetIdentity.evidenceRef
           },
           returnChannels: {
             evidence: {
@@ -768,10 +832,105 @@ describe("DecisionPacket MCP wrapper", () => {
     const result = isRecord(reply) ? reply["result"] : undefined;
     expect(isRecord(result) ? result["content"] : undefined).toEqual([{
       type: "text",
-      text: expect.stringContaining("checksum=" + "a".repeat(64))
+      text: expect.stringContaining(`checksum=${packetJson.packetIdentity.checksum}`)
     }]);
     const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
     expect(isRecord(structuredContent) && !("readModel" in structuredContent)).toBe(true);
+  });
+
+  it.each([
+    {
+      name: "array output",
+      output: []
+    },
+    {
+      name: "incomplete packet",
+      output: {
+        kind: "krn.decisionPacketReadback.v1",
+        proof: {
+          proves: [],
+          doesNotProve: []
+        }
+      }
+    },
+    {
+      name: "wrong run",
+      output: {
+        ...packetJson,
+        request: {
+          runId: "run-agent-other"
+        }
+      }
+    },
+    {
+      name: "wrong task",
+      output: {
+        ...packetJson,
+        request: {
+          ...packetJson.request,
+          taskId: "task-other"
+        }
+      }
+    },
+    {
+      name: "wrong project",
+      output: {
+        ...packetJson,
+        request: {
+          ...packetJson.request,
+          projectId: "project-other"
+        }
+      }
+    },
+    {
+      name: "checksum mismatch",
+      output: {
+        ...packetJson,
+        packet: {
+          ...packetJson.packet,
+          nextAction: "Use unchecksummed packet content."
+        }
+      }
+    },
+    {
+      name: "fabricated transport proof",
+      output: {
+        ...packetJson,
+        proof: {
+          ...packetJson.proof,
+          proves: [
+            ...packetJson.proof.proves,
+            "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
+          ]
+        }
+      }
+    }
+  ])("rejects malformed packet output: $name", async ({ output }) => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "malformed-packet",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1"
+        }
+      }
+    }, runtime(async () => ({
+      stdout: `${JSON.stringify(output)}\n`
+    })));
+
+    expect(reply).toEqual({
+      jsonrpc: "2.0",
+      id: "malformed-packet",
+      result: {
+        content: [{
+          type: "text",
+          text: "krn decision packet command returned an invalid DecisionPacket contract"
+        }],
+        isError: true
+      }
+    });
   });
 
   it("preserves abstention and evidence gaps in structured tool output", async () => {
@@ -794,8 +953,8 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(structuredContent).toMatchObject({
       kind: "krn.decisionPacketReadback.v1",
       packetIdentity: {
-        checksum: "b".repeat(64),
-        evidenceRef: `packet:${"b".repeat(64)}`
+        checksum: weakPacketJson.packetIdentity.checksum,
+        evidenceRef: weakPacketJson.packetIdentity.evidenceRef
       },
       proof: {
         proves: expect.arrayContaining([
@@ -850,8 +1009,8 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(structuredContent).toMatchObject({
       kind: "krn.decisionPacketReadback.v1",
       packetIdentity: {
-        checksum: "d".repeat(64),
-        evidenceRef: `packet:${"d".repeat(64)}`
+        checksum: unresolvedSourceDissentPacketJson.packetIdentity.checksum,
+        evidenceRef: unresolvedSourceDissentPacketJson.packetIdentity.evidenceRef
       },
       packet: {
         governingDecisionIds: [],
@@ -900,8 +1059,8 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(structuredContent).toMatchObject({
       kind: "krn.decisionPacketReadback.v1",
       packetIdentity: {
-        checksum: "c".repeat(64),
-        evidenceRef: `packet:${"c".repeat(64)}`
+        checksum: noFormalNegativePacketJson.packetIdentity.checksum,
+        evidenceRef: noFormalNegativePacketJson.packetIdentity.evidenceRef
       },
       packet: {
         governingDecisionIds: ["frontend-project-standard-packet"],
@@ -1003,7 +1162,7 @@ describe("DecisionPacket MCP wrapper", () => {
       : undefined).toMatchObject({
         kind: "krn.decisionPacketReadback.v1",
         packetIdentity: {
-          checksum: "a".repeat(64)
+          checksum: packetJson.packetIdentity.checksum
         }
     });
   });

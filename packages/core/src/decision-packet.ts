@@ -533,6 +533,17 @@ export interface DecisionPacketContractReadback {
 
 export type DecisionPacketSha256Hex = (value: string) => string;
 
+export interface DecisionPacketChecksumInput {
+  readonly generatedAt: string;
+  readonly packet: DecisionPacket;
+  readonly request: {
+    readonly runId: string;
+  };
+  readonly sourceRunStatus: ExecutionRunStatus;
+  readonly sourceRunLifecycleRevision: number;
+  readonly sourceRunUpdatedAt: string;
+}
+
 function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map(canonicalJson).join(",")}]`;
@@ -551,6 +562,11 @@ function canonicalJsonObject(value: object): string {
     .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
     .join(",")}}`;
 }
+
+export const decisionPacketChecksum = (
+  input: DecisionPacketChecksumInput,
+  sha256Hex: DecisionPacketSha256Hex
+): string => sha256Hex(canonicalJson(input));
 
 const sourceDecisionEdgeIdsFor = (
   readModel: DecisionPacketReadModelInput,
@@ -1205,7 +1221,7 @@ export const buildDecisionPacketIdentity = (input: {
   readonly generatedAt: string;
   readonly sha256Hex: DecisionPacketSha256Hex;
 }): DecisionPacketIdentity => {
-  const checksum = input.sha256Hex(canonicalJson({
+  const checksum = decisionPacketChecksum({
     generatedAt: input.generatedAt,
     packet: input.packet,
     request: {
@@ -1214,7 +1230,7 @@ export const buildDecisionPacketIdentity = (input: {
     sourceRunStatus: input.readModel.run.status,
     sourceRunLifecycleRevision: input.readModel.run.lifecycleRevision,
     sourceRunUpdatedAt: input.readModel.run.updatedAt
-  }));
+  }, input.sha256Hex);
 
   return {
     packetId: `decision-packet:${input.runId}:${checksum.slice(0, 16)}`,

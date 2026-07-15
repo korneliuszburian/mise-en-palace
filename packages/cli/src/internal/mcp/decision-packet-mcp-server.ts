@@ -12,6 +12,9 @@ import {
 import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
+import {
+  parseDecisionPacketContractReadback
+} from "./decision-packet-contract-parser.js";
 
 type JsonRpcId = string | number;
 
@@ -401,12 +404,18 @@ const runDecisionPacket = async (
   };
   const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
   const parsed: unknown = JSON.parse(result.stdout);
+  const readback = parseDecisionPacketContractReadback(parsed, runId);
 
-  if (!isJsonValue(parsed)) {
-    return textResult("krn decision packet command returned non-JSON tool content", true);
+  if (readback === undefined) {
+    return textResult(
+      "krn decision packet command returned an invalid DecisionPacket contract",
+      true
+    );
   }
 
-  return jsonResult(boundedReadback(annotateMcpTransportProof(parsed)));
+  return jsonResult(boundedReadback(annotateMcpTransportProof(
+    readback as unknown as JsonValue
+  )));
 };
 
 // fallow-ignore-next-line complexity -- protocol boundary distinguishes schema, tool, argument, and execution failure channels
