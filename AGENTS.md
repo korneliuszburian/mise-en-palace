@@ -21,25 +21,17 @@ falsifiers.
 - Keep source corpora outside active repo context. Derive bounded mechanisms
   and decisions instead of copying research or course material into Markdown.
 
-## Skill Routing
+## Domain Skills
 
-| Work | Skill |
-|---|---|
-| durable task state, planning, or handoff | `$beads` |
-| Memory Core, `DecisionPacket`, source/memory authority, or feedback domain rules | `$krn-memory-core` alongside the workflow owner |
-| bounded implementation or TypeScript maker work | global `$implement` |
-| unknown failure, flake, regression, or slowness | global `$diagnosing-bugs` |
-| branch, PR, fixed-point, or working-tree review | global `$code-review` |
-| module interface, seam placement, or deepening | global `$codebase-design` |
-| terminology, public naming, or rare durable decision | global `$domain-modeling` |
-| external source into an engineering decision | global `$source-to-decision` |
-| work against another repository | global `$target-repo-work` |
-| advisory Claude challenge | explicit global `$second-opinion-review` only |
+- Use `$beads` for durable task state, planning, blockers, follow-ups, and
+  handoffs.
+- Use `$krn-memory-core` when `DecisionPacket`, source/memory authority,
+  feedback, activation, or another Memory Core boundary changes.
 
-Diagnose before implementing when the cause is unknown. Classify target-repo
-authority before target commands. Review is read-only. Global skills own
-reusable procedure; repo-local skills add only KRN domain or tool context and
-may compose with the selected global workflow.
+Reusable engineering workflows are discovered from the installed global
+catalog. Do not copy, rename, enumerate, or alias them in this repository. If a
+required global owner is unavailable, report the installation gap instead of
+recreating its procedure locally.
 
 ## Product And Change Boundaries
 
