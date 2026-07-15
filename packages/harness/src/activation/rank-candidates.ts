@@ -2,6 +2,7 @@ import type {
   SearchDocumentSearchResult,
 } from "@krn/core/repositories";
 import type {
+  AntiMemoryRecord,
   MemoryRecord,
   MemoryRecordReviewSignal,
   IsoTimestamp,
@@ -21,6 +22,9 @@ import type {
   ActivationCandidate,
   ActivationQuery,
   RankedActivationCandidate
+} from "./types.js";
+import {
+  markExcluded
 } from "./types.js";
 import {
   tokenizeActivationText
@@ -589,6 +593,41 @@ export const toSearchCandidate = (document: SearchDocumentSearchResult): Activat
   }
 });
 
+const antiMemoryCandidate = (
+  record: AntiMemoryRecord
+): ActivationCandidate => ({
+  id: record.id,
+  kind: "anti_memory",
+  subjectType: "anti_memory_record",
+  subjectId: record.id,
+  text: [
+    record.key,
+    record.rejectedClaim,
+    record.reason,
+    record.appliesTo,
+    record.summary,
+    record.body
+  ].filter((value): value is string => value !== undefined).join(" "),
+  sourceAuthority: confidenceToSourceAuthority(record.confidence),
+  reason: `Rejected path: ${record.reason ?? record.summary}`,
+  expectedUse:
+    "Preserve as a non-governing rejected-path warning; never activate it as positive authority.",
+  tokenEstimate: estimateTokens([record.summary, record.body].join(" ")),
+  validFrom: record.validFrom,
+  ...(record.validUntil === undefined ? {} : { validUntil: record.validUntil }),
+  ...(record.invalidatedAt === undefined ? {} : { invalidatedAt: record.invalidatedAt }),
+  antiMemoryRecordId: record.id,
+  metadata: {
+    key: record.key,
+    ...(record.rejectedClaim === undefined ? {} : { rejectedClaim: record.rejectedClaim }),
+    ...(record.reason === undefined ? {} : { reason: record.reason }),
+    ...(record.appliesTo === undefined ? {} : { appliesTo: record.appliesTo }),
+    ...(record.mayRevisitWhen === undefined ? {} : { mayRevisitWhen: record.mayRevisitWhen }),
+    sourceLineage: record.sourceLineage,
+    nonGoverning: true
+  }
+});
+
 export const rankCandidates = (
   candidates: readonly ActivationCandidate[],
   query: ActivationQuery
@@ -615,6 +654,22 @@ export const rankCandidates = (
       };
     })
     .sort((left, right) => right.totalScore - left.totalScore);
+
+export const toNonGoverningAntiMemoryCandidate = (
+  record: AntiMemoryRecord,
+  query: ActivationQuery
+): RankedActivationCandidate => {
+  const candidate = rankCandidates([antiMemoryCandidate(record)], query)[0];
+
+  if (candidate === undefined) {
+    throw new Error(`Anti-memory ${record.id} did not produce an activation candidate`);
+  }
+
+  return markExcluded(candidate, {
+    reason: "unsafe",
+    explanation: `Non-governing ${candidate.reason} (anti-memory ${record.id}).`
+  });
+};
 
 export const mergeActivationCandidates = (
   candidates: readonly RankedActivationCandidate[]

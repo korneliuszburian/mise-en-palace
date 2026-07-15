@@ -42,6 +42,7 @@ import {
   mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
+  toNonGoverningAntiMemoryCandidate,
   toSearchCandidate,
   toSourceClaimCandidate
 } from "./rank-candidates.js";
@@ -707,6 +708,9 @@ export const retrieveActivationCandidates = async (
           input.taskContract.projectId,
           input.limits.antiMemory
         );
+  const rejectedPathCandidates = antiMemoryRecords.map((record) =>
+    toNonGoverningAntiMemoryCandidate(record, memoryQuery)
+  );
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
@@ -816,7 +820,8 @@ export const retrieveActivationCandidates = async (
     ...memoryCandidates,
     ...sourceCandidates,
     ...searchCandidates,
-    ...ownerFileCandidates
+    ...ownerFileCandidates,
+    ...rejectedPathCandidates
   ]), antiMemoryCandidates);
 
   return {
