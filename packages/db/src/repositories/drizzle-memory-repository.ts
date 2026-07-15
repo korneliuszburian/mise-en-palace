@@ -2356,12 +2356,31 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return [];
     }
 
+    const terms = [...new Set(
+      (options?.terms ?? [])
+        .map((term) => term.trim().toLowerCase())
+        .filter((term) => term.length > 0)
+    )];
+    const searchableText = sql`lower(concat_ws(' ',
+      ${antiMemoryRecords.key},
+      ${antiMemoryRecords.rejectedClaim},
+      ${antiMemoryRecords.reason},
+      ${antiMemoryRecords.appliesTo},
+      ${antiMemoryRecords.mayRevisitWhen},
+      ${antiMemoryRecords.summary},
+      ${antiMemoryRecords.body},
+      ${antiMemoryRecords.owner}
+    ))`;
+    const relevanceFilter = terms.length === 0
+      ? undefined
+      : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
     const rows = await this.db.query.antiMemoryRecords.findMany({
       where: and(
         eq(antiMemoryRecords.projectId, projectId),
         lte(antiMemoryRecords.validFrom, now),
         or(isNull(antiMemoryRecords.validUntil), gt(antiMemoryRecords.validUntil, now)),
-        or(isNull(antiMemoryRecords.invalidatedAt), gt(antiMemoryRecords.invalidatedAt, now))
+        or(isNull(antiMemoryRecords.invalidatedAt), gt(antiMemoryRecords.invalidatedAt, now)),
+        relevanceFilter
       ),
       orderBy: [asc(antiMemoryRecords.createdAt), asc(antiMemoryRecords.id)],
       limit

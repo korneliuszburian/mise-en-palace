@@ -1,4 +1,5 @@
 import type {
+  AntiMemoryRecord,
   MemoryRecord,
   TaskContract
 } from "@krn/core";
@@ -36,6 +37,27 @@ const memoryRecord = (input: {
   positiveFeedbackCount: input.positiveFeedbackCount,
   negativeFeedbackCount: 0,
   metadata: {},
+  createdAt: now,
+  updatedAt: now
+});
+
+const antiMemoryRecord = (input: {
+  id: string;
+  body: string;
+}): AntiMemoryRecord => ({
+  id: input.id,
+  projectId: "project-memory-relevance",
+  key: input.id,
+  rejectedClaim: input.body,
+  reason: "Rejected path.",
+  summary: input.id,
+  body: input.body,
+  owner: "memory-relevance-test",
+  confidence: 90,
+  sourceLineage: [{ sourceId: `source:${input.id}` }],
+  invalidatedBySourceClaimIds: [],
+  metadata: {},
+  validFrom: now,
   createdAt: now,
   updatedAt: now
 });
@@ -120,5 +142,69 @@ describe("memory retrieval boundary", () => {
 
     expect(result.memoryQuery.terms).toContain("idempotency");
     expect(result.candidates.map((candidate) => candidate.subjectId)).toContain(relevant.id);
+  });
+
+  it("passes task terms before the bounded anti-memory limit", async () => {
+    const distractors = Array.from({ length: 25 }, (_, index) => antiMemoryRecord({
+      id: `anti-distractor-${index}`,
+      body: "Unrelated deployment rejection."
+    }));
+    const relevant = antiMemoryRecord({
+      id: "anti-relevant-packet-idempotency",
+      body: "Reject duplicate packet checksum applications."
+    });
+    const allRecords = [...distractors, relevant];
+
+    const result = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 0,
+        source: 0,
+        search: 0,
+        antiMemory: 1
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject(
+            _projectId,
+            limit,
+            options?: { terms?: readonly string[] }
+          ) {
+            const terms = options?.terms ?? [];
+            const candidates = terms.length === 0
+              ? allRecords
+              : allRecords.filter((record) => terms.some((term) =>
+                  `${record.key} ${record.rejectedClaim} ${record.reason} ${record.appliesTo} ${record.summary} ${record.body}`
+                    .toLowerCase()
+                    .includes(term.toLowerCase())
+                ));
+
+            return candidates.slice(0, limit);
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [];
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
+          async listSourceDecisionEdgesForClaim() {
+            return [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(result.memoryQuery.terms).toContain("idempotency");
+    expect(result.antiMemoryRecords.map((record) => record.id)).toEqual([relevant.id]);
   });
 });

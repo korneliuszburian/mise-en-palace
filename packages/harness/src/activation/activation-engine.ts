@@ -698,7 +698,7 @@ export const retrieveActivationCandidates = async (
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
     input.limits.antiMemory,
-    { now: activationNow }
+    { terms: memoryQuery.terms, now: activationNow }
   );
   const antiMemoryCandidates =
     input.repositories.memoryRepository.listAntiMemoryCandidates === undefined

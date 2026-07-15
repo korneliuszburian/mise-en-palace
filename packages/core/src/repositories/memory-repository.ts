@@ -239,6 +239,7 @@ export interface ActiveMemorySelectionOptions {
 }
 
 export interface AntiMemorySelectionOptions {
+  terms?: readonly string[];
   now?: string;
 }
 
