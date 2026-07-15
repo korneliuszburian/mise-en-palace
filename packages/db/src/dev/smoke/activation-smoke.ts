@@ -11,8 +11,10 @@ import {
   assembleContext,
   buildSourceQuery,
   persistActivationTrace,
+  rankCandidates,
   retrieveActivationCandidates,
-  selectObservationPrefix
+  selectObservationPrefix,
+  toMemoryCandidate
 } from "@krn/harness";
 
 import {
@@ -27,6 +29,8 @@ import {
 } from "./db-smoke-support.js";
 import {
   contextAssemblies,
+  contextExclusions,
+  contextItems,
   memoryRecords,
   projects,
   retrievalRuns,
@@ -70,6 +74,13 @@ export interface ActivationSmokeReport {
   decisionPacketRelevantMemorySelected: boolean;
   decisionPacketDistractorRefCount: number;
   decisionPacketReadbackMatched: boolean;
+  relevantMemoryCanonicalScore: number;
+  relevantMemoryPersistedScore: number;
+  staleProjectionCandidateRefCount: number;
+  staleProjectionDecisionRefCount: number;
+  staleProjectionContextRefCount: number;
+  staleProjectionPacketRefCount: number;
+  staleProjectionHistoricalScore: number;
   antiMemoryRecordCount: number;
   searchDocumentCount: number;
   indexOnlySearchExcluded: boolean;
@@ -99,6 +110,9 @@ const countByDecision = (
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
+
+const hasSerializedReference = (value: unknown, id: string): boolean =>
+  JSON.stringify(value).includes(id);
 
 const rawEvidenceRecallTriggerCount = (
   metadata: unknown
@@ -416,6 +430,22 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
+    const expiredMemorySearchDocument = await retrievalRepository.createSearchDocument({
+      projectId: project.id,
+      subjectType: "memory_record",
+      subjectId: relevantMemory.id,
+      memoryRecordId: relevantMemory.id,
+      title: "Expired activation memory projection",
+      body: "An expired projection must not boost a current canonical memory record.",
+      searchText: Array.from({ length: 20 }, () => sourceQuery.text).join(" "),
+      sourceAuthority: "project-decision",
+      validFrom: past,
+      validUntil: expiredValidUntil,
+      metadata: {
+        smokeId: marker,
+        temporalCase: "expired-memory-projection"
+      }
+    });
     const crossProjectSearchDocument = await retrievalRepository.createSearchDocument({
       projectId: project.id,
       subjectType: "source_claim",
@@ -430,6 +460,15 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
+    const historicallyEligibleSearchResults = await retrievalRepository.searchLexical({
+      projectId: project.id,
+      query: sourceQuery.text,
+      now: past,
+      limit: 25
+    });
+    const staleProjectionHistoricalScore = historicallyEligibleSearchResults.find(
+      (document) => document.id === expiredMemorySearchDocument.id
+    )?.lexicalScore ?? Number.NaN;
 
     const retrieved = await retrieveActivationCandidates({
       taskContract,
@@ -446,6 +485,16 @@ export const runActivationSmokeCheck = async (
         retrievalRepository
       }
     });
+    const canonicalRelevantMemory = requireSmokeReadbackValue(
+      rankCandidates([toMemoryCandidate(relevantMemory)], retrieved.memoryQuery)[0],
+      "canonical relevant memory",
+      "Activation smoke could not rank its canonical relevant memory"
+    );
+    const retrievedRelevantMemory = requireSmokeReadbackValue(
+      retrieved.candidates.find((candidate) => candidate.subjectId === relevantMemory.id),
+      "retrieved relevant memory",
+      "Activation smoke did not retrieve its canonical relevant memory"
+    );
     const relevantMemoryRetrieved = retrieved.candidates.some(
       (candidate) => candidate.subjectId === relevantMemory.id
     );
@@ -621,6 +670,16 @@ export const runActivationSmokeCheck = async (
       .from(retrievalRuns)
       .where(eq(retrievalRuns.id, retrievalRun.id));
     const contextSelectionCounts = await countSmokeContextSelectionRows(db, contextAssembly.id);
+    const [persistedContextItems, persistedContextExclusions] = await Promise.all([
+      db
+        .select({ subjectId: contextItems.subjectId, metadata: contextItems.metadata })
+        .from(contextItems)
+        .where(eq(contextItems.contextAssemblyId, contextAssembly.id)),
+      db
+        .select({ subjectId: contextExclusions.subjectId, metadata: contextExclusions.metadata })
+        .from(contextExclusions)
+        .where(eq(contextExclusions.contextAssemblyId, contextAssembly.id))
+    ]);
     const searchDocumentRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(searchDocuments)
@@ -654,6 +713,26 @@ export const runActivationSmokeCheck = async (
     ).length;
     const decisionPacketReadbackMatched =
       issuedPacketReadback.packetIdentity.checksum === issuedPacket.packetIdentity.checksum;
+    const persistedRelevantMemory = candidates.find(
+      (candidate) => candidate.subjectId === relevantMemory.id
+    );
+    const relevantMemoryCanonicalScore = canonicalRelevantMemory.totalScore;
+    const relevantMemoryPersistedScore = persistedRelevantMemory?.totalScore ?? Number.NaN;
+    const staleProjectionCandidateRefCount = candidates.filter((candidate) =>
+      candidate.searchDocumentId === expiredMemorySearchDocument.id ||
+      hasSerializedReference(candidate.metadata, expiredMemorySearchDocument.id)
+    ).length;
+    const staleProjectionDecisionRefCount = activationRecords.filter((decision) =>
+      hasSerializedReference(decision, expiredMemorySearchDocument.id)
+    ).length;
+    const staleProjectionContextRefCount = [
+      ...persistedContextItems,
+      ...persistedContextExclusions
+    ].filter((row) => hasSerializedReference(row, expiredMemorySearchDocument.id)).length;
+    const staleProjectionPacketRefCount = hasSerializedReference(
+      issuedPacketReadback,
+      expiredMemorySearchDocument.id
+    ) ? 1 : 0;
     const antiMemoryRecordCount = retrieved.antiMemoryRecords.length;
     const searchDocumentCount = searchDocumentRows[0]?.count ?? 0;
     const indexOnlySearchExcluded = !contextAssembly.inclusions.some(
@@ -706,8 +785,24 @@ export const runActivationSmokeCheck = async (
         },
         { label: "DecisionPacket excluded distractors", passed: decisionPacketDistractorRefCount === 0 },
         { label: "DecisionPacket persisted readback", passed: decisionPacketReadbackMatched },
+        {
+          label: `canonical memory score remains projection-free (expected ${relevantMemoryCanonicalScore}, persisted ${relevantMemoryPersistedScore})`,
+          passed:
+            retrievedRelevantMemory.totalScore === relevantMemoryCanonicalScore &&
+            relevantMemoryPersistedScore === relevantMemoryCanonicalScore &&
+            retrievedRelevantMemory.searchDocumentId === undefined &&
+            retrievedRelevantMemory.searchDocumentIds === undefined
+        },
+        {
+          label: `expired projection was boost-capable while current (historical score ${staleProjectionHistoricalScore})`,
+          passed: staleProjectionHistoricalScore > relevantMemoryCanonicalScore
+        },
+        { label: "expired projection absent from persisted candidates", passed: staleProjectionCandidateRefCount === 0 },
+        { label: "expired projection absent from persisted decisions", passed: staleProjectionDecisionRefCount === 0 },
+        { label: "expired projection absent from context provenance", passed: staleProjectionContextRefCount === 0 },
+        { label: "expired projection absent from DecisionPacket provenance", passed: staleProjectionPacketRefCount === 0 },
         { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
-        { label: "search documents", passed: searchDocumentCount === 2 },
+        { label: "search documents", passed: searchDocumentCount === 3 },
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
         { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
@@ -759,6 +854,13 @@ export const runActivationSmokeCheck = async (
       decisionPacketRelevantMemorySelected,
       decisionPacketDistractorRefCount,
       decisionPacketReadbackMatched,
+      relevantMemoryCanonicalScore,
+      relevantMemoryPersistedScore,
+      staleProjectionCandidateRefCount,
+      staleProjectionDecisionRefCount,
+      staleProjectionContextRefCount,
+      staleProjectionPacketRefCount,
+      staleProjectionHistoricalScore,
       antiMemoryRecordCount,
       searchDocumentCount,
       indexOnlySearchExcluded,
