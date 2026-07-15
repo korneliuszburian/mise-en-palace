@@ -154,7 +154,7 @@ describe("security policy scanner", () => {
   });
 
   it("uses the bulk advisory endpoint and fails closed on invalid registry responses", async () => {
-    const requests: { path?: string; body: string }[] = [];
+    const requests: { path: string | undefined; body: string }[] = [];
     let responseBody = JSON.stringify({});
     let responseStatus = 200;
     const server = createServer((request, response) => {
