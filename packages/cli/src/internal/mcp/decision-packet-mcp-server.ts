@@ -736,7 +736,8 @@ export const serveDecisionPacketMcpStdio = async (
 
     let parsed: unknown;
     try {
-      parsed = JSON.parse(line) as unknown;
+      const decoded: unknown = JSON.parse(line);
+      parsed = decoded;
     } catch {
       writeParseError();
       return;
@@ -768,7 +769,6 @@ export const serveDecisionPacketMcpStdio = async (
       }
     }
   }
-
 };
 
 if (isCliEntrypoint(import.meta.url)) {
