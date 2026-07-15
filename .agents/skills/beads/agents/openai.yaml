@@ -1,4 +1,6 @@
 interface:
   display_name: "Beads"
-  short_description: "Project task tracking with bd"
-  default_prompt: "Use $beads to inspect ready work and manage durable project tasks."
+  short_description: "Durable KRN task state and handoffs"
+  default_prompt: "Use $beads to claim this durable work and keep its dependencies, proof, and handoff state current."
+policy:
+  allow_implicit_invocation: true

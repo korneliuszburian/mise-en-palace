@@ -32,7 +32,7 @@ describe("runInitCommand source seed detection", () => {
           kind: "skill_root"
         }),
         expect.objectContaining({
-          path: ".agents/skills/code-review/references/evidence-review.md",
+          path: ".agents/skills/krn-memory-core/references/evidence-feedback.md",
           kind: "skill_doc"
         }),
       ])

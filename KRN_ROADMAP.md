@@ -560,21 +560,22 @@ Keep a skill if it:
 Delete or rewrite a skill if it only contains motivational prose, stale project
 state, decorative vocabulary, or instructions better expressed in `AGENTS.md`.
 
-The target is a small set of sharp skills:
+Reusable engineering procedure belongs to the private global skill system:
+implementation with proportional proof and TypeScript boundaries, diagnosis,
+code review, codebase design, domain modeling, source-to-decision mapping,
+target-repo work, skill authoring, and explicit advisory review.
 
-- Beads workflow;
-- source-to-decision mapping;
-- evidence review;
-- codebase design;
-- code review;
-- TDD/behavior-test discipline;
-- activation/context work;
-- type-safety;
-- target-repo testing;
-- handoff only if real handoffs continue to exist.
+This repository keeps only two local extensions:
 
-Skills for building the kernel may stay if they encode real project discipline,
-but their vocabulary must not leak into runtime contracts unless implemented.
+- `beads` for the tracker substrate and durable planning modes;
+- `krn-memory-core` for `DecisionPacket`, activation, temporal source/memory
+  authority, persistence, evidence/feedback, Codex rendering, and owner-file
+  read-model invariants.
+
+The domain extension composes with the selected global workflow; it does not
+copy maker, reviewer, diagnosis, TypeScript, source-intake, or target-repo
+procedure. Skill vocabulary must not leak into runtime contracts unless the
+product implements it.
 
 ## Artifact Contract
 
@@ -641,10 +642,11 @@ For large strategy reviews, the prompt should request proposed Beads with
 dependencies, acceptance criteria, and non-goals. The output should update the
 task graph, not create another prose forest.
 
-The old Claude-based repo skill was removed from the active repo surface after
-local reviewer output hallucinated basic repository facts. Reintroduce an
-external-review skill only when a current reviewer can produce evidence-backed
-findings that survive deterministic local validation.
+The old Claude-based repo skill remains removed after local reviewer output
+hallucinated basic repository facts. The explicit global
+`second-opinion-review` skill may now provide advisory evidence because it runs
+tool-free from isolated context and binds findings to current local line hashes.
+It is still invalid when factual claims fail deterministic local validation.
 
 ## Near-Term Roadmap
 

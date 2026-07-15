@@ -279,9 +279,9 @@ describe("owner-file recall", () => {
           reason: "seed repo-local KRN skills and execution workflow organs"
         },
         {
-          path: ".agents/skills/code-review/references/evidence-review.md",
+          path: ".agents/skills/krn-memory-core/references/evidence-feedback.md",
           kind: "skill_doc",
-          reason: "seed code-review evidence-review reference owner for proof and sequencing work"
+          reason: "seed Memory Core evidence and feedback owner for proof and sequencing work"
         },
       ],
       ownerFiles: [],
@@ -289,14 +289,14 @@ describe("owner-file recall", () => {
     };
     const candidates = buildOwnerFileRecallCandidates(
       taskContract(
-        "Update code-review evidence-review reference and skill invariant for observe reflect sequencing guard"
+        "Update Memory Core evidence-feedback reference and observe reflect sequencing guard"
       ),
       { targetReadModel }
     );
 
     expect(candidates.map((candidate) => candidate.reason)).toEqual(
       expect.arrayContaining([
-        "Target source seed: .agents/skills/code-review/references/evidence-review.md"
+        "Target source seed: .agents/skills/krn-memory-core/references/evidence-feedback.md"
       ])
     );
     expect(candidates).toEqual(
@@ -305,7 +305,7 @@ describe("owner-file recall", () => {
           metadata: expect.objectContaining({
             source: "target_project_read_model",
             targetReadModelKind: "source_seed",
-            targetPath: ".agents/skills/code-review/references/evidence-review.md",
+            targetPath: ".agents/skills/krn-memory-core/references/evidence-feedback.md",
             seedKind: "skill_doc"
           })
         }),
@@ -320,9 +320,9 @@ describe("owner-file recall", () => {
       localPathHints: ["/tmp/mise-en-palace"],
       sourceSeeds: [
         {
-          path: ".agents/skills/krn-implementation/references/type-safety.md",
-          kind: "skill_doc",
-          reason: "seed TypeScript boundary workflow for strict code changes"
+          path: "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
+          kind: "knowledge_fixture",
+          reason: "seed retained unknown-first TypeScript boundary knowledge"
         }
       ],
       ownerFiles: [
@@ -336,7 +336,7 @@ describe("owner-file recall", () => {
       trustExclusions: []
     };
     const task = taskContract(
-      "Apply TypeScript type-safety skill to strict boundary changes"
+      "Apply unknown-first TypeScript boundary knowledge to strict input changes"
     );
     const ranked = rankCandidates(
       buildOwnerFileRecallCandidates(task, { targetReadModel }),
@@ -349,8 +349,8 @@ describe("owner-file recall", () => {
 
     expect(included?.metadata).toMatchObject({
       targetReadModelKind: "source_seed",
-      targetPath: ".agents/skills/krn-implementation/references/type-safety.md",
-      seedKind: "skill_doc"
+      targetPath: "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json",
+      seedKind: "knowledge_fixture"
     });
     expect(excluded).toEqual(expect.arrayContaining([
       expect.objectContaining({

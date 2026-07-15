@@ -10,7 +10,7 @@
   "sourceRefs": [
     "KRN_ROADMAP.md#decision-rule",
     "legacy-knowledge-selection-gate",
-    ".agents/skills/source-to-decision/SKILL.md"
+    ".agents/skills/krn-memory-core/references/source-knowledge-authority.md"
   ],
   "evidenceRefs": [
     "packages/harness/src/__tests__/knowledge-read-model-invariants.test.ts"

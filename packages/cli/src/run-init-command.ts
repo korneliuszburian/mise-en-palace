@@ -250,9 +250,9 @@ const sourceSeedCandidates = [
     reason: "seed repo-local KRN skills and execution workflow organs"
   },
   {
-    path: ".agents/skills/code-review/references/evidence-review.md",
+    path: ".agents/skills/krn-memory-core/references/evidence-feedback.md",
     kind: "skill_doc",
-    reason: "seed code-review evidence-review reference owner for proof and sequencing work"
+    reason: "seed Memory Core evidence and feedback owner for proof and sequencing work"
   },
   {
     path: "docs",

@@ -1,0 +1,6 @@
+interface:
+  display_name: "KRN Memory Core"
+  short_description: "KRN DecisionPacket and memory domain invariants"
+  default_prompt: "Use $krn-memory-core beside the applicable global workflow to preserve KRN Memory Core authority, negative states, and proof boundaries."
+policy:
+  allow_implicit_invocation: true

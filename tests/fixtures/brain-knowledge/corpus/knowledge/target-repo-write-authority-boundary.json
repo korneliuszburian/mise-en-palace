@@ -6,7 +6,7 @@
   "reviewability": "ready",
   "decision": "KRN target-repo work must declare mode, dirty state, write authority, allowed files, forbidden writes, rollback, verification, and proof/non-proof before changing a target repository.",
   "sourceRefs": [
-    ".agents/skills/target-repo-testing/SKILL.md",
+    ".agents/skills/krn-memory-core/references/target-trial-evidence.md",
     "KRN_ROADMAP.md#non-goals"
   ],
   "evidenceRefs": [
@@ -14,7 +14,7 @@
   ],
   "consumers": [
     "future target-repo trials",
-    "target-repo-testing skill",
+    "global target-repo-work skill",
     "future second-operator/internal-alpha gates"
   ],
   "falsifier": "A future target-repo task writes to a living or fixture target without explicit mode, dirty-state handling, allowed/forbidden writes, rollback, and verification while tests still pass.",

@@ -239,7 +239,7 @@ describe("runSecondRepoDecisionPacketEval", () => {
         typeof decision["id"] === "string" && decision["id"].startsWith("env-config-")
           ? {
               ...decision,
-              evidenceRef: ".agents/skills/krn-implementation/references/type-safety.md"
+              evidenceRef: "tests/fixtures/brain-knowledge/corpus/knowledge/ts-boundary-unknown-first-result-state.json"
             }
           : decision
       );
