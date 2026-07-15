@@ -174,8 +174,15 @@ const contextSubjectIds = (
   .map((item) => item.subjectId));
 
 export const decisionPacketNegativePathsForContext = (input: {
-  readonly contextInclusions: readonly DecisionPacketContextInclusion[];
-  readonly contextExclusions: readonly DecisionPacketContextExclusion[];
+  readonly contextInclusions: readonly {
+    readonly subjectType: ContextSubjectType;
+    readonly subjectId: string;
+  }[];
+  readonly contextExclusions: readonly {
+    readonly subjectType: ContextSubjectType;
+    readonly subjectId: string;
+    readonly reason: string;
+  }[];
 }): {
   readonly rejectedPathIds: readonly string[];
   readonly supersededPathIds: readonly string[];
@@ -1100,9 +1107,10 @@ export const buildDecisionPacketFromReadModel = (
     ...authoritySupersededPathIds
   ]);
   const rejectedPathIds = unique([
-    ...inclusions
-      .filter((inclusion) => inclusion.subjectType === "anti_memory_record")
-      .map((inclusion) => inclusion.subjectId),
+    ...decisionPacketNegativePathsForContext({
+      contextInclusions: inclusions,
+      contextExclusions: exclusions
+    }).rejectedPathIds,
     ...antiMemoryBlockedPathIdsFor(readModel)
   ]);
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({

@@ -118,6 +118,16 @@ export interface DecisionPacketReturnLoopSmokeReport {
   selectorMaintenanceAntiMemoryCandidateId: string;
   selectorMaintenanceFeedbackEventId: string;
   selectorMaintenanceCandidateLinkedToFeedbackDelta: boolean;
+  standaloneAntiMemoryProofRunId: string;
+  standaloneAntiMemoryRecordId: string;
+  standaloneAntiMemoryRetrievalRunId: string;
+  standaloneAntiMemoryCandidateCount: number;
+  standaloneAntiMemoryExcludedDecisionCount: number;
+  standaloneAntiMemoryContextExclusionCount: number;
+  standaloneAntiMemoryPacketRejectedPathIds: readonly string[];
+  standaloneAntiMemoryCliPreserved: boolean;
+  standaloneAntiMemoryMcpPreserved: boolean;
+  standaloneAntiMemoryUsefulnessRowDelta: number;
   sourceConsensusProofRunId: string;
   sourceConsensusCurrentSourceClaimId: string;
   sourceConsensusSupersededSourceClaimId: string;
@@ -384,6 +394,23 @@ interface SourceConsensusProofInput extends SourcePacketProofInput {
   };
 }
 
+interface StandaloneAntiMemoryProofInput extends SourceConsensusProofInput {
+  readonly client: Sql;
+}
+
+interface StandaloneAntiMemoryProofResult {
+  proofRunId: string;
+  retrievalRunId: string;
+  antiMemoryRecordId: string;
+  candidateCount: number;
+  excludedDecisionCount: number;
+  contextExclusionCount: number;
+  packetRejectedPathIds: readonly string[];
+  cliPreserved: boolean;
+  mcpPreserved: boolean;
+  usefulnessRowDelta: number;
+}
+
 const issueDecisionPacket = async (
   repository: HarnessRunRepository,
   executionRunId: string
@@ -618,6 +645,23 @@ const readMcpDecisionPacket = (
     structuredContentMeasurement: measureDecisionPacketTransport(structuredContent)
   };
 };
+
+const standaloneAntiMemoryTransportReadback = (input: {
+  readonly antiMemoryRecordId: string;
+  readonly cliExclusions: readonly DecisionPacketSmokeExclusion[];
+  readonly cliPacket: DecisionPacketSmokeJson["packet"];
+  readonly mcpPacket: DecisionPacketSmokeJson["packet"];
+}): { readonly cliPreserved: boolean; readonly mcpPreserved: boolean } => ({
+  cliPreserved:
+    input.cliExclusions.length === 1 &&
+    input.cliPacket.rejectedPathIds.filter((id) => id === input.antiMemoryRecordId).length === 1 &&
+    input.cliPacket.memoryRefs.length === 0 &&
+    input.cliPacket.governingDecisionIds.length === 0,
+  mcpPreserved:
+    input.mcpPacket.rejectedPathIds.filter((id) => id === input.antiMemoryRecordId).length === 1 &&
+    input.mcpPacket.memoryRefs.length === 0 &&
+    input.mcpPacket.governingDecisionIds.length === 0
+});
 
 const countReadOnlyUsefulnessRows = async (input: {
   readonly client: Sql;
@@ -1291,6 +1335,169 @@ const runFeedbackMaintenanceProof = async (
     exactReplayIdempotent:
       replay.candidateId === candidate.id && replay.outboxCountUnchanged,
     directMutationDelta: directMutationCountAfter - directMutationCountBefore
+  };
+};
+
+const runStandaloneAntiMemoryProof = async (
+  input: StandaloneAntiMemoryProofInput
+): Promise<StandaloneAntiMemoryProofResult> => {
+  const {
+    harnessRunRepository,
+    memoryRepository,
+    retrievalRepository,
+    sourceRepository
+  } = input.repositories;
+  const antiMemory = await memoryRepository.createAntiMemoryRecord({
+    projectId: input.projectId,
+    executionRunId: input.executionRunId,
+    key: `standalone-anti-memory:${input.marker}`,
+    rejectedClaim: "Standalone anti-memory rejected path must not become positive authority.",
+    reason: "The reviewed path was rejected and remains non-governing.",
+    appliesTo: "standalone anti-memory rejected path",
+    summary: "Standalone anti-memory rejected path",
+    body: "Preserve this standalone anti-memory rejected path only as a packet warning.",
+    owner: "decision-packet-return-loop-smoke",
+    confidence: 95,
+    sourceLineage: [{ sourceId: `source:standalone-anti-memory:${input.marker}` }],
+    validFrom: "2026-07-01T00:00:00.000Z",
+    metadata: {
+      smokeId: input.marker,
+      standaloneAntiMemoryProof: true
+    }
+  });
+  const compiled = await compileHarnessPlan({
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    operatorIntent: {
+      rawIntent: `standalone anti-memory rejected path ${input.marker}`,
+      source: "cli",
+      metadata: { smokeId: input.marker }
+    },
+    taskContract: {
+      title: "Prove standalone anti-memory DecisionPacket readback",
+      objective: "Keep one standalone anti-memory rejected path visible without positive authority.",
+      constraints: ["persist one bounded exclusion", "create no usefulness signal"],
+      nonGoals: ["no positive memory", "no source decision", "no feedback"],
+      acceptance: ["CLI and MCP expose exactly one non-governing rejected path"],
+      metadata: {
+        smokeId: input.marker,
+        standaloneAntiMemoryProof: true
+      }
+    },
+    tokenBudget: 1,
+    metadata: {
+      smokeId: input.marker,
+      proof: "standalone_anti_memory_readback"
+    }
+  }, {
+    harnessRunRepository,
+    memoryRepository,
+    sourceRepository,
+    retrievalRepository,
+    now: () => "2026-07-15T12:00:00.000Z",
+    createId: createIdFactory(input.marker, "standalone-anti-memory")
+  });
+  const retrievalRunId = compiled.contextAssembly.metadata.retrievalRunId;
+
+  if (typeof retrievalRunId !== "string") {
+    throw new Error("Standalone anti-memory proof missed persisted retrieval run id");
+  }
+
+  const proofRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId: compiled.harnessPlan.id,
+    adapter: "codex",
+    status: "planned",
+    metadata: {
+      smokeId: input.marker,
+      phase: "standalone-anti-memory-proof",
+      evidenceContract: compiled.evidenceContract
+    }
+  });
+  await issueDecisionPacket(harnessRunRepository, proofRun.id);
+  const usefulnessRowsBefore = await countReadOnlyUsefulnessRows({
+    client: input.client,
+    executionRunId: proofRun.id
+  });
+  const packet = parseDecisionPacket((await runDecisionPacketCommand({
+    ...input.baseRuntime,
+    runId: proofRun.id,
+    createDatabaseRuntime: async () => input.commandRuntime
+  })).stdout);
+  const mcpReadback = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
+    jsonrpc: "2.0",
+    id: "standalone-anti-memory",
+    method: "tools/call",
+    params: {
+      name: "krn_decision_packet",
+      arguments: { runId: proofRun.id }
+    }
+  }, {
+    env: input.baseRuntime.env,
+    now: input.baseRuntime.now,
+    createId: input.baseRuntime.createId,
+    session: { phase: "ready" },
+    runDecisionPacket: async (runtime) => runDecisionPacketCommand({
+      ...input.baseRuntime,
+      runId: runtime.runId,
+      createDatabaseRuntime: async () => input.commandRuntime
+    })
+  }));
+  const usefulnessRowsAfter = await countReadOnlyUsefulnessRows({
+    client: input.client,
+    executionRunId: proofRun.id
+  });
+  const [counts] = await input.client<{
+    candidateCount: number;
+    excludedDecisionCount: number;
+    contextExclusionCount: number;
+  }[]>`
+    select
+      (
+        select count(*)::int
+        from retrieval_candidates
+        where retrieval_run_id = ${retrievalRunId}
+          and kind = 'anti_memory'
+          and subject_type = 'anti_memory_record'
+          and subject_id = ${antiMemory.id}
+      ) as "candidateCount",
+      (
+        select count(*)::int
+        from activation_decisions
+        where retrieval_run_id = ${retrievalRunId}
+          and subject_type = 'anti_memory_record'
+          and subject_id = ${antiMemory.id}
+          and decision = 'excluded'
+      ) as "excludedDecisionCount",
+      (
+        select count(*)::int
+        from context_exclusions
+        where context_assembly_id = ${compiled.contextAssembly.id}
+          and subject_type = 'anti_memory_record'
+          and subject_id = ${antiMemory.id}
+          and reason = 'unsafe'
+      ) as "contextExclusionCount"
+  `;
+  const cliExclusions = packet.readModel.context.exclusionDetails.filter((exclusion) =>
+    exclusion.subjectType === "anti_memory_record" && exclusion.subjectId === antiMemory.id
+  );
+  const transportReadback = standaloneAntiMemoryTransportReadback({
+    antiMemoryRecordId: antiMemory.id,
+    cliExclusions,
+    cliPacket: packet.packet,
+    mcpPacket: mcpReadback.packet
+  });
+
+  return {
+    proofRunId: proofRun.id,
+    retrievalRunId,
+    antiMemoryRecordId: antiMemory.id,
+    candidateCount: counts?.candidateCount ?? 0,
+    excludedDecisionCount: counts?.excludedDecisionCount ?? 0,
+    contextExclusionCount: counts?.contextExclusionCount ?? 0,
+    packetRejectedPathIds: packet.packet.rejectedPathIds,
+    cliPreserved: transportReadback.cliPreserved,
+    mcpPreserved: transportReadback.mcpPreserved,
+    usefulnessRowDelta: usefulnessRowsAfter - usefulnessRowsBefore
   };
 };
 
@@ -2453,6 +2660,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
   let retrievalRunId: string | undefined;
   let selectorRetrievalRunId: string | undefined;
+  let standaloneAntiMemoryRetrievalRunId: string | undefined;
   let sourceConsensusRetrievalRunId: string | undefined;
   let sourceDissentRetrievalRunId: string | undefined;
   const feedbackDeltaIds: string[] = [];
@@ -2474,15 +2682,23 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   );
 
   const cleanup = async (): Promise<number> => {
+    const proofRetrievalRunIds = [
+      selectorRetrievalRunId,
+      standaloneAntiMemoryRetrievalRunId,
+      sourceConsensusRetrievalRunId,
+      sourceDissentRetrievalRunId
+    ].filter((id): id is string => id !== undefined);
+
     await deleteFeedbackOutboxRows({ client, feedbackDeltaIds });
+    await client`
+      delete from anti_memory_records
+      where metadata->>'smokeId' = ${marker}
+        and metadata->>'standaloneAntiMemoryProof' = 'true'
+    `;
     await deleteSelectorProofRows({
       client,
       marker,
-      retrievalRunIds: [
-        ...(selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]),
-        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId]),
-        ...(sourceDissentRetrievalRunId === undefined ? [] : [sourceDissentRetrievalRunId])
-      ]
+      retrievalRunIds: proofRetrievalRunIds
     });
     if (maintenanceQueueIds.length > 0) {
       await new DrizzleMaintenanceQueueRepository(db).cleanupTestMaintenanceQueues({
@@ -2511,11 +2727,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const selectorProofRemaining = await countSelectorProofRows({
       client,
       marker,
-      retrievalRunIds: [
-        ...(selectorRetrievalRunId === undefined ? [] : [selectorRetrievalRunId]),
-        ...(sourceConsensusRetrievalRunId === undefined ? [] : [sourceConsensusRetrievalRunId]),
-        ...(sourceDissentRetrievalRunId === undefined ? [] : [sourceDissentRetrievalRunId])
-      ]
+      retrievalRunIds: proofRetrievalRunIds
     });
 
     return baseRemaining + feedbackOutboxRemaining + selectorProofRemaining + maintenanceQueueRemaining;
@@ -2980,6 +3192,22 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       workspaceId: workspace.id
     });
     sourceDissentRetrievalRunId = sourceDissentProof.retrievalRunId;
+    const standaloneAntiMemoryProof = await runStandaloneAntiMemoryProof({
+      baseRuntime,
+      client,
+      commandRuntime,
+      executionRunId: executionRun.id,
+      marker,
+      projectId: project.id,
+      repositories: {
+        harnessRunRepository,
+        memoryRepository,
+        sourceRepository,
+        retrievalRepository
+      },
+      workspaceId: workspace.id
+    });
+    standaloneAntiMemoryRetrievalRunId = standaloneAntiMemoryProof.retrievalRunId;
 
     assertReturnLoopChecks([
       { label: "return channel checksum binding", passed: returnChannelHasChecksum },
@@ -3025,6 +3253,25 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         detail:
           `sourceClaimIds=${sourceConsensusProof.packetSourceClaimIds.join(",")}; ` +
           `decisionEdgeIds=${sourceConsensusProof.packetSourceDecisionEdgeIds.join(",")}`
+      },
+      {
+        label: "standalone anti-memory persists as exactly one non-governing exclusion",
+        passed:
+          standaloneAntiMemoryProof.candidateCount === 1 &&
+          standaloneAntiMemoryProof.excludedDecisionCount === 1 &&
+          standaloneAntiMemoryProof.contextExclusionCount === 1 &&
+          standaloneAntiMemoryProof.cliPreserved &&
+          standaloneAntiMemoryProof.mcpPreserved &&
+          standaloneAntiMemoryProof.usefulnessRowDelta === 0,
+        detail:
+          `antiMemoryRecordId=${standaloneAntiMemoryProof.antiMemoryRecordId}; ` +
+          `candidateCount=${standaloneAntiMemoryProof.candidateCount}; ` +
+          `excludedDecisionCount=${standaloneAntiMemoryProof.excludedDecisionCount}; ` +
+          `contextExclusionCount=${standaloneAntiMemoryProof.contextExclusionCount}; ` +
+          `rejectedPathIds=${standaloneAntiMemoryProof.packetRejectedPathIds.join(",")}; ` +
+          `cliPreserved=${standaloneAntiMemoryProof.cliPreserved}; ` +
+          `mcpPreserved=${standaloneAntiMemoryProof.mcpPreserved}; ` +
+          `usefulnessRowDelta=${standaloneAntiMemoryProof.usefulnessRowDelta}`
       },
       {
         label: "source consensus without formal rejection stays non-ready and explicit",
@@ -3139,6 +3386,19 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       selectorMaintenanceFeedbackEventId: selectorProof.maintenanceFeedbackEventId,
       selectorMaintenanceCandidateLinkedToFeedbackDelta:
         selectorProof.maintenanceCandidateLinkedToFeedbackDelta,
+      standaloneAntiMemoryProofRunId: standaloneAntiMemoryProof.proofRunId,
+      standaloneAntiMemoryRecordId: standaloneAntiMemoryProof.antiMemoryRecordId,
+      standaloneAntiMemoryRetrievalRunId: standaloneAntiMemoryProof.retrievalRunId,
+      standaloneAntiMemoryCandidateCount: standaloneAntiMemoryProof.candidateCount,
+      standaloneAntiMemoryExcludedDecisionCount:
+        standaloneAntiMemoryProof.excludedDecisionCount,
+      standaloneAntiMemoryContextExclusionCount:
+        standaloneAntiMemoryProof.contextExclusionCount,
+      standaloneAntiMemoryPacketRejectedPathIds:
+        standaloneAntiMemoryProof.packetRejectedPathIds,
+      standaloneAntiMemoryCliPreserved: standaloneAntiMemoryProof.cliPreserved,
+      standaloneAntiMemoryMcpPreserved: standaloneAntiMemoryProof.mcpPreserved,
+      standaloneAntiMemoryUsefulnessRowDelta: standaloneAntiMemoryProof.usefulnessRowDelta,
       sourceConsensusProofRunId: sourceConsensusProof.proofRunId,
       sourceConsensusCurrentSourceClaimId: sourceConsensusProof.currentSourceClaimId,
       sourceConsensusSupersededSourceClaimId: sourceConsensusProof.supersededSourceClaimId,

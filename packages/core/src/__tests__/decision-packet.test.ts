@@ -541,6 +541,32 @@ describe("DecisionPacket builder", () => {
     expect(paths.supersededPathIds).toEqual(["claim-superseded"]);
   });
 
+  it("preserves persisted standalone anti-memory exclusions as rejected paths", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        exclusions: readModel.context.exclusions + 1,
+        exclusionDetails: [
+          ...readModel.context.exclusionDetails,
+          {
+            subjectType: "anti_memory_record",
+            subjectId: "anti-memory-standalone",
+            reason: "unsafe",
+            explanation: "Standalone anti-memory remains non-governing."
+          }
+        ]
+      }
+    });
+
+    expect(packet.rejectedPathIds).toEqual([
+      "anti-memory-standalone",
+      "anti-memory-superseded-template"
+    ]);
+    expect(packet.memoryRefs).not.toContain("anti-memory-standalone");
+    expect(packet.governingDecisionIds).not.toContain("anti-memory-standalone");
+  });
+
   it("builds governed packet signals from read model evidence", () => {
     const packet = buildDecisionPacketFromReadModel(readModel);
 
