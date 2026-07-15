@@ -69,4 +69,34 @@ describe("UsefulnessApplicationEvidence", () => {
 
     expect(parseUsefulnessApplicationEvidenceForIdentity(evidence, identity)).toEqual(evidence);
   });
+
+  it("requires an exact content-addressed target state when one was persisted", () => {
+    const targetState = {
+      targetRepo: "/target/repo",
+      treeIdentity: `git-tree:${"a".repeat(40)}`,
+      patchIdentity: `sha256:${"b".repeat(64)}`,
+      changedFiles: ["src/application.ts"]
+    };
+    const targetEvidence = { ...evidence, targetState };
+    const { appliedAt: _appliedAt, ...identity } = targetEvidence;
+
+    expect(parseUsefulnessApplicationEvidenceForIdentity(targetEvidence, {
+      ...identity,
+      targetState: {
+        targetRepo: targetState.targetRepo,
+        changedFiles: targetState.changedFiles,
+        treeIdentity: targetState.treeIdentity,
+        patchIdentity: targetState.patchIdentity
+      }
+    }))
+      .toEqual(targetEvidence);
+    expect(parseUsefulnessApplicationEvidenceForIdentity(targetEvidence, {
+      ...identity,
+      targetState: { ...targetState, patchIdentity: `sha256:${"c".repeat(64)}` }
+    })).toBeUndefined();
+    expect(parseUsefulnessApplicationEvidence({
+      ...targetEvidence,
+      targetState: { ...targetState, patchIdentity: "caller-label" }
+    })).toBeUndefined();
+  });
 });

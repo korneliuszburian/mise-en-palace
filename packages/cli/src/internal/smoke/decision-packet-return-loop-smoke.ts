@@ -1,6 +1,10 @@
 import type {
   Sql
 } from "postgres";
+import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type {
   FeedbackDelta,
   SourceUsefulnessOutcomeFeedback
@@ -66,9 +70,7 @@ import {
 const returnChannelCheckpointCommand =
   "decision-packet return-channel checkpoint";
 const returnLoopApplicationPath =
-  "packages/cli/src/internal/smoke/decision-packet-return-loop-smoke.ts";
-const returnLoopApplicationStatusPath =
-  "src/internal/smoke/decision-packet-return-loop-smoke.ts";
+  "src/application.ts";
 
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
@@ -2284,6 +2286,18 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   let cleanedUp = false;
   let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
   let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
+  const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-return-loop-target-"));
+  execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
+  execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: targetRepo });
+  execFileSync("git", ["config", "user.name", "Fixture"], { cwd: targetRepo });
+  await mkdir(path.join(targetRepo, "src"));
+  await writeFile(path.join(targetRepo, returnLoopApplicationPath), "export const base = true;\n");
+  execFileSync("git", ["add", returnLoopApplicationPath], { cwd: targetRepo });
+  execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+  await writeFile(
+    path.join(targetRepo, returnLoopApplicationPath),
+    "export const appliedDecision = true;\n"
+  );
 
   const cleanup = async (): Promise<number> => {
     await deleteFeedbackOutboxRows({ client, feedbackDeltaIds });
@@ -2465,12 +2479,27 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     }
 
     const matchingApplicationId = `decision-packet-return-loop:${marker}:source-application`;
+    const returnLoopTargetEvidence = {
+      targetRepo,
+      mode: "headless-repair",
+      dirtyBefore: "clean",
+      dirtyAfter: "dirty",
+      ownedChanges: "owned-by-current-krn-run",
+      targetStatusFreshness: "fresh-current-task",
+      changedFiles: [{
+        status: "M",
+        path: returnLoopApplicationPath,
+        ownership: "owned-by-current-krn-run"
+      }],
+      commands: [returnChannelCheckpointCommand]
+    } as const;
     const applicationEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
+      targetEvidence: returnLoopTargetEvidence,
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
           applicationId: matchingApplicationId,
@@ -2516,7 +2545,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
-      intendedFiles: [returnLoopApplicationPath],
       commandOutcomes: [{
         command: checkpointArtifact.command,
         status: "passed",
@@ -2526,6 +2554,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         outputRef: checkpointArtifact.outputRef
       }],
       commandOutputArtifacts: [checkpointArtifact],
+      targetEvidence: returnLoopTargetEvidence,
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
           applicationId: matchingApplication.applicationId,
@@ -2542,7 +2571,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           reason: "Matching packet checksum kept selected source claim feedback bound to the packet."
         })
       ],
-      readGitStatus: async () => ` M ${returnLoopApplicationStatusPath}\n`,
+      readGitStatus: async () => "",
       createDatabaseRuntime: async () => commandRuntime
     });
     const aggregateAfterMatching =
@@ -2985,6 +3014,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     } finally {
       await client.end();
+      await rm(targetRepo, { recursive: true, force: true });
     }
   }
 };

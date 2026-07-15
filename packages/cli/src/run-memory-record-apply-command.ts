@@ -4,8 +4,6 @@ import {
 import {
   authorizeDecisionPacketUsefulness,
   buildFeedbackRecommendationReadback,
-  decideEvidenceContractActivation,
-  evidenceBundleProvesHelped,
   parseMemoryApplicationInput
 } from "@krn/core";
 import type {
@@ -120,6 +118,9 @@ const formatPreview = (
     `runId: ${application.executionRunId}`,
     `outcome: ${application.outcome}`,
     `notes: ${application.notes}`,
+    ...(application.outcome === "helped"
+      ? ["Persistence boundary: helped requires the two-phase evidence capture return channel."]
+      : []),
     "Memory Core mutation: none",
     ...formatFeedbackRecommendation(recommendation),
     feedbackEventTypeForOutcome(application.outcome) === undefined
@@ -179,59 +180,16 @@ const createRuntime = async (
   });
 };
 
-const hasFreshHelpedVerification = (input: {
-  aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
-  evidenceBundleId: string | undefined;
-  packetChecksum: string;
-  packetGeneratedAt: string;
-  sourceRunLifecycleRevision: number;
-  runId: string;
-}): boolean => {
-  const aggregate = input.aggregate;
-
-  if (aggregate === undefined || input.evidenceBundleId === undefined) {
-    return false;
-  }
-
-  const bundle = aggregate.evidenceBundles.find((candidate) => candidate.id === input.evidenceBundleId);
-  const activation = decideEvidenceContractActivation({
-    evidenceContract: aggregate.harnessPlan.metadata.evidenceContract,
-    taskContract: aggregate.taskContract,
-    harnessPlan: aggregate.harnessPlan,
-    executionRun: aggregate.executionRun
-  });
-
-  return activation.status === "active" &&
-    bundle !== undefined &&
-    bundle.executionRunId === input.runId &&
-    evidenceBundleProvesHelped({
-      bundle,
-      evidenceContract: activation.evidenceContract,
-      packetChecksum: input.packetChecksum,
-      packetGeneratedAt: input.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
-      sha256Hex
-    });
-};
-
-const assertHelpedMemoryApplicationEvidence = (input: {
-  outcome: MemoryApplicationOutcome;
-  aggregate: Awaited<ReturnType<DatabaseRuntime["harnessRunRepository"]["getHarnessRunByExecutionRunId"]>>;
-  evidenceBundleId: string | undefined;
-  packetChecksum: string;
-  packetGeneratedAt: string;
-  sourceRunLifecycleRevision: number;
-  runId: string;
-}): void => {
-  if (input.outcome !== "helped") {
+const assertMemoryApplicationPrecedesHelpedVerification = (
+  outcome: MemoryApplicationOutcome
+): void => {
+  if (outcome !== "helped") {
     return;
   }
 
-  if (!hasFreshHelpedVerification(input)) {
-    throw new Error(
-      "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
-    );
-  }
+  throw new Error(
+    "helped memory application requires an earlier persisted application and later target-bound verification; use the two-phase evidence capture return channel"
+  );
 };
 
 export const runMemoryRecordApplyCommand = async (
@@ -302,15 +260,7 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error("usefulness write rejected: memory record project does not match the run task project");
     }
 
-    assertHelpedMemoryApplicationEvidence({
-      outcome: applicationInput.outcome,
-      aggregate,
-      evidenceBundleId: command.evidenceBundleId,
-      packetChecksum: authorization.packetChecksum,
-      packetGeneratedAt: authorization.packetGeneratedAt,
-      sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision,
-      runId: applicationInput.executionRunId
-    });
+    assertMemoryApplicationPrecedesHelpedVerification(applicationInput.outcome);
 
     const recordApplicationWithEffectsOnce =
       databaseRuntime.memoryRepository.recordMemoryApplicationWithEffectsOnce;

@@ -9,6 +9,7 @@ export * from "./decision-packet-authority.js";
 export * from "./eval.js";
 export * from "./evidence-contract.js";
 export * from "./evidence-bundle.js";
+export * from "./target-state-snapshot.js";
 export * from "./execution-run.js";
 export * from "./feedback-delta.js";
 export * from "./behavior-fixture.js";

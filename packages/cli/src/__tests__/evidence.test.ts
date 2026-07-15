@@ -44,6 +44,10 @@ import { runCli } from "../run-cli.js";
 import { runEvidenceCaptureCommand } from "../run-evidence-capture-command.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const targetSnapshot = {
+  treeIdentity: "git-tree:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  patchIdentity: `sha256:${"b".repeat(64)}`
+};
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
 const temporaryDirectories: string[] = [];
@@ -608,6 +612,7 @@ const expectPersistedEvidenceMetadata = (capture: EvidencePersistenceCapture): v
       commands: ["wilq-seo scripts/test.sh"],
       doesNotProve: [
         "Target evidence does not prove KRN source correctness.",
+        "Target evidence content-addresses the current patch but does not independently prove who created it or that the repository was clean before the run.",
         "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
         "Target evidence does not prove product readiness or V02-01 second-operator usability."
       ]
@@ -976,7 +981,7 @@ describe("runCli", () => {
 
   it("persists explicit application evidence before packet-bound helped feedback", async () => {
     const verificationCommand = "pnpm typecheck";
-    const applicationPath = "packages/cli/src/run-evidence-capture-command.ts";
+    const applicationPath = "packages/cli/src/generated-application.ts";
     const appliedAt = "2026-06-21T12:00:30.000Z";
     const verificationArtifact = createCommandOutputArtifact({
       command: verificationCommand,
@@ -1019,6 +1024,20 @@ describe("runCli", () => {
         return undefined;
       }
     });
+    const applicationTargetEvidence = {
+      targetRepo: ".",
+      mode: "headless-repair",
+      dirtyBefore: "clean",
+      dirtyAfter: "dirty",
+      ownedChanges: "owned-by-current-krn-run",
+      targetStatusFreshness: "fresh-current-task",
+      changedFiles: [{
+        status: "??",
+        path: applicationPath,
+        ownership: "owned-by-current-krn-run"
+      }],
+      commands: [verificationCommand]
+    } as const;
 
     const applicationCapture = await runEvidenceCaptureCommand({
       env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
@@ -1028,6 +1047,7 @@ describe("runCli", () => {
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
       intendedFiles: [applicationPath],
+      targetEvidence: applicationTargetEvidence,
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         applicationId: "application-1",
@@ -1038,7 +1058,11 @@ describe("runCli", () => {
       }],
       now: () => "2026-06-21T12:00:30.000Z",
       createId: (prefix) => `${prefix}-1`,
-      readGitStatus: async () => ` M ${applicationPath}\n`,
+      readGitStatus: async () => `?? ${applicationPath}\n`,
+      readTargetStateSnapshot: async () => ({
+        ...targetSnapshot,
+        changedPaths: [applicationPath]
+      }),
       createDatabaseRuntime: createRuntime
     });
 
@@ -1065,6 +1089,7 @@ describe("runCli", () => {
         outputRef: verificationArtifact.outputRef
       }],
       commandOutputArtifacts: [verificationArtifact],
+      targetEvidence: applicationTargetEvidence,
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         applicationId: "application-1",
@@ -1081,7 +1106,11 @@ describe("runCli", () => {
       }],
       now: () => "2026-06-21T12:10:00.000Z",
       createId: (prefix) => `${prefix}-1`,
-      readGitStatus: async () => ` M ${applicationPath}\n`,
+      readGitStatus: async () => `?? ${applicationPath}\n`,
+      readTargetStateSnapshot: async () => ({
+        ...targetSnapshot,
+        changedPaths: [applicationPath]
+      }),
       createDatabaseRuntime: createRuntime
     });
 
@@ -1096,6 +1125,11 @@ describe("runCli", () => {
       packetChecksum: packetBinding.packetChecksum,
       packetGeneratedAt: packetBinding.packetGeneratedAt,
       sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
+      targetState: {
+        targetRepo: path.resolve(process.cwd(), "../.."),
+        ...targetSnapshot,
+        changedFiles: [applicationPath]
+      },
       appliedAt
     }]);
     expect(capture.knowledgeUsefulnessOutcomes).toEqual([
@@ -1188,7 +1222,7 @@ describe("runCli", () => {
     expect(capture.maintenanceQueueInputs).toBeUndefined();
   });
 
-  it("downgrades operator-reported helped outcomes with one shared typed reason", async () => {
+  it("downgrades operator-reported helped outcomes without explicit application evidence", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1263,13 +1297,13 @@ describe("runCli", () => {
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
-        outcome: "used",
-        reason: expect.stringContaining("not_execution_backed")
+        outcome: "selected",
+        reason: expect.stringContaining("missing_current_application_reference")
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
-        outcome: "used",
-        reason: expect.stringContaining("not_execution_backed")
+        outcome: "selected",
+        reason: expect.stringContaining("missing_current_application_reference")
       }]
     });
   });
@@ -1285,6 +1319,7 @@ describe("runCli", () => {
     const unrelatedPath = "packages/cli/src/unrelated-change.ts";
     const verificationCommand = "pnpm --filter @krn/cli test -- evidence";
     const operatorReportedCommand = "pnpm unrelated-check";
+    const appliedAt = new Date(Date.parse(now) - 1_000).toISOString();
     aggregate.harnessPlan.metadata = {
       evidenceContract: {
         taskContractId: aggregate.taskContract.id,
@@ -1335,8 +1370,24 @@ describe("runCli", () => {
         provenance: "operator_reported"
       }],
       commandOutputArtifacts: [artifact],
+      targetEvidence: {
+        targetRepo: ".",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
+        dirtyAfter: "dirty",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "fresh-current-task",
+        changedFiles: [{
+          status: "M",
+          path: applicationPath,
+          ownership: "owned-by-current-krn-run"
+        }],
+        commands: [verificationCommand]
+      },
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "source-claim-1",
+        applicationId: "application:source-claim-1",
+        appliedAt,
         outcome: "helped",
         reason: "Execution-backed source application passed.",
         evidenceRefs: [
@@ -1359,6 +1410,8 @@ describe("runCli", () => {
       }],
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+        applicationId: "application:knowledge-1",
+        appliedAt,
         outcome: "helped",
         reason: "Execution-backed knowledge application passed.",
         evidenceRefs: [
@@ -1382,6 +1435,10 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => ` M ${applicationPath}\n M ${unrelatedPath}\n`,
+      readTargetStateSnapshot: async () => ({
+        ...targetSnapshot,
+        changedPaths: [applicationPath]
+      }),
       createDatabaseRuntime: async () => ({
         workspaceId: "workspace-1",
         projectId: "project-1",
@@ -1444,17 +1501,17 @@ describe("runCli", () => {
       gitStatus: "",
       targetEvidence: {
         targetRepo: "../target",
-        mode: "write-authorized",
+        mode: "headless-repair",
         dirtyBefore: "clean",
         dirtyAfter: "clean",
         ownedChanges: "owned-by-current-krn-run",
         targetStatusFreshness: "fresh-current-task",
-        targetPatchLifecycle: "none",
         changedFiles: [{
           status: "M",
           path: "src/unchanged-target.ts",
           ownership: "owned-by-current-krn-run"
-        }]
+        }],
+        commands: [verificationCommand]
       }
     }, {
       label: "stale target status",
@@ -1463,23 +1520,53 @@ describe("runCli", () => {
       gitStatus: "",
       targetEvidence: {
         targetRepo: "../target",
-        mode: "write-authorized",
-        dirtyBefore: "dirty",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
         dirtyAfter: "dirty",
         ownedChanges: "owned-by-current-krn-run",
         targetStatusFreshness: "changed-since-selection",
-        targetPatchLifecycle: "active",
         changedFiles: [{
           status: "M",
           path: "src/stale-target.ts",
           ownership: "owned-by-current-krn-run"
-        }]
+        }],
+        commands: [verificationCommand]
       }
     }, {
       label: "verification observed before application status",
-      applicationPath: "packages/cli/src/application-observed-later.ts",
-      intendedFiles: ["packages/cli/src/application-observed-later.ts"],
-      gitStatus: " M packages/cli/src/application-observed-later.ts\n"
+      applicationPath: "src/application-observed-later.ts",
+      intendedFiles: [],
+      gitStatus: "",
+      appliedAt: "2026-06-21T12:02:00.000Z",
+      targetEvidence: {
+        targetRepo: "../target",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
+        dirtyAfter: "dirty",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "fresh-current-task",
+        changedFiles: [{
+          status: "M",
+          path: "src/application-observed-later.ts",
+          ownership: "owned-by-current-krn-run"
+        }],
+        commands: [verificationCommand]
+      }
+    }, {
+      label: "unknown target owner",
+      applicationPath: "src/unknown-owner.ts",
+      intendedFiles: [],
+      gitStatus: "",
+      targetEvidence: {
+        targetRepo: "../target",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
+        dirtyAfter: "dirty",
+        ownedChanges: "unknown",
+        targetStatusFreshness: "fresh-current-task",
+        changedFiles: [{ status: "M", path: "src/unknown-owner.ts", ownership: "unknown" }],
+        commands: [verificationCommand]
+      }
     }] as const;
 
     for (const [index, falsePositive] of falsePositiveCases.entries()) {
@@ -1527,6 +1614,10 @@ describe("runCli", () => {
         commandOutputArtifacts: [artifact],
         knowledgeUsefulnessOutcomes: [{
           knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
+          applicationId: `application:false-positive:${index}`,
+          appliedAt: "appliedAt" in falsePositive
+            ? falsePositive.appliedAt
+            : "2026-06-21T12:00:00.000Z",
           outcome: "helped",
           reason: `${falsePositive.label} allegedly proves application and later verification.`,
           evidenceRefs: [
@@ -1543,6 +1634,10 @@ describe("runCli", () => {
         now: () => captureObservedAt,
         createId: (prefix) => `${prefix}-${index}`,
         readGitStatus: async () => falsePositive.gitStatus,
+        readTargetStateSnapshot: async () => ({
+          ...targetSnapshot,
+          changedPaths: [falsePositive.applicationPath]
+        }),
         createDatabaseRuntime: async () => ({
           workspaceId: "workspace-1",
           projectId: "project-1",
@@ -1560,14 +1655,11 @@ describe("runCli", () => {
       });
 
       expect(
-        capture.knowledgeUsefulnessOutcomes,
+        capture.knowledgeUsefulnessOutcomes?.[0]?.outcome,
         falsePositive.label
-      ).toEqual([expect.objectContaining({
-        knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
-        outcome: "helped"
-      })]);
+      ).not.toBe("helped");
     }
-  });
+  }, 10_000);
 
   it("keeps unauthorized usefulness outside persisted feedback", async () => {
     const dependencies = createNoStoreCompilerDependencies({

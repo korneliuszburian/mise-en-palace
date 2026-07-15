@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -24,6 +25,7 @@ import {
   taskContractStatuses,
   usefulnessApplicationSubjectKinds
 } from "@krn/core";
+import type { UsefulnessApplicationTargetState } from "@krn/core";
 
 import {
   byteaColumn,
@@ -268,6 +270,7 @@ export const usefulnessApplications = pgTable(
     packetChecksum: text("packet_checksum").notNull(),
     packetGeneratedAt: timestamp("packet_generated_at", { withTimezone: true }).notNull(),
     sourceRunLifecycleRevision: integer("source_run_lifecycle_revision").notNull(),
+    targetState: jsonb("target_state").$type<UsefulnessApplicationTargetState>(),
     appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
     createdAt: createdAtColumn()
   },

@@ -28,6 +28,7 @@ import type {
   ReviewAssessment,
   SourceUsefulnessOutcome,
   TaskContract,
+  TargetStateSnapshot,
   UsefulnessApplicationEvidence,
   UsefulnessApplicationEvidenceIdentity,
   ExecutionRunStatus,
@@ -35,8 +36,9 @@ import type {
 } from "@krn/core";
 import {
   assessCommandOutputArtifactIntegrity,
-  assessEvidenceBundleHelpedProof,
+  assessCurrentDecisionPacketHelpedProof,
   authorizeDecisionPacketUsefulness,
+  collectTargetStateSnapshot,
   decideEvidenceContractActivation,
   decisionPacketAuthorityAdmissionCurrent,
   executionRunLifecycleCreatedEvent,
@@ -51,6 +53,8 @@ import {
   parseUsefulnessApplicationEvidenceForIdentity,
   stampCurrentDecisionPacketAuthorityMetadata,
   stampUnboundDecisionPacketAuthorityMetadata,
+  targetEvidenceFromMetadata,
+  targetEvidenceClaimsFreshOwnedPatch,
   toEvidenceCommandReadback,
   readMetadataString
 } from "@krn/core";
@@ -900,6 +904,7 @@ export type EvidenceFeedbackPersistenceStage =
 
 export interface DrizzleHarnessRunRepositoryOptions {
   faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void;
+  readTargetStateSnapshot?: (targetRepo: string) => Promise<TargetStateSnapshot>;
 }
 
 const findCaptureEvidenceBundle = (
@@ -1184,18 +1189,65 @@ const downgradeUnprovedHelped = <TOutcome extends ApplicationBoundOutcome>(
   reason: `${reason} Original reason: ${outcome.reason}`
 });
 
+const downgradeUnprovedApplication = <TOutcome extends ApplicationBoundOutcome>(
+  outcome: TOutcome,
+  reason: string
+): TOutcome => ({
+  ...outcome,
+  outcome: outcome.outcome === "helped" ? "unknown" : "selected",
+  reason: `${reason} Original reason: ${outcome.reason}`
+});
+
+const snapshotMatchesApplicationTarget = (
+  snapshot: TargetStateSnapshot,
+  target: NonNullable<UsefulnessApplicationEvidence["targetState"]>
+): boolean => snapshot.treeIdentity === target.treeIdentity &&
+  snapshot.patchIdentity === target.patchIdentity &&
+  JSON.stringify([...snapshot.changedPaths].sort()) ===
+    JSON.stringify([...target.changedFiles].sort());
+
+const applicationTargetMatchesCapture = async (
+  application: UsefulnessApplicationEvidence,
+  capture: CreateEvidenceFeedbackOnceInput,
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
+): Promise<boolean> => {
+  const target = targetEvidenceFromMetadata(capture.evidence.metadata?.["targetEvidence"]);
+  const applicationTarget = application.targetState;
+
+  if (applicationTarget === undefined || !targetEvidenceClaimsFreshOwnedPatch(target)) {
+    return false;
+  }
+  const snapshot = await readTargetStateSnapshot(target.targetRepo);
+
+  return snapshotMatchesApplicationTarget(snapshot, applicationTarget) &&
+    target.targetRepo === applicationTarget.targetRepo &&
+    target.treeIdentity === applicationTarget.treeIdentity &&
+    target.patchIdentity === applicationTarget.patchIdentity &&
+    JSON.stringify(target.changedFiles.map((file) => file.path).sort()) ===
+      JSON.stringify([...applicationTarget.changedFiles].sort());
+};
+
 const verificationFollowsApplication = (input: {
   evidence: CreateEvidenceFeedbackOnceInput["evidence"];
   requiredCommands: ReadonlySet<string>;
   appliedAt: string;
-}): boolean => input.evidence.commands
+}): boolean => {
+  const artifactsByRef = new Map(
+    (input.evidence.commandOutputArtifacts ?? []).map((artifact) => [artifact.outputRef, artifact])
+  );
+
+  return input.evidence.commands
   .map(toEvidenceCommandReadback)
   .filter((command): command is Extract<EvidenceCommandReadback, { kind: "command_runner" }> =>
     command.kind === "command_runner" && input.requiredCommands.has(command.command)
   )
-  .every((command) => Date.parse(command.capturedAt) > Date.parse(input.appliedAt));
+  .every((command) => command.outputRef !== undefined &&
+    Date.parse(artifactsByRef.get(command.outputRef)?.startedAt ?? "") >
+      Date.parse(input.appliedAt) &&
+    Date.parse(command.capturedAt) > Date.parse(input.appliedAt));
+};
 
-const applicationForHelpedOutcome = async (
+const applicationForBoundOutcome = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   aggregate: HarnessRunAggregate,
@@ -1221,16 +1273,18 @@ const applicationForHelpedOutcome = async (
     taskContractId: aggregate.taskContract.id,
     packetChecksum: input.decisionPacketClaim.checksum,
     packetGeneratedAt: input.decisionPacketClaim.generatedAt,
-    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision
+    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+    ...(application.targetState === undefined
+      ? {}
+      : { targetState: application.targetState })
   });
-
   return parsed !== undefined &&
     Date.parse(parsed.appliedAt) === Date.parse(outcome.appliedAt)
     ? parsed
     : undefined;
 };
 
-const admitHelpedOutcome = async <TOutcome extends ApplicationBoundOutcome>(input: {
+const admitApplicationBoundOutcome = async <TOutcome extends ApplicationBoundOutcome>(input: {
   tx: KrnDatabaseTransaction;
   capture: CreateEvidenceFeedbackOnceInput;
   aggregate: HarnessRunAggregate;
@@ -1238,11 +1292,12 @@ const admitHelpedOutcome = async <TOutcome extends ApplicationBoundOutcome>(inpu
   subject: UsefulnessSubjectIdentity;
   strictProofEligible: boolean;
   requiredCommands: ReadonlySet<string>;
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>;
 }): Promise<TOutcome> => {
-  if (input.outcome.outcome !== "helped") {
+  if (input.outcome.outcome !== "used" && input.outcome.outcome !== "helped") {
     return { ...input.outcome };
   }
-  const application = await applicationForHelpedOutcome(
+  const application = await applicationForBoundOutcome(
     input.tx,
     input.capture,
     input.aggregate,
@@ -1250,10 +1305,23 @@ const admitHelpedOutcome = async <TOutcome extends ApplicationBoundOutcome>(inpu
     input.subject
   );
   if (application === undefined) {
-    return downgradeUnprovedHelped(
+    return downgradeUnprovedApplication(
       input.outcome,
-      "Helped was downgraded because exact persisted application evidence is missing."
+      "Usefulness was downgraded because exact persisted application evidence is missing."
     );
+  }
+  if (!await applicationTargetMatchesCapture(
+    application,
+    input.capture,
+    input.readTargetStateSnapshot
+  )) {
+    return downgradeUnprovedApplication(
+      input.outcome,
+      "Usefulness was downgraded because fresh subject-owned target state does not match the persisted application."
+    );
+  }
+  if (input.outcome.outcome === "used") {
+    return { ...input.outcome };
   }
   if (!input.strictProofEligible || !verificationFollowsApplication({
     evidence: input.capture.evidence,
@@ -1355,23 +1423,11 @@ const helpedProofContext = (
   const evidenceContract = activation.status === "active"
     ? activation.evidenceContract
     : undefined;
-  const strictProof = assessEvidenceBundleHelpedProof({
-    bundle: {
-      status: input.evidence.status ?? "captured",
-      commands: input.evidence.commands,
-      ...(input.evidence.commandOutputArtifacts === undefined
-        ? {}
-        : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
-      metadata: stampCurrentDecisionPacketAuthorityMetadata(
-        input.evidence.metadata ?? {},
-        authorityIdentity
-      ),
-      createdAt: new Date().toISOString()
-    },
+  const strictProof = assessCurrentDecisionPacketHelpedProof({
+    evidence: input.evidence,
     evidenceContract,
-    packetChecksum: authorityIdentity.checksum,
-    packetGeneratedAt: authorityIdentity.generatedAt,
-    sourceRunLifecycleRevision: authorityIdentity.sourceRunLifecycleRevision,
+    authority: authorityIdentity,
+    createdAt: new Date().toISOString(),
     sha256Hex
   });
 
@@ -1403,28 +1459,31 @@ const admitUsefulnessOutcomes = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   aggregate: HarnessRunAggregate,
-  proof: HelpedProofContext
+  proof: HelpedProofContext,
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
 ) => {
   const sourceUsefulnessOutcomes = await Promise.all(
-    (input.sourceUsefulnessOutcomes ?? []).map((outcome) => admitHelpedOutcome({
+    (input.sourceUsefulnessOutcomes ?? []).map((outcome) => admitApplicationBoundOutcome({
       tx,
       capture: input,
       aggregate,
       outcome,
       subject: sourceUsefulnessSubject(outcome),
       strictProofEligible: proof.eligible,
-      requiredCommands: proof.requiredCommands
+      requiredCommands: proof.requiredCommands,
+      readTargetStateSnapshot
     }))
   );
   const knowledgeUsefulnessOutcomes = await Promise.all(
-    (input.knowledgeUsefulnessOutcomes ?? []).map((outcome) => admitHelpedOutcome({
+    (input.knowledgeUsefulnessOutcomes ?? []).map((outcome) => admitApplicationBoundOutcome({
       tx,
       capture: input,
       aggregate,
       outcome,
       subject: { kind: "knowledge", id: outcome.knowledgeId },
       strictProofEligible: proof.eligible,
-      requiredCommands: proof.requiredCommands
+      requiredCommands: proof.requiredCommands,
+      readTargetStateSnapshot
     }))
   );
 
@@ -1477,7 +1536,8 @@ const applicationBoundEvidenceFeedbackInput = (
 const evidenceFeedbackInputWithRepositoryAuthority = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
-  aggregate: HarnessRunAggregate
+  aggregate: HarnessRunAggregate,
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
 ): Promise<CreateEvidenceFeedbackOnceInput> => {
   if (input.decisionPacketClaim === undefined) {
     return unboundEvidenceFeedbackInput(input);
@@ -1488,7 +1548,13 @@ const evidenceFeedbackInputWithRepositoryAuthority = async (
   };
   const authorityIdentity = admitDecisionPacketIdentity(boundInput, aggregate);
   const proof = helpedProofContext(input, aggregate, authorityIdentity);
-  const admitted = await admitUsefulnessOutcomes(tx, input, aggregate, proof);
+  const admitted = await admitUsefulnessOutcomes(
+    tx,
+    input,
+    aggregate,
+    proof,
+    readTargetStateSnapshot
+  );
 
   return applicationBoundEvidenceFeedbackInput(input, authorityIdentity, admitted);
 };
@@ -1654,6 +1720,7 @@ const mapUsefulnessApplication = (
   packetChecksum: row.packetChecksum,
   packetGeneratedAt: row.packetGeneratedAt.toISOString(),
   sourceRunLifecycleRevision: row.sourceRunLifecycleRevision,
+  ...(row.targetState === null ? {} : { targetState: row.targetState }),
   appliedAt: row.appliedAt.toISOString()
 });
 
@@ -1661,6 +1728,21 @@ const sameUsefulnessApplication = (
   left: UsefulnessApplicationEvidence,
   right: UsefulnessApplicationEvidenceIdentity
 ): boolean => parseUsefulnessApplicationEvidenceForIdentity(left, right) !== undefined;
+
+const requireCurrentApplicationTarget = async (
+  application: UsefulnessApplicationEvidenceIdentity,
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
+): Promise<void> => {
+  if (application.targetState === undefined) {
+    return;
+  }
+  const snapshot = await readTargetStateSnapshot(application.targetState.targetRepo);
+  if (!snapshotMatchesApplicationTarget(snapshot, application.targetState)) {
+    throw new Error(
+      "recordUsefulnessApplicationOnce rejected: target state does not match the current repository patch"
+    );
+  }
+};
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(
@@ -2105,6 +2187,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     if (authorityInput === undefined) {
       throw new Error("recordUsefulnessApplicationOnce requires valid application evidence");
     }
+    await requireCurrentApplicationTarget(
+      authorityInput,
+      this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
+    );
 
     return this.db.transaction(async (tx) => {
       const lockedRun = await lockHarnessRunAuthority(
@@ -2149,7 +2235,6 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           "recordUsefulnessApplicationOnce rejected: packet lifecycle revision mismatch"
         );
       }
-
       const [inserted] = await tx
         .insert(usefulnessApplications)
         .values({
@@ -2161,7 +2246,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           taskContractId: authorityInput.taskContractId,
           packetChecksum: authorityInput.packetChecksum,
           packetGeneratedAt: fromIsoTimestamp(authorityInput.packetGeneratedAt),
-          sourceRunLifecycleRevision: authorityInput.sourceRunLifecycleRevision
+          sourceRunLifecycleRevision: authorityInput.sourceRunLifecycleRevision,
+          ...(authorityInput.targetState === undefined
+            ? {}
+            : { targetState: authorityInput.targetState })
         })
         .onConflictDoNothing()
         .returning();
@@ -2308,7 +2396,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       const admittedInput = await evidenceFeedbackInputWithRepositoryAuthority(
         tx,
         authorityInput,
-        aggregate
+        aggregate,
+        this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
       );
 
       return insertEvidenceFeedbackChain(

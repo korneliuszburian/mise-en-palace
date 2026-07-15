@@ -23,14 +23,16 @@ import type {
   SourceUsefulnessOutcomeFeedback,
   TargetEvidence,
   TargetEvidenceInput,
+  TargetStateSnapshot,
   UsefulnessApplicationEvidence,
   UsefulnessApplicationEvidenceIdentity
 } from "@krn/core";
 import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
-  assessEvidenceBundleHelpedProof,
+  assessCurrentDecisionPacketHelpedProof,
   assessCandidateReviewability,
+  collectTargetStateSnapshot,
   decideEvidenceContractActivation,
   decisionPacketBindingReadbackFromMetadata,
   decisionPacketUsefulnessAuthorizationDowngradeReason,
@@ -38,7 +40,7 @@ import {
   knowledgeUsefulnessOutcomesFromMetadata,
   projectDecisionPacketUsefulnessSubjects,
   sourceUsefulnessOutcomesFromMetadata,
-  stampCurrentDecisionPacketAuthorityMetadata,
+  targetEvidenceClaimsFreshOwnedPatch,
   toEvidenceCommandReadback,
   normalizeTargetEvidence
 } from "@krn/core";
@@ -101,6 +103,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
   evalCandidateProposals?: readonly EvalCandidateProposal[];
   readGitStatus?(): Promise<string>;
+  readTargetStateSnapshot?(targetRepo: string): Promise<TargetStateSnapshot>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
@@ -555,6 +558,8 @@ const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): strin
     `- dirtyAfter: ${targetEvidence.dirtyAfter}`,
     `- ownedChanges: ${targetEvidence.ownedChanges}`,
     `- targetStatusFreshness: ${targetEvidence.targetStatusFreshness}`,
+    `- treeIdentity: ${targetEvidence.treeIdentity ?? "none"}`,
+    `- patchIdentity: ${targetEvidence.patchIdentity ?? "none"}`,
     `- targetPatchLifecycle: ${targetEvidence.targetPatchLifecycle}`,
     `- handoffArtifact: ${targetEvidence.handoffArtifact ?? "none"}`,
     `- targetOwnerDecision: ${targetEvidence.targetOwnerDecision ?? "none"}`,
@@ -909,6 +914,8 @@ const outcomeHasCurrentEvidenceRef = (
 interface UsefulnessEvidenceClass {
   applicationRefs: ReadonlySet<string>;
   verificationRefs: ReadonlySet<string>;
+  verificationCommands: readonly EvidenceCommandReadback[];
+  verificationArtifactsByRef: ReadonlyMap<string, CommandOutputArtifact>;
 }
 
 type UsefulnessOutcomeProofFailureReason =
@@ -922,18 +929,47 @@ const evidenceCommandOutputRefs = (
   : [];
 
 const usefulnessEvidenceClassFor = (input: {
-  readonly classification: ChangedFileClassification;
+  readonly commands: readonly EvidenceCommandReadback[];
+  readonly commandOutputArtifacts: readonly CommandOutputArtifact[];
   readonly strictVerificationRefs: readonly string[];
   readonly targetEvidence: TargetEvidence | undefined;
-}): UsefulnessEvidenceClass => ({
-  applicationRefs: new Set([
-    ...input.classification.intended.map((file) => file.path),
-    ...(input.targetEvidence?.changedFiles
-      .filter((file) => file.ownership === "owned_by_current_krn_run" || file.ownership === "partial")
-      .map((file) => file.path) ?? [])
-  ]),
-  verificationRefs: new Set(input.strictVerificationRefs)
-});
+}): UsefulnessEvidenceClass => {
+  const target = input.targetEvidence;
+  const ownsExactCurrentPatch = targetEvidenceClaimsFreshOwnedPatch(target);
+
+  return {
+    applicationRefs: new Set(ownsExactCurrentPatch
+      ? target.changedFiles.map((file) => file.path)
+      : []),
+    verificationRefs: new Set(input.strictVerificationRefs),
+    verificationArtifactsByRef: new Map(
+      input.commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
+    ),
+    verificationCommands: input.commands.filter((command) =>
+      command.kind === "command_runner" && target?.commands.includes(command.command) === true
+    )
+  };
+};
+
+const verificationFollowsApplication = (input: {
+  readonly appliedAt: string | undefined;
+  readonly evidenceRefs: ReadonlySet<string>;
+  readonly evidenceClass: UsefulnessEvidenceClass;
+}): boolean => {
+  const appliedAt = input.appliedAt;
+
+  return appliedAt !== undefined && input.evidenceClass.verificationCommands.some((command) =>
+    command.kind === "command_runner" &&
+    command.outputRef !== undefined &&
+    Date.parse(
+      input.evidenceClass.verificationArtifactsByRef.get(command.outputRef)?.startedAt ?? ""
+    ) > Date.parse(appliedAt) &&
+    Date.parse(command.capturedAt) > Date.parse(appliedAt) &&
+    [command.command, ...evidenceCommandOutputRefs(command)].some((ref) =>
+      input.evidenceRefs.has(ref) && input.evidenceClass.verificationRefs.has(ref)
+    )
+  );
+};
 
 const evidenceClassDowngradeReason = (
   requestedOutcome: "used" | "helped",
@@ -989,6 +1025,8 @@ const provenUsefulnessOutcome = (input: {
 };
 
 const downgradeUsefulnessOutcomesWithoutApplicationProof = <T extends {
+  readonly applicationId?: string;
+  readonly appliedAt?: string;
   readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
   readonly reason: string;
   readonly evidenceRefs: readonly string[];
@@ -1002,8 +1040,14 @@ const downgradeUsefulnessOutcomesWithoutApplicationProof = <T extends {
   }
 
   const refs = new Set(outcome.evidenceRefs);
-  const hasApplicationEvidence = [...refs].some((ref) => evidenceClass.applicationRefs.has(ref));
-  const hasVerificationEvidence = [...refs].some((ref) => evidenceClass.verificationRefs.has(ref));
+  const hasApplicationEvidence = outcome.applicationId !== undefined &&
+    outcome.appliedAt !== undefined &&
+    [...refs].some((ref) => evidenceClass.applicationRefs.has(ref));
+  const hasVerificationEvidence = verificationFollowsApplication({
+    appliedAt: outcome.appliedAt,
+    evidenceRefs: refs,
+    evidenceClass
+  });
   const provenOutcome = provenUsefulnessOutcome({
     requestedOutcome: outcome.outcome,
     hasApplicationEvidence,
@@ -1268,15 +1312,31 @@ interface EvidenceBackedUsefulnessOutcomes {
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
 }
 
+const applicationTargetState = (
+  target: TargetEvidence | undefined
+): UsefulnessApplicationEvidenceIdentity["targetState"] =>
+  !targetEvidenceClaimsFreshOwnedPatch(target)
+    ? undefined
+    : {
+        targetRepo: target.targetRepo,
+        treeIdentity: target.treeIdentity,
+        patchIdentity: target.patchIdentity,
+        changedFiles: target.changedFiles.map((file) => file.path).sort()
+      };
+
 const explicitUsefulnessApplications = (input: {
   aggregate: HarnessRunAggregate;
   binding: DecisionPacketBinding;
   projectId: string;
   runId: string;
+  targetEvidence: TargetEvidence | undefined;
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
-}): UsefulnessApplicationEvidenceIdentity[] => [
-  ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
+}): UsefulnessApplicationEvidenceIdentity[] => {
+  const targetState = applicationTargetState(input.targetEvidence);
+
+  return [
+    ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
     const subjectId = outcome.sourceDecisionId ?? outcome.sourceClaimId;
     if (
       subjectId === undefined ||
@@ -1296,10 +1356,11 @@ const explicitUsefulnessApplications = (input: {
       taskContractId: input.aggregate.taskContract.id,
       packetChecksum: input.binding.packetChecksum,
       packetGeneratedAt: input.binding.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision
+      sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
+      ...(targetState === undefined ? {} : { targetState })
     }];
-  }),
-  ...(input.knowledgeOutcomes ?? []).flatMap((outcome) =>
+    }),
+    ...(input.knowledgeOutcomes ?? []).flatMap((outcome) =>
     outcome.applicationId === undefined || outcome.appliedAt !== undefined
       ? []
       : [{
@@ -1311,10 +1372,12 @@ const explicitUsefulnessApplications = (input: {
           taskContractId: input.aggregate.taskContract.id,
           packetChecksum: input.binding.packetChecksum,
           packetGeneratedAt: input.binding.packetGeneratedAt,
-          sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision
+          sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
+          ...(targetState === undefined ? {} : { targetState })
         }]
-  )
-];
+    )
+  ];
+};
 
 const persistExplicitUsefulnessApplications = async (
   repository: DatabaseRuntime["harnessRunRepository"],
@@ -1348,6 +1411,7 @@ const usefulnessApplicationsForPersistence = (input: {
   projectId: string;
   runId: string;
   usefulness: EvidenceBackedUsefulnessOutcomes;
+  targetEvidence: TargetEvidence | undefined;
 }): UsefulnessApplicationEvidenceIdentity[] => {
   if (input.binding === undefined) {
     return [];
@@ -1358,6 +1422,7 @@ const usefulnessApplicationsForPersistence = (input: {
     binding: input.binding,
     projectId: input.projectId,
     runId: input.runId,
+    targetEvidence: input.targetEvidence,
     sourceOutcomes: input.usefulness.sourceOutcomes,
     knowledgeOutcomes: input.usefulness.knowledgeOutcomes
   });
@@ -1366,8 +1431,8 @@ const usefulnessApplicationsForPersistence = (input: {
 const evidenceBackedUsefulnessOutcomesFor = (input: {
   readonly captureIdentity: string;
   readonly changedFiles: readonly ChangedFile[];
-  readonly classification: ChangedFileClassification;
   readonly commands: readonly EvidenceCommandReadback[];
+  readonly commandOutputArtifacts: readonly CommandOutputArtifact[];
   readonly decisionPacketChecksum: string | undefined;
   readonly helpedProof: CaptureHelpedProof;
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
@@ -1389,7 +1454,8 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
     currentEvidenceRefs
   );
   const evidenceClass = usefulnessEvidenceClassFor({
-    classification: input.classification,
+    commands: input.commands,
+    commandOutputArtifacts: input.commandOutputArtifacts,
     strictVerificationRefs: input.helpedProof.verificationRefs,
     targetEvidence: input.targetEvidence
   });
@@ -1675,27 +1741,15 @@ const captureHelpedProof = (input: {
   const evidenceContract = activation.status === "active"
     ? activation.evidenceContract
     : undefined;
-  const assessment = assessEvidenceBundleHelpedProof({
-    bundle: {
-      status: input.evidence.status ?? "captured",
-      commands: input.evidence.commands,
-      ...(input.evidence.commandOutputArtifacts === undefined
-        ? {}
-        : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
-      metadata: stampCurrentDecisionPacketAuthorityMetadata(
-        input.evidence.metadata ?? {},
-        {
-          checksum: binding.packetChecksum,
-          generatedAt: binding.packetGeneratedAt,
-          sourceRunLifecycleRevision: binding.sourceRunLifecycleRevision
-        }
-      ),
-      createdAt: input.createdAt
-    },
+  const assessment = assessCurrentDecisionPacketHelpedProof({
+    evidence: input.evidence,
     evidenceContract,
-    packetChecksum: binding.packetChecksum,
-    packetGeneratedAt: binding.packetGeneratedAt,
-    sourceRunLifecycleRevision: binding.sourceRunLifecycleRevision,
+    authority: {
+      checksum: binding.packetChecksum,
+      generatedAt: binding.packetGeneratedAt,
+      sourceRunLifecycleRevision: binding.sourceRunLifecycleRevision
+    },
+    createdAt: input.createdAt,
     sha256Hex
   });
 
@@ -1801,8 +1855,8 @@ const persistEvidenceCapture = async (
     const evidenceBackedUsefulness = evidenceBackedUsefulnessOutcomesFor({
       captureIdentity,
       changedFiles,
-      classification,
       commands,
+      commandOutputArtifacts: evidence.commandOutputArtifacts ?? [],
       decisionPacketChecksum: packet.binding?.packetChecksum,
       helpedProof,
       knowledgeOutcomes: usefulness.knowledgeOutcomes,
@@ -1818,7 +1872,8 @@ const persistEvidenceCapture = async (
       binding: packet.binding,
       projectId,
       runId,
-      usefulness: admittedUsefulness
+      usefulness: admittedUsefulness,
+      targetEvidence
     });
     const persistedApplications = await persistExplicitUsefulnessApplications(
       databaseRuntime.harnessRunRepository,
@@ -1876,6 +1931,45 @@ const persistEvidenceCapture = async (
   }
 };
 
+const hasApplicationBoundOutcome = (runtime: EvidenceCaptureRuntime): boolean => [
+    ...(runtime.sourceUsefulnessOutcomes ?? []),
+    ...(runtime.knowledgeUsefulnessOutcomes ?? [])
+  ].some((outcome) => outcome.applicationId !== undefined);
+
+const applicationTargetEvidence = async (
+  runtime: EvidenceCaptureRuntime,
+  targetEvidence: TargetEvidenceInput
+): Promise<TargetEvidence> => {
+  const targetRepo = path.resolve(runtime.cwd, targetEvidence.targetRepo);
+  const snapshot = await (runtime.readTargetStateSnapshot ?? collectTargetStateSnapshot)(
+    targetRepo
+  );
+
+  const claimedFiles = new Map(
+    targetEvidence.changedFiles?.map((file) => [file.path, file]) ?? []
+  );
+  const changedFiles = snapshot.changedPaths.map((changedPath) => ({
+    status: claimedFiles.get(changedPath)?.status ?? "??",
+    path: changedPath,
+    ownership: claimedFiles.get(changedPath)?.ownership ?? "unknown"
+  }));
+
+  return normalizeTargetEvidence({
+    ...targetEvidence,
+    targetRepo,
+    ...snapshot,
+    changedFiles
+  });
+};
+
+const targetEvidenceForCapture = async (
+  runtime: EvidenceCaptureRuntime
+): Promise<TargetEvidence | undefined> => runtime.targetEvidence === undefined
+  ? undefined
+  : hasApplicationBoundOutcome(runtime)
+    ? applicationTargetEvidence(runtime, runtime.targetEvidence)
+    : normalizeTargetEvidence(runtime.targetEvidence);
+
 export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
 ): Promise<EvidenceCaptureResult> => {
@@ -1904,10 +1998,7 @@ export const runEvidenceCaptureCommand = async (
       : { commandOutputArtifacts: runtime.commandOutputArtifacts })
   });
   const commands = preparedCommandEvidence.commands;
-  const targetEvidence =
-    runtime.targetEvidence === undefined
-      ? undefined
-      : normalizeTargetEvidence(runtime.targetEvidence);
+  const targetEvidence = await targetEvidenceForCapture(runtime);
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
   const sourceDecisionCandidates = buildSourceDecisionCandidates(runtime, changedFiles);
   const memoryCandidateProposals = buildMemoryCandidateProposals(runtime, changedFiles);

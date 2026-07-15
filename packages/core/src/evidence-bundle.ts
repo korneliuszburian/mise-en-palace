@@ -96,6 +96,8 @@ export interface TargetEvidenceInput {
   dirtyAfter?: string;
   ownedChanges?: string;
   targetStatusFreshness?: string;
+  treeIdentity?: string;
+  patchIdentity?: string;
   targetPatchLifecycle?: string;
   handoffArtifact?: string;
   targetOwnerDecision?: string;
@@ -113,6 +115,8 @@ export interface TargetEvidence {
   dirtyAfter: TargetDirtyState;
   ownedChanges: TargetChangeOwnership;
   targetStatusFreshness: TargetStatusFreshness;
+  treeIdentity?: string;
+  patchIdentity?: string;
   targetPatchLifecycle: TargetPatchLifecycle;
   handoffArtifact?: string;
   targetOwnerDecision?: string;
@@ -122,6 +126,21 @@ export interface TargetEvidence {
   commands: string[];
   doesNotProve: string[];
 }
+
+export const targetEvidenceClaimsFreshOwnedPatch = (
+  target: TargetEvidence | undefined
+): target is TargetEvidence & { treeIdentity: string; patchIdentity: string } =>
+  target !== undefined &&
+  target.mode !== "observation_only" &&
+  target.mode !== "unknown" &&
+  target.dirtyBefore === "clean" &&
+  target.dirtyAfter === "dirty" &&
+  target.ownedChanges === "owned_by_current_krn_run" &&
+  target.targetStatusFreshness === "fresh_current_task" &&
+  target.changedFiles.length > 0 &&
+  target.changedFiles.every((file) => file.ownership === "owned_by_current_krn_run") &&
+  target.treeIdentity !== undefined &&
+  target.patchIdentity !== undefined;
 
 interface BaseEvidenceCommandReadback {
   command: string;
@@ -309,6 +328,7 @@ export const commandResultDoesNotProve =
   "This command result does not prove memory quality, source truth, review correctness, or production readiness.";
 export const targetEvidenceDoesNotProve = [
   "Target evidence does not prove KRN source correctness.",
+  "Target evidence content-addresses the current patch but does not independently prove who created it or that the repository was clean before the run.",
   "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
   "Target evidence does not prove product readiness or V02-01 second-operator usability."
 ] as const;
@@ -646,6 +666,8 @@ export const normalizeTargetEvidence = (
   const forbiddenWrites = normalizedStringList(input.forbiddenWrites);
   const handoffArtifact = trimmedOptionalString(input.handoffArtifact);
   const targetOwnerDecision = trimmedOptionalString(input.targetOwnerDecision);
+  const treeIdentity = trimmedOptionalString(input.treeIdentity);
+  const patchIdentity = trimmedOptionalString(input.patchIdentity);
 
   return {
     targetRepo: input.targetRepo.trim(),
@@ -654,6 +676,8 @@ export const normalizeTargetEvidence = (
     dirtyAfter: normalizeTargetDirtyState(input.dirtyAfter),
     ownedChanges,
     targetStatusFreshness: normalizeTargetStatusFreshness(input.targetStatusFreshness),
+    ...(treeIdentity === undefined ? {} : { treeIdentity }),
+    ...(patchIdentity === undefined ? {} : { patchIdentity }),
     targetPatchLifecycle: normalizeTargetPatchLifecycle(input.targetPatchLifecycle),
     ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
     ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
@@ -727,6 +751,8 @@ export const targetEvidenceFromMetadata = (
   const dirtyAfter = readMetadataString(record, "dirtyAfter");
   const ownedChanges = readMetadataString(record, "ownedChanges");
   const targetStatusFreshness = readMetadataString(record, "targetStatusFreshness");
+  const treeIdentity = readMetadataString(record, "treeIdentity");
+  const patchIdentity = readMetadataString(record, "patchIdentity");
   const targetPatchLifecycle = readMetadataString(record, "targetPatchLifecycle");
   const handoffArtifact = readMetadataString(record, "handoffArtifact");
   const targetOwnerDecision = readMetadataString(record, "targetOwnerDecision");
@@ -738,6 +764,8 @@ export const targetEvidenceFromMetadata = (
     ...(dirtyAfter === undefined ? {} : { dirtyAfter }),
     ...(ownedChanges === undefined ? {} : { ownedChanges }),
     ...(targetStatusFreshness === undefined ? {} : { targetStatusFreshness }),
+    ...(treeIdentity === undefined ? {} : { treeIdentity }),
+    ...(patchIdentity === undefined ? {} : { patchIdentity }),
     ...(targetPatchLifecycle === undefined ? {} : { targetPatchLifecycle }),
     ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
     ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
@@ -1192,6 +1220,37 @@ export const assessEvidenceBundleHelpedProof = (input: {
     sha256Hex: input.sha256Hex
   });
 };
+
+export const assessCurrentDecisionPacketHelpedProof = (input: {
+  evidence: {
+    status?: EvidenceBundleStatus;
+    commands: EvidenceCommand[];
+    commandOutputArtifacts?: CommandOutputArtifact[];
+    metadata?: Record<string, unknown>;
+  };
+  evidenceContract: EvidenceContract | undefined;
+  authority: CurrentDecisionPacketAuthorityMetadataInput;
+  createdAt: IsoTimestamp;
+  sha256Hex: CommandOutputArtifactSha256Hex;
+}): EvidenceBundleHelpedProofAssessment => assessEvidenceBundleHelpedProof({
+  bundle: {
+    status: input.evidence.status ?? "captured",
+    commands: input.evidence.commands,
+    ...(input.evidence.commandOutputArtifacts === undefined
+      ? {}
+      : { commandOutputArtifacts: input.evidence.commandOutputArtifacts }),
+    metadata: stampCurrentDecisionPacketAuthorityMetadata(
+      input.evidence.metadata ?? {},
+      input.authority
+    ),
+    createdAt: input.createdAt
+  },
+  evidenceContract: input.evidenceContract,
+  packetChecksum: input.authority.checksum,
+  packetGeneratedAt: input.authority.generatedAt,
+  sourceRunLifecycleRevision: input.authority.sourceRunLifecycleRevision,
+  sha256Hex: input.sha256Hex
+});
 
 export const evidenceBundleProvesHelped = (
   input: Parameters<typeof assessEvidenceBundleHelpedProof>[0]

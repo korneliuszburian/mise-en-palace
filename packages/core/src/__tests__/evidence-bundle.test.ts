@@ -13,6 +13,7 @@ import {
   normalizeTargetEvidence,
   parseEvidenceBundleMetadataReadback,
   targetEvidenceFromMetadata,
+  targetEvidenceClaimsFreshOwnedPatch,
   type EvidenceBundle,
   type EvidenceCommand,
   type EvidenceCommandHelpedProofFailureReason
@@ -781,6 +782,8 @@ describe("evidence bundle completeness", () => {
       dirtyAfter: "dirty",
       ownedChanges: "external",
       targetStatusFreshness: "changed-since-selection",
+      treeIdentity: " git-tree:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ",
+      patchIdentity: ` sha256:${"b".repeat(64)} `,
       targetPatchLifecycle: "handed-off-unresolved",
       handoffArtifact: " review-evidence/target/HANDOFF.md ",
       targetOwnerDecision: " stronger verification requested ",
@@ -799,6 +802,8 @@ describe("evidence bundle completeness", () => {
       dirtyAfter: "dirty",
       ownedChanges: "external",
       targetStatusFreshness: "changed_since_selection",
+      treeIdentity: "git-tree:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      patchIdentity: `sha256:${"b".repeat(64)}`,
       targetPatchLifecycle: "handed_off_unresolved",
       handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "stronger verification requested",
@@ -812,6 +817,7 @@ describe("evidence bundle completeness", () => {
       commands: ["wilq-seo scripts/test.sh"],
       doesNotProve: [
         "Target evidence does not prove KRN source correctness.",
+        "Target evidence content-addresses the current patch but does not independently prove who created it or that the repository was clean before the run.",
         "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
         "Target evidence does not prove product readiness or V02-01 second-operator usability."
       ]
@@ -833,6 +839,37 @@ describe("evidence bundle completeness", () => {
     ]);
   });
 
+  test("admits only a fresh, content-addressed patch owned by the current run", () => {
+    const target = normalizeTargetEvidence({
+      targetRepo: "../target",
+      mode: "headless-repair",
+      dirtyBefore: "clean",
+      dirtyAfter: "dirty",
+      ownedChanges: "owned-by-current-krn-run",
+      targetStatusFreshness: "fresh-current-task",
+      treeIdentity: `git-tree:${"a".repeat(40)}`,
+      patchIdentity: `sha256:${"b".repeat(64)}`,
+      changedFiles: [{
+        status: "M",
+        path: "src/app.ts",
+        ownership: "owned-by-current-krn-run"
+      }]
+    });
+
+    expect(targetEvidenceClaimsFreshOwnedPatch(target)).toBe(true);
+    expect(targetEvidenceClaimsFreshOwnedPatch({ ...target, dirtyAfter: "clean" })).toBe(false);
+    expect(targetEvidenceClaimsFreshOwnedPatch({
+      ...target,
+      targetStatusFreshness: "changed_since_selection"
+    })).toBe(false);
+    const { patchIdentity: _patchIdentity, ...withoutPatchIdentity } = target;
+    expect(targetEvidenceClaimsFreshOwnedPatch(withoutPatchIdentity)).toBe(false);
+    expect(targetEvidenceClaimsFreshOwnedPatch({
+      ...target,
+      changedFiles: [{ ...target.changedFiles[0]!, ownership: "unknown" }]
+    })).toBe(false);
+  });
+
   test("reads target evidence back from metadata defensively", () => {
     expect(targetEvidenceFromMetadata({
       targetRepo: "../wilq-seo",
@@ -841,6 +878,8 @@ describe("evidence bundle completeness", () => {
       dirtyAfter: "dirty",
       ownedChanges: "partial",
       targetStatusFreshness: "fresh-current-task",
+      treeIdentity: "git-tree:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      patchIdentity: `sha256:${"b".repeat(64)}`,
       targetPatchLifecycle: "accepted-by-target-owner",
       handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "accepted after smoke proof",
@@ -858,6 +897,8 @@ describe("evidence bundle completeness", () => {
       dirtyAfter: "dirty",
       ownedChanges: "partial",
       targetStatusFreshness: "fresh_current_task",
+      treeIdentity: "git-tree:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      patchIdentity: `sha256:${"b".repeat(64)}`,
       targetPatchLifecycle: "accepted_by_target_owner",
       handoffArtifact: "review-evidence/target/HANDOFF.md",
       targetOwnerDecision: "accepted after smoke proof",

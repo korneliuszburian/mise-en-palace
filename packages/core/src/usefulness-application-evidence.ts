@@ -16,6 +16,13 @@ export const usefulnessApplicationSubjectKinds = [
 export type UsefulnessApplicationSubjectKind =
   typeof usefulnessApplicationSubjectKinds[number];
 
+export interface UsefulnessApplicationTargetState {
+  targetRepo: string;
+  treeIdentity: string;
+  patchIdentity: string;
+  changedFiles: string[];
+}
+
 export interface UsefulnessApplicationEvidence {
   applicationId: string;
   subjectKind: UsefulnessApplicationSubjectKind;
@@ -26,6 +33,7 @@ export interface UsefulnessApplicationEvidence {
   packetChecksum: string;
   packetGeneratedAt: IsoTimestamp;
   sourceRunLifecycleRevision: number;
+  targetState?: UsefulnessApplicationTargetState;
   appliedAt: IsoTimestamp;
 }
 
@@ -37,6 +45,16 @@ export type UsefulnessApplicationEvidenceIdentity = Omit<
 const packetChecksumPattern = /^[a-f0-9]{64}$/u;
 const requiredTextSchema = z.string().trim().min(1);
 const isoTimestampSchema = requiredTextSchema.refine(isIsoTimestamp);
+const targetStateSchema = z.object({
+  targetRepo: requiredTextSchema,
+  treeIdentity: requiredTextSchema.regex(/^git-tree:[a-f0-9]{40,64}$/u),
+  patchIdentity: requiredTextSchema.regex(/^sha256:[a-f0-9]{64}$/u),
+  changedFiles: z.array(requiredTextSchema).min(1).refine((paths) =>
+    new Set(paths).size === paths.length &&
+    paths.every((path, index) => index === 0 || paths[index - 1]!.localeCompare(path) < 0),
+  "target changed files must be unique and sorted"
+  )
+});
 const usefulnessApplicationEvidenceIdentitySchema = z.object({
   applicationId: requiredTextSchema,
   subjectKind: z.enum(usefulnessApplicationSubjectKinds),
@@ -46,7 +64,8 @@ const usefulnessApplicationEvidenceIdentitySchema = z.object({
   taskContractId: requiredTextSchema,
   packetChecksum: requiredTextSchema.regex(packetChecksumPattern),
   packetGeneratedAt: isoTimestampSchema,
-  sourceRunLifecycleRevision: z.number().int().safe().positive()
+  sourceRunLifecycleRevision: z.number().int().safe().positive(),
+  targetState: targetStateSchema.optional()
 });
 const usefulnessApplicationEvidenceSchema = usefulnessApplicationEvidenceIdentitySchema.extend({
   appliedAt: isoTimestampSchema
@@ -61,14 +80,22 @@ export const parseUsefulnessApplicationEvidenceIdentity = (
   value: unknown
 ): UsefulnessApplicationEvidenceIdentity | undefined => {
   const result = usefulnessApplicationEvidenceIdentitySchema.safeParse(value);
-  return result.success ? result.data : undefined;
+  if (!result.success) {
+    return undefined;
+  }
+  const { targetState, ...identity } = result.data;
+  return targetState === undefined ? identity : { ...identity, targetState };
 };
 
 export const parseUsefulnessApplicationEvidence = (
   value: unknown
 ): UsefulnessApplicationEvidence | undefined => {
   const result = usefulnessApplicationEvidenceSchema.safeParse(value);
-  return result.success ? result.data : undefined;
+  if (!result.success) {
+    return undefined;
+  }
+  const { targetState, ...evidence } = result.data;
+  return targetState === undefined ? evidence : { ...evidence, targetState };
 };
 
 const identityFields = [
@@ -83,6 +110,17 @@ const identityFields = [
   "sourceRunLifecycleRevision"
 ] as const satisfies readonly (keyof UsefulnessApplicationEvidenceIdentity)[];
 
+const sameTargetState = (
+  left: UsefulnessApplicationEvidenceIdentity["targetState"],
+  right: UsefulnessApplicationEvidenceIdentity["targetState"]
+): boolean => left === undefined || right === undefined
+  ? left === right
+  : left.targetRepo === right.targetRepo &&
+    left.treeIdentity === right.treeIdentity &&
+    left.patchIdentity === right.patchIdentity &&
+    left.changedFiles.length === right.changedFiles.length &&
+    left.changedFiles.every((file, index) => file === right.changedFiles[index]);
+
 export const parseUsefulnessApplicationEvidenceForIdentity = (
   value: unknown,
   expected: UsefulnessApplicationEvidenceIdentity
@@ -91,7 +129,7 @@ export const parseUsefulnessApplicationEvidenceForIdentity = (
 
   return evidence !== undefined && identityFields.every((field) =>
     evidence[field] === expected[field]
-  )
+  ) && sameTargetState(evidence.targetState, expected.targetState)
     ? evidence
     : undefined;
 };

@@ -1053,6 +1053,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryRecordId: memory-record-1");
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("outcome: helped");
+    expect(result.stdout).toContain(
+      "Persistence boundary: helped requires the two-phase evidence capture return channel."
+    );
     expect(result.stdout).toContain("Memory Core mutation: none");
     expect(result.stdout).toContain("recommendationOutcome: helped");
     expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
@@ -1214,7 +1217,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain(
-      "helped memory application requires a fresh successful verification EvidenceBundle"
+      "helped memory application requires an earlier persisted application and later target-bound verification"
     );
     expect(capturedApplication).toBeUndefined();
   });
@@ -1336,11 +1339,16 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain(
-      "helped memory application requires a fresh successful verification EvidenceBundle"
+      "helped memory application requires an earlier persisted application and later target-bound verification"
     );
   });
 
   it.each([{
+    label: "current active contract with verification recorded before application",
+    taskStatus: "active" as const,
+    runStatus: "running" as const,
+    bindingTaskContractId: "task-1"
+  }, {
     label: "terminal execution run",
     taskStatus: "active" as const,
     runStatus: "succeeded" as const,
@@ -1355,7 +1363,7 @@ describe("runCli", () => {
     taskStatus: "active" as const,
     runStatus: "running" as const,
     bindingTaskContractId: "task-other"
-  }])("rejects helped memory evidence from an inactive $label contract", async (scenario) => {
+  }])("rejects helped memory evidence when application did not precede the $label verification", async (scenario) => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1459,7 +1467,7 @@ describe("runCli", () => {
         async close() {}
       })
     })).rejects.toThrow(
-      "helped memory application requires a fresh successful verification EvidenceBundle"
+      "helped memory application requires an earlier persisted application and later target-bound verification"
     );
   });
 

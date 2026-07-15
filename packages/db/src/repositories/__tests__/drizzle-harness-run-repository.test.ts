@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import postgres from "postgres";
 import {
   buildDecisionPacketAuthorityProjection,
+  collectTargetStateSnapshot,
   createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
   decisionPacketBindingReadbackFromMetadata,
@@ -1513,6 +1518,18 @@ describe("DrizzleHarnessRunRepository", () => {
       const captureBRepository = new DrizzleHarnessRunRepository(
         createKrnDatabase(captureBClient)
       );
+      const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-target-authority-"));
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: targetRepo });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: targetRepo });
+      await mkdir(path.join(targetRepo, "src"));
+      await writeFile(path.join(targetRepo, "src/base.ts"), "export const base = true;\n");
+      execFileSync("git", ["add", "src/base.ts"], { cwd: targetRepo });
+      execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+      await writeFile(
+        path.join(targetRepo, "src/application.ts"),
+        "export const application = true;\n"
+      );
       let blockerTransactionOpen = false;
       let captureB: ReturnType<DrizzleHarnessRunRepository["createEvidenceFeedbackOnce"]> |
         undefined;
@@ -1911,6 +1928,7 @@ describe("DrizzleHarnessRunRepository", () => {
           packetGeneratedAt: "2026-07-14T20:02:00.000Z",
           sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
         });
+        const applicationSnapshot = await collectTargetStateSnapshot(targetRepo);
         const applicationIdentity = {
           applicationId: `application:${marker}:knowledge`,
           subjectKind: "knowledge" as const,
@@ -1920,8 +1938,22 @@ describe("DrizzleHarnessRunRepository", () => {
           taskContractId: scaffold.taskContract.id,
           packetChecksum: packetBeforeProvedHelped.packetChecksum,
           packetGeneratedAt: packetBeforeProvedHelped.packetGeneratedAt,
-          sourceRunLifecycleRevision: executionRun.lifecycleRevision
+          sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+          targetState: {
+            targetRepo,
+            treeIdentity: applicationSnapshot.treeIdentity,
+            patchIdentity: applicationSnapshot.patchIdentity,
+            changedFiles: [...applicationSnapshot.changedPaths]
+          }
         };
+        await expect(scaffold.harnessRunRepository.recordUsefulnessApplicationOnce({
+          ...applicationIdentity,
+          applicationId: `application:${marker}:forged-target`,
+          targetState: {
+            ...applicationIdentity.targetState,
+            patchIdentity: `sha256:${"f".repeat(64)}`
+          }
+        })).rejects.toThrow("target state does not match the current repository patch");
         const application = await scaffold.harnessRunRepository
           .recordUsefulnessApplicationOnce(applicationIdentity);
         const applicationRetry = await scaffold.harnessRunRepository
@@ -1941,8 +1973,12 @@ describe("DrizzleHarnessRunRepository", () => {
         const preApplicationArtifact = createCommandOutputArtifact({
           command: "pnpm typecheck",
           exitCode: 0,
-          startedAt: "2026-07-14T20:02:01.000Z",
-          completedAt: "2026-07-14T20:02:05.000Z",
+          startedAt: new Date(
+            Date.parse(application.application.appliedAt) - 1_000
+          ).toISOString(),
+          completedAt: new Date(
+            Date.parse(application.application.appliedAt) + 1_000
+          ).toISOString(),
           stdout: new Uint8Array(),
           stderr: new Uint8Array()
         }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
@@ -1971,11 +2007,37 @@ describe("DrizzleHarnessRunRepository", () => {
                 status: "passed",
                 provenance: "command_runner",
                 exitCode: 0,
-                capturedAt: "2026-07-14T20:02:05.000Z",
+                capturedAt: preApplicationArtifact.completedAt,
                 outputRef: preApplicationArtifact.outputRef,
                 doesNotProve: "Typecheck does not prove runtime behavior."
               }],
-              commandOutputArtifacts: [preApplicationArtifact]
+              commandOutputArtifacts: [preApplicationArtifact],
+              metadata: {
+                ...captureInput(
+                  `capture-authority-race:${marker}:pre-application`,
+                  undefined
+                ).evidence.metadata,
+                targetEvidence: {
+                  targetRepo,
+                  mode: "headless_repair",
+                  dirtyBefore: "clean",
+                  dirtyAfter: "dirty",
+                  ownedChanges: "owned_by_current_krn_run",
+                  targetStatusFreshness: "fresh_current_task",
+                  targetPatchLifecycle: "none",
+                  treeIdentity: applicationIdentity.targetState.treeIdentity,
+                  patchIdentity: applicationIdentity.targetState.patchIdentity,
+                  allowedWrites: [],
+                  forbiddenWrites: [],
+                  changedFiles: [{
+                    status: "??",
+                    path: "src/application.ts",
+                    ownership: "owned_by_current_krn_run"
+                  }],
+                  commands: ["pnpm typecheck"],
+                  doesNotProve: []
+                }
+              }
             },
             maintenance: {
               reason: "This queue record must not survive pre-application verification."
@@ -2031,6 +2093,32 @@ describe("DrizzleHarnessRunRepository", () => {
               doesNotProve: "Typecheck does not prove runtime behavior."
             }],
             commandOutputArtifacts: [typecheckArtifact],
+            metadata: {
+              ...captureInput(
+                `capture-authority-race:${marker}:proved-helped`,
+                undefined
+              ).evidence.metadata,
+              targetEvidence: {
+                targetRepo,
+                mode: "headless_repair",
+                dirtyBefore: "clean",
+                dirtyAfter: "dirty",
+                ownedChanges: "owned_by_current_krn_run",
+                targetStatusFreshness: "fresh_current_task",
+                targetPatchLifecycle: "none",
+                treeIdentity: applicationIdentity.targetState.treeIdentity,
+                patchIdentity: applicationIdentity.targetState.patchIdentity,
+                allowedWrites: [],
+                forbiddenWrites: [],
+                changedFiles: [{
+                  status: "??",
+                  path: "src/application.ts",
+                  ownership: "owned_by_current_krn_run"
+                }],
+                commands: ["pnpm typecheck"],
+                doesNotProve: []
+              }
+            },
             event: {
               type: "smoke.capture_authority_race.proved_helped",
               message: "ordered application and verification persisted",
@@ -2088,6 +2176,34 @@ describe("DrizzleHarnessRunRepository", () => {
           outcome: "helped"
         })]);
         expect(provedHelped.feedbackMaintenanceQueueRecordId).toEqual(expect.any(String));
+
+        await writeFile(
+          path.join(targetRepo, "src/application.ts"),
+          "export const mutatedAfterVerification = true;\n"
+        );
+        const changedAfterVerification = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce({
+            ...provedHelpedInput,
+            captureIdentity: `capture-authority-race:${marker}:changed-after-verification`,
+            evidence: {
+              ...provedHelpedInput.evidence,
+              metadata: provedHelpedInput.evidence.metadata
+            },
+            maintenance: {
+              reason: "A post-verification target mutation must not remain actionable."
+            }
+          });
+        expect(knowledgeUsefulnessOutcomesFromMetadata(
+          changedAfterVerification.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          applicationId: applicationIdentity.applicationId,
+          knowledgeId: selectedKnowledge.id,
+          outcome: "unknown",
+          reason: expect.stringContaining(
+            "fresh subject-owned target state does not match the persisted application"
+          )
+        })]);
+        expect(changedAfterVerification.feedbackMaintenanceQueueRecordId).toBeUndefined();
       } finally {
         if (blockerTransactionOpen) {
           await blockerClient.unsafe("rollback");
@@ -2099,6 +2215,7 @@ describe("DrizzleHarnessRunRepository", () => {
           captureBClient.end(),
           blockerClient.end()
         ]);
+        await rm(targetRepo, { recursive: true, force: true });
       }
     }
   );
