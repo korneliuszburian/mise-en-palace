@@ -4,9 +4,38 @@ This is the maintained command map for KRN verification. A command marked
 `NON-GATING` may be useful for exploration or reporting but cannot establish a
 green repository gate by itself.
 
-## Canonical gates
+## Selection rule
 
-Run the relevant local contract before closing work:
+Select the cheapest command that can falsify the current claim. During
+implementation, stay on the nearest package, behavior, type, or DB signal. Run
+the broad completion set once after the slice stabilizes only when the changed
+surface or publication contract requires it. Do not rerun an unchanged green
+gate.
+
+| Changed surface | Inner loop | Completion signal |
+|---|---|---|
+| docs or mechanical metadata | rendered or structural check if one exists | `rtk git diff --check` |
+| one package's TypeScript internals | package-supported typecheck | root typecheck only if no narrow command covers it |
+| shared tsconfig, cross-package, or public type contract | producer and consumer typecheck | `rtk proxy pnpm typecheck` once |
+| one runtime contract or bug | focused public-seam test or repro | affected package suite; root tests only for workspace-wide risk |
+| fixture or corpus contract | focused fixture/corpus checker | `rtk pnpm fixtures:check` when shared fixtures changed |
+| package surface, architecture, or cleanup | focused behavior/type signal | `rtk pnpm quality:fallow:ci` once after stabilization |
+| activation, packet, or required eval behavior | focused eval case | `rtk pnpm eval:required` when the required eval contract changed |
+| database schema or store-backed behavior | focused DB test/smoke | relevant configured-store gates below |
+| bootstrap, platform, or workspace tooling | changed script smoke | matching toolchain, platform, or workspace check |
+
+Documentation wording, file topology, command lists, private call order, and
+cleanup ceremony do not earn tests. A broad command is not stronger evidence
+when it cannot disagree with the changed claim.
+
+The existence of an umbrella command and the size of the repository do not
+select a gate. Do not replay focused tests, typecheck, or lint through `ci`,
+`check`, or `validate` unless the changed-surface row requires that aggregate
+or it adds a distinct observer.
+
+## Canonical commands
+
+These are selectable commands, not a mandatory run-all list:
 
 ```sh
 rtk pnpm toolchain:check

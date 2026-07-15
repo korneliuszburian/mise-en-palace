@@ -52,26 +52,25 @@ recreating its procedure locally.
 - Change only owned paths. Remove artifacts made obsolete by the current slice;
   leave pre-existing out-of-scope cleanup unchanged.
 
-## Proof And Completion
+## KRN Gates And Publication
 
-- Prefix every shell command with `rtk`.
-- Select gates from `docs/VERIFICATION_GATES.md`; do not invent a parallel gate
-  list.
-- TypeScript changes require `rtk proxy pnpm typecheck`.
-- JS/TS package-surface, architecture, or cleanup changes require
-  `rtk pnpm quality:fallow:ci`. The broad Fallow report is advisory.
-- Prove changed behavior at the highest public seam with the smallest useful
-  falsifier. A type-only or already-covered refactor may need zero new tests;
-  one behavior test is the default for one changed runtime contract.
+The installed global engineering contract owns the production loop, `rtk`
+usage, proof budget, test boundaries, umbrella-gate policy, dirty-work safety,
+and publication separation. This repository adds only KRN gate selection:
+
+- Select gates from `docs/VERIFICATION_GATES.md`; do not invent a parallel list.
+- TypeScript changes use the narrowest supported package typecheck. Run the
+  root `rtk proxy pnpm typecheck` only for shared compiler config,
+  cross-package or public type boundaries, when no narrower command exists, or
+  when the final gate map requires it.
+- For qualifying JS/TS package-surface, architecture, or cleanup changes, run
+  `rtk pnpm quality:fallow:ci` once after the slice stabilizes. Rerun it only
+  after a change that can affect its result. The broad Fallow report is
+  advisory.
 - External review is advisory. Validate every factual finding against current
   code and local verification before acting on it.
-- Done means acceptance criteria are satisfied, the scoped diff is accounted
-  for, relevant gates pass or are honestly blocked, and proof/non-proof is
-  recorded. Publication status is separate.
 - An owned Beads implementation session is not fully handed off until its
   commit is pushed and the branch is verified against its upstream. If
   publication lacks authority or is blocked, record that state instead.
-- Commit, rebase, push, or clean only in an owned workflow with the required
-  authority. Never clear another operator's stashes, branches, or dirty work.
 - Use Conventional Commits for owned commits, for example
   `fix(scope): concise imperative summary`.
