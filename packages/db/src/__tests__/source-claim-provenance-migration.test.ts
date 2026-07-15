@@ -13,8 +13,15 @@ import { fileURLToPath } from "node:url";
 
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
+import { retrieveActivationCandidates } from "@krn/harness";
 
+import { createKrnDatabase } from "../database.js";
 import { migrateDatabase } from "../migration-readiness.js";
+import {
+  DrizzleMemoryRepository,
+  DrizzleRetrievalRepository,
+  DrizzleSourceRepository
+} from "../repositories/index.js";
 import { inspectSourceAuthorityIntegrity } from "../source-authority-integrity-readiness.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
@@ -41,6 +48,10 @@ interface MismatchedClaimFixture {
   readonly wrongChunkId: string;
   readonly actualChunkArtifactId: string;
   readonly claimId: string;
+  readonly coherentPeerClaimId: string;
+  readonly unrelatedPeerClaimId: string;
+  readonly taintedClaimEdgeId: string;
+  readonly coherentClaimEdgeId: string;
   readonly decisionId: string;
   readonly edgeId: string;
   readonly searchId: string;
@@ -247,6 +258,44 @@ const seedMismatchedClaim = async (
           ${client.json(evidenceMetadata)}
         from claim_artifact, wrong_chunk
         returning id
+      ), coherent_peer_claim as (
+        insert into source_claims (
+          source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+          does_not_prove, trust_tier, support_type, consumer, status, metadata
+        )
+        select
+          claim_artifact.id,
+          claim_artifact_chunk.id,
+          'coherent peer claim',
+          'the peer retains one unrelated coherent edge after migration',
+          'migration proof distinguishes tainted and coherent graph relations',
+          'does not prove the peer claim is true',
+          'project-decision',
+          'implementation-boundary',
+          'source claim provenance migration',
+          'accepted',
+          ${client.json(evidenceMetadata)}
+        from claim_artifact, claim_artifact_chunk
+        returning id
+      ), unrelated_peer_claim as (
+        insert into source_claims (
+          source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+          does_not_prove, trust_tier, support_type, consumer, status, metadata
+        )
+        select
+          claim_artifact.id,
+          claim_artifact_chunk.id,
+          'unrelated coherent peer claim',
+          'the claim anchors an unaffected graph relation',
+          'migration proof preserves coherent graph relations',
+          'does not prove the relation is useful',
+          'project-decision',
+          'implementation-boundary',
+          'source claim provenance migration',
+          'proposed',
+          ${client.json(evidenceMetadata)}
+        from claim_artifact, claim_artifact_chunk
+        returning id
       ), decision as (
         insert into source_decisions (
           project_id, source_claim_id, status, decision, rationale,
@@ -279,6 +328,68 @@ const seedMismatchedClaim = async (
           ${client.json({ smokeId: marker })}
         from claim, decision
         returning id
+      ), coherent_peer_decision as (
+        insert into source_decisions (
+          project_id, source_claim_id, status, decision, rationale,
+          falsifier, consumer, metadata
+        )
+        select
+          project.id,
+          coherent_peer_claim.id,
+          'adopt',
+          'retain coherent peer claim',
+          'the peer provenance is internally coherent',
+          'migration corrupts or removes the coherent peer authority chain',
+          'source claim provenance migration',
+          ${client.json(evidenceMetadata)}
+        from project, coherent_peer_claim
+        returning id
+      ), coherent_peer_decision_edge as (
+        insert into source_decision_edges (
+          source_claim_id, source_decision_id, target_type, target_id,
+          support_type, confidence, notes, metadata
+        )
+        select
+          coherent_peer_claim.id,
+          coherent_peer_decision.id,
+          'architecture_decision',
+          ${`${marker}:coherent-peer`},
+          'implementation-boundary',
+          'high',
+          'coherent peer governing edge',
+          ${client.json({ smokeId: marker })}
+        from coherent_peer_claim, coherent_peer_decision
+        returning id
+      ), tainted_claim_edge as (
+        insert into source_claim_edges (
+          from_source_claim_id, to_source_claim_id, kind, metadata
+        )
+        select
+          claim.id,
+          coherent_peer_claim.id,
+          'supports',
+          ${client.json({
+            consumer: "source claim provenance migration",
+            doesNotProve: "a retained edge would not prove the quarantined claim is authoritative",
+            evidenceRef: `migration-fixture:${marker}:tainted-edge`
+          })}
+        from claim, coherent_peer_claim
+        returning id
+      ), coherent_claim_edge as (
+        insert into source_claim_edges (
+          from_source_claim_id, to_source_claim_id, kind, metadata
+        )
+        select
+          coherent_peer_claim.id,
+          unrelated_peer_claim.id,
+          'supports',
+          ${client.json({
+            consumer: "source claim provenance migration",
+            doesNotProve: "structural coherence does not prove graph relation truth",
+            evidenceRef: `migration-fixture:${marker}:coherent-edge`
+          })}
+        from coherent_peer_claim, unrelated_peer_claim
+        returning id
       ), search as (
         insert into search_documents (
           project_id, subject_type, subject_id, source_artifact_id, source_chunk_id,
@@ -308,6 +419,10 @@ const seedMismatchedClaim = async (
         wrong_chunk.id::text as "wrongChunkId",
         actual_chunk_artifact.id::text as "actualChunkArtifactId",
         claim.id::text as "claimId",
+        coherent_peer_claim.id::text as "coherentPeerClaimId",
+        unrelated_peer_claim.id::text as "unrelatedPeerClaimId",
+        tainted_claim_edge.id::text as "taintedClaimEdgeId",
+        coherent_claim_edge.id::text as "coherentClaimEdgeId",
         decision.id::text as "decisionId",
         edge.id::text as "edgeId",
         search.id::text as "searchId"
@@ -318,8 +433,14 @@ const seedMismatchedClaim = async (
         claim_artifact_chunk,
         wrong_chunk,
         claim,
+        coherent_peer_claim,
+        unrelated_peer_claim,
         decision,
         edge,
+        coherent_peer_decision,
+        coherent_peer_decision_edge,
+        tainted_claim_edge,
+        coherent_claim_edge,
         search
     `;
     const fixture = rows[0];
@@ -368,6 +489,16 @@ describe("SourceClaim provenance migration", () => {
         expect(post0030Report.appliedMigrationCount).toBe(
           post0030Report.expectedMigrationCount
         );
+        const retryReport = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+        expect(retryReport).toMatchObject({
+          expectedMigrationCount: post0030Report.expectedMigrationCount,
+          appliedMigrationCount: post0030Report.appliedMigrationCount,
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
 
         const client = postgres(disposable.databaseUrl, {
           max: 1,
@@ -402,6 +533,67 @@ describe("SourceClaim provenance migration", () => {
           `;
           expect(edgeRows).toEqual([{ count: 0 }]);
 
+          const claimEdgeRows = await client<{
+            id: string;
+            fromSourceClaimId: string;
+            toSourceClaimId: string;
+          }[]>`
+            select
+              id::text,
+              from_source_claim_id::text as "fromSourceClaimId",
+              to_source_claim_id::text as "toSourceClaimId"
+            from source_claim_edges
+            where id in (${fixture.taintedClaimEdgeId}, ${fixture.coherentClaimEdgeId})
+            order by id
+          `;
+          expect(claimEdgeRows).toEqual([{
+            id: fixture.coherentClaimEdgeId,
+            fromSourceClaimId: fixture.coherentPeerClaimId,
+            toSourceClaimId: fixture.unrelatedPeerClaimId
+          }]);
+
+          const activationNow = "2026-07-16T00:00:00.000Z";
+          const database = createKrnDatabase(client);
+          const retrieved = await retrieveActivationCandidates({
+            taskContract: {
+              id: `task-${marker}`,
+              operatorIntentId: `intent-${marker}`,
+              projectId: fixture.projectId,
+              title: "Review coherent peer claim migration",
+              objective: "Keep coherent peer claim graph context without legacy mixed provenance",
+              constraints: ["exclude quarantined graph authority"],
+              nonGoals: ["do not infer replacement provenance"],
+              acceptance: ["only coherent graph influence remains"],
+              status: "active",
+              metadata: {},
+              createdAt: activationNow,
+              updatedAt: activationNow
+            },
+            now: activationNow,
+            limits: {
+              memory: 0,
+              source: 10,
+              search: 0,
+              antiMemory: 0
+            },
+            repositories: {
+              memoryRepository: new DrizzleMemoryRepository(database),
+              sourceRepository: new DrizzleSourceRepository(database),
+              retrievalRepository: new DrizzleRetrievalRepository(database)
+            }
+          });
+          const candidateWithCoherentInfluence = retrieved.candidates.find((candidate) =>
+            JSON.stringify(candidate.metadata).includes(fixture.coherentClaimEdgeId)
+          );
+
+          expect(JSON.stringify(retrieved.candidates)).not.toContain(fixture.taintedClaimEdgeId);
+          expect(candidateWithCoherentInfluence?.metadata).toMatchObject({
+            sourceClaimEdgeInfluence: {
+              edgeIds: [fixture.coherentClaimEdgeId]
+            }
+          });
+          expect(candidateWithCoherentInfluence?.graphScore).toBeGreaterThan(0);
+
           const searchRows = await client<{
             validityStatus: string;
             invalidated: boolean;
@@ -426,6 +618,7 @@ describe("SourceClaim provenance migration", () => {
             where reason = 'claim_chunk_artifact_mismatch'
               and entity_id in (
                 ${fixture.claimId},
+                ${fixture.taintedClaimEdgeId},
                 ${fixture.decisionId},
                 ${fixture.edgeId},
                 ${fixture.searchId}
@@ -435,9 +628,32 @@ describe("SourceClaim provenance migration", () => {
           expect(quarantineRows).toEqual([
             { entityType: "search_document", entityId: fixture.searchId },
             { entityType: "source_claim", entityId: fixture.claimId },
+            { entityType: "source_claim_edge", entityId: fixture.taintedClaimEdgeId },
             { entityType: "source_decision", entityId: fixture.decisionId },
             { entityType: "source_decision_edge", entityId: fixture.edgeId }
           ]);
+
+          const claimEdgeQuarantineRows = await client<{
+            fromSourceClaimId: string | null;
+            toSourceClaimId: string | null;
+            quarantinedSourceClaimIds: string[] | null;
+          }[]>`
+            select
+              metadata->>'from_source_claim_id' as "fromSourceClaimId",
+              metadata->>'to_source_claim_id' as "toSourceClaimId",
+              array(
+                select jsonb_array_elements_text(metadata->'quarantined_source_claim_ids')
+              ) as "quarantinedSourceClaimIds"
+            from source_authority_quarantines
+            where entity_type = 'source_claim_edge'
+              and entity_id = ${fixture.taintedClaimEdgeId}
+              and reason = 'claim_chunk_artifact_mismatch'
+          `;
+          expect(claimEdgeQuarantineRows).toEqual([{
+            fromSourceClaimId: fixture.claimId,
+            toSourceClaimId: fixture.coherentPeerClaimId,
+            quarantinedSourceClaimIds: [fixture.claimId]
+          }]);
 
           const claimQuarantineRows = await client<{
             claimArtifactId: string | null;
