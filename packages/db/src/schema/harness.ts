@@ -459,7 +459,7 @@ export const reviewAssessments = pgTable(
     ),
     check(
       "review_assessments_capture_channel_known",
-      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
+      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1', 'review_assess_v1')`
     ),
     index("review_assessments_status_idx").on(table.status)
   ]
@@ -490,7 +490,7 @@ export const feedbackDeltas = pgTable(
     ),
     check(
       "feedback_deltas_capture_channel_known",
-      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
+      sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1', 'review_assess_v1')`
     ),
     check(
       "feedback_deltas_decision_packet_authority_admission_known",

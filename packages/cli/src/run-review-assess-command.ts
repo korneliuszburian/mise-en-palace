@@ -203,25 +203,28 @@ export const runReviewAssessCommand = async (
   });
 
   try {
-    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment({
-      evidenceBundleId,
-      status,
-      reviewer,
-      summary,
-      findings,
-      metadata
-    });
-    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta({
-      reviewAssessmentId: reviewAssessment.id,
-      status: "candidate",
-      memoryCandidates: [],
-      sourceDecisions: [],
-      evalCandidates: [],
-      metadata: {
-        ...metadata,
-        memoryRecordMutation: "none"
-      }
-    });
+    const { feedbackDelta, reviewAssessment } =
+      await databaseRuntime.harnessRunRepository.createReviewFeedbackOnce({
+        evidenceBundleId,
+        requestIdentity: `review:${evidenceBundleId}`,
+        review: {
+          status,
+          reviewer,
+          summary,
+          findings,
+          metadata
+        },
+        feedback: {
+          status: "candidate",
+          memoryCandidates: [],
+          sourceDecisions: [],
+          evalCandidates: [],
+          metadata: {
+            ...metadata,
+            memoryRecordMutation: "none"
+          }
+        }
+      });
 
     return {
       stdout: formatPersisted(

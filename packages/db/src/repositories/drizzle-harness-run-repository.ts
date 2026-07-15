@@ -78,6 +78,8 @@ import type {
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
+  CreateReviewFeedbackOnceInput,
+  CreateReviewFeedbackOnceResult,
   CreateTaskContractInput,
   HarnessRunAggregate,
   HarnessRunRepository,
@@ -86,7 +88,8 @@ import type {
   UpdateExecutionRunStatusInput
 } from "@krn/core/repositories/internal";
 import {
-  EvidenceFeedbackIdentityConflictError
+  EvidenceFeedbackIdentityConflictError,
+  ReviewFeedbackIdentityConflictError
 } from "@krn/core/repositories/internal";
 
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
@@ -754,6 +757,7 @@ const lockHarnessPlanAuthority = async (
 
 const evidenceFeedbackCaptureChannel = "evidence_feedback_v1" as const;
 const evalFeedbackCaptureChannel = "eval_feedback_v1" as const;
+const reviewAssessCaptureChannel = "review_assess_v1" as const;
 
 type EvidenceCommandArtifactRow = typeof evidenceCommandArtifacts.$inferSelect;
 
@@ -899,14 +903,17 @@ const insertEvidenceBundleAndEvent = async (
   return { commandOutputArtifactRows, evidenceBundleRow: row };
 };
 
-export type EvidenceFeedbackPersistenceStage =
+export type HarnessFeedbackPersistenceStage =
   | "after_evidence_bundle"
   | "after_review_assessment"
   | "after_feedback_delta"
-  | "after_maintenance_queue";
+  | "after_maintenance_queue"
+  | "after_review_feedback_assessment"
+  | "after_review_feedback_delta"
+  | "after_review_feedback_outbox";
 
 export interface DrizzleHarnessRunRepositoryOptions {
-  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void;
+  faultAfterStage?: (stage: HarnessFeedbackPersistenceStage) => void;
   readTargetStateSnapshot?: (targetRepo: string) => Promise<TargetStateSnapshot>;
 }
 
@@ -1254,6 +1261,23 @@ const evidenceFeedbackRequestFingerprintFromRow = (
     ? fingerprint
     : undefined;
 };
+
+const reviewFeedbackRequestFingerprint = (
+  input: CreateReviewFeedbackOnceInput
+): string => sha256Hex(canonicalJson({
+  evidenceBundleId: input.evidenceBundleId,
+  requestIdentity: input.requestIdentity,
+  review: input.review,
+  feedback: input.feedback,
+  metadata: input.metadata ?? null
+}));
+
+const reviewFeedbackRequestFingerprintFromRow = (
+  row: typeof reviewAssessments.$inferSelect
+): string | undefined => readMetadataString(
+  row.metadata,
+  "reviewFeedbackRequestFingerprint"
+);
 
 
 const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
@@ -1750,7 +1774,7 @@ const insertEvidenceFeedbackChain = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   captureIdentity: string,
-  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void,
+  faultAfterStage?: (stage: HarnessFeedbackPersistenceStage) => void,
   requestFingerprint = evidenceFeedbackRequestFingerprint(input)
 ): Promise<CreateEvidenceFeedbackOnceResult> => {
   const evidenceInput = validateEvidenceBundleInputForPersistence({
@@ -1854,6 +1878,161 @@ const requireCurrentApplicationTarget = async (
       "recordUsefulnessApplicationOnce rejected: target state does not match the current repository patch"
     );
   }
+};
+
+const existingReviewFeedbackOnceResult = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateReviewFeedbackOnceInput,
+  requestIdentity: string,
+  requestFingerprint: string
+): Promise<CreateReviewFeedbackOnceResult | undefined> => {
+  const existingReview = await tx.query.reviewAssessments.findFirst({
+    where: and(
+      eq(reviewAssessments.evidenceBundleId, input.evidenceBundleId),
+      eq(reviewAssessments.captureChannel, reviewAssessCaptureChannel)
+    )
+  });
+
+  if (existingReview === undefined) {
+    return undefined;
+  }
+  if (
+    readMetadataString(existingReview.metadata, "reviewFeedbackRequestIdentity") !==
+      requestIdentity ||
+    reviewFeedbackRequestFingerprintFromRow(existingReview) !== requestFingerprint
+  ) {
+    throw new ReviewFeedbackIdentityConflictError(
+      input.evidenceBundleId,
+      requestIdentity
+    );
+  }
+
+  const existingFeedback = await tx.query.feedbackDeltas.findFirst({
+    where: and(
+      eq(feedbackDeltas.reviewAssessmentId, existingReview.id),
+      eq(feedbackDeltas.captureChannel, reviewAssessCaptureChannel)
+    )
+  });
+  if (existingFeedback === undefined) {
+    throw new Error(
+      `Review feedback persistence is incomplete for ${requestIdentity}: feedback delta missing`
+    );
+  }
+
+  const existingOutbox = await tx.query.outboxEvents.findFirst({
+    where: and(
+      eq(outboxEvents.topic, "feedback.delta.created"),
+      sql`${outboxEvents.payload}->>'reviewRequestIdentity' = ${requestIdentity}`,
+      sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${existingFeedback.id}`
+    )
+  });
+  if (existingOutbox === undefined) {
+    throw new Error(
+      `Review feedback persistence is incomplete for ${requestIdentity}: outbox event missing`
+    );
+  }
+
+  return {
+    reviewAssessment: mapReviewAssessment(existingReview),
+    feedbackDelta: mapFeedbackDelta(existingFeedback),
+    created: false
+  };
+};
+
+const assertNoLegacyReviewFeedback = async (
+  tx: KrnDatabaseTransaction,
+  evidenceBundleId: string
+): Promise<void> => {
+  const legacyReview = await tx.query.reviewAssessments.findFirst({
+    where: and(
+      eq(reviewAssessments.evidenceBundleId, evidenceBundleId),
+      isNull(reviewAssessments.captureChannel)
+    )
+  });
+
+  if (legacyReview === undefined) {
+    return;
+  }
+
+  const legacyFeedback = await tx.query.feedbackDeltas.findFirst({
+    where: eq(feedbackDeltas.reviewAssessmentId, legacyReview.id)
+  });
+  const missingPart = legacyFeedback === undefined
+    ? "feedback delta missing"
+    : "repository-owned request identity missing";
+
+  throw new Error(
+    `Review feedback persistence is blocked by legacy assessment ${legacyReview.id}: ${missingPart}`
+  );
+};
+
+const insertReviewFeedbackChain = async (
+  tx: KrnDatabaseTransaction,
+  input: CreateReviewFeedbackOnceInput,
+  requestIdentity: string,
+  requestFingerprint: string,
+  faultAfterStage?: (stage: HarnessFeedbackPersistenceStage) => void
+): Promise<CreateReviewFeedbackOnceResult> => {
+  const reviewAssessmentRow = requireReturnedRow(
+    await tx
+      .insert(reviewAssessments)
+      .values({
+        evidenceBundleId: input.evidenceBundleId,
+        captureChannel: reviewAssessCaptureChannel,
+        status: input.review.status ?? "pending",
+        reviewer: input.review.reviewer,
+        summary: input.review.summary,
+        findings: input.review.findings,
+        metadata: {
+          ...(input.review.metadata ?? {}),
+          reviewFeedbackRequestIdentity: requestIdentity,
+          reviewFeedbackRequestFingerprint: requestFingerprint
+        }
+      })
+      .returning(),
+    "createReviewFeedbackOnce.reviewAssessment"
+  );
+  faultAfterStage?.("after_review_feedback_assessment");
+
+  const feedbackDeltaRow = requireReturnedRow(
+    await tx
+      .insert(feedbackDeltas)
+      .values({
+        reviewAssessmentId: reviewAssessmentRow.id,
+        captureChannel: reviewAssessCaptureChannel,
+        status: input.feedback.status ?? "candidate",
+        memoryCandidates: input.feedback.memoryCandidates,
+        sourceDecisions: input.feedback.sourceDecisions,
+        evalCandidates: input.feedback.evalCandidates,
+        metadata: {
+          ...repositoryUnboundMetadata(
+            input.feedback.metadata,
+            "Operator review feedback persistence does not admit DecisionPacket usefulness authority."
+          ),
+          reviewFeedbackRequestIdentity: requestIdentity,
+          reviewFeedbackRequestFingerprint: requestFingerprint
+        }
+      })
+      .returning(),
+    "createReviewFeedbackOnce.feedbackDelta"
+  );
+  faultAfterStage?.("after_review_feedback_delta");
+
+  await tx.insert(outboxEvents).values({
+    topic: "feedback.delta.created",
+    payload: {
+      feedbackDeltaId: feedbackDeltaRow.id,
+      reviewAssessmentId: reviewAssessmentRow.id,
+      reviewRequestIdentity: requestIdentity
+    }
+  });
+  faultAfterStage?.("after_review_feedback_outbox");
+
+  return {
+    reviewAssessment: mapReviewAssessment(reviewAssessmentRow),
+    feedbackDelta: mapFeedbackDelta(feedbackDeltaRow),
+    created: true
+  };
 };
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
@@ -2472,6 +2651,57 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       });
 
       return mapFeedbackDelta(row);
+    });
+  }
+
+  async createReviewFeedbackOnce(
+    input: CreateReviewFeedbackOnceInput
+  ): Promise<CreateReviewFeedbackOnceResult> {
+    const authorityInput = snapshotRepositoryInput(input);
+    const requestIdentity = authorityInput.requestIdentity.trim();
+
+    if (requestIdentity.length === 0) {
+      throw new Error("createReviewFeedbackOnce requires request identity");
+    }
+
+    const requestFingerprint = reviewFeedbackRequestFingerprint({
+      ...authorityInput,
+      requestIdentity
+    });
+
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`review:${authorityInput.evidenceBundleId}`}, 0))`
+      );
+
+      requireReturnedRow(
+        await tx
+          .select({ id: evidenceBundles.id })
+          .from(evidenceBundles)
+          .where(eq(evidenceBundles.id, authorityInput.evidenceBundleId))
+          .for("update"),
+        "createReviewFeedbackOnce.evidenceBundle"
+      );
+
+      const existing = await existingReviewFeedbackOnceResult(
+        tx,
+        authorityInput,
+        requestIdentity,
+        requestFingerprint
+      );
+      if (existing !== undefined) {
+        return existing;
+      }
+
+      await assertNoLegacyReviewFeedback(tx, authorityInput.evidenceBundleId);
+
+      return insertReviewFeedbackChain(
+        tx,
+        authorityInput,
+        requestIdentity,
+        requestFingerprint,
+        this.options.faultAfterStage
+      );
     });
   }
 

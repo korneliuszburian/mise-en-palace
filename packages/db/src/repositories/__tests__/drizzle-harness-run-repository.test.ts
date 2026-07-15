@@ -22,10 +22,12 @@ import type { EvalCandidateProposal } from "@krn/core";
 import type {
   CreateEvidenceBundleInput,
   CreateEvidenceFeedbackOnceInput,
-  CreateEvalFeedbackDeltaOnceInput
+  CreateEvalFeedbackDeltaOnceInput,
+  CreateReviewFeedbackOnceInput
 } from "@krn/core/repositories";
 import {
-  EvidenceFeedbackIdentityConflictError
+  EvidenceFeedbackIdentityConflictError,
+  ReviewFeedbackIdentityConflictError
 } from "@krn/core/repositories/internal";
 
 import { createKrnDatabase, type KrnDatabase } from "../../database.js";
@@ -3403,6 +3405,196 @@ describe("DrizzleHarnessRunRepository", () => {
           runEventCount: 1
         });
 
+      } finally {
+        await scaffold.cleanup();
+        await Promise.all([scaffold.client.end(), retryClient.end()]);
+      }
+    }
+  );
+
+  postgresIt(
+    "persists operator review feedback atomically and exactly once",
+    async () => {
+      const marker = `krn_review_feedback_once_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "operator review feedback atomicity",
+        workspacePrefix: "krn-review-feedback-once",
+        projectSlug: "review-feedback-once",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `operator review feedback ${marker}`,
+        taskContract: {
+          title: "Persist one operator review chain",
+          objective: "Falsify partial and duplicate operator review persistence.",
+          constraints: ["real PostgreSQL", "two connections"],
+          nonGoals: ["judge reviewer correctness"],
+          acceptance: ["one assessment, one feedback delta, one outbox event"]
+        },
+        harnessPlan: {
+          summary: "Operator review feedback atomicity",
+          nextAction: "Persist the review and feedback in one transaction."
+        }
+      });
+      const retryClient = postgres(databaseUrl!, { max: 1 });
+      const retryRepository = new DrizzleHarnessRunRepository(createKrnDatabase(retryClient));
+
+      try {
+        const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "review-feedback-once",
+          status: "running",
+          startedAt: "2026-07-15T06:00:00.000Z",
+          metadata: { smokeId: marker }
+        });
+        const evidenceBundle = await scaffold.harnessRunRepository.createEvidenceBundle({
+          executionRunId: executionRun.id,
+          changedFiles: ["packages/cli/src/run-review-assess-command.ts"],
+          commands: [{ command: "pnpm test", status: "passed" }],
+          diffRisk: "medium",
+          reviewBurden: "medium",
+          rollbackPath: "Revert the operator review persistence change.",
+          event: {
+            type: "review.feedback.once",
+            message: "operator review evidence captured",
+            payload: { smokeId: marker }
+          },
+          metadata: { smokeId: marker }
+        });
+        const requestIdentity = `review:${evidenceBundle.id}`;
+        const input = {
+          evidenceBundleId: evidenceBundle.id,
+          requestIdentity,
+          review: {
+            status: "changes_requested" as const,
+            reviewer: "operator",
+            summary: "The rollback path needs one concrete command.",
+            findings: [{
+              severity: "medium" as const,
+              message: "Rollback command is missing."
+            }],
+            metadata: { smokeId: marker, outcome: "changes_requested" }
+          },
+          feedback: {
+            status: "candidate" as const,
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: { smokeId: marker, memoryRecordMutation: "none" }
+          },
+          metadata: { smokeId: marker }
+        } satisfies CreateReviewFeedbackOnceInput;
+
+        for (const faultStage of [
+          "after_review_feedback_assessment",
+          "after_review_feedback_delta",
+          "after_review_feedback_outbox"
+        ] as const) {
+          const faultRepository = new DrizzleHarnessRunRepository(scaffold.db, {
+            faultAfterStage: (stage) => {
+              if (stage === faultStage) {
+                throw new Error(`fault:${faultStage}`);
+              }
+            }
+          });
+
+          await expect(faultRepository.createReviewFeedbackOnce(input))
+            .rejects.toThrow(`fault:${faultStage}`);
+
+          const [rolledBack] = await scaffold.client<{
+            feedbackDeltaCount: number;
+            outboxEventCount: number;
+            reviewAssessmentCount: number;
+          }[]>`
+            select
+              (select count(*)::int from review_assessments
+                where evidence_bundle_id = ${evidenceBundle.id}
+                  and capture_channel = 'review_assess_v1') as "reviewAssessmentCount",
+              (select count(*)::int from feedback_deltas feedback
+                inner join review_assessments review on review.id = feedback.review_assessment_id
+                where review.evidence_bundle_id = ${evidenceBundle.id}
+                  and feedback.capture_channel = 'review_assess_v1') as "feedbackDeltaCount",
+              (select count(*)::int from outbox_events
+                where payload->>'reviewRequestIdentity' = ${requestIdentity}) as "outboxEventCount"
+          `;
+          expect(rolledBack).toEqual({
+            reviewAssessmentCount: 0,
+            feedbackDeltaCount: 0,
+            outboxEventCount: 0
+          });
+        }
+
+        const concurrentResults = await Promise.all([
+          scaffold.harnessRunRepository.createReviewFeedbackOnce(input),
+          retryRepository.createReviewFeedbackOnce(input)
+        ]);
+        expect(concurrentResults.map((result) => result.created).sort()).toEqual([false, true]);
+        expect(new Set(concurrentResults.map((result) => result.reviewAssessment.id)).size).toBe(1);
+        expect(new Set(concurrentResults.map((result) => result.feedbackDelta.id)).size).toBe(1);
+
+        const exactRetry = await scaffold.harnessRunRepository.createReviewFeedbackOnce(input);
+        expect(exactRetry).toEqual({ ...concurrentResults[0], created: false });
+
+        await expect(scaffold.harnessRunRepository.createReviewFeedbackOnce({
+          ...input,
+          review: {
+            ...input.review,
+            summary: "Changed retry payload must conflict."
+          }
+        })).rejects.toBeInstanceOf(ReviewFeedbackIdentityConflictError);
+
+        const [counts] = await scaffold.client<{
+          feedbackDeltaCount: number;
+          outboxEventCount: number;
+          reviewAssessmentCount: number;
+        }[]>`
+          select
+            (select count(*)::int from review_assessments
+              where evidence_bundle_id = ${evidenceBundle.id}
+                and capture_channel = 'review_assess_v1') as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              where review.evidence_bundle_id = ${evidenceBundle.id}
+                and feedback.capture_channel = 'review_assess_v1') as "feedbackDeltaCount",
+            (select count(*)::int from outbox_events
+              where payload->>'reviewRequestIdentity' = ${requestIdentity}) as "outboxEventCount"
+        `;
+        expect(counts).toEqual({
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          outboxEventCount: 1
+        });
+
+        const legacyEvidenceBundle = await scaffold.harnessRunRepository.createEvidenceBundle({
+          executionRunId: executionRun.id,
+          changedFiles: [],
+          commands: [],
+          diffRisk: "low",
+          reviewBurden: "low",
+          rollbackPath: "Delete the legacy fixture.",
+          event: {
+            type: "review.feedback.legacy",
+            message: "legacy partial review captured",
+            payload: { smokeId: marker }
+          },
+          metadata: { smokeId: marker }
+        });
+        const legacyReview = await scaffold.harnessRunRepository.createReviewAssessment({
+          evidenceBundleId: legacyEvidenceBundle.id,
+          reviewer: "legacy-operator",
+          summary: "Legacy partial review.",
+          findings: [],
+          metadata: { smokeId: marker }
+        });
+        await expect(scaffold.harnessRunRepository.createReviewFeedbackOnce({
+          ...input,
+          evidenceBundleId: legacyEvidenceBundle.id,
+          requestIdentity: `review:${legacyEvidenceBundle.id}`
+        })).rejects.toThrow(
+          `Review feedback persistence is blocked by legacy assessment ${legacyReview.id}: feedback delta missing`
+        );
       } finally {
         await scaffold.cleanup();
         await Promise.all([scaffold.client.end(), retryClient.end()]);

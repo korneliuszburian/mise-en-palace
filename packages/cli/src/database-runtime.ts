@@ -234,9 +234,8 @@ export interface ReviewAssessDatabaseRuntimeInput {
 
 export interface ReviewAssessDatabaseRuntime {
   harnessRunRepository: Pick<
-    HarnessRunRepository,
-    | "createReviewAssessment"
-    | "createFeedbackDelta"
+    Required<HarnessRunRepository>,
+    "createReviewFeedbackOnce"
   >;
   close(): Promise<void>;
 }

@@ -90,6 +90,31 @@ export interface CreateFeedbackDeltaInput extends RepositoryMetadata {
   evalCandidates: FeedbackDelta["evalCandidates"];
 }
 
+export interface CreateReviewFeedbackOnceInput extends RepositoryMetadata {
+  evidenceBundleId: string;
+  requestIdentity: string;
+  review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
+  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
+}
+
+export interface CreateReviewFeedbackOnceResult {
+  reviewAssessment: ReviewAssessment;
+  feedbackDelta: FeedbackDelta;
+  created: boolean;
+}
+
+export class ReviewFeedbackIdentityConflictError extends Error {
+  constructor(
+    readonly evidenceBundleId: string,
+    readonly requestIdentity: string
+  ) {
+    super(
+      `review feedback identity conflict for ${requestIdentity} on evidence bundle ${evidenceBundleId}: immutable review request differs`
+    );
+    this.name = "ReviewFeedbackIdentityConflictError";
+  }
+}
+
 export type FeedbackSubjectKind =
   | "memory_record"
   | "knowledge"
@@ -219,6 +244,9 @@ export interface HarnessRunRepository {
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;
+  createReviewFeedbackOnce?(
+    input: CreateReviewFeedbackOnceInput
+  ): Promise<CreateReviewFeedbackOnceResult>;
   createEvidenceFeedbackOnce?(
     input: CreateEvidenceFeedbackOnceInput
   ): Promise<CreateEvidenceFeedbackOnceResult>;
