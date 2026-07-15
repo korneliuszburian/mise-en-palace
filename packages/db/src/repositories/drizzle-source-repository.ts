@@ -15,7 +15,8 @@ import type {
 import {
   assessSourceDecisionReviewSignals,
   decisionGradeSourceSupportTypes,
-  isDecisionGradeSourceSupportType
+  isDecisionGradeSourceSupportType,
+  rankSourceAuthority as rankCanonicalSourceAuthority
 } from "@krn/core";
 import type {
   CreateSourceArtifactInput,
@@ -787,6 +788,31 @@ const assertSourceClaimChunkOwnership = async (
   }
 };
 
+const assertSourceClaimAuthorityWithinArtifact = async (
+  db: KrnDatabase | KrnDatabaseTransaction,
+  input: Pick<CreateSourceClaimInput, "sourceArtifactId" | "sourceAuthority">
+): Promise<void> => {
+  const [sourceArtifact] = await db
+    .select({ sourceAuthority: sourceArtifacts.sourceAuthority })
+    .from(sourceArtifacts)
+    .where(eq(sourceArtifacts.id, input.sourceArtifactId))
+    .limit(1);
+
+  if (sourceArtifact === undefined) {
+    throw new Error(`SourceClaim sourceArtifactId ${input.sourceArtifactId} was not found`);
+  }
+
+  if (
+    rankCanonicalSourceAuthority(input.sourceAuthority) >
+    rankCanonicalSourceAuthority(sourceArtifact.sourceAuthority)
+  ) {
+    throw new Error(
+      `SourceClaim sourceAuthority ${input.sourceAuthority} exceeds SourceArtifact `
+      + `sourceAuthority ${sourceArtifact.sourceAuthority}`
+    );
+  }
+};
+
 export class DrizzleSourceRepository implements SourceRepository {
   constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
@@ -834,6 +860,7 @@ export class DrizzleSourceRepository implements SourceRepository {
 
   async createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim> {
     assertSourceClaimGovernance(input);
+    await assertSourceClaimAuthorityWithinArtifact(this.db, input);
     await assertSourceClaimChunkOwnership(this.db, input);
 
     const row = requireReturnedRow(

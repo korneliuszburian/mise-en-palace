@@ -122,23 +122,30 @@ const createDisposableDatabase = async (input: string): Promise<{
   };
 };
 
-const createMigrationsFolderThrough0029 = async (): Promise<{
+const createMigrationsFolderThrough = async (
+  lastMigrationIndex: number,
+  expectedLastTag: string
+): Promise<{
   readonly migrationsFolder: string;
   readonly cleanup: () => Promise<void>;
 }> => {
-  const temporaryFolder = await mkdtemp(join(tmpdir(), "krn-migrations-through-0029-"));
+  const temporaryFolder = await mkdtemp(
+    join(tmpdir(), `krn-migrations-through-${lastMigrationIndex}-`)
+  );
 
   try {
     const journalPath = join(migrationsFolder, "meta", "_journal.json");
     const journal = parseMigrationJournal(await readFile(journalPath, "utf8"));
-    const entries = journal.entries.filter((entry) => entry.idx <= 29);
+    const entries = journal.entries.filter((entry) => entry.idx <= lastMigrationIndex);
 
     if (
-      entries.length !== 30 ||
+      entries.length !== lastMigrationIndex + 1 ||
       entries.some((entry, index) => entry.idx !== index) ||
-      entries.at(-1)?.tag !== "0029_careful_spyke"
+      entries.at(-1)?.tag !== expectedLastTag
     ) {
-      throw new Error("migration journal does not contain the expected contiguous 0000-0029 range");
+      throw new Error(
+        `migration journal does not contain the expected contiguous 0000-${lastMigrationIndex} range`
+      );
     }
 
     const temporaryJournalPath = join(temporaryFolder, "meta", "_journal.json");
@@ -455,16 +462,157 @@ const seedMismatchedClaim = async (
   }
 };
 
+const seedElevatedClaim = async (
+  input: string,
+  marker: string
+): Promise<{ readonly artifactId: string; readonly claimId: string }> => {
+  const client = postgres(input, { max: 1, onnotice: () => undefined });
+
+  try {
+    const rows = await client<{ artifactId: string; claimId: string }[]>`
+      with workspace as (
+        insert into workspaces (slug, display_name, metadata)
+        values (${marker}, ${marker}, ${client.json({ smokeId: marker })})
+        returning id
+      ), project as (
+        insert into projects (workspace_id, slug, display_name, metadata)
+        select id, ${marker}, ${marker}, ${client.json({ smokeId: marker })}
+        from workspace
+        returning id
+      ), artifact as (
+        insert into source_artifacts (
+          project_id, kind, trust_tier, uri, title, content_hash, metadata
+        )
+        select
+          id,
+          'doc',
+          'hypothesis',
+          ${`source-authority://${marker}/hypothesis`},
+          'legacy hypothesis artifact',
+          ${`sha256:${marker}:hypothesis`},
+          ${client.json({ smokeId: marker })}
+        from project
+        returning id
+      ), chunk as (
+        insert into source_chunks (
+          source_artifact_id, ordinal, content, content_hash, metadata
+        )
+        select
+          id,
+          0,
+          'legacy hypothesis artifact chunk',
+          ${`sha256:${marker}:chunk`},
+          ${client.json({ smokeId: marker })}
+        from artifact
+        returning id
+      ), claim as (
+        insert into source_claims (
+          source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+          does_not_prove, trust_tier, support_type, consumer, status, metadata
+        )
+        select
+          artifact.id,
+          chunk.id,
+          'legacy elevated official claim',
+          'pre-0042 writes did not compare claim and artifact authority',
+          'migration must block instead of silently clamping authority',
+          'does not prove the artifact tier is correct',
+          'official',
+          'implementation-boundary',
+          'source authority ceiling migration',
+          'proposed',
+          ${client.json({ smokeId: marker })}
+        from artifact, chunk
+        returning id, source_artifact_id
+      )
+      select
+        source_artifact_id::text as "artifactId",
+        id::text as "claimId"
+      from claim
+    `;
+    const fixture = rows[0];
+
+    if (fixture === undefined) {
+      throw new Error("failed to seed an elevated SourceClaim migration fixture");
+    }
+
+    return fixture;
+  } finally {
+    await client.end();
+  }
+};
+
+const seedHypothesisArtifact = async (
+  input: string,
+  marker: string
+): Promise<{ readonly artifactId: string; readonly chunkId: string }> => {
+  const client = postgres(input, { max: 1, onnotice: () => undefined });
+
+  try {
+    const rows = await client<{ artifactId: string; chunkId: string }[]>`
+      with workspace as (
+        insert into workspaces (slug, display_name, metadata)
+        values (${marker}, ${marker}, ${client.json({ smokeId: marker })})
+        returning id
+      ), project as (
+        insert into projects (workspace_id, slug, display_name, metadata)
+        select id, ${marker}, ${marker}, ${client.json({ smokeId: marker })}
+        from workspace
+        returning id
+      ), artifact as (
+        insert into source_artifacts (
+          project_id, kind, trust_tier, uri, title, content_hash, metadata
+        )
+        select
+          id,
+          'doc',
+          'hypothesis',
+          ${`source-authority://${marker}/hypothesis`},
+          'hypothesis artifact',
+          ${`sha256:${marker}:hypothesis`},
+          ${client.json({ smokeId: marker })}
+        from project
+        returning id
+      ), chunk as (
+        insert into source_chunks (
+          source_artifact_id, ordinal, content, content_hash, metadata
+        )
+        select
+          id,
+          0,
+          'hypothesis artifact chunk',
+          ${`sha256:${marker}:chunk`},
+          ${client.json({ smokeId: marker })}
+        from artifact
+        returning id, source_artifact_id
+      )
+      select
+        source_artifact_id::text as "artifactId",
+        id::text as "chunkId"
+      from chunk
+    `;
+    const fixture = rows[0];
+
+    if (fixture === undefined) {
+      throw new Error("failed to seed a hypothesis SourceArtifact migration fixture");
+    }
+
+    return fixture;
+  } finally {
+    await client.end();
+  }
+};
+
 describe("SourceClaim provenance migration", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "quarantines legacy artifact-chunk mismatches before validating the composite foreign key",
     async () => {
       const disposable = await createDisposableDatabase(databaseUrl!);
-      let pre0030Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough0029>> | undefined;
+      let pre0030Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough>> | undefined;
       const marker = `source-claim-migration-${crypto.randomUUID()}`;
 
       try {
-        pre0030Migrations = await createMigrationsFolderThrough0029();
+        pre0030Migrations = await createMigrationsFolderThrough(29, "0029_careful_spyke");
         const pre0030Report = await migrateDatabase({
           databaseUrl: disposable.databaseUrl,
           migrationsFolder: pre0030Migrations.migrationsFolder
@@ -742,6 +890,256 @@ describe("SourceClaim provenance migration", () => {
           pre0030Migrations?.cleanup() ?? Promise.resolve(),
           disposable.cleanup()
         ]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "blocks authority-ceiling migration when elevated legacy claims exist",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      let pre0042Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough>> | undefined;
+      const marker = `source-claim-authority-ceiling-${crypto.randomUUID()}`;
+
+      try {
+        pre0042Migrations = await createMigrationsFolderThrough(
+          41,
+          "0041_quarantine_legacy_mixed_claim_graph_edges"
+        );
+        const pre0042Report = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0042Migrations.migrationsFolder
+        });
+        expect(pre0042Report).toMatchObject({
+          expectedMigrationCount: 42,
+          appliedMigrationCount: 42,
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
+        const fixture = await seedElevatedClaim(disposable.databaseUrl, marker);
+
+        await expect(migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        })).rejects.toMatchObject({
+          cause: {
+            code: "23514",
+            constraint_name: "source_claims_authority_ceiling",
+            message:
+              "cannot enforce SourceClaim authority ceiling while elevated legacy claims exist"
+          }
+        });
+
+        const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+
+        try {
+          const rows = await client<{
+            artifactAuthority: string;
+            claimAuthority: string;
+          }[]>`
+            select
+              artifact.trust_tier::text as "artifactAuthority",
+              claim.trust_tier::text as "claimAuthority"
+            from source_claims claim
+            join source_artifacts artifact on artifact.id = claim.source_artifact_id
+            where artifact.id = ${fixture.artifactId}
+              and claim.id = ${fixture.claimId}
+          `;
+          expect(rows).toEqual([{
+            artifactAuthority: "hypothesis",
+            claimAuthority: "official"
+          }]);
+        } finally {
+          await client.end();
+        }
+      } finally {
+        await Promise.all([
+          pre0042Migrations?.cleanup() ?? Promise.resolve(),
+          disposable.cleanup()
+        ]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "serializes legacy writers before the authority-ceiling migration preflight",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      let pre0042Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough>> | undefined;
+      const marker = `source-claim-authority-cutover-${crypto.randomUUID()}`;
+      const migrationApplicationName = `krn-authority-cutover-${crypto.randomUUID()}`;
+      const migrationUrl = new URL(disposable.databaseUrl);
+      migrationUrl.searchParams.set("application_name", migrationApplicationName);
+      const writerClient = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+      const observerClient = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+      let allowWriterCommit: (() => void) | undefined;
+      let reportWriterReady: (() => void) | undefined;
+      const writerMayCommit = new Promise<void>((resolve) => {
+        allowWriterCommit = resolve;
+      });
+      const writerReady = new Promise<void>((resolve) => {
+        reportWriterReady = resolve;
+      });
+      let writer: Promise<unknown> | undefined;
+
+      try {
+        pre0042Migrations = await createMigrationsFolderThrough(
+          41,
+          "0041_quarantine_legacy_mixed_claim_graph_edges"
+        );
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0042Migrations.migrationsFolder
+        });
+        const fixture = await seedHypothesisArtifact(disposable.databaseUrl, marker);
+
+        writer = writerClient.begin(async (transaction) => {
+          await transaction`
+            insert into source_claims (
+              source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+              does_not_prove, trust_tier, support_type, consumer, status, metadata
+            ) values (
+              ${fixture.artifactId},
+              ${fixture.chunkId},
+              'concurrent legacy elevated official claim',
+              'an old writer can overlap the authority-ceiling migration',
+              'the migration must lock before scanning legacy rows',
+              'does not prove the artifact tier is correct',
+              'official',
+              'implementation-boundary',
+              'source authority ceiling migration cutover',
+              'proposed',
+              ${transaction.json({ smokeId: marker })}
+            )
+          `;
+          reportWriterReady?.();
+          await writerMayCommit;
+        });
+
+        await writerReady;
+        const migration = migrateDatabase({
+          databaseUrl: migrationUrl.toString(),
+          migrationsFolder
+        });
+        let migrationWaitedForWriter = false;
+
+        for (let attempt = 0; attempt < 200; attempt += 1) {
+          const [activity] = await observerClient<{ waiting: boolean }[]>`
+            select wait_event_type = 'Lock' as waiting
+            from pg_stat_activity
+            where application_name = ${migrationApplicationName}
+          `;
+
+          if (activity?.waiting === true) {
+            migrationWaitedForWriter = true;
+            break;
+          }
+
+          await new Promise<void>((resolve) => setTimeout(resolve, 10));
+        }
+
+        expect(migrationWaitedForWriter).toBe(true);
+        allowWriterCommit?.();
+        await writer;
+        await expect(migration).rejects.toMatchObject({
+          cause: {
+            code: "23514",
+            constraint_name: "source_claims_authority_ceiling",
+            message:
+              "cannot enforce SourceClaim authority ceiling while elevated legacy claims exist"
+          }
+        });
+
+        const rows = await observerClient<{ claimAuthority: string; artifactAuthority: string }[]>`
+          select
+            claim.trust_tier::text as "claimAuthority",
+            artifact.trust_tier::text as "artifactAuthority"
+          from source_claims claim
+          join source_artifacts artifact on artifact.id = claim.source_artifact_id
+          where claim.metadata->>'smokeId' = ${marker}
+        `;
+        expect(rows).toEqual([{
+          claimAuthority: "official",
+          artifactAuthority: "hypothesis"
+        }]);
+      } finally {
+        allowWriterCommit?.();
+        await Promise.allSettled([
+          writer ?? Promise.resolve(),
+          writerClient.end(),
+          observerClient.end()
+        ]);
+        await Promise.all([
+          pre0042Migrations?.cleanup() ?? Promise.resolve(),
+          disposable.cleanup()
+        ]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "fails closed for authority labels not classified by the SQL projection",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      const marker = `source-claim-unclassified-authority-${crypto.randomUUID()}`;
+      const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+      const unclassifiedAuthority = "future-unclassified";
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+        const fixture = await seedHypothesisArtifact(disposable.databaseUrl, marker);
+        await client.unsafe(
+          `alter type source_trust_tier add value '${unclassifiedAuthority}'`
+        );
+        const [projection] = await client<{ rank: number | null }[]>`
+          select krn_source_authority_rank(
+            ${unclassifiedAuthority}::source_trust_tier
+          ) as rank
+        `;
+        expect(projection).toEqual({ rank: null });
+
+        await expect(client`
+          insert into source_claims (
+            source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+            does_not_prove, trust_tier, support_type, consumer, falsifier, status, metadata
+          ) values (
+            ${fixture.artifactId},
+            ${fixture.chunkId},
+            'unclassified authority claim',
+            'a future enum value lacks a canonical SQL rank',
+            'the trigger must fail closed until the projection is updated',
+            'does not prove the future tier belongs in the taxonomy',
+            ${unclassifiedAuthority},
+            'implementation-boundary',
+            'source authority SQL projection',
+            'an unclassified claim authority persists',
+            'proposed',
+            ${client.json({ smokeId: marker })}
+          )
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "source_claims_authority_ceiling",
+          message: "cannot compare unclassified SourceClaim or SourceArtifact authority"
+        });
+
+        await expect(client`
+          update source_artifacts
+          set trust_tier = ${unclassifiedAuthority}
+          where id = ${fixture.artifactId}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "source_claims_authority_ceiling",
+          message: "cannot compare unclassified SourceArtifact authority"
+        });
+      } finally {
+        await client.end();
+        await disposable.cleanup();
       }
     },
     migrationTestTimeoutMs
