@@ -234,17 +234,12 @@ function runDependencyReport(argv) {
 }
 
 function packageKeyIdentity(key) {
-  const peerSuffixIndex = key.indexOf("(");
-  const baseKey = peerSuffixIndex === -1 ? key : key.slice(0, peerSuffixIndex);
-  const versionSeparator = baseKey.lastIndexOf("@");
-  const name = baseKey.slice(0, versionSeparator);
-  const version = baseKey.slice(versionSeparator + 1);
-
-  if (versionSeparator < 1 || name.length === 0 || version.length === 0) {
+  const identity = /^(.+)@([^()]+)(?:\(.*\))?$/u.exec(key);
+  if (identity === null) {
     throw new Error(`pnpm lockfile package key lacks name/version identity: ${key}`);
   }
 
-  return { name, version };
+  return { name: identity[1], version: identity[2] };
 }
 
 function unquoteYamlKey(value) {
@@ -252,31 +247,45 @@ function unquoteYamlKey(value) {
   return match?.[2] ?? value;
 }
 
-function dependencyInventoryFromPnpmLock(lockfile) {
-  const packagesHeader = /^packages:\s*$/mu.exec(lockfile);
-  if (packagesHeader === null) {
-    throw new Error("pnpm lockfile has no auditable packages section");
+function requireMatch(pattern, value, message) {
+  const match = pattern.exec(value);
+  if (match === null) {
+    throw new Error(message);
   }
+  return match;
+}
 
+function contentBeforeNextTopLevelSection(value) {
+  const nextSection = /^\S.*:\s*$/mu.exec(value);
+  return value.slice(0, nextSection?.index);
+}
+
+function addInventoryVersion(inventory, name, version) {
+  const versions = inventory.get(name);
+  if (versions === undefined) {
+    inventory.set(name, new Set([version]));
+    return;
+  }
+  versions.add(version);
+}
+
+function dependencyInventoryFromPnpmLock(lockfile) {
+  const missingPackages = "pnpm lockfile has no auditable packages section";
+  const packagesHeader = requireMatch(/^packages:\s*$/mu, lockfile, missingPackages);
   const packagesStart = packagesHeader.index + packagesHeader[0].length;
   const afterPackagesHeader = lockfile.slice(packagesStart).replace(/^\r?\n/u, "");
-  const nextTopLevelSection = /^\S.*:\s*$/mu.exec(afterPackagesHeader);
-  const packagesSection = nextTopLevelSection === null
-    ? afterPackagesHeader
-    : afterPackagesHeader.slice(0, nextTopLevelSection.index);
+  const packagesSection = contentBeforeNextTopLevelSection(afterPackagesHeader);
   const packageKeys = [...packagesSection.matchAll(/^  (\S.+):$/gmu)]
     .map((match) => unquoteYamlKey(match[1]));
 
   if (packageKeys.length === 0) {
-    throw new Error("pnpm lockfile has no auditable packages section");
+    throw new Error(missingPackages);
   }
 
   const inventory = new Map();
   for (const key of packageKeys) {
     const { name, version } = packageKeyIdentity(key);
-    const versions = new Set(inventory.get(name) ?? []);
-    versions.add(version);
-    inventory.set(name, versions);
+    addInventoryVersion(inventory, name, version);
   }
 
   return Object.fromEntries([...inventory.entries()]
@@ -344,14 +353,19 @@ function runDependencyLockfileReport(argv) {
 }
 
 async function runDependencyAudit(argv) {
-  const lockfilePath = optionValue(argv, "--lockfile") ?? join(process.cwd(), "pnpm-lock.yaml");
-  const registry = optionValue(argv, "--registry") ??
-    process.env.npm_config_registry ??
-    "https://registry.npmjs.org/";
+  const lockfilePath = optionValue(argv, "--lockfile") || join(process.cwd(), "pnpm-lock.yaml");
+  const registry = optionValue(argv, "--registry") || dependencyRegistry();
   const inventory = dependencyInventoryFromPnpmLock(readFileSync(lockfilePath, "utf8"));
   const result = await bulkAdvisoryReport(registry, inventory);
-  const report = dependencyAuditReportOrFail(result);
+  reportDependencyAuditResult(result, Object.keys(inventory).length);
+}
 
+function dependencyRegistry() {
+  return process.env.npm_config_registry || "https://registry.npmjs.org/";
+}
+
+function reportDependencyAuditResult(result, packageCount) {
+  const report = dependencyAuditReportOrFail(result);
   if (report === undefined) {
     return;
   }
@@ -363,7 +377,7 @@ async function runDependencyAudit(argv) {
   }
 
   console.log(
-    `Security policy passed: bulk dependency audit covered ${Object.keys(inventory).length} packages with no high or critical advisories.`,
+    `Security policy passed: bulk dependency audit covered ${packageCount} packages with no high or critical advisories.`,
   );
 }
 
