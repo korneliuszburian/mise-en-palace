@@ -153,6 +153,7 @@ const observationPrefixItemCount = (
   return typeof count === "number" ? count : 0;
 };
 
+// fallow-ignore-next-line complexity -- this DB smoke intentionally sequences retrieval, packet issuance, exact stale-authority readback, and cleanup falsifiers
 export const runActivationSmokeCheck = async (
   input: ActivationSmokeInput
 ): Promise<ActivationSmokeReport> => {
