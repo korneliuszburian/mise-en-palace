@@ -832,6 +832,58 @@ describe("runRunShowCommand", () => {
     }
   });
 
+  it("downgrades packet binding after lifecycle revision advances", async () => {
+    const staleBindingAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      executionRun: {
+        ...aggregate.executionRun,
+        lifecycleRevision: aggregate.executionRun.lifecycleRevision + 1
+      }
+    };
+    const runShow = (format: "json" | "text") => runRunShowCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      runId: "run-1",
+      format,
+      createDatabaseRuntime: async () => ({
+        harnessRunRepository: {
+          async getHarnessRunByExecutionRunId(runId: string) {
+            return runId === "run-1" ? staleBindingAggregate : undefined;
+          }
+        },
+        async close() {}
+      })
+    });
+
+    const json = await runShow("json");
+    const parsed = JSON.parse(json.stdout) as DecisionPacketReadModel;
+
+    expect(parsed.evidenceBundles[0]).toMatchObject({
+      freshness: "stale_lifecycle",
+      packetBinding: {
+        status: "mismatch",
+        checksum: "packet-run-show",
+        evidenceRef: "packet:packet-run-show",
+        generatedAt: now,
+        sourceRunLifecycleRevision: 3,
+        reason:
+          "DecisionPacket binding lifecycle revision 3 does not match current ExecutionRun lifecycle revision 4."
+      }
+    });
+
+    const text = await runShow("text");
+
+    expect(text.stdout).toContain("freshness=stale_lifecycle");
+    expect(text.stdout).toContain("packetBinding: mismatch");
+    expect(text.stdout).toContain("packetBindingChecksum: packet-run-show");
+    expect(text.stdout).toContain(
+      "packetBindingReason: DecisionPacket binding lifecycle revision 3 does not match current ExecutionRun lifecycle revision 4."
+    );
+  });
+
   it("renders read-only typed json for external consumers", async () => {
     let closed = false;
     const result = await runRunShowCommand({

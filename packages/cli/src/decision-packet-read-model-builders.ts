@@ -475,11 +475,23 @@ export const evidenceBundleFreshness = (
 
 export const decisionPacketEvidenceBundleResource = (
   bundle: HarnessRunAggregate["evidenceBundles"][number],
-  referenceTime: string
+  referenceTime: string,
+  currentExecutionRunLifecycleRevision: number
 ): DecisionPacketReadModelEvidenceBundle => {
   const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
   const packetChecksum = readMetadataString(bundle.metadata, "decisionPacketChecksum");
-  const packetBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
+  const storedPacketBinding = decisionPacketBindingReadbackFromMetadata(bundle.metadata);
+  const lifecycleMismatch = storedPacketBinding.status === "bound_current" &&
+    storedPacketBinding.sourceRunLifecycleRevision !== currentExecutionRunLifecycleRevision;
+  const packetBinding = lifecycleMismatch
+    ? {
+        ...storedPacketBinding,
+        status: "mismatch" as const,
+        reason:
+          `DecisionPacket binding lifecycle revision ${storedPacketBinding.sourceRunLifecycleRevision} ` +
+          `does not match current ExecutionRun lifecycle revision ${currentExecutionRunLifecycleRevision}.`
+      }
+    : storedPacketBinding;
   const commandOutputArtifacts = bundle.commandOutputArtifacts ?? [];
   const commandOutputArtifactsByRef = new Map(
     commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
@@ -491,7 +503,9 @@ export const decisionPacketEvidenceBundleResource = (
     createdAt: bundle.createdAt,
     updatedAt: bundle.updatedAt,
     status: bundle.status,
-    freshness: evidenceBundleFreshness(bundle, referenceTime),
+    freshness: lifecycleMismatch
+      ? "stale_lifecycle"
+      : evidenceBundleFreshness(bundle, referenceTime),
     ...(packetChecksum === undefined ? {} : { packetChecksum }),
     packetBinding,
     diffRisk: bundle.diffRisk,
@@ -580,7 +594,11 @@ export const buildDecisionPacketReadModel = (
     evidenceContractActivation,
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
     evidenceBundles: aggregate.evidenceBundles.map((bundle) =>
-      decisionPacketEvidenceBundleResource(bundle, aggregate.executionRun.updatedAt)
+      decisionPacketEvidenceBundleResource(
+        bundle,
+        aggregate.executionRun.updatedAt,
+        aggregate.executionRun.lifecycleRevision
+      )
     ),
     reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
     feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaResource),

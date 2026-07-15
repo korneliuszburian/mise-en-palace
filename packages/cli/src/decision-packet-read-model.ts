@@ -28,6 +28,7 @@ import type { KnowledgePlanSelection } from "./knowledge-selection.js";
 export type DecisionPacketReadModelOutputFormat = "text" | "json";
 export type DecisionPacketReadModelEvidenceFreshness =
   | "fresh_current"
+  | "stale_lifecycle"
   | "stale_historical"
   | "unknown";
 

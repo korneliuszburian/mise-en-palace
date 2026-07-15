@@ -339,7 +339,8 @@ const renderEvidenceBundle = (
     ...aggregate.evidenceBundles.flatMap((bundle) => {
       const resource = decisionPacketEvidenceBundleResource(
         bundle,
-        aggregate.executionRun.updatedAt
+        aggregate.executionRun.updatedAt,
+        aggregate.executionRun.lifecycleRevision
       );
       const packetBinding = resource.packetBinding;
 
