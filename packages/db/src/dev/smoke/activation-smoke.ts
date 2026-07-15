@@ -61,6 +61,15 @@ export interface ActivationSmokeReport {
   sourceClaimCount: number;
   memoryRecordCount: number;
   relevantMemoryRetrieved: boolean;
+  relevantMemoryCandidateCount: number;
+  relevantMemoryIncludedDecisionCount: number;
+  relevanceDistractorCandidateCount: number;
+  relevanceDistractorExcludedDecisionCount: number;
+  relevanceDistractorContextInclusionCount: number;
+  decisionPacketMemoryRefCount: number;
+  decisionPacketRelevantMemorySelected: boolean;
+  decisionPacketDistractorRefCount: number;
+  decisionPacketReadbackMatched: boolean;
   antiMemoryRecordCount: number;
   searchDocumentCount: number;
   indexOnlySearchExcluded: boolean;
@@ -81,6 +90,7 @@ export interface ActivationSmokeReport {
 }
 
 const relevanceDistractorCount = 25;
+const boundedMemoryLimit = 25;
 
 const countByDecision = (
   decisions: readonly { decision: string }[],
@@ -239,7 +249,7 @@ export const runActivationSmokeCheck = async (
         smokeId: marker
       }
     });
-    await memoryRepository.createMemoryRecord({
+    const baselineMemory = await memoryRepository.createMemoryRecord({
       projectId: project.id,
       key: `activation-smoke:${marker}:high-signal`,
       kind: "constraint",
@@ -277,13 +287,14 @@ export const runActivationSmokeCheck = async (
       }
     });
     const relevanceKey = Date.now().toString();
+    const relevanceDistractorIds: string[] = [];
     for (const index of Array.from({ length: relevanceDistractorCount }, (_, item) => item)) {
       const distractor = await memoryRepository.createMemoryRecord({
         projectId: project.id,
         key: `unrelated-release-distractor:${relevanceKey}:${index}`,
         kind: "procedure",
         status: "active",
-        summary: "Unrelated release calendar note",
+        summary: "Activation-only unrelated release calendar note",
         body: "Unrelated deployment note with favored positive feedback.",
         owner: "kernel",
         confidence: 95,
@@ -296,6 +307,7 @@ export const runActivationSmokeCheck = async (
           smokeId: marker
         }
       });
+      relevanceDistractorIds.push(distractor.id);
       await db
         .update(memoryRecords)
         .set({ positiveFeedbackCount: 100 })
@@ -307,7 +319,13 @@ export const runActivationSmokeCheck = async (
       kind: "procedure",
       status: "active",
       summary: "Activation memory relevance",
-      body: "Activation smoke must preserve bounded task-relevant memory before candidate limits.",
+      body: [
+        taskContract.title,
+        taskContract.objective,
+        ...taskContract.constraints,
+        ...taskContract.nonGoals,
+        ...taskContract.acceptance
+      ].join(" "),
       owner: "kernel",
       confidence: 80,
       applicationGuidance: "Use for activation retrieval relevance.",
@@ -415,7 +433,7 @@ export const runActivationSmokeCheck = async (
       taskContract,
       now,
       limits: {
-        memory: 25,
+        memory: boundedMemoryLimit,
         source: 25,
         search: 25,
         antiMemory: 25
@@ -572,6 +590,15 @@ export const runActivationSmokeCheck = async (
       }
     });
 
+    const issuedPacket = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+      executionRun.id
+    );
+    const issuedPacketReadback = requireSmokeReadbackValue(
+      await harnessRunRepository.getIssuedDecisionPacketForExecutionRun(executionRun.id),
+      "issued DecisionPacket readback",
+      "Activation smoke could not read back its issued DecisionPacket"
+    );
+
     const candidates = await retrievalRepository.listCandidatesForRetrievalRun(retrievalRun.id);
     const activationRecords = await retrievalRepository.listActivationDecisionsForRun(
       retrievalRun.id
@@ -601,6 +628,30 @@ export const runActivationSmokeCheck = async (
     const readBackRetrievalRun = readBackRetrievalRunRows[0];
     const sourceClaimCount = [activationClaim, crawlerClaim].length + 1;
     const memoryRecordCount = 2 + relevanceDistractorCount + 1;
+    const relevantMemoryCandidateCount = candidates.filter(
+      (candidate) => candidate.subjectId === relevantMemory.id
+    ).length;
+    const relevantMemoryIncludedDecisionCount = activationRecords.filter(
+      (decision) => decision.subjectId === relevantMemory.id && decision.decision === "included"
+    ).length;
+    const relevanceDistractorCandidateCount = candidates.filter(
+      (candidate) => relevanceDistractorIds.includes(candidate.subjectId)
+    ).length;
+    const relevanceDistractorExcludedDecisionCount = activationRecords.filter(
+      (decision) =>
+        relevanceDistractorIds.includes(decision.subjectId) && decision.decision === "excluded"
+    ).length;
+    const relevanceDistractorContextInclusionCount = contextAssembly.inclusions.filter(
+      (inclusion) => relevanceDistractorIds.includes(inclusion.subjectId)
+    ).length;
+    const decisionPacketMemoryRefCount = issuedPacketReadback.packet.memoryRefs.length;
+    const decisionPacketRelevantMemorySelected =
+      issuedPacketReadback.packet.memoryRefs.includes(relevantMemory.id);
+    const decisionPacketDistractorRefCount = issuedPacketReadback.packet.memoryRefs.filter(
+      (memoryRecordId) => relevanceDistractorIds.includes(memoryRecordId)
+    ).length;
+    const decisionPacketReadbackMatched =
+      issuedPacketReadback.packetIdentity.checksum === issuedPacket.packetIdentity.checksum;
     const antiMemoryRecordCount = retrieved.antiMemoryRecords.length;
     const searchDocumentCount = searchDocumentRows[0]?.count ?? 0;
     const indexOnlySearchExcluded = !contextAssembly.inclusions.some(
@@ -631,18 +682,41 @@ export const runActivationSmokeCheck = async (
         { label: "memory records", passed: memoryRecordCount === 2 + relevanceDistractorCount + 1 },
         { label: "no-term memory fallback remains bounded", passed: noTermFallbackRecords.length === 1 },
         { label: "relevant memory before bounded limit", passed: relevantMemoryRetrieved },
+        { label: "relevant memory candidate count", passed: relevantMemoryCandidateCount === 1 },
+        { label: "relevant memory included decision count", passed: relevantMemoryIncludedDecisionCount === 1 },
+        {
+          label: "one-term distractor candidate count",
+          passed: relevanceDistractorCandidateCount === boundedMemoryLimit - 2
+        },
+        {
+          label: "one-term distractors have excluded decisions",
+          passed: relevanceDistractorExcludedDecisionCount === relevanceDistractorCandidateCount
+        },
+        { label: "one-term distractors excluded from context", passed: relevanceDistractorContextInclusionCount === 0 },
+        {
+          label: `DecisionPacket memory ref count (observed ${decisionPacketMemoryRefCount})`,
+          passed: decisionPacketMemoryRefCount === 2
+        },
+        { label: "DecisionPacket selected relevant memory", passed: decisionPacketRelevantMemorySelected },
+        {
+          label: "DecisionPacket retained baseline memory",
+          passed: issuedPacketReadback.packet.memoryRefs.includes(baselineMemory.id)
+        },
+        { label: "DecisionPacket excluded distractors", passed: decisionPacketDistractorRefCount === 0 },
+        { label: "DecisionPacket persisted readback", passed: decisionPacketReadbackMatched },
         { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
         { label: "search documents", passed: searchDocumentCount === 2 },
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
         { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
-        { label: "retrieval candidates", passed: retrievalCandidateCount >= 5 },
-        { label: "activation decisions", passed: activationDecisionCount >= 5 },
-        { label: "included decisions", passed: includedDecisionCount >= 1 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 32 },
+        { label: "activation decisions", passed: activationDecisionCount === 32 },
+        { label: "included decisions", passed: includedDecisionCount === 2 },
+        { label: "excluded decisions", passed: excludedDecisionCount === 29 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
         { label: "stale decisions are filtered before activation", passed: staleDecisionCount === 0 },
-        { label: "context items", passed: contextItemCount >= 1 },
-        { label: "context exclusions", passed: contextExclusionCount >= 3 },
+        { label: "context items", passed: contextItemCount === 2 },
+        { label: "context exclusions", passed: contextExclusionCount === 30 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
         { label: "raw recall trigger readback", passed: rawRecallTriggerCount >= 0 }
       ],
@@ -674,6 +748,15 @@ export const runActivationSmokeCheck = async (
       sourceClaimCount,
       memoryRecordCount,
       relevantMemoryRetrieved,
+      relevantMemoryCandidateCount,
+      relevantMemoryIncludedDecisionCount,
+      relevanceDistractorCandidateCount,
+      relevanceDistractorExcludedDecisionCount,
+      relevanceDistractorContextInclusionCount,
+      decisionPacketMemoryRefCount,
+      decisionPacketRelevantMemorySelected,
+      decisionPacketDistractorRefCount,
+      decisionPacketReadbackMatched,
       antiMemoryRecordCount,
       searchDocumentCount,
       indexOnlySearchExcluded,
