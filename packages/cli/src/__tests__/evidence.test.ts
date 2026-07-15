@@ -151,6 +151,7 @@ const unusedSourceRepository = {
 } satisfies DatabaseRuntime["sourceRepository"];
 
 interface EvidencePersistenceCapture {
+  captureIdentity?: string;
   commands?: CreateEvidenceBundleInput["commands"];
   evidenceBundle?: CreateEvidenceBundleInput;
   decisionPacketClaim?: CreateEvidenceFeedbackOnceInput["decisionPacketClaim"];
@@ -441,6 +442,7 @@ const createCapturingEvidenceHarnessRunRepository = (
     return { application, created: true };
   },
   async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+    capture.captureIdentity = input.captureIdentity;
     capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "feedback"];
     capture.sourceRunLifecycleRevision = input.sourceRunLifecycleRevision;
     capture.decisionPacketClaim = input.decisionPacketClaim;
@@ -471,6 +473,18 @@ const createCapturingEvidenceHarnessRunRepository = (
     return persisted;
   }
 });
+
+const requireAtomicEvidenceFeedback = (
+  repository: EvidenceHarnessRunRepository
+): NonNullable<EvidenceHarnessRunRepository["createEvidenceFeedbackOnce"]> => {
+  const createEvidenceFeedbackOnce = repository.createEvidenceFeedbackOnce;
+
+  if (createEvidenceFeedbackOnce === undefined) {
+    throw new Error("capturing repository must support atomic evidence feedback");
+  }
+
+  return createEvidenceFeedbackOnce.bind(repository);
+};
 
 const createCapturingMaintenanceQueueRepository = (
   capture: EvidencePersistenceCapture
@@ -506,7 +520,7 @@ const expectPersistedEvidenceCaptureStdout = (stdout: string): void => {
   expect(stdout).toContain("feedbackDelta: feedback-delta-1");
   expect(stdout).toContain("Memory mutation: none");
   expect(stdout).toContain("memoryCandidates:");
-  expect(stdout).toContain("memory-candidate-proposal-1");
+  expect(stdout).toContain("memory-candidate-proposal-");
   expect(stdout).toContain("No MemoryCandidate row created");
   expect(stdout).toContain("sourceDecisionCandidates:");
   expect(stdout).toContain("sourceUsefulnessOutcomes:");
@@ -979,6 +993,277 @@ describe("runCli", () => {
     expectDefaultTemplateCommands(capture.commands);
     expect(capture.sourceRunLifecycleRevision).toBe(aggregate.executionRun.lifecycleRevision);
     expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
+  it("derives capture and proposal identities from semantic inputs", async () => {
+    type CaptureRuntime = Parameters<typeof runEvidenceCaptureCommand>[0];
+    const captureIdentityFor = async (
+      clock: string,
+      idSuffix: string,
+      overrides: Partial<CaptureRuntime> = {}
+    ): Promise<EvidencePersistenceCapture> => {
+      const dependencies = createNoStoreCompilerDependencies({
+        now: () => clock,
+        createId: (prefix) => `${prefix}-${idSuffix}`
+      });
+      const capture: EvidencePersistenceCapture = {};
+      const aggregate = createEvidencePersistenceAggregate();
+      const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+        dependencies,
+        aggregate,
+        capture
+      );
+
+      await runEvidenceCaptureCommand({
+        env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+        cwd: path.resolve(process.cwd(), "../.."),
+        persist: true,
+        runId: aggregate.executionRun.id,
+        now: () => clock,
+        createId: (prefix) => `${prefix}-${idSuffix}`,
+        readGitStatus: async () => " M KRN_ROADMAP.md\n",
+        ...overrides,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: { ...dependencies, harnessRunRepository },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      });
+
+      return capture;
+    };
+
+    const first = await captureIdentityFor("2026-06-21T12:00:00.000Z", "first");
+    const retry = await captureIdentityFor("2026-06-22T12:00:00.000Z", "retry");
+    const changedFile = await captureIdentityFor(
+      "2026-06-22T12:00:00.000Z",
+      "changed-file",
+      { readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n" }
+    );
+    const changedCommand = await captureIdentityFor(
+      "2026-06-22T12:00:00.000Z",
+      "changed-command",
+      {
+        commandOutcomes: [{
+          command: "pnpm test",
+          status: "passed",
+          provenance: "operator_reported"
+        }]
+      }
+    );
+    const changedOutcome = await captureIdentityFor(
+      "2026-06-22T12:00:00.000Z",
+      "changed-outcome",
+      {
+        knowledgeUsefulnessOutcomes: [{
+          knowledgeId: "knowledge:frontend-template",
+          outcome: "unknown",
+          reason: "The capture does not establish usefulness.",
+          evidenceRefs: [],
+          doesNotProve: "Unknown feedback does not prove selection quality."
+        }]
+      }
+    );
+
+    expect(retry.captureIdentity).toBe(first.captureIdentity);
+    expect(retry.memoryCandidates?.map((candidate) => candidate.id)).toEqual(
+      first.memoryCandidates?.map((candidate) => candidate.id)
+    );
+    expect(retry.sourceDecisions?.map((candidate) => candidate.id)).toEqual(
+      first.sourceDecisions?.map((candidate) => candidate.id)
+    );
+    expect(new Set([
+      first.captureIdentity,
+      changedFile.captureIdentity,
+      changedCommand.captureIdentity,
+      changedOutcome.captureIdentity
+    ]).size).toBe(4);
+  }, 15_000);
+
+  it("replays reviewable caller feedback after the first capture changes packet authority", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-retry`
+    });
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const capture: EvidencePersistenceCapture = {};
+    const capturedInputs: CreateEvidenceFeedbackOnceInput[] = [];
+    const baseRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const createEvidenceFeedbackOnce = requireAtomicEvidenceFeedback(baseRepository);
+    let storedResult: Awaited<ReturnType<
+      typeof createEvidenceFeedbackOnce
+    >> | undefined;
+    const harnessRunRepository = {
+      ...baseRepository,
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+        capturedInputs.push(structuredClone(input));
+
+        if (storedResult !== undefined) {
+          return { ...storedResult, created: false };
+        }
+
+        storedResult = await createEvidenceFeedbackOnce(input);
+        aggregate.evidenceBundles.push(storedResult.evidenceBundle);
+        aggregate.reviewAssessments.push(storedResult.reviewAssessment);
+        aggregate.feedbackDeltas.push(storedResult.feedbackDelta);
+
+        return storedResult;
+      }
+    };
+    const runtime = {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:frontend-template",
+        outcome: "stale" as const,
+        reason: "The selected knowledge is stale for this task.",
+        evidenceRefs: [packetBinding.packetEvidenceRef],
+        doesNotProve: "One stale report does not prove future selection quality."
+      }],
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-retry`,
+      readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n",
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: { ...dependencies, harnessRunRepository },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    };
+
+    const first = await runEvidenceCaptureCommand(runtime);
+    const retry = await runEvidenceCaptureCommand(runtime);
+    const firstInput = capturedInputs[0];
+    const retryInput = capturedInputs[1];
+
+    expect(firstInput?.decisionPacketClaim).toBeDefined();
+    expect(firstInput?.knowledgeUsefulnessOutcomes).toHaveLength(1);
+    expect(firstInput?.maintenance).toBeDefined();
+    expect(retryInput?.decisionPacketClaim).toBeUndefined();
+    expect(retryInput?.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(retryInput?.maintenance).toBeUndefined();
+    expect(retryInput?.semanticRequest).toEqual(firstInput?.semanticRequest);
+    expect(retry.stdout).toContain("outcome=stale knowledge=knowledge:frontend-template");
+    expect(retry.stdout).toContain(`feedbackDelta: ${storedResult?.feedbackDelta.id}`);
+    expect(first.stdout).toContain(`feedbackDelta: ${storedResult?.feedbackDelta.id}`);
+  });
+
+  it("replays helped application identity from the persisted feedback chain", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-helped-retry`
+    });
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const capture: EvidencePersistenceCapture = {};
+    const baseRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const createEvidenceFeedbackOnce = requireAtomicEvidenceFeedback(baseRepository);
+    const applicationId = "application:historical-helped-retry";
+    const appliedAt = "2026-06-21T12:00:30.000Z";
+    let storedResult: Awaited<ReturnType<
+      typeof createEvidenceFeedbackOnce
+    >> | undefined;
+    const harnessRunRepository = {
+      ...baseRepository,
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+        if (storedResult !== undefined) {
+          return { ...storedResult, created: false };
+        }
+
+        const created = await createEvidenceFeedbackOnce(input);
+        storedResult = {
+          ...created,
+          feedbackDelta: {
+            ...created.feedbackDelta,
+            metadata: {
+              ...created.feedbackDelta.metadata,
+              knowledgeUsefulnessOutcomes: [{
+                knowledgeId: "knowledge:historical-helped-retry",
+                applicationId,
+                appliedAt,
+                outcome: "helped",
+                reason: "Persisted application evidence survived the retry.",
+                evidenceRefs: [packetBinding.packetEvidenceRef],
+                doesNotProve: "A stored readback does not prove causal usefulness."
+              }]
+            }
+          }
+        };
+        aggregate.evidenceBundles.push(storedResult.evidenceBundle);
+        aggregate.reviewAssessments.push(storedResult.reviewAssessment);
+        aggregate.feedbackDeltas.push(storedResult.feedbackDelta);
+
+        return storedResult;
+      }
+    };
+    const runtime = {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      knowledgeUsefulnessOutcomes: [{
+        knowledgeId: "knowledge:historical-helped-retry",
+        outcome: "stale" as const,
+        reason: "The caller projection is intentionally different from stored feedback.",
+        evidenceRefs: [packetBinding.packetEvidenceRef],
+        doesNotProve: "The caller projection must not replace persisted feedback."
+      }],
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-helped-retry`,
+      readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n",
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: { ...dependencies, harnessRunRepository },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    };
+
+    const first = await runEvidenceCaptureCommand(runtime);
+    const retry = await runEvidenceCaptureCommand(runtime);
+    const applicationReadback = `usefulnessApplication: ${applicationId}|${appliedAt}`;
+
+    expect(first.stdout).toContain(applicationReadback);
+    expect(retry.stdout).toContain(applicationReadback);
+    expect(retry.stdout).toContain("outcome=helped knowledge=knowledge:historical-helped-retry");
+    expect(retry.stdout).not.toContain("usefulnessAuthorization:");
   });
 
   it("persists explicit application evidence before packet-bound helped feedback", async () => {

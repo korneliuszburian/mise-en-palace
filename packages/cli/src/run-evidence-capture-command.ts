@@ -142,7 +142,13 @@ interface PersistedEvidenceIdentity {
   decisionPacketGeneratedAt?: string;
   packetBindingRejectionReason?: string;
   usefulnessAuthorizationReason?: string;
-  usefulnessApplications?: readonly UsefulnessApplicationEvidence[];
+  usefulnessApplications?: readonly Pick<
+    UsefulnessApplicationEvidence,
+    "applicationId" | "appliedAt"
+  >[];
+  memoryCandidates?: readonly MemoryCandidate[];
+  sourceDecisionCandidates?: readonly SourceDecision[];
+  evalCandidateProposals?: readonly EvalCandidateProposal[];
 }
 
 interface EvidencePersistenceConfig {
@@ -165,6 +171,22 @@ const canonicalCaptureIdentityJson = (value: unknown): string => {
   return JSON.stringify(value) ?? "null";
 };
 
+const sourceDecisionCandidateSemanticInput = (
+  candidate: SourceDecision
+): Omit<SourceDecision, "id" | "createdAt" | "updatedAt"> => {
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...semanticInput } = candidate;
+
+  return semanticInput;
+};
+
+const memoryCandidateProposalSemanticInput = (
+  proposal: MemoryCandidateProposal
+): Omit<MemoryCandidateProposal, "id" | "createdAt" | "updatedAt"> => {
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...semanticInput } = proposal;
+
+  return semanticInput;
+};
+
 const evidenceCaptureIdentityFor = (input: {
   readonly runId: string;
   readonly projectId: string;
@@ -180,8 +202,32 @@ const evidenceCaptureIdentityFor = (input: {
   readonly evalCandidateProposals: readonly EvalCandidateProposal[];
 }): string => createHash("sha256").update(canonicalCaptureIdentityJson({
   version: 1,
-  ...input
+  ...input,
+  sourceDecisionCandidates: input.sourceDecisionCandidates.map(sourceDecisionCandidateSemanticInput),
+  memoryCandidateProposals: input.memoryCandidateProposals.map(memoryCandidateProposalSemanticInput)
 })).digest("hex");
+
+const sourceDecisionCandidatesForCapture = (
+  candidates: readonly SourceDecision[],
+  captureIdentity: string,
+  stableTimestamp: string
+): SourceDecision[] => candidates.map((candidate, index) => ({
+  ...candidate,
+  id: `source-decision-candidate-${captureIdentity}-${index + 1}`,
+  createdAt: stableTimestamp,
+  updatedAt: stableTimestamp
+}));
+
+const memoryCandidateProposalsForCapture = (
+  proposals: readonly MemoryCandidateProposal[],
+  captureIdentity: string,
+  stableTimestamp: string
+): MemoryCandidateProposal[] => proposals.map((proposal, index) => ({
+  ...proposal,
+  id: `memory-candidate-proposal-${captureIdentity}-${index + 1}`,
+  createdAt: stableTimestamp,
+  updatedAt: stableTimestamp
+}));
 
 interface EvidencePersistenceCounts {
   changedFileCount: number;
@@ -723,7 +769,7 @@ const renderKnowledgeUsefulnessOutcomes = (
 };
 
 const renderMemoryCandidateProposals = (
-  proposals: readonly MemoryCandidateProposal[]
+  proposals: readonly (MemoryCandidateProposal | MemoryCandidate)[]
 ): string[] => {
   if (proposals.length === 0) {
     return ["- none"];
@@ -737,6 +783,13 @@ const renderMemoryCandidateProposals = (
       typeof proposal.metadata.applicationGuidance === "string"
         ? proposal.metadata.applicationGuidance
         : undefined;
+    const missingFields = "missingFields" in proposal
+      ? proposal.missingFields
+      : Array.isArray(proposal.metadata.missingFields)
+        ? proposal.metadata.missingFields.filter(
+            (value): value is string => typeof value === "string"
+          )
+        : [];
     const reviewability = assessCandidateReviewability({
       summary: proposal.summary,
       body: proposal.body,
@@ -744,7 +797,7 @@ const renderMemoryCandidateProposals = (
       sourceLineage: proposal.sourceLineage,
       ...(applicationGuidance === undefined ? {} : { applicationGuidance }),
       doesNotProve: candidateReviewabilityDoesNotProve,
-      missingFields: proposal.missingFields
+      missingFields
     });
 
     return [
@@ -755,7 +808,7 @@ const renderMemoryCandidateProposals = (
       "  reviewability reasons:",
       ...reviewability.reasons.map((reason) => `  - ${reason}`),
       "  completeness: incomplete",
-      `  missing: ${proposal.missingFields.join(", ")}`,
+      `  missing: ${missingFields.join(", ")}`,
       "  No MemoryCandidate row created",
       "  No MemoryRecord created"
     ];
@@ -1246,23 +1299,16 @@ const requireEvidenceCaptureAggregate = async (
 };
 
 const evidenceFeedbackMaintenanceFor = (input: {
-  readonly authorization: UsefulnessAuthorization | undefined;
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
-}): Pick<CreateEvidenceFeedbackOnceInput, "maintenance"> => {
-  if (
-    input.authorization?.authorized !== true ||
-    !hasReviewableUsefulnessFeedback(input.sourceOutcomes, input.knowledgeOutcomes)
-  ) {
-    return {};
-  }
-
-  return {
-    maintenance: {
-      reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
-    }
-  };
-};
+}): Pick<CreateEvidenceFeedbackOnceInput, "maintenance"> =>
+  hasReviewableUsefulnessFeedback(input.sourceOutcomes, input.knowledgeOutcomes)
+    ? {
+        maintenance: {
+          reason: "Review source or knowledge usefulness feedback captured from persisted evidence."
+        }
+      }
+    : {};
 
 const prepareUsefulnessOutcomes = (input: {
   readonly aggregate: HarnessRunAggregate;
@@ -1556,6 +1602,21 @@ const usefulnessOutcomesIdentityFor = (input: {
   return identity;
 };
 
+const usefulnessApplicationsFromPersistedOutcomes = (input: {
+  readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[];
+}): Pick<UsefulnessApplicationEvidence, "applicationId" | "appliedAt">[] => [
+  ...input.sourceOutcomes,
+  ...input.knowledgeOutcomes
+].flatMap((outcome) =>
+  outcome.applicationId === undefined || outcome.appliedAt === undefined
+    ? []
+    : [{
+        applicationId: outcome.applicationId,
+        appliedAt: outcome.appliedAt
+      }]
+);
+
 const buildPersistedEvidenceIdentity = (input: {
   readonly atomicResult: CreateEvidenceFeedbackOnceResult;
   readonly applications: readonly UsefulnessApplicationEvidence[];
@@ -1565,7 +1626,7 @@ const buildPersistedEvidenceIdentity = (input: {
 }): PersistedEvidenceIdentity => {
   const packetBindingIdentity = packetBindingIdentityFor(
     input.atomicResult.evidenceBundle.metadata,
-    input.packetAuthorization
+    input.atomicResult.created ? input.packetAuthorization : undefined
   );
   const sourceOutcomes = sourceUsefulnessOutcomesFromMetadata(
     input.atomicResult.feedbackDelta.metadata
@@ -1573,21 +1634,39 @@ const buildPersistedEvidenceIdentity = (input: {
   const knowledgeOutcomes = knowledgeUsefulnessOutcomesFromMetadata(
     input.atomicResult.feedbackDelta.metadata
   );
+  const persistedOutcomeApplications = usefulnessApplicationsFromPersistedOutcomes({
+    sourceOutcomes,
+    knowledgeOutcomes
+  });
+  const applications = input.atomicResult.created
+    ? [
+        ...input.applications,
+        ...persistedOutcomeApplications.filter((outcomeApplication) =>
+          !input.applications.some((application) =>
+            application.applicationId === outcomeApplication.applicationId &&
+            application.appliedAt === outcomeApplication.appliedAt
+          )
+        )
+      ]
+    : persistedOutcomeApplications;
 
   return {
     captureIdentity: input.captureIdentity,
     evidenceBundleId: input.atomicResult.evidenceBundle.id,
     reviewAssessmentId: input.atomicResult.reviewAssessment.id,
     feedbackDeltaId: input.atomicResult.feedbackDelta.id,
-    ...(input.applications.length === 0
+    memoryCandidates: input.atomicResult.feedbackDelta.memoryCandidates,
+    sourceDecisionCandidates: input.atomicResult.feedbackDelta.sourceDecisions,
+    evalCandidateProposals: input.atomicResult.feedbackDelta.evalCandidates,
+    ...(applications.length === 0
       ? {}
-      : { usefulnessApplications: [...input.applications] }),
+      : { usefulnessApplications: applications }),
     ...feedbackMaintenanceQueueIdentityFor(
       input.atomicResult.feedbackMaintenanceQueueRecordId
     ),
     ...packetBindingIdentity,
     ...usefulnessAuthorizationIdentityFor(
-      input.authorization,
+      input.atomicResult.created ? input.authorization : undefined,
       packetBindingIdentity.packetBindingRejectionReason
     ),
     ...usefulnessOutcomesIdentityFor({
@@ -1651,7 +1730,7 @@ const renderEvidenceCaptureOutput = (input: {
   readonly packetBindingRejectionReason?: string;
   readonly diffRisk: DiffRisk;
   readonly feedbackCandidate: string;
-  readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
+  readonly memoryCandidateProposals: readonly (MemoryCandidateProposal | MemoryCandidate)[];
   readonly persistedIdentity: PersistedEvidenceIdentity | undefined;
   readonly runtime: EvidenceCaptureRuntime;
   readonly evalCandidateProposals: readonly EvalCandidateProposal[];
@@ -1763,6 +1842,78 @@ const captureHelpedProof = (input: {
   };
 };
 
+const evidenceFeedbackOnceInputForCapture = (input: {
+  readonly admittedUsefulness: ReturnType<typeof admitEvidenceBackedUsefulness>;
+  readonly captureIdentity: string;
+  readonly counts: EvidencePersistenceCounts;
+  readonly evidence: CreateEvidenceBundleInput;
+  readonly evalCandidateProposals: readonly EvalCandidateProposal[];
+  readonly memoryCandidates: readonly MemoryCandidate[];
+  readonly packet: ReturnType<typeof packetBindingForEvidenceCapture>;
+  readonly persistedSourceDecisionCandidates: readonly SourceDecision[];
+  readonly projectId: string;
+  readonly runId: string;
+  readonly sourceRunLifecycleRevision: number;
+  readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>;
+}): CreateEvidenceFeedbackOnceInput => ({
+  executionRunId: input.runId,
+  sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+  projectId: input.projectId,
+  captureIdentity: input.captureIdentity,
+  semanticRequest: {
+    ...(input.packet.callerPacketChecksum === undefined ||
+      input.packet.callerPacketGeneratedAt === undefined
+      ? {}
+      : {
+          decisionPacketClaim: {
+            checksum: input.packet.callerPacketChecksum,
+            generatedAt: input.packet.callerPacketGeneratedAt
+          }
+        }),
+    ...(input.sourceUsefulnessOutcomes === undefined
+      ? {}
+      : { sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes }),
+    ...(input.knowledgeUsefulnessOutcomes === undefined
+      ? {}
+      : { knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes }),
+    ...evidenceFeedbackMaintenanceFor({
+      sourceOutcomes: input.sourceUsefulnessOutcomes,
+      knowledgeOutcomes: input.knowledgeUsefulnessOutcomes
+    })
+  },
+  ...(input.packet.binding === undefined
+    ? {}
+    : {
+        decisionPacketClaim: {
+          checksum: input.packet.binding.packetChecksum,
+          generatedAt: input.packet.binding.packetGeneratedAt
+        }
+      }),
+  ...(input.admittedUsefulness.sourceOutcomes === undefined
+    ? {}
+    : { sourceUsefulnessOutcomes: input.admittedUsefulness.sourceOutcomes }),
+  ...(input.admittedUsefulness.knowledgeOutcomes === undefined
+    ? {}
+    : { knowledgeUsefulnessOutcomes: input.admittedUsefulness.knowledgeOutcomes }),
+  ...evidenceFeedbackMaintenanceFor({
+    sourceOutcomes: input.admittedUsefulness.sourceOutcomes,
+    knowledgeOutcomes: input.admittedUsefulness.knowledgeOutcomes
+  }),
+  evidence: input.evidence,
+  review: buildReviewAssessmentInput(input.runId, input.counts),
+  feedback: buildFeedbackDeltaInput(
+    input.captureIdentity,
+    input.runId,
+    input.counts,
+    input.memoryCandidates,
+    input.persistedSourceDecisionCandidates,
+    input.evalCandidateProposals,
+    input.environmentFingerprint
+  )
+});
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
@@ -1806,7 +1957,7 @@ const persistEvidenceCapture = async (
     const captureIdentity = evidenceCaptureIdentityFor({
       runId,
       projectId,
-      decisionPacketChecksum: packet.binding?.packetChecksum,
+      decisionPacketChecksum: packet.callerPacketChecksum,
       environmentFingerprintId: environmentFingerprint.id,
       changedFiles,
       commands,
@@ -1817,6 +1968,16 @@ const persistEvidenceCapture = async (
       memoryCandidateProposals,
       evalCandidateProposals
     });
+    const persistedSourceDecisionCandidates = sourceDecisionCandidatesForCapture(
+      sourceDecisionCandidates,
+      captureIdentity,
+      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt
+    );
+    const persistedMemoryCandidateProposals = memoryCandidateProposalsForCapture(
+      memoryCandidateProposals,
+      captureIdentity,
+      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt
+    );
     const usefulness = prepareUsefulnessOutcomes({
       aggregate,
       callerPacketChecksum: packet.callerPacketChecksum,
@@ -1828,7 +1989,7 @@ const persistEvidenceCapture = async (
       sourceUsefulnessOutcomes
     });
     const memoryCandidates = materializeFeedbackDeltaMemoryCandidates(
-      memoryCandidateProposals,
+      persistedMemoryCandidateProposals,
       projectId,
       runId
     );
@@ -1879,42 +2040,25 @@ const persistEvidenceCapture = async (
     const createEvidenceFeedbackOnce = requireEvidenceFeedbackPersistence(
       databaseRuntime.harnessRunRepository.createEvidenceFeedbackOnce
     );
-    const atomicResult = await createEvidenceFeedbackOnce.call(databaseRuntime.harnessRunRepository, {
-      executionRunId: runId,
-      sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
-      projectId,
-      captureIdentity,
-      ...(packet.binding === undefined
-        ? {}
-        : {
-            decisionPacketClaim: {
-              checksum: packet.binding.packetChecksum,
-              generatedAt: packet.binding.packetGeneratedAt
-            }
-          }),
-      ...(admittedUsefulness.sourceOutcomes === undefined
-        ? {}
-        : { sourceUsefulnessOutcomes: admittedUsefulness.sourceOutcomes }),
-      ...(admittedUsefulness.knowledgeOutcomes === undefined
-        ? {}
-        : { knowledgeUsefulnessOutcomes: admittedUsefulness.knowledgeOutcomes }),
-      evidence,
-      review: buildReviewAssessmentInput(runId, counts),
-      feedback: buildFeedbackDeltaInput(
+    const atomicResult = await createEvidenceFeedbackOnce.call(
+      databaseRuntime.harnessRunRepository,
+      evidenceFeedbackOnceInputForCapture({
+        admittedUsefulness,
         captureIdentity,
-        runId,
         counts,
-        memoryCandidates,
-        sourceDecisionCandidates,
+        evidence,
         evalCandidateProposals,
+        memoryCandidates,
+        packet,
+        persistedSourceDecisionCandidates,
+        projectId,
+        runId,
+        sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
+        sourceUsefulnessOutcomes,
+        knowledgeUsefulnessOutcomes,
         environmentFingerprint
-      ),
-      ...evidenceFeedbackMaintenanceFor({
-        authorization: usefulness.authorization,
-        sourceOutcomes: admittedUsefulness.sourceOutcomes,
-        knowledgeOutcomes: admittedUsefulness.knowledgeOutcomes
       })
-    });
+    );
 
     return buildPersistedEvidenceIdentity({
       atomicResult,
@@ -2040,13 +2184,16 @@ export const runEvidenceCaptureCommand = async (
       diffRisk,
       feedbackCandidate,
       knowledgeUsefulnessOutcomes: renderedKnowledgeUsefulnessOutcomes,
-      memoryCandidateProposals,
+      memoryCandidateProposals:
+        persistedIdentity?.memoryCandidates ?? memoryCandidateProposals,
       persistedIdentity,
       runtime,
-      sourceDecisionCandidates,
+      sourceDecisionCandidates:
+        persistedIdentity?.sourceDecisionCandidates ?? sourceDecisionCandidates,
       sourceUsefulnessOutcomes: renderedSourceUsefulnessOutcomes,
       targetEvidence,
-      evalCandidateProposals: runtime.evalCandidateProposals ?? [],
+      evalCandidateProposals:
+        persistedIdentity?.evalCandidateProposals ?? runtime.evalCandidateProposals ?? [],
       environmentFingerprint
     })
   };

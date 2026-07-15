@@ -151,6 +151,14 @@ export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
   sourceRunLifecycleRevision: number;
   projectId: ProjectId;
   captureIdentity: string;
+  semanticRequest?: {
+    decisionPacketClaim?: DecisionPacketClaim;
+    sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+    knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+    maintenance?: {
+      reason: string;
+    };
+  };
   decisionPacketClaim?: DecisionPacketClaim;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
@@ -168,6 +176,18 @@ export interface CreateEvidenceFeedbackOnceResult {
   feedbackDelta: FeedbackDelta;
   feedbackMaintenanceQueueRecordId?: string;
   created: boolean;
+}
+
+export class EvidenceFeedbackIdentityConflictError extends Error {
+  constructor(
+    readonly executionRunId: ExecutionRunId,
+    readonly captureIdentity: string
+  ) {
+    super(
+      `evidence feedback identity conflict for ${captureIdentity} in run ${executionRunId}: immutable capture request differs`
+    );
+    this.name = "EvidenceFeedbackIdentityConflictError";
+  }
 }
 
 export interface HarnessRunAggregate {

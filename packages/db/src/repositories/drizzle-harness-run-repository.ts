@@ -85,6 +85,9 @@ import type {
   RecordUsefulnessApplicationOnceResult,
   UpdateExecutionRunStatusInput
 } from "@krn/core/repositories/internal";
+import {
+  EvidenceFeedbackIdentityConflictError
+} from "@krn/core/repositories/internal";
 
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
@@ -978,6 +981,15 @@ const existingEvidenceFeedbackOnceResult = async (
       `createEvidenceFeedbackOnce rejected: capture identity collision for ${captureIdentity} is not repository-owned evidence feedback`
     );
   }
+  if (
+    evidenceFeedbackRequestFingerprintFromRow(evidenceBundleRow) !==
+    evidenceFeedbackRequestFingerprint(input)
+  ) {
+    throw new EvidenceFeedbackIdentityConflictError(
+      input.executionRunId,
+      captureIdentity
+    );
+  }
 
   const { feedbackDeltaRow, reviewAssessmentRow } = await requireCaptureChainChildren(
     tx,
@@ -1160,6 +1172,89 @@ const assertSourceRunLifecycleRevision = (
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
+
+const canonicalJsonValue = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(canonicalJsonValue);
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, canonicalJsonValue(entry)])
+    );
+  }
+
+  return value;
+};
+
+const canonicalJson = (value: unknown): string =>
+  JSON.stringify(canonicalJsonValue(value)) ?? "null";
+
+const evidenceFeedbackSemanticInput = (
+  input: CreateEvidenceFeedbackOnceInput
+): CreateEvidenceFeedbackOnceInput => {
+  if (input.semanticRequest === undefined) {
+    return input;
+  }
+
+  const {
+    decisionPacketClaim: _decisionPacketClaim,
+    sourceUsefulnessOutcomes: _sourceUsefulnessOutcomes,
+    knowledgeUsefulnessOutcomes: _knowledgeUsefulnessOutcomes,
+    maintenance: _maintenance,
+    semanticRequest,
+    ...identityInput
+  } = input;
+
+  return {
+    ...identityInput,
+    ...(semanticRequest.decisionPacketClaim === undefined
+      ? {}
+      : { decisionPacketClaim: semanticRequest.decisionPacketClaim }),
+    ...(semanticRequest.sourceUsefulnessOutcomes === undefined
+      ? {}
+      : { sourceUsefulnessOutcomes: semanticRequest.sourceUsefulnessOutcomes }),
+    ...(semanticRequest.knowledgeUsefulnessOutcomes === undefined
+      ? {}
+      : { knowledgeUsefulnessOutcomes: semanticRequest.knowledgeUsefulnessOutcomes }),
+    ...(semanticRequest.maintenance === undefined
+      ? {}
+      : { maintenance: semanticRequest.maintenance })
+  };
+};
+
+const evidenceFeedbackRequestFingerprint = (
+  input: CreateEvidenceFeedbackOnceInput
+): string => {
+  const semanticInput = evidenceFeedbackSemanticInput(input);
+
+  return sha256Hex(canonicalJson({
+    executionRunId: semanticInput.executionRunId,
+    projectId: semanticInput.projectId,
+    captureIdentity: semanticInput.captureIdentity,
+    decisionPacketClaim: semanticInput.decisionPacketClaim ?? null,
+    sourceUsefulnessOutcomes: semanticInput.sourceUsefulnessOutcomes ?? null,
+    knowledgeUsefulnessOutcomes: semanticInput.knowledgeUsefulnessOutcomes ?? null,
+    evidence: semanticInput.evidence,
+    review: semanticInput.review,
+    feedback: semanticInput.feedback,
+    maintenance: semanticInput.maintenance ?? null,
+    metadata: semanticInput.metadata ?? null
+  }));
+};
+
+const evidenceFeedbackRequestFingerprintFromRow = (
+  row: typeof evidenceBundles.$inferSelect
+): string | undefined => {
+  const fingerprint = row.metadata.evidenceFeedbackRequestFingerprint;
+
+  return typeof fingerprint === "string" && fingerprint.length > 0
+    ? fingerprint
+    : undefined;
+};
+
 
 const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
   structuredClone(input);
@@ -1385,8 +1480,9 @@ const admitDecisionPacketIdentity = (
   input: CreateEvidenceFeedbackOnceInput & {
     decisionPacketClaim: NonNullable<CreateEvidenceFeedbackOnceInput["decisionPacketClaim"]>;
   },
-  aggregate: HarnessRunAggregate
-): AdmittedDecisionPacketIdentity => {
+  aggregate: HarnessRunAggregate,
+  invalidClaim: "persist_unbound" | "reject"
+): AdmittedDecisionPacketIdentity | undefined => {
   const claim = input.decisionPacketClaim;
   const authorization = authorizeDecisionPacketUsefulness({
     aggregate,
@@ -1402,6 +1498,9 @@ const admitDecisionPacketIdentity = (
   });
 
   if (!authorization.authorized) {
+    if (invalidClaim === "persist_unbound") {
+      return undefined;
+    }
     throw new Error(`createEvidenceFeedbackOnce rejected: ${authorization.reason}`);
   }
 
@@ -1540,7 +1639,8 @@ const evidenceFeedbackInputWithRepositoryAuthority = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   aggregate: HarnessRunAggregate,
-  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>,
+  invalidClaim: "persist_unbound" | "reject"
 ): Promise<CreateEvidenceFeedbackOnceInput> => {
   if (input.decisionPacketClaim === undefined) {
     return unboundEvidenceFeedbackInput(input);
@@ -1549,7 +1649,14 @@ const evidenceFeedbackInputWithRepositoryAuthority = async (
     ...input,
     decisionPacketClaim: input.decisionPacketClaim
   };
-  const authorityIdentity = admitDecisionPacketIdentity(boundInput, aggregate);
+  const authorityIdentity = admitDecisionPacketIdentity(
+    boundInput,
+    aggregate,
+    invalidClaim
+  );
+  if (authorityIdentity === undefined) {
+    return unboundEvidenceFeedbackInput(input);
+  }
   const proof = helpedProofContext(input, aggregate, authorityIdentity);
   const admitted = await admitUsefulnessOutcomes(
     tx,
@@ -1643,7 +1750,8 @@ const insertEvidenceFeedbackChain = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
   captureIdentity: string,
-  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void
+  faultAfterStage?: (stage: EvidenceFeedbackPersistenceStage) => void,
+  requestFingerprint = evidenceFeedbackRequestFingerprint(input)
 ): Promise<CreateEvidenceFeedbackOnceResult> => {
   const evidenceInput = validateEvidenceBundleInputForPersistence({
     ...input.evidence,
@@ -1651,7 +1759,8 @@ const insertEvidenceFeedbackChain = async (
     metadata: {
       ...(input.evidence.metadata ?? {}),
       captureIdentity,
-      projectId: input.projectId
+      projectId: input.projectId,
+      evidenceFeedbackRequestFingerprint: requestFingerprint
     }
   });
   const { commandOutputArtifactRows, evidenceBundleRow } = await insertEvidenceBundleAndEvent(
@@ -2378,7 +2487,6 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     if (captureIdentity.startsWith("eval:")) {
       throw new Error("createEvidenceFeedbackOnce capture identity uses the reserved eval namespace");
     }
-
     return this.db.transaction(async (tx) => {
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtextextended(${`${authorityInput.executionRunId}:${captureIdentity}`}, 0))`
@@ -2388,7 +2496,19 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         tx,
         authorityInput,
         "createEvidenceFeedbackOnce"
-      );
+      ).catch((error: unknown) => {
+        if (
+          error instanceof Error &&
+          error.message.includes("execution run project does not match declared project")
+        ) {
+          throw new EvidenceFeedbackIdentityConflictError(
+            authorityInput.executionRunId,
+            captureIdentity
+          );
+        }
+
+        throw error;
+      });
       const existing = await existingEvidenceFeedbackOnceResult(
         tx,
         authorityInput,
@@ -2414,16 +2534,18 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       );
       const admittedInput = await evidenceFeedbackInputWithRepositoryAuthority(
         tx,
-        authorityInput,
+        evidenceFeedbackSemanticInput(authorityInput),
         aggregate,
-        this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
+        this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot,
+        authorityInput.semanticRequest === undefined ? "reject" : "persist_unbound"
       );
 
       return insertEvidenceFeedbackChain(
         tx,
         admittedInput,
         captureIdentity,
-        this.options.faultAfterStage
+        this.options.faultAfterStage,
+        evidenceFeedbackRequestFingerprint(authorityInput)
       );
     });
   }

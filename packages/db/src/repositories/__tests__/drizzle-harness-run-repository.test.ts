@@ -24,6 +24,9 @@ import type {
   CreateEvidenceFeedbackOnceInput,
   CreateEvalFeedbackDeltaOnceInput
 } from "@krn/core/repositories";
+import {
+  EvidenceFeedbackIdentityConflictError
+} from "@krn/core/repositories/internal";
 
 import { createKrnDatabase, type KrnDatabase } from "../../database.js";
 import {
@@ -493,7 +496,6 @@ describe("DrizzleHarnessRunRepository", () => {
           nextAction: "Record lifecycle state matrix."
         }
       });
-
       try {
         const createRun = () => scaffold.harnessRunRepository.createExecutionRun({
           harnessPlanId: scaffold.harnessPlan.id,
@@ -2065,8 +2067,7 @@ describe("DrizzleHarnessRunRepository", () => {
           stderr: new Uint8Array()
         }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
 
-        const provedHelpedInput = {
-          ...captureInput(`capture-authority-race:${marker}:proved-helped`, [{
+        const provedHelpedCallerOutcomes = [{
             knowledgeId: selectedKnowledge.id,
             applicationId: applicationIdentity.applicationId,
             appliedAt: application.application.appliedAt,
@@ -2074,10 +2075,26 @@ describe("DrizzleHarnessRunRepository", () => {
             reason: "Persisted application preceded strict verification.",
             evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
             doesNotProve: "The ordered proof does not establish semantic causality."
-          }]),
+          }];
+        const provedHelpedCallerClaim = {
+          checksum: packetBeforeProvedHelped.packetChecksum,
+          generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+        };
+        const provedHelpedCallerMaintenance = {
+          reason: "Review the repository-admitted helped outcome."
+        };
+        const provedHelpedInput = {
+          ...captureInput(
+            `capture-authority-race:${marker}:proved-helped`,
+            provedHelpedCallerOutcomes
+          ),
+          semanticRequest: {
+            decisionPacketClaim: provedHelpedCallerClaim,
+            knowledgeUsefulnessOutcomes: provedHelpedCallerOutcomes,
+            maintenance: provedHelpedCallerMaintenance
+          },
           decisionPacketClaim: {
-            checksum: packetBeforeProvedHelped.packetChecksum,
-            generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+            ...provedHelpedCallerClaim
           },
           evidence: {
             ...captureInput(`capture-authority-race:${marker}:proved-helped`, undefined).evidence,
@@ -2125,40 +2142,56 @@ describe("DrizzleHarnessRunRepository", () => {
               payload: { smokeId: marker }
             }
           },
-          maintenance: {
-            reason: "Review the repository-admitted helped outcome."
-          }
+          maintenance: provedHelpedCallerMaintenance
         } satisfies CreateEvidenceFeedbackOnceInput;
         const beforeFault = await scaffold.harnessRunRepository
           .getHarnessRunByExecutionRunId(executionRun.id);
         if (beforeFault === undefined) {
           throw new Error("fault proof aggregate was not persisted");
         }
-        const faultReason = `application feedback rollback ${marker}`;
-        const faultRepository = new DrizzleHarnessRunRepository(scaffold.db, {
-          faultAfterStage: (stage) => {
-            if (stage === "after_feedback_delta") {
-              throw new Error(faultReason);
+        for (const faultStage of [
+          "after_evidence_bundle",
+          "after_review_assessment",
+          "after_feedback_delta",
+          "after_maintenance_queue"
+        ] as const) {
+          const faultReason = `application feedback rollback ${faultStage} ${marker}`;
+          const faultIdentity = `capture-authority-race:${marker}:fault:${faultStage}`;
+          const faultRepository = new DrizzleHarnessRunRepository(scaffold.db, {
+            faultAfterStage: (stage) => {
+              if (stage === faultStage) {
+                throw new Error(faultReason);
+              }
             }
-          }
-        });
-        await expect(faultRepository.createEvidenceFeedbackOnce({
-          ...provedHelpedInput,
-          captureIdentity: `capture-authority-race:${marker}:fault`,
-          maintenance: { reason: faultReason }
-        })).rejects.toThrow(faultReason);
-        const afterFault = await scaffold.harnessRunRepository
-          .getHarnessRunByExecutionRunId(executionRun.id);
-        expect(afterFault).toMatchObject({
-          evidenceBundles: { length: beforeFault.evidenceBundles.length },
-          reviewAssessments: { length: beforeFault.reviewAssessments.length },
-          feedbackDeltas: { length: beforeFault.feedbackDeltas.length }
-        });
-        const faultMaintenanceRows = await scaffold.db
-          .select({ id: maintenanceQueues.id })
-          .from(maintenanceQueues)
-          .where(sql`${maintenanceQueues.payload}->>'reason' = ${faultReason}`);
-        expect(faultMaintenanceRows).toEqual([]);
+          });
+          await expect(faultRepository.createEvidenceFeedbackOnce({
+            ...provedHelpedInput,
+            captureIdentity: faultIdentity,
+            semanticRequest: {
+              ...provedHelpedInput.semanticRequest,
+              maintenance: { reason: faultReason }
+            },
+            maintenance: { reason: faultReason }
+          })).rejects.toThrow(faultReason);
+          const afterFault = await scaffold.harnessRunRepository
+            .getHarnessRunByExecutionRunId(executionRun.id);
+          expect(afterFault).toMatchObject({
+            evidenceBundles: { length: beforeFault.evidenceBundles.length },
+            reviewAssessments: { length: beforeFault.reviewAssessments.length },
+            feedbackDeltas: { length: beforeFault.feedbackDeltas.length }
+          });
+          const faultRows = await scaffold.client<{
+            maintenanceCount: number;
+            outboxEventCount: number;
+          }[]>`
+            select
+              (select count(*)::int from maintenance_queue_records
+                where payload->>'reason' = ${faultReason}) as "maintenanceCount",
+              (select count(*)::int from outbox_events
+                where payload->>'captureIdentity' = ${faultIdentity}) as "outboxEventCount"
+          `;
+          expect(faultRows[0]).toEqual({ maintenanceCount: 0, outboxEventCount: 0 });
+        }
         expect(await scaffold.harnessRunRepository.recordUsefulnessApplicationOnce(
           applicationIdentity
         )).toMatchObject({
@@ -2176,6 +2209,108 @@ describe("DrizzleHarnessRunRepository", () => {
           outcome: "helped"
         })]);
         expect(provedHelped.feedbackMaintenanceQueueRecordId).toEqual(expect.any(String));
+        const provedHelpedRetry = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce(provedHelpedInput);
+        expect(provedHelpedRetry).toEqual({ ...provedHelped, created: false });
+        const {
+          decisionPacketClaim: _historicalClaim,
+          knowledgeUsefulnessOutcomes: _historicalOutcomes,
+          maintenance: _historicalMaintenance,
+          ...historicalSemanticRetryInput
+        } = provedHelpedInput;
+        const historicalSemanticRetry = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce(historicalSemanticRetryInput);
+        expect(historicalSemanticRetry).toEqual({ ...provedHelped, created: false });
+        const aggregateBeforeProjectionRace = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        expect(aggregateBeforeProjectionRace).toBeDefined();
+        const projectionRaceBinding = currentDecisionPacketBindingForHarnessRun({
+          aggregate: aggregateBeforeProjectionRace!,
+          packetGeneratedAt: "2026-07-15T11:08:00.000Z",
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        const projectionRaceOutcomes = [{
+          knowledgeId: selectedKnowledge.id,
+          outcome: "selected" as const,
+          reason: "Caller projection cannot choose persisted packet authority.",
+          evidenceRefs: [projectionRaceBinding.packetEvidenceRef],
+          doesNotProve: "A deterministic race does not prove distributed delivery."
+        }];
+        const projectionRaceInput = {
+          ...provedHelpedInput,
+          captureIdentity: `capture-authority-race:${marker}:projection-signal`,
+          decisionPacketClaim: {
+            checksum: projectionRaceBinding.packetChecksum,
+            generatedAt: projectionRaceBinding.packetGeneratedAt
+          },
+          semanticRequest: {
+            decisionPacketClaim: {
+              checksum: projectionRaceBinding.packetChecksum,
+              generatedAt: projectionRaceBinding.packetGeneratedAt
+            },
+            knowledgeUsefulnessOutcomes: projectionRaceOutcomes
+          },
+          knowledgeUsefulnessOutcomes: projectionRaceOutcomes
+        } satisfies CreateEvidenceFeedbackOnceInput;
+        const {
+          decisionPacketClaim: _projectionClaim,
+          ...projectionWithoutClaim
+        } = projectionRaceInput;
+        const [projectionWithClaim, projectionWithoutTopClaim] = await Promise.all([
+          scaffold.harnessRunRepository.createEvidenceFeedbackOnce(projectionRaceInput),
+          scaffold.harnessRunRepository.createEvidenceFeedbackOnce(projectionWithoutClaim)
+        ]);
+        expect(new Set([
+          projectionWithClaim.created,
+          projectionWithoutTopClaim.created
+        ])).toEqual(new Set([true, false]));
+        expect(projectionWithoutTopClaim.feedbackDelta.id).toBe(
+          projectionWithClaim.feedbackDelta.id
+        );
+        expect(decisionPacketBindingReadbackFromMetadata(
+          projectionWithClaim.feedbackDelta.metadata
+        )).toMatchObject({
+          status: "bound_current",
+          checksum: projectionRaceBinding.packetChecksum
+        });
+        const shadowConflicts: CreateEvidenceFeedbackOnceInput[] = [{
+          ...provedHelpedInput,
+          semanticRequest: {
+            ...provedHelpedInput.semanticRequest,
+            decisionPacketClaim: {
+              ...provedHelpedCallerClaim,
+              checksum: crypto.createHash("sha256").update(`${marker}:shadow`).digest("hex")
+            }
+          }
+        }, {
+          ...provedHelpedInput,
+          semanticRequest: {
+            ...provedHelpedInput.semanticRequest,
+            knowledgeUsefulnessOutcomes: [{
+              ...provedHelpedCallerOutcomes[0]!,
+              outcome: "hurt",
+              reason: "A shadow outcome must conflict."
+            }]
+          }
+        }, {
+          ...provedHelpedInput,
+          semanticRequest: {
+            ...provedHelpedInput.semanticRequest,
+            maintenance: { reason: "A shadow maintenance request must conflict." }
+          }
+        }];
+        for (const shadowConflict of shadowConflicts) {
+          await expect(
+            scaffold.harnessRunRepository.createEvidenceFeedbackOnce(shadowConflict)
+          ).rejects.toBeInstanceOf(EvidenceFeedbackIdentityConflictError);
+        }
+        const provedHelpedMaintenanceRows = await scaffold.db
+          .select({ id: maintenanceQueues.id })
+          .from(maintenanceQueues)
+          .where(sql`${maintenanceQueues.payload}->>'feedbackDeltaId' = ${provedHelped.feedbackDelta.id}`);
+        expect(provedHelpedMaintenanceRows).toEqual([{
+          id: provedHelped.feedbackMaintenanceQueueRecordId
+        }]);
 
         const sourceClaimApplicationIdentity = {
           ...applicationIdentity,
@@ -2199,21 +2334,28 @@ describe("DrizzleHarnessRunRepository", () => {
         }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
         const {
           knowledgeUsefulnessOutcomes: _knowledgeUsefulnessOutcomes,
+          semanticRequest: _knowledgeSemanticRequest,
           ...sourceClaimHelpedBase
         } = provedHelpedInput;
+        const sourceClaimHelpedOutcomes = [{
+          sourceClaimId: selectedSourceClaim.id,
+          applicationId: sourceClaimApplicationIdentity.applicationId,
+          appliedAt: sourceClaimApplication.application.appliedAt,
+          outcome: "helped" as const,
+          reason: "Persisted claim application preceded strict verification.",
+          evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+          doesNotProve: "Ordered proof does not establish source truth."
+        }];
         const sourceClaimHelped = await scaffold.harnessRunRepository
           .createEvidenceFeedbackOnce({
             ...sourceClaimHelpedBase,
             captureIdentity: `capture-authority-race:${marker}:source-claim-helped`,
-            sourceUsefulnessOutcomes: [{
-              sourceClaimId: selectedSourceClaim.id,
-              applicationId: sourceClaimApplicationIdentity.applicationId,
-              appliedAt: sourceClaimApplication.application.appliedAt,
-              outcome: "helped",
-              reason: "Persisted claim application preceded strict verification.",
-              evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
-              doesNotProve: "Ordered proof does not establish source truth."
-            }],
+            semanticRequest: {
+              decisionPacketClaim: provedHelpedCallerClaim,
+              sourceUsefulnessOutcomes: sourceClaimHelpedOutcomes,
+              maintenance: provedHelpedCallerMaintenance
+            },
+            sourceUsefulnessOutcomes: sourceClaimHelpedOutcomes,
             evidence: {
               ...provedHelpedInput.evidence,
               commands: [{
@@ -2992,6 +3134,8 @@ describe("DrizzleHarnessRunRepository", () => {
           nextAction: "Attach generic poison rows before retry."
         }
       });
+      const retryClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const retryRepository = new DrizzleHarnessRunRepository(createKrnDatabase(retryClient));
 
       try {
         const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
@@ -3155,9 +3299,113 @@ describe("DrizzleHarnessRunRepository", () => {
         ] as const) {
           expect(retry).toEqual({ ...original, created: false });
         }
+
+        const conflictingInputs: CreateEvidenceFeedbackOnceInput[] = [{
+          ...currentInput,
+          projectId: `wrong-project-${marker}`
+        }, {
+          ...currentInput,
+          knowledgeUsefulnessOutcomes: [{
+            knowledgeId: `knowledge-${marker}`,
+            outcome: "unknown",
+            reason: "Changed retry outcome must conflict.",
+            evidenceRefs: [],
+            doesNotProve: "A conflict does not prove usefulness."
+          }]
+        }, {
+          ...currentInput,
+          maintenance: {
+            reason: "Changed retry maintenance payload must conflict."
+          }
+        }];
+
+        for (const conflictingInput of conflictingInputs) {
+          await expect(
+            scaffold.harnessRunRepository.createEvidenceFeedbackOnce(conflictingInput)
+          ).rejects.toBeInstanceOf(EvidenceFeedbackIdentityConflictError);
+        }
+
+        const [conflictCounts] = await scaffold.client<{
+          evidenceBundleCount: number;
+          feedbackDeltaCount: number;
+          outboxEventCount: number;
+          reviewAssessmentCount: number;
+        }[]>`
+          select
+            (select count(*)::int from evidence_bundles
+              where capture_identity = ${currentInput.captureIdentity}) as "evidenceBundleCount",
+            (select count(*)::int from review_assessments review
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${currentInput.captureIdentity}
+                and review.capture_channel = 'evidence_feedback_v1') as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${currentInput.captureIdentity}
+                and feedback.capture_channel = 'evidence_feedback_v1') as "feedbackDeltaCount",
+            (select count(*)::int from outbox_events
+              where payload->>'captureIdentity' = ${currentInput.captureIdentity}) as "outboxEventCount"
+        `;
+
+        expect(conflictCounts).toEqual({
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          outboxEventCount: 1
+        });
+
+        const concurrentIdentity = `capture-chain-ownership:${marker}:concurrent`;
+        const concurrentInput = canonicalInput(concurrentIdentity, false);
+        const concurrentResults = await Promise.all([
+          scaffold.harnessRunRepository.createEvidenceFeedbackOnce(concurrentInput),
+          retryRepository.createEvidenceFeedbackOnce(concurrentInput)
+        ]);
+        expect(concurrentResults.map((result) => result.created).sort()).toEqual([false, true]);
+        expect(new Set(concurrentResults.map((result) => result.evidenceBundle.id)).size).toBe(1);
+        expect(new Set(concurrentResults.map((result) => result.reviewAssessment.id)).size).toBe(1);
+        expect(new Set(concurrentResults.map((result) => result.feedbackDelta.id)).size).toBe(1);
+        expect(concurrentResults.map(
+          (result) => result.feedbackMaintenanceQueueRecordId
+        )).toEqual([undefined, undefined]);
+        const [concurrentCounts] = await scaffold.client<{
+          evidenceBundleCount: number;
+          feedbackDeltaCount: number;
+          maintenanceCount: number;
+          outboxEventCount: number;
+          reviewAssessmentCount: number;
+          runEventCount: number;
+        }[]>`
+          select
+            (select count(*)::int from evidence_bundles
+              where capture_identity = ${concurrentIdentity}) as "evidenceBundleCount",
+            (select count(*)::int from review_assessments review
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${concurrentIdentity}
+                and review.capture_channel = 'evidence_feedback_v1') as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.capture_identity = ${concurrentIdentity}
+                and feedback.capture_channel = 'evidence_feedback_v1') as "feedbackDeltaCount",
+            (select count(*)::int from outbox_events
+              where payload->>'captureIdentity' = ${concurrentIdentity}) as "outboxEventCount",
+            (select count(*)::int from maintenance_queue_records
+              where payload->>'feedbackDeltaId' = ${concurrentResults[0]!.feedbackDelta.id}) as "maintenanceCount",
+            (select count(*)::int from run_events
+              where payload->>'captureIdentity' = ${concurrentIdentity}) as "runEventCount"
+        `;
+        expect(concurrentCounts).toEqual({
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          outboxEventCount: 1,
+          maintenanceCount: 0,
+          runEventCount: 1
+        });
+
       } finally {
         await scaffold.cleanup();
-        await scaffold.client.end();
+        await Promise.all([scaffold.client.end(), retryClient.end()]);
       }
     }
   );
