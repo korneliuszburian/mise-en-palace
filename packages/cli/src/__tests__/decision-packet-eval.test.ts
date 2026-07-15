@@ -480,6 +480,7 @@ describe("runDecisionPacketEval", () => {
       formatVersion: "krn.decisionPacket.v1",
       task: {
         id: testCase.id,
+        projectId: "project:decision-packet-eval",
         title: testCase.id,
         objective: testCase.task,
         constraints: [],
