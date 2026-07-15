@@ -4,6 +4,7 @@ import type {
   TaskContractId
 } from "./ids.js";
 import { z } from "zod";
+import { compareTargetPaths } from "./target-path-order.js";
 import { isIsoTimestamp } from "./time.js";
 import type { IsoTimestamp } from "./time.js";
 
@@ -53,11 +54,12 @@ const requiredTextSchema = z.string().trim().min(1);
 const isoTimestampSchema = requiredTextSchema.refine(isIsoTimestamp);
 const targetStateSchema = z.object({
   targetRepo: requiredTextSchema,
-  treeIdentity: requiredTextSchema.regex(/^git-tree:[a-f0-9]{40,64}$/u),
+  treeIdentity: requiredTextSchema.regex(/^git-tree:(?:[a-f0-9]{40}|[a-f0-9]{64})$/u),
   patchIdentity: requiredTextSchema.regex(/^sha256:[a-f0-9]{64}$/u),
   changedFiles: z.array(requiredTextSchema).min(1).refine((paths) =>
     new Set(paths).size === paths.length &&
-    paths.every((path, index) => index === 0 || paths[index - 1]!.localeCompare(path) < 0),
+    paths.every((path, index) => index === 0 ||
+      compareTargetPaths(paths[index - 1]!, path) < 0),
   "target changed files must be unique and sorted"
   )
 });

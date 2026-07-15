@@ -103,4 +103,35 @@ describe("UsefulnessApplicationEvidence", () => {
       targetState: { ...targetState, patchIdentity: "caller-label" }
     })).toBeUndefined();
   });
+
+  it("accepts collector-ordered target paths deterministically", () => {
+    const targetState = {
+      targetRepo: "/target/repo",
+      treeIdentity: `git-tree:${"a".repeat(64)}`,
+      patchIdentity: `sha256:${"b".repeat(64)}`,
+      changedFiles: ["Z.ts", "a.ts", "é.ts"]
+    };
+
+    expect(parseUsefulnessApplicationEvidence({ ...evidence, targetState }))
+      .toEqual({ ...evidence, targetState });
+  });
+
+  it("accepts only real Git object id lengths", () => {
+    const targetState = {
+      targetRepo: "/target/repo",
+      treeIdentity: `git-tree:${"a".repeat(40)}`,
+      patchIdentity: `sha256:${"b".repeat(64)}`,
+      changedFiles: ["src/application.ts"]
+    };
+
+    for (const oidLength of [41, 63]) {
+      expect(parseUsefulnessApplicationEvidence({
+        ...evidence,
+        targetState: {
+          ...targetState,
+          treeIdentity: `git-tree:${"a".repeat(oidLength)}`
+        }
+      })).toBeUndefined();
+    }
+  });
 });

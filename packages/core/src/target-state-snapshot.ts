@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { lstat, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { compareTargetPaths } from "./target-path-order.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -58,7 +59,8 @@ export const collectTargetStateSnapshot = async (
   const patchHash = createHash("sha256");
   updateLengthPrefixed(patchHash, patch.stdout);
 
-  for (const relativePath of untracked.stdout.toString("utf8").split("\0").filter(Boolean).sort()) {
+  for (const relativePath of untracked.stdout.toString("utf8").split("\0").filter(Boolean)
+    .sort(compareTargetPaths)) {
     const entry = await untrackedEntry(path.join(repoRoot, relativePath));
     updateLengthPrefixed(patchHash, Buffer.from(relativePath));
     updateLengthPrefixed(patchHash, Buffer.from(entry.mode));
@@ -71,6 +73,6 @@ export const collectTargetStateSnapshot = async (
     changedPaths: [...new Set([
       ...trackedPaths.stdout.toString("utf8").split("\0").filter(Boolean),
       ...untracked.stdout.toString("utf8").split("\0").filter(Boolean)
-    ])].sort()
+    ])].sort(compareTargetPaths)
   };
 };
