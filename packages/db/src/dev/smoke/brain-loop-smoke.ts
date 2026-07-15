@@ -27,7 +27,6 @@ import {
   buildMemoryStalenessMaintenancePreview,
   collectTargetStateSnapshot,
   createCommandOutputArtifact,
-  currentDecisionPacketBindingForHarnessRun,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
   knowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
@@ -862,25 +861,15 @@ export const runBrainLoopSmokeCheck = async (
       admittedPacketFeedback.feedbackDelta.metadata
     );
 
-    const applicationAggregate = requireSmokeReadbackValue(
-      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
-      "current memory application aggregate",
-      "Memory loop smoke could not reconstruct current application authority"
-    );
-    const applicationPacketBinding = currentDecisionPacketBindingForHarnessRun({
-      aggregate: applicationAggregate,
-      packetGeneratedAt: applicationAggregate.executionRun.updatedAt,
-      sha256Hex
-    });
     const memoryApplicationResult = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
       expectedUse: "Verify next activation reused reviewed memory.",
       outcome: "neutral",
       notes: "DB-backed memory loop smoke observed selected memory without strengthening it.",
-      packetChecksum: applicationPacketBinding.packetChecksum,
-      packetGeneratedAt: applicationPacketBinding.packetGeneratedAt,
-      sourceRunLifecycleRevision: applicationPacketBinding.sourceRunLifecycleRevision,
+      packetChecksum: packetBinding.packetChecksum,
+      packetGeneratedAt: packetBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
       metadata: {
         smokeId: marker
       }
@@ -960,8 +949,33 @@ export const runBrainLoopSmokeCheck = async (
         "downgrade memory authority",
         "Memory loop smoke lost memory before downgrade application"
       );
+      const downgradeIntent = await harnessRunRepository.createOperatorIntent({
+        workspaceId: workspace.id,
+        projectId: project.id,
+        source: "cli",
+        rawIntent: `memory loop downgrade ${marker} ${attempt}`,
+        metadata: { smokeId: marker }
+      });
+      const downgradeTask = await harnessRunRepository.createTaskContract({
+        operatorIntentId: downgradeIntent.id,
+        projectId: project.id,
+        title: `Memory loop downgrade ${attempt}`,
+        objective: "Record one packet-bound negative memory outcome.",
+        constraints: [],
+        nonGoals: [],
+        acceptance: ["The selected memory receives one exact negative outcome."],
+        metadata: { smokeId: marker }
+      });
+      const downgradePlan = await harnessRunRepository.createHarnessPlan({
+        taskContractId: downgradeTask.id,
+        version: 1,
+        status: "running",
+        summary: `Memory loop downgrade ${attempt}`,
+        nextAction: "Record the selected memory outcome.",
+        metadata: { smokeId: marker }
+      });
       await harnessRunRepository.createContextAssembly({
-        harnessPlanId: harnessPlan.id,
+        harnessPlanId: downgradePlan.id,
         status: "assembled",
         tokenBudget: 256,
         inclusions: [{
@@ -984,24 +998,24 @@ export const runBrainLoopSmokeCheck = async (
           }]
         }
       });
-      const downgradeAggregate = requireSmokeReadbackValue(
-        await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
-        "downgrade application aggregate",
-        "Memory loop smoke could not reconstruct downgrade application authority"
-      );
-      const downgradePacketBinding = currentDecisionPacketBindingForHarnessRun({
-        aggregate: downgradeAggregate,
-        packetGeneratedAt: downgradeAggregate.executionRun.updatedAt,
-        sha256Hex
+      const downgradeRun = await harnessRunRepository.createExecutionRun({
+        harnessPlanId: downgradePlan.id,
+        adapter: "codex",
+        status: "planned",
+        metadata: { smokeId: marker }
       });
+      const downgradeIssuance = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+        downgradeRun.id
+      );
+      const downgradePacketBinding = downgradeIssuance.packetIdentity;
       const downgradeResult = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
         memoryRecordId: memoryRecord.id,
-        executionRunId: executionRun.id,
+        executionRunId: downgradeRun.id,
         expectedUse: "Verify negative application feedback downgrades future activation.",
         outcome: "hurt",
         notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
-        packetChecksum: downgradePacketBinding.packetChecksum,
-        packetGeneratedAt: downgradePacketBinding.packetGeneratedAt,
+        packetChecksum: downgradePacketBinding.checksum,
+        packetGeneratedAt: downgradePacketBinding.generatedAt,
         sourceRunLifecycleRevision: downgradePacketBinding.sourceRunLifecycleRevision,
         metadata: {
           smokeId: marker,

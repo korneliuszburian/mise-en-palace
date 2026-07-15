@@ -22,11 +22,11 @@ const evidence = {
 describe("UsefulnessApplicationEvidence", () => {
   it("parses exact packet-bound application evidence from unknown input", () => {
     expect(parseUsefulnessApplicationEvidence(evidence)).toEqual(evidence);
-    const { appliedAt: _appliedAt, ...identity } = evidence;
+    const { appliedAt: _identityAppliedAt, ...identity } = evidence;
     expect(parseUsefulnessApplicationEvidenceIdentity(identity)).toEqual(identity);
   });
 
-  it("rejects selected-only, malformed, stale-order, and storage-vocabulary input", () => {
+  it("accepts canonical memory subjects and rejects malformed or storage-only input", () => {
     const { applicationId: _applicationId, appliedAt: _appliedAt, ...selectedOnly } = evidence;
 
     expect(parseUsefulnessApplicationEvidence(selectedOnly)).toBeUndefined();
@@ -44,6 +44,11 @@ describe("UsefulnessApplicationEvidence", () => {
     })).toBeUndefined();
     expect(parseUsefulnessApplicationEvidence({
       ...evidence,
+      subjectKind: "memory_record"
+    })).toEqual({ ...evidence, subjectKind: "memory_record" });
+    const { appliedAt: _identityAppliedAt, ...identity } = evidence;
+    expect(parseUsefulnessApplicationEvidenceIdentity({
+      ...identity,
       subjectKind: "memory_record"
     })).toBeUndefined();
     expect(parseUsefulnessApplicationEvidence({

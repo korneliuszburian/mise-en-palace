@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 
 import {
+  buildDecisionPacketIssuance,
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
 
@@ -203,6 +204,18 @@ const createMemoryHarnessRunRepository = (
   },
   async getHarnessRunByExecutionRunId() {
     return runProjectId === undefined ? undefined : memoryHarnessRunAggregate(runProjectId);
+  },
+  async getIssuedDecisionPacketForExecutionRun() {
+    if (runProjectId === undefined) {
+      return undefined;
+    }
+
+    const aggregate = memoryHarnessRunAggregate(runProjectId);
+    return buildDecisionPacketIssuance({
+      aggregate,
+      packetGeneratedAt: aggregate.executionRun.updatedAt,
+      sha256Hex
+    });
   },
   async createEvidenceBundle(): Promise<never> {
     throw new Error("createEvidenceBundle should not be called");

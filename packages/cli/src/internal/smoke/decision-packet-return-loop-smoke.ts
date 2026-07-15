@@ -1,7 +1,6 @@
 import type {
   Sql
 } from "postgres";
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -15,7 +14,6 @@ import {
   buildMaintenanceQueueWriteBoundaryReadback,
   buildMemoryStalenessMaintenancePreview,
   createCommandOutputArtifact,
-  currentDecisionPacketBindingForHarnessRun,
   decisionPacketBindingReadbackFromMetadata,
   parseMaintenanceJob
 } from "@krn/core";
@@ -74,9 +72,6 @@ import {
   readString,
   readStringArray
 } from "./json-readers.js";
-
-const sha256Hex = (value: string | Uint8Array): string =>
-  createHash("sha256").update(value).digest("hex");
 
 const returnChannelCheckpointCommand =
   "decision-packet return-channel checkpoint";
@@ -254,8 +249,37 @@ const selectMemoryApplicationAuthority = async (input: {
   if (aggregate === undefined) {
     throw new Error("DecisionPacket return-loop smoke lost memory application run");
   }
+  const projectId = aggregate.taskContract.projectId;
+  if (projectId === undefined) {
+    throw new Error("DecisionPacket return-loop smoke requires project-bound memory authority");
+  }
+  const intent = await input.harnessRunRepository.createOperatorIntent({
+    workspaceId: aggregate.operatorIntent.workspaceId,
+    projectId,
+    source: "cli",
+    rawIntent: `${input.reason} ${input.marker}`,
+    metadata: { smokeId: input.marker }
+  });
+  const task = await input.harnessRunRepository.createTaskContract({
+    operatorIntentId: intent.id,
+    projectId,
+    title: input.reason,
+    objective: input.expectedUse,
+    constraints: [],
+    nonGoals: [],
+    acceptance: ["One selected memory outcome is packet-bound."],
+    metadata: { smokeId: input.marker }
+  });
+  const plan = await input.harnessRunRepository.createHarnessPlan({
+    taskContractId: task.id,
+    version: 1,
+    status: "running",
+    summary: input.reason,
+    nextAction: input.expectedUse,
+    metadata: { smokeId: input.marker }
+  });
   await input.harnessRunRepository.createContextAssembly({
-    harnessPlanId: aggregate.harnessPlan.id,
+    harnessPlanId: plan.id,
     status: "assembled",
     tokenBudget: 256,
     inclusions: [{
@@ -277,18 +301,25 @@ const selectMemoryApplicationAuthority = async (input: {
       }]
     }
   });
-  const selectedAggregate = await input.harnessRunRepository.getHarnessRunByExecutionRunId(
-    input.executionRunId
-  );
-  if (selectedAggregate === undefined) {
-    throw new Error("DecisionPacket return-loop smoke lost selected memory authority");
-  }
-
-  return currentDecisionPacketBindingForHarnessRun({
-    aggregate: selectedAggregate,
-    packetGeneratedAt: selectedAggregate.executionRun.updatedAt,
-    sha256Hex
+  const run = await input.harnessRunRepository.createExecutionRun({
+    harnessPlanId: plan.id,
+    adapter: "codex",
+    status: "planned",
+    metadata: { smokeId: input.marker }
   });
+  const issue = input.harnessRunRepository.issueDecisionPacketForExecutionRun;
+  if (issue === undefined) {
+    throw new Error("DecisionPacket return-loop smoke requires persisted packet issuance");
+  }
+  const issuance = await issue.call(input.harnessRunRepository, run.id);
+
+  return {
+    executionRunId: run.id,
+    packetChecksum: issuance.packetIdentity.checksum,
+    packetEvidenceRef: issuance.packetIdentity.evidenceRef,
+    packetGeneratedAt: issuance.packetIdentity.generatedAt,
+    sourceRunLifecycleRevision: issuance.packetIdentity.sourceRunLifecycleRevision
+  };
 };
 
 type FeedbackSourceProof = "helped" | "stale";
@@ -2205,7 +2236,7 @@ const runSelectorFeedbackProof = async (
   const selectorRetainedMemoryApplication = await memoryRepository
     .recordMemoryApplicationWithEffectsOnce({
     memoryRecordId: selectorRetainedMemory.id,
-    executionRunId: input.executionRunId,
+    executionRunId: selectorControlBinding.executionRunId,
     expectedUse: "Retain eligible DecisionPacket selector feedback memory on the next packet.",
     outcome: "neutral",
     notes: "Selected control memory remains eligible without fabricated positive feedback.",
@@ -2234,7 +2265,7 @@ const runSelectorFeedbackProof = async (
     });
     const staleApplication = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
       memoryRecordId: selectorStaleMemory.id,
-      executionRunId: input.executionRunId,
+      executionRunId: staleBinding.executionRunId,
       expectedUse: "Demote stale DecisionPacket selector feedback memory on the next packet.",
       outcome: "stale",
       notes: `Store-backed stale feedback ${attempt} should make this memory unsafe for next activation.`,

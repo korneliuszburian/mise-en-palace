@@ -1291,7 +1291,7 @@ const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
 
 type DecisionPacketIssuanceRow = typeof decisionPacketIssuances.$inferSelect;
 
-const mapDecisionPacketIssuance = (
+export const mapDecisionPacketIssuance = (
   row: DecisionPacketIssuanceRow
 ): DecisionPacketContractReadback => {
   const readback = parseDecisionPacketContractReadback({
@@ -1400,6 +1400,11 @@ const verificationFollowsApplication = (input: {
     Date.parse(command.capturedAt) > Date.parse(input.appliedAt));
 };
 
+const returnChannelUsefulnessSubjectKinds = new Set<string>([
+  "knowledge",
+  "source_claim"
+]);
+
 const applicationForBoundOutcome = async (
   tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput,
@@ -1410,9 +1415,10 @@ const applicationForBoundOutcome = async (
   if (outcome.applicationId === undefined || outcome.appliedAt === undefined) {
     return undefined;
   }
-  if (subject.kind === "source_decision") {
+  if (!returnChannelUsefulnessSubjectKinds.has(subject.kind)) {
     return undefined;
   }
+  const subjectKind = subject.kind as UsefulnessApplicationEvidenceIdentity["subjectKind"];
   const row = await tx.query.usefulnessApplications.findFirst({
     where: eq(usefulnessApplications.applicationId, outcome.applicationId)
   });
@@ -1422,7 +1428,7 @@ const applicationForBoundOutcome = async (
   const application = mapUsefulnessApplication(row);
   const parsed = parseUsefulnessApplicationEvidenceForIdentity(application, {
     applicationId: outcome.applicationId,
-    subjectKind: subject.kind,
+    subjectKind,
     subjectId: subject.id,
     projectId: input.projectId,
     executionRunId: input.executionRunId,

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."usefulness_application_subject_kind" ADD VALUE 'memory_record' BEFORE 'source_decision';

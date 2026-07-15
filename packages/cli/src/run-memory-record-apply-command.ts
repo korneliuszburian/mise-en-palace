@@ -1,8 +1,5 @@
 import {
-  createHash
-} from "node:crypto";
-import {
-  authorizeDecisionPacketUsefulness,
+  authorizeIssuedDecisionPacketUsefulness,
   buildFeedbackRecommendationReadback,
   parseMemoryApplicationInput
 } from "@krn/core";
@@ -44,9 +41,6 @@ export interface MemoryRecordApplyCommandResult {
 type CreateMemoryRecordApplyDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
-
-const sha256Hex = (value: string | Uint8Array): string =>
-  createHash("sha256").update(value).digest("hex");
 
 const defaultExpectedUse = (command: MemoryRecordApplyCommand): string =>
   `Operator explicitly applied memory record ${command.memoryId ?? ""} to run ${command.runId ?? ""}`;
@@ -224,6 +218,8 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error(`MemoryRecord not found: ${applicationInput.memoryRecordId}`);
     }
 
+    assertMemoryApplicationPrecedesHelpedVerification(applicationInput.outcome);
+
     const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
       applicationInput.executionRunId
     );
@@ -232,17 +228,32 @@ export const runMemoryRecordApplyCommand = async (
       throw new Error(`Execution run not found: ${applicationInput.executionRunId}`);
     }
 
-    const authorization = authorizeDecisionPacketUsefulness({
+    const getIssuedPacket =
+      databaseRuntime.harnessRunRepository.getIssuedDecisionPacketForExecutionRun;
+    if (getIssuedPacket === undefined) {
+      throw new Error("Issued DecisionPacket readback is unavailable");
+    }
+    const issuance = await getIssuedPacket.call(
+      databaseRuntime.harnessRunRepository,
+      applicationInput.executionRunId
+    );
+    if (issuance === undefined) {
+      throw new Error(`Issued DecisionPacket not found: ${applicationInput.executionRunId}`);
+    }
+
+    const authorization = authorizeIssuedDecisionPacketUsefulness({
       aggregate,
+      issuance,
       runId: applicationInput.executionRunId,
       runtimeProjectId: databaseRuntime.projectId,
-      sha256Hex,
       ...(command.decisionPacketChecksum === undefined
         ? {}
         : { callerPacketChecksum: command.decisionPacketChecksum }),
       ...(command.decisionPacketGeneratedAt === undefined
         ? {}
         : { callerPacketGeneratedAt: command.decisionPacketGeneratedAt }),
+      callerSourceRunLifecycleRevision:
+        issuance.packetIdentity.sourceRunLifecycleRevision,
       subjects: [{
         kind: "memory_record",
         id: applicationInput.memoryRecordId,
@@ -259,8 +270,6 @@ export const runMemoryRecordApplyCommand = async (
     if (memoryRecord.projectId !== authorization.projectId) {
       throw new Error("usefulness write rejected: memory record project does not match the run task project");
     }
-
-    assertMemoryApplicationPrecedesHelpedVerification(applicationInput.outcome);
 
     const recordApplicationWithEffectsOnce =
       databaseRuntime.memoryRepository.recordMemoryApplicationWithEffectsOnce;

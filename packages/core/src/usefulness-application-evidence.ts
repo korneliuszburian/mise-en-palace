@@ -15,6 +15,7 @@ export const usefulnessApplicationSubjectKinds = [
 
 export const persistedUsefulnessApplicationSubjectKinds = [
   ...usefulnessApplicationSubjectKinds,
+  "memory_record",
   "source_decision"
 ] as const;
 
@@ -76,6 +77,7 @@ const usefulnessApplicationEvidenceIdentitySchema = z.object({
   targetState: targetStateSchema.optional()
 });
 const usefulnessApplicationEvidenceSchema = usefulnessApplicationEvidenceIdentitySchema.extend({
+  subjectKind: z.enum([...usefulnessApplicationSubjectKinds, "memory_record"]),
   appliedAt: isoTimestampSchema
 }).refine((evidence) =>
   Date.parse(evidence.appliedAt) >= Date.parse(evidence.packetGeneratedAt),

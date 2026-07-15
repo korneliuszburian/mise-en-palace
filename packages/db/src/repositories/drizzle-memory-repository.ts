@@ -26,7 +26,7 @@ import type {
   ProjectId
 } from "@krn/core";
 import {
-  authorizeDecisionPacketUsefulness,
+  authorizeIssuedDecisionPacketUsefulness,
   decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
   parseEvidenceContract
@@ -71,7 +71,9 @@ import {
   executionRuns,
   harnessPlans,
   taskContracts,
-  outboxEvents
+  outboxEvents,
+  decisionPacketIssuances,
+  usefulnessApplications
 } from "../schema/index.js";
 import {
   fromIsoTimestamp,
@@ -87,7 +89,10 @@ import {
   mapCommandOutputArtifact,
   mapEvidenceBundle
 } from "./mappers.js";
-import { DrizzleHarnessRunRepository } from "./drizzle-harness-run-repository.js";
+import {
+  DrizzleHarnessRunRepository,
+  mapDecisionPacketIssuance
+} from "./drizzle-harness-run-repository.js";
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
@@ -248,6 +253,7 @@ type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
 type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
 type AntiMemoryCandidateInsertRow = typeof antiMemoryCandidates.$inferInsert;
 type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
+type UsefulnessApplicationRow = InferSelectModel<typeof usefulnessApplications>;
 
 interface PacketBoundMemoryApplicationIdentity {
   executionRunId: string;
@@ -255,6 +261,19 @@ interface PacketBoundMemoryApplicationIdentity {
   packetGeneratedAt: IsoTimestamp;
   sourceRunLifecycleRevision: number;
 }
+
+const memoryUsefulnessAdmissionMatches = (
+  admission: UsefulnessApplicationRow | undefined,
+  row: MemoryApplicationRow,
+  identity: PacketBoundMemoryApplicationIdentity
+): boolean =>
+  admission !== undefined &&
+  admission.subjectKind === "memory_record" &&
+  admission.subjectId === row.memoryRecordId &&
+  admission.executionRunId === identity.executionRunId &&
+  admission.packetChecksum === identity.packetChecksum &&
+  admission.packetGeneratedAt.toISOString() === identity.packetGeneratedAt &&
+  admission.sourceRunLifecycleRevision === identity.sourceRunLifecycleRevision;
 
 const packetBoundMemoryApplicationIdentity = (
   row: MemoryApplicationRow
@@ -1323,7 +1342,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     input: TInput,
     tx: KrnDatabaseTransaction,
     aggregate?: HarnessRunAggregate
-  ): Promise<TInput> {
+  ): Promise<{
+    input: TInput;
+    projectId: ProjectId;
+    taskContractId: HarnessRunAggregate["taskContract"]["id"];
+  }> {
     const authorityAggregate = aggregate ?? await new DrizzleHarnessRunRepository(this.db)
       .readHarnessRunAuthority(tx, input.executionRunId);
     const authority = await this.requireMemoryApplicationProject(
@@ -1331,18 +1354,25 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       tx,
       authorityAggregate
     );
-    const authorization = authorizeDecisionPacketUsefulness({
+    const issuanceRow = await tx.query.decisionPacketIssuances.findFirst({
+      where: eq(decisionPacketIssuances.executionRunId, input.executionRunId)
+    });
+    if (issuanceRow === undefined) {
+      throw new Error("memory application authority rejected: issued DecisionPacket is required");
+    }
+    const authorization = authorizeIssuedDecisionPacketUsefulness({
       aggregate: authority.aggregate,
+      issuance: mapDecisionPacketIssuance(issuanceRow),
       runId: input.executionRunId,
       runtimeProjectId: authority.projectId,
       callerPacketChecksum: input.packetChecksum,
       callerPacketGeneratedAt: input.packetGeneratedAt,
+      callerSourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
       subjects: [{
         kind: "memory_record",
         id: input.memoryRecordId,
         evidenceRefs: [`packet:${input.packetChecksum}`]
-      }],
-      sha256Hex
+      }]
     });
 
     if (!authorization.authorized) {
@@ -1353,8 +1383,18 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     if (authorization.sourceRunLifecycleRevision !== input.sourceRunLifecycleRevision) {
       throw new Error("memory application authority rejected: lifecycle revision mismatch");
     }
+    if (
+      authority.aggregate.executionRun.lifecycleRevision !==
+      input.sourceRunLifecycleRevision
+    ) {
+      throw new Error("memory application authority rejected: lifecycle revision mismatch");
+    }
 
-    return this.deriveMemoryApplicationLineage(input, authority.aggregate);
+    return {
+      input: this.deriveMemoryApplicationLineage(input, authority.aggregate),
+      projectId: authority.projectId,
+      taskContractId: authority.aggregate.taskContract.id
+    };
   }
 
   private async requireMemoryApplicationProject(
@@ -1612,7 +1652,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     tx: KrnDatabaseTransaction
   ): Promise<
     | { kind: "existing"; row: MemoryApplicationRow }
-    | { kind: "admitted"; input: TInput }
+    | {
+        kind: "admitted";
+        input: TInput;
+        projectId: ProjectId;
+        taskContractId: HarnessRunAggregate["taskContract"]["id"];
+      }
   > {
     const aggregate = await new DrizzleHarnessRunRepository(this.db)
       .readHarnessRunAuthority(tx, input.executionRunId);
@@ -1622,10 +1667,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return { kind: "existing", row: existing };
     }
 
-    return {
-      kind: "admitted",
-      input: await this.requireCurrentMemoryApplicationAuthority(input, tx, aggregate)
-    };
+    const authority = await this.requireCurrentMemoryApplicationAuthority(input, tx, aggregate);
+
+    return { kind: "admitted", ...authority };
   }
 
   private async insertMemoryApplicationOnceRow(
@@ -1782,6 +1826,24 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         };
       }
 
+      requireReturnedRow(
+        await tx
+          .insert(usefulnessApplications)
+          .values({
+            applicationId: applicationResult.row.id,
+            subjectKind: "memory_record",
+            subjectId: admittedInput.memoryRecordId,
+            projectId: admission.projectId,
+            executionRunId: admittedInput.executionRunId,
+            taskContractId: admission.taskContractId,
+            packetChecksum: admittedInput.packetChecksum,
+            packetGeneratedAt: fromIsoTimestamp(admittedInput.packetGeneratedAt),
+            sourceRunLifecycleRevision: admittedInput.sourceRunLifecycleRevision
+          })
+          .returning(),
+        "recordMemoryApplicationWithEffectsOnce.recordCanonicalUsefulness"
+      );
+
       await this.options.faultAfterStage?.("after_application");
       await this.applyMemoryApplicationOutcome(admittedInput, tx);
       await this.options.faultAfterStage?.("after_counter");
@@ -1888,6 +1950,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       packetIdentity === undefined ||
       memoryApplicationFingerprintFromRow(row) === undefined
     ) {
+      return false;
+    }
+    const admission = await tx.query.usefulnessApplications.findFirst({
+      where: eq(usefulnessApplications.applicationId, row.id)
+    });
+    if (!memoryUsefulnessAdmissionMatches(admission, row, packetIdentity)) {
       return false;
     }
 
