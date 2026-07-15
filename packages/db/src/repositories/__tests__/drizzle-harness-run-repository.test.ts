@@ -1800,6 +1800,9 @@ describe("DrizzleHarnessRunRepository", () => {
               message: "capture invocation snapshot persisted",
               payload: { smokeId: marker, captureIdentity: snapshotCaptureIdentity }
             }
+          },
+          maintenance: {
+            reason: "Review the admitted stale and hurt outcomes."
           }
         } satisfies CreateEvidenceFeedbackOnceInput;
         let inputMutatedAfterEvidence = false;
@@ -1844,6 +1847,7 @@ describe("DrizzleHarnessRunRepository", () => {
           outcome: "hurt",
           evidenceRefs: [packetOne.packetEvidenceRef]
         })]);
+        expect(snapshotCapture.feedbackMaintenanceQueueRecordId).toEqual(expect.any(String));
 
         const aggregateBeforeUnprovedHelped = await scaffold.harnessRunRepository
           .getHarnessRunByExecutionRunId(executionRun.id);

@@ -26,6 +26,7 @@ import type {
   EvidenceCommandReadback,
   OperatorIntent,
   ReviewAssessment,
+  SourceUsefulnessOutcome,
   TaskContract,
   UsefulnessApplicationEvidence,
   UsefulnessApplicationEvidenceIdentity,
@@ -44,6 +45,7 @@ import {
   executionRunLifecycleTransitionedEventType,
   ExecutionRunLifecycleConflictError,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
+  isReviewableFeedbackOutcome,
   projectDecisionPacketUsefulnessSubjects,
   parseUsefulnessApplicationEvidenceIdentity,
   parseUsefulnessApplicationEvidenceForIdentity,
@@ -1266,8 +1268,12 @@ const admitHelpedOutcome = async <TOutcome extends ApplicationBoundOutcome>(inpu
   return { ...input.outcome };
 };
 
-const hasHelpedOutcome = (outcomes: readonly { outcome: string }[]): boolean =>
-  outcomes.some((outcome) => outcome.outcome === "helped");
+const remainsMaintenanceEligible = (
+  requested: { readonly outcome: string } | undefined,
+  admitted: { readonly outcome: SourceUsefulnessOutcome }
+): boolean => requested?.outcome === "helped"
+  ? admitted.outcome === "helped"
+  : isReviewableFeedbackOutcome(admitted.outcome);
 
 interface AdmittedDecisionPacketIdentity {
   checksum: string;
@@ -1431,10 +1437,11 @@ const applicationBoundEvidenceFeedbackInput = (
   admitted: Awaited<ReturnType<typeof admitUsefulnessOutcomes>>
 ): CreateEvidenceFeedbackOnceInput => {
   const { sourceUsefulnessOutcomes, knowledgeUsefulnessOutcomes } = admitted;
-  const keepMaintenance = hasHelpedOutcome([
-    ...sourceUsefulnessOutcomes,
-    ...knowledgeUsefulnessOutcomes
-  ]);
+  const keepMaintenance = sourceUsefulnessOutcomes.some((outcome, index) =>
+    remainsMaintenanceEligible(input.sourceUsefulnessOutcomes?.[index], outcome)
+  ) || knowledgeUsefulnessOutcomes.some((outcome, index) =>
+    remainsMaintenanceEligible(input.knowledgeUsefulnessOutcomes?.[index], outcome)
+  );
   const { maintenance: _maintenance, ...applicationBoundInput } = input;
 
   return {

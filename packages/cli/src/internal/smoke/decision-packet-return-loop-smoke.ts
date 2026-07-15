@@ -65,6 +65,10 @@ import {
 
 const returnChannelCheckpointCommand =
   "decision-packet return-channel checkpoint";
+const returnLoopApplicationPath =
+  "packages/cli/src/internal/smoke/decision-packet-return-loop-smoke.ts";
+const returnLoopApplicationStatusPath =
+  "src/internal/smoke/decision-packet-return-loop-smoke.ts";
 
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
@@ -558,17 +562,24 @@ const hasNoFormalRejectionTypedState = (input: {
 };
 
 const sourceUsefulnessOutcome = (input: {
+  readonly applicationId?: string;
+  readonly appliedAt?: string;
   readonly claimId?: string;
   readonly decisionId?: string;
   readonly evidenceRef: string;
+  readonly evidenceRefs?: readonly string[];
   readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
   readonly reason: string;
 }): SourceUsefulnessOutcomeFeedback => ({
+  ...(input.applicationId === undefined ? {} : { applicationId: input.applicationId }),
+  ...(input.appliedAt === undefined ? {} : { appliedAt: input.appliedAt }),
   ...(input.claimId === undefined ? {} : { sourceClaimId: input.claimId }),
   ...(input.decisionId === undefined ? {} : { sourceDecisionId: input.decisionId }),
   outcome: input.outcome,
   reason: input.reason,
-  evidenceRefs: [input.evidenceRef],
+  evidenceRefs: input.evidenceRefs === undefined
+    ? [input.evidenceRef]
+    : [...input.evidenceRefs],
   doesNotProve:
     "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
 });
@@ -690,6 +701,21 @@ const persistedFeedbackDeltaIdOrThrow = (
   }
 
   return feedbackDeltaId;
+};
+
+const persistedUsefulnessApplicationOrThrow = (
+  stdout: string,
+  applicationId: string
+): { readonly applicationId: string; readonly appliedAt: string } => {
+  const match = /^usefulnessApplication: ([^|]+)\|(.+)$/mu.exec(stdout);
+  const persistedApplicationId = match?.[1]?.trim();
+  const appliedAt = match?.[2]?.trim();
+
+  if (persistedApplicationId !== applicationId || appliedAt === undefined || appliedAt.length === 0) {
+    throw new Error("DecisionPacket return-loop smoke missed persisted usefulness application identity");
+  }
+
+  return { applicationId: persistedApplicationId, appliedAt };
 };
 
 const feedbackDeltaByIdOrThrow = (
@@ -2428,7 +2454,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
     }
     const unseenDecisionId = `source-decision-unseen:${marker}`;
-    const checkpointStartedAt = new Date().toISOString();
     const returnChannelHasChecksum =
       firstPacket.returnChannels.evidence.persistedCommand.includes(firstPacket.packetIdentity.checksum) &&
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
@@ -2439,7 +2464,39 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       throw new Error("DecisionPacket return-loop checkpoint did not bind the return channel");
     }
 
-    const checkpointCompletedAt = new Date().toISOString();
+    const matchingApplicationId = `decision-packet-return-loop:${marker}:source-application`;
+    const applicationEvidence = await runEvidenceCaptureCommand({
+      ...baseRuntime,
+      persist: true,
+      runId: executionRun.id,
+      decisionPacketChecksum: firstPacket.packetIdentity.checksum,
+      decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
+      sourceUsefulnessOutcomes: [
+        sourceUsefulnessOutcome({
+          applicationId: matchingApplicationId,
+          claimId: helpedFeedbackSource.claimId,
+          evidenceRef: firstPacket.packetIdentity.evidenceRef,
+          outcome: "selected",
+          reason: "Record selected source application before running the return-channel checkpoint."
+        })
+      ],
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => commandRuntime
+    });
+    const applicationFeedbackDeltaId = persistedFeedbackDeltaIdOrThrow(
+      applicationEvidence.stdout,
+      "DecisionPacket return-loop smoke application capture missed persisted feedback delta id"
+    );
+    const matchingApplication = persistedUsefulnessApplicationOrThrow(
+      applicationEvidence.stdout,
+      matchingApplicationId
+    );
+    feedbackDeltaIds.push(applicationFeedbackDeltaId);
+
+    const checkpointStartedAt = new Date(
+      Math.max(Date.now(), Date.parse(matchingApplication.appliedAt) + 1)
+    ).toISOString();
+    const checkpointCompletedAt = new Date(Date.parse(checkpointStartedAt) + 1).toISOString();
     const checkpointArtifact = createCommandOutputArtifact({
       command: returnChannelCheckpointCommand,
       exitCode: 0,
@@ -2459,6 +2516,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       runId: executionRun.id,
       decisionPacketChecksum: firstPacket.packetIdentity.checksum,
       decisionPacketGeneratedAt: firstPacket.packetIdentity.generatedAt,
+      intendedFiles: [returnLoopApplicationPath],
       commandOutcomes: [{
         command: checkpointArtifact.command,
         status: "passed",
@@ -2470,13 +2528,21 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       commandOutputArtifacts: [checkpointArtifact],
       sourceUsefulnessOutcomes: [
         sourceUsefulnessOutcome({
+          applicationId: matchingApplication.applicationId,
+          appliedAt: matchingApplication.appliedAt,
           claimId: helpedFeedbackSource.claimId,
           evidenceRef: firstPacket.packetIdentity.evidenceRef,
+          evidenceRefs: [
+            firstPacket.packetIdentity.evidenceRef,
+            returnLoopApplicationPath,
+            checkpointArtifact.command,
+            checkpointArtifact.outputRef
+          ],
           outcome: "helped",
           reason: "Matching packet checksum kept selected source claim feedback bound to the packet."
         })
       ],
-      readGitStatus: async () => "",
+      readGitStatus: async () => ` M ${returnLoopApplicationStatusPath}\n`,
       createDatabaseRuntime: async () => commandRuntime
     });
     const aggregateAfterMatching =
@@ -2494,7 +2560,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
 
     const matchingFeedbackOutcome = feedbackOutcome(matchingFeedbackDelta.metadata);
     const matchingFeedbackWasAccepted =
-      matchingFeedbackOutcome === "selected" &&
+      matchingFeedbackOutcome === "helped" &&
       matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
     const packetAfterMatching = parseDecisionPacket((await runDecisionPacketCommand({
       ...baseRuntime,
