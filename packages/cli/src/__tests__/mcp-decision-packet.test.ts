@@ -289,11 +289,217 @@ const runtime = (
   },
   now: () => now,
   createId: (prefix) => `${prefix}:test`,
-  session: { initialized },
+  session: { phase: initialized ? "ready" : "new" },
   runDecisionPacket: handler
 });
 
+const validInitializeParams = {
+  protocolVersion: "2025-06-18",
+  capabilities: {},
+  clientInfo: {
+    name: "test-client",
+    version: "0.0.0"
+  }
+} as const;
+
 describe("DecisionPacket MCP wrapper", () => {
+  // Pinned protocol rationale:
+  // https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle
+  // https://modelcontextprotocol.io/specification/2025-06-18/schema
+  // https://www.jsonrpc.org/specification
+  it.each([
+    {
+      id: "missing-capabilities",
+      params: {
+        protocolVersion: validInitializeParams.protocolVersion,
+        clientInfo: validInitializeParams.clientInfo
+      }
+    },
+    {
+      id: "missing-client-info",
+      params: {
+        protocolVersion: validInitializeParams.protocolVersion,
+        capabilities: validInitializeParams.capabilities
+      }
+    },
+    {
+      id: "numeric-protocol-version",
+      params: {
+        ...validInitializeParams,
+        protocolVersion: 20250618
+      }
+    },
+    {
+      id: "array-capabilities",
+      params: {
+        ...validInitializeParams,
+        capabilities: []
+      }
+    },
+    {
+      id: "incomplete-client-info",
+      params: {
+        ...validInitializeParams,
+        clientInfo: { name: "test-client" }
+      }
+    }
+  ])("falsifies initialize schema divergence: $id", async (testCase) => {
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: testCase.id,
+      method: "initialize",
+      params: testCase.params
+    }, runtime(undefined, false))).resolves.toMatchObject({
+      id: testCase.id,
+      error: {
+        code: -32602,
+        message: "Invalid initialize params"
+      }
+    });
+  });
+
+  it("falsifies initialize version negotiation divergence", async () => {
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "negotiate-version",
+      method: "initialize",
+      params: {
+        ...validInitializeParams,
+        protocolVersion: "2025-03-26"
+      }
+    }, runtime(undefined, false))).resolves.toMatchObject({
+      id: "negotiate-version",
+      result: { protocolVersion: "2025-06-18" }
+    });
+  });
+
+  it("falsifies initialize notification ordering", async () => {
+    const sessionRuntime = runtime(undefined, false);
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "initialize-once",
+      method: "initialize",
+      params: validInitializeParams
+    }, sessionRuntime)).resolves.toMatchObject({
+      id: "initialize-once",
+      result: { protocolVersion: "2025-06-18" }
+    });
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "before-initialized-notification",
+      method: "tools/list"
+    }, sessionRuntime)).resolves.toMatchObject({
+      id: "before-initialized-notification",
+      error: {
+        code: -32002,
+        message: "Server not initialized"
+      }
+    });
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-before-initialized-notification",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: { runId: "run-agent-1" }
+      }
+    }, sessionRuntime)).resolves.toMatchObject({
+      id: "call-before-initialized-notification",
+      error: {
+        code: -32002,
+        message: "Server not initialized"
+      }
+    });
+
+  });
+
+  it("falsifies duplicate initialize", async () => {
+    const sessionRuntime = runtime(undefined, false);
+
+    await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "initialize-once",
+      method: "initialize",
+      params: validInitializeParams
+    }, sessionRuntime);
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "initialize-twice",
+      method: "initialize",
+      params: validInitializeParams
+    }, sessionRuntime)).resolves.toMatchObject({
+      id: "initialize-twice",
+      error: {
+        code: -32600,
+        message: "Initialize request is not allowed after initialization has started"
+      }
+    });
+  });
+
+  it("round-trips a fractional JSON-RPC request id", async () => {
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: 1.5,
+      method: "ping"
+    }, runtime())).resolves.toEqual({
+      jsonrpc: "2.0",
+      id: 1.5,
+      result: {}
+    });
+
+  });
+
+  it.each([
+    { name: "array params", params: [] },
+    { name: "non-string cursor", params: { cursor: 7 } },
+    { name: "array metadata", params: { _meta: [] } },
+    { name: "unknown property", params: { extra: true } }
+  ])("rejects malformed tools list params: $name", async ({ params }) => {
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "malformed-tools-list",
+      method: "tools/list",
+      params
+    }, runtime())).resolves.toMatchObject({
+      id: "malformed-tools-list",
+      error: {
+        code: -32602,
+        message: "Invalid tools/list params"
+      }
+    });
+  });
+
+  it("makes the one-page tools list cursor contract explicit", async () => {
+    for (const params of [undefined, {}, { _meta: { progressToken: "progress-1" } }]) {
+      await expect(handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id: "initial-tools-list",
+        method: "tools/list",
+        ...(params === undefined ? {} : { params })
+      }, runtime())).resolves.toMatchObject({
+        id: "initial-tools-list",
+        result: { tools: [{ name: "krn_decision_packet" }] }
+      });
+    }
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "unsupported-cursor",
+      method: "tools/list",
+      params: { cursor: "no-next-page-exists" }
+    }, runtime())).resolves.toMatchObject({
+      id: "unsupported-cursor",
+      error: {
+        code: -32602,
+        message: "Invalid tools/list cursor"
+      }
+    });
+  });
+
   it("requires the pinned initialize lifecycle before tools are available", async () => {
     const sessionRuntime = runtime(undefined, false);
 
@@ -312,10 +518,15 @@ describe("DecisionPacket MCP wrapper", () => {
       jsonrpc: "2.0",
       id: "initialize",
       method: "initialize",
-      params: { protocolVersion: "2025-06-18" }
+      params: validInitializeParams
     }, sessionRuntime)).resolves.toMatchObject({
       result: { protocolVersion: "2025-06-18" }
     });
+
+    await expect(handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      method: "notifications/initialized"
+    }, sessionRuntime)).resolves.toBeUndefined();
 
     await expect(handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
@@ -339,7 +550,7 @@ describe("DecisionPacket MCP wrapper", () => {
           version: "0.0.0"
         }
       }
-    }, runtime());
+    }, runtime(undefined, false));
 
     expect(initialized).toMatchObject({
       jsonrpc: "2.0",
@@ -384,8 +595,8 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
-  it("round-trips string and integer request IDs and rejects invalid IDs", async () => {
-    const validIds: Array<string | number> = ["request-id", 0, 7];
+  it("round-trips string and numeric request IDs and rejects invalid IDs", async () => {
+    const validIds: Array<string | number> = ["request-id", 0, 1.5, 7];
 
     for (const id of validIds) {
       const reply = await handleDecisionPacketMcpMessage({
@@ -401,7 +612,7 @@ describe("DecisionPacket MCP wrapper", () => {
       });
     }
 
-    for (const id of [null, true, 1.5, { nested: "id" }]) {
+    for (const id of [null, true, { nested: "id" }]) {
       const reply = await handleDecisionPacketMcpMessage({
         jsonrpc: "2.0",
         id,
@@ -444,13 +655,13 @@ describe("DecisionPacket MCP wrapper", () => {
       id: "initialize-missing-version",
       method: "initialize",
       params: {}
-    }, runtime());
+    }, runtime(undefined, false));
 
     expect(missingVersion).toMatchObject({
       id: "initialize-missing-version",
       error: {
         code: -32602,
-        message: "initialize requires protocolVersion 2025-06-18"
+        message: "Invalid initialize params"
       }
     });
 
@@ -794,7 +1005,67 @@ describe("DecisionPacket MCP wrapper", () => {
         packetIdentity: {
           checksum: "a".repeat(64)
         }
-      });
+    });
+  });
+
+  it("preserves a multibyte runId at every stdio byte split", async () => {
+    const expectedRunId = "run-żółw";
+    const request = Buffer.from(`${JSON.stringify({
+      jsonrpc: "2.0",
+      id: "split-utf8",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: { runId: expectedRunId }
+      }
+    })}\n`);
+
+    for (let split = 0; split <= request.length; split += 1) {
+      let observedRunId: string | undefined;
+
+      async function* input(): AsyncIterable<Buffer> {
+        yield request.subarray(0, split);
+        yield request.subarray(split);
+      }
+
+      await serveDecisionPacketMcpStdio(input(), { write() {} }, runtime(async (command) => {
+        observedRunId = command.runId;
+        return { stdout: `${JSON.stringify(packetJson)}\n` };
+      }));
+
+      expect(observedRunId, `byte split ${split}`).toBe(expectedRunId);
+    }
+  });
+
+  it("fails explicitly on invalid UTF-8 instead of executing replacement text", async () => {
+    const prefix = Buffer.from(
+      "{\"jsonrpc\":\"2.0\",\"id\":\"invalid-utf8\",\"method\":\"tools/call\",\"params\":{\"name\":\"krn_decision_packet\",\"arguments\":{\"runId\":\"run-"
+    );
+    const suffix = Buffer.from("\"}}}\n");
+    const request = Buffer.concat([prefix, Buffer.from([0xff]), suffix]);
+    const output: string[] = [];
+    let executed = false;
+
+    async function* input(): AsyncIterable<Buffer> {
+      yield request;
+    }
+
+    await serveDecisionPacketMcpStdio(input(), {
+      write: (chunk) => output.push(chunk)
+    }, runtime(async () => {
+      executed = true;
+      return { stdout: `${JSON.stringify(packetJson)}\n` };
+    }));
+
+    expect(executed).toBe(false);
+    expect(output.map((line) => JSON.parse(line))).toEqual([{
+      jsonrpc: "2.0",
+      id: null,
+      error: {
+        code: -32700,
+        message: "Parse error"
+      }
+    }]);
   });
 
   it("replaces the CLI-only MCP non-proof with the transport proof", async () => {

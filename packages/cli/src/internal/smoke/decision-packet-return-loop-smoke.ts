@@ -1939,7 +1939,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     env: input.baseRuntime.env,
     now: input.baseRuntime.now,
     createId: input.baseRuntime.createId,
-    session: { initialized: true },
+    session: { phase: "ready" },
     runDecisionPacket: async (runtime) => runDecisionPacketCommand({
       ...input.baseRuntime,
       runId: runtime.runId,

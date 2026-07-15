@@ -1809,6 +1809,7 @@ const fetchDecisionPacketViaMcp = async (
     timeoutMs: 30_000,
     input: [
       JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "krn-tracked-paired-trial", version: "1" } } }),
+      JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
       JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "krn_decision_packet", arguments: { runId } } })
     ].join("\n") + "\n"
   });
