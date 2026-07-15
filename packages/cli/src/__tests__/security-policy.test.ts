@@ -1,6 +1,7 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +22,29 @@ const runFailure = (args: string[]) => {
     return error as { status?: number; stderr?: string };
   }
 };
+
+const runScanner = async (args: string[]) => new Promise<{
+  status: number | null;
+  stderr: string;
+  stdout: string;
+}>((resolve) => {
+  const child = spawn(process.execPath, [scanner, ...args], {
+    cwd: repoRoot,
+    stdio: "pipe"
+  });
+  let stdout = "";
+  let stderr = "";
+
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", (chunk: string) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk: string) => {
+    stderr += chunk;
+  });
+  child.on("close", (status) => resolve({ status, stderr, stdout }));
+});
 
 describe("security policy scanner", () => {
   it("detects secret-shaped fixture content without treating safe content as a secret", () => {
@@ -76,7 +100,7 @@ describe("security policy scanner", () => {
       writeFileSync(cleanPath, JSON.stringify({ vulnerabilities: {} }));
       writeFileSync(
         vulnerablePath,
-        JSON.stringify({ vulnerabilities: { fixture: { severity: "high" } } }),
+        JSON.stringify({ fixture: [{ severity: "high" }] }),
       );
 
       expect(execFileSync(process.execPath, [scanner, "dependency-report", "--report", cleanPath], {
@@ -89,6 +113,110 @@ describe("security policy scanner", () => {
       expect(failure?.stderr).toContain("high or critical dependency advisories");
     } finally {
       rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("builds a complete bulk advisory inventory from pnpm lockfile package keys", () => {
+    const root = mkdtempSync(join(tmpdir(), "krn-security-lockfile-"));
+    const lockfilePath = join(root, "pnpm-lock.yaml");
+
+    try {
+      writeFileSync(lockfilePath, [
+        "lockfileVersion: '9.0'",
+        "packages:",
+        "  alpha@1.2.3:",
+        "    resolution: {integrity: fixture}",
+        "  '@scope/beta@2.0.0(peer@4.0.0)':",
+        "    resolution: {integrity: fixture}",
+        "  alpha@1.2.4:",
+        "    resolution: {integrity: fixture}",
+        "snapshots:",
+        ""
+      ].join("\n"));
+
+      const output = execFileSync(process.execPath, [
+        scanner,
+        "dependency-lockfile-report",
+        "--lockfile",
+        lockfilePath
+      ], {
+        cwd: repoRoot,
+        encoding: "utf8"
+      });
+
+      expect(JSON.parse(output)).toEqual({
+        "@scope/beta": ["2.0.0"],
+        alpha: ["1.2.3", "1.2.4"]
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("uses the bulk advisory endpoint and fails closed on invalid registry responses", async () => {
+    const requests: { path?: string; body: string }[] = [];
+    let responseBody = JSON.stringify({});
+    let responseStatus = 200;
+    const server = createServer((request, response) => {
+      let body = "";
+      request.setEncoding("utf8");
+      request.on("data", (chunk) => {
+        body += chunk;
+      });
+      request.on("end", () => {
+        requests.push({ path: request.url, body });
+        response.writeHead(responseStatus, { "content-type": "application/json" });
+        response.end(responseBody);
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+
+    if (address === null || typeof address === "string") {
+      server.close();
+      throw new Error("fixture registry did not expose a TCP port");
+    }
+
+    const registry = `http://127.0.0.1:${address.port}`;
+
+    try {
+      const clean = await runScanner([
+        "dependency-audit",
+        "--registry",
+        registry
+      ]);
+      expect(clean.status).toBe(0);
+      expect(clean.stdout).toContain("Security policy passed");
+      expect(requests[0]?.path).toBe("/-/npm/v1/security/advisories/bulk");
+      expect(Object.keys(JSON.parse(requests[0]?.body ?? "{}"))).toContain("zod");
+
+      responseStatus = 503;
+      responseBody = JSON.stringify({ error: "fixture unavailable" });
+      const unavailable = await runScanner([
+        "dependency-audit",
+        "--registry",
+        registry
+      ]);
+      expect(unavailable.status).toBe(1);
+      expect(unavailable.stderr).toContain("dependency scanner failed without a verifiable report");
+
+      responseStatus = 200;
+      responseBody = "not-json";
+      const malformed = await runScanner([
+        "dependency-audit",
+        "--registry",
+        registry
+      ]);
+      expect(malformed.status).toBe(1);
+      expect(malformed.stderr).toContain("dependency scanner returned an invalid report");
+    } finally {
+      await new Promise<void>((resolve, reject) => server.close((error) => {
+        if (error === undefined) {
+          resolve();
+          return;
+        }
+        reject(error);
+      }));
     }
   });
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { resolveCommittedRange } from "./resolve-committed-range.mjs";
@@ -141,15 +141,20 @@ function licenseFindings(report, baseline) {
 }
 
 function objectSeverities(value) {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => objectSeverities(item));
+  }
+
   if (!isRecord(value)) {
     return [];
   }
 
-  return Object.values(value).flatMap((advisory) =>
-    isRecord(advisory) && typeof advisory.severity === "string"
-      ? [advisory.severity.toLowerCase()]
-      : [],
-  );
+  return [
+    ...(typeof value.severity === "string" ? [value.severity.toLowerCase()] : []),
+    ...Object.entries(value).flatMap(([key, item]) =>
+      key === "severity" ? [] : objectSeverities(item),
+    ),
+  ];
 }
 
 function metadataSeverities(report) {
@@ -164,8 +169,7 @@ function metadataSeverities(report) {
 
 function advisorySeverities(report) {
   return [
-    ...objectSeverities(report.advisories),
-    ...objectSeverities(report.vulnerabilities),
+    ...objectSeverities(report),
     ...metadataSeverities(report),
   ];
 }
@@ -229,58 +233,154 @@ function runDependencyReport(argv) {
   console.log("Security policy passed: no high or critical dependency advisories detected.");
 }
 
-function parseAuditReport(result) {
+function packageKeyIdentity(key) {
+  const peerSuffixIndex = key.indexOf("(");
+  const baseKey = peerSuffixIndex === -1 ? key : key.slice(0, peerSuffixIndex);
+  const versionSeparator = baseKey.lastIndexOf("@");
+  const name = baseKey.slice(0, versionSeparator);
+  const version = baseKey.slice(versionSeparator + 1);
+
+  if (versionSeparator < 1 || name.length === 0 || version.length === 0) {
+    throw new Error(`pnpm lockfile package key lacks name/version identity: ${key}`);
+  }
+
+  return { name, version };
+}
+
+function unquoteYamlKey(value) {
+  const match = /^(['"])(.*)\1$/u.exec(value);
+  return match?.[2] ?? value;
+}
+
+function dependencyInventoryFromPnpmLock(lockfile) {
+  const packagesHeader = /^packages:\s*$/mu.exec(lockfile);
+  if (packagesHeader === null) {
+    throw new Error("pnpm lockfile has no auditable packages section");
+  }
+
+  const packagesStart = packagesHeader.index + packagesHeader[0].length;
+  const afterPackagesHeader = lockfile.slice(packagesStart).replace(/^\r?\n/u, "");
+  const nextTopLevelSection = /^\S.*:\s*$/mu.exec(afterPackagesHeader);
+  const packagesSection = nextTopLevelSection === null
+    ? afterPackagesHeader
+    : afterPackagesHeader.slice(0, nextTopLevelSection.index);
+  const packageKeys = [...packagesSection.matchAll(/^  (\S.+):$/gmu)]
+    .map((match) => unquoteYamlKey(match[1]));
+
+  if (packageKeys.length === 0) {
+    throw new Error("pnpm lockfile has no auditable packages section");
+  }
+
+  const inventory = new Map();
+  for (const key of packageKeys) {
+    const { name, version } = packageKeyIdentity(key);
+    const versions = new Set(inventory.get(name) ?? []);
+    versions.add(version);
+    inventory.set(name, versions);
+  }
+
+  return Object.fromEntries([...inventory.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, versions]) => [name, [...versions].sort()]));
+}
+
+function dependencyBulkEndpoint(registry) {
+  const url = new URL(registry);
+  url.pathname = "/-/npm/v1/security/advisories/bulk";
+  url.search = "";
+  url.hash = "";
+  return url;
+}
+
+async function requestBulkAdvisories(registry, inventory) {
   try {
-    return { report: JSON.parse(result.stdout ?? "") };
-  } catch {
-    return { error: result.stderr?.trim() ?? "no diagnostic output" };
+    const response = await fetch(dependencyBulkEndpoint(registry), {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(inventory),
+      signal: AbortSignal.timeout(30_000),
+    });
+    return { status: "responded", response };
+  } catch (error) {
+    return {
+      status: "failed",
+      reason: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
-function dependencyAuditFailure(result, findings) {
-  if (findings.length > 0) {
+async function parseBulkAdvisoryResponse(response) {
+  const body = await response.text();
+  if (!response.ok) {
     return {
-      message: "high or critical dependency advisories detected",
-      details: findings,
+      status: "failed",
+      reason: `registry returned HTTP ${response.status}`,
     };
   }
 
-  return result.status !== 0
-    ? {
-        message: "dependency scanner failed without a verifiable report",
-        details: [result.stderr?.trim() ?? `scanner exit code ${result.status}`],
-      }
-    : undefined;
+  try {
+    const report = JSON.parse(body);
+    return isRecord(report)
+      ? { status: "reported", report }
+      : { status: "invalid", reason: "registry response is not a JSON object" };
+  } catch {
+    return { status: "invalid", reason: "registry response is not valid JSON" };
+  }
 }
 
-function runDependencyAudit() {
-  const result = spawnSync("pnpm", ["audit", "--audit-level=high", "--json"], {
-    encoding: "utf8",
-  });
-
-  if (result.error !== undefined) {
-    fail("dependency scanner could not start", [result.error.message]);
-    return;
-  }
-
-  const parsed = parseAuditReport(result);
-
-  if (parsed.error !== undefined) {
-    fail("dependency scanner returned an invalid report", [parsed.error]);
-    return;
-  }
-
-  const failure = dependencyAuditFailure(result, highOrCriticalFindings(parsed.report));
-
-  if (failure !== undefined) {
-    fail(failure.message, failure.details);
-    return;
-  }
-
-  console.log("Security policy passed: dependency audit completed with no high or critical advisories.");
+async function bulkAdvisoryReport(registry, inventory) {
+  const request = await requestBulkAdvisories(registry, inventory);
+  return request.status === "failed"
+    ? request
+    : parseBulkAdvisoryResponse(request.response);
 }
 
-function main() {
+function runDependencyLockfileReport(argv) {
+  const lockfile = readFileSync(requireOption(argv, "--lockfile"), "utf8");
+  console.log(JSON.stringify(dependencyInventoryFromPnpmLock(lockfile)));
+}
+
+async function runDependencyAudit(argv) {
+  const lockfilePath = optionValue(argv, "--lockfile") ?? join(process.cwd(), "pnpm-lock.yaml");
+  const registry = optionValue(argv, "--registry") ??
+    process.env.npm_config_registry ??
+    "https://registry.npmjs.org/";
+  const inventory = dependencyInventoryFromPnpmLock(readFileSync(lockfilePath, "utf8"));
+  const result = await bulkAdvisoryReport(registry, inventory);
+  const report = dependencyAuditReportOrFail(result);
+
+  if (report === undefined) {
+    return;
+  }
+
+  const findings = highOrCriticalFindings(report);
+  if (findings.length > 0) {
+    fail("high or critical dependency advisories detected", findings);
+    return;
+  }
+
+  console.log(
+    `Security policy passed: bulk dependency audit covered ${Object.keys(inventory).length} packages with no high or critical advisories.`,
+  );
+}
+
+function dependencyAuditReportOrFail(result) {
+  switch (result.status) {
+    case "reported":
+      return result.report;
+    case "failed":
+      fail("dependency scanner failed without a verifiable report", [result.reason]);
+      return undefined;
+    case "invalid":
+      fail("dependency scanner returned an invalid report", [result.reason]);
+      return undefined;
+  }
+}
+
+async function main() {
   const [mode, ...argv] = process.argv.slice(2);
 
   const root = optionValue(argv, "--root");
@@ -292,19 +392,20 @@ function main() {
     secrets: () => runSecrets(argv),
     licenses: () => runLicenses(argv),
     "dependency-report": () => runDependencyReport(argv),
-    "dependency-audit": () => runDependencyAudit(),
+    "dependency-lockfile-report": () => runDependencyLockfileReport(argv),
+    "dependency-audit": () => runDependencyAudit(argv),
   };
   const handler = handlers[mode];
 
   if (handler === undefined) {
-      throw new Error("Usage: security-policy.mjs <secrets|licenses|dependency-report|dependency-audit> [options]");
+      throw new Error("Usage: security-policy.mjs <secrets|licenses|dependency-report|dependency-lockfile-report|dependency-audit> [options]");
   }
 
-  handler();
+  await handler();
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
