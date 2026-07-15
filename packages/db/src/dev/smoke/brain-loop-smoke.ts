@@ -861,22 +861,30 @@ export const runBrainLoopSmokeCheck = async (
       admittedPacketFeedback.feedbackDelta.metadata
     );
 
-    const memoryApplication = await memoryRepository.recordMemoryApplication({
+    const applicationAggregate = requireSmokeReadbackValue(
+      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
+      "current memory application aggregate",
+      "Memory loop smoke could not reconstruct current application authority"
+    );
+    const applicationPacketBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: applicationAggregate,
+      packetGeneratedAt: applicationAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
+    const memoryApplicationResult = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
-      taskContractId: taskContract.id,
-      contextAssemblyId: contextAssembly.id,
       expectedUse: "Verify next activation reused reviewed memory.",
-      outcome: "helped",
-      notes: "DB-backed memory loop smoke included reviewed memory in context.",
-      packetChecksum: packetBinding.packetChecksum,
-      packetGeneratedAt: packetBinding.packetGeneratedAt,
-      sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
-      evidenceBundleId: admittedPacketFeedback.evidenceBundle.id,
+      outcome: "neutral",
+      notes: "DB-backed memory loop smoke observed selected memory without strengthening it.",
+      packetChecksum: applicationPacketBinding.packetChecksum,
+      packetGeneratedAt: applicationPacketBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: applicationPacketBinding.sourceRunLifecycleRevision,
       metadata: {
         smokeId: marker
       }
     });
+    const memoryApplication = memoryApplicationResult.application;
     const nextCompile = await compileHarnessPlan({
       workspaceId: workspace.id,
       projectId: project.id,
@@ -946,23 +954,86 @@ export const runBrainLoopSmokeCheck = async (
     const downgradedMemoryApplications: (typeof memoryApplication)[] = [];
 
     for (const attempt of [1, 2, 3]) {
-      downgradedMemoryApplications.push(await memoryRepository.recordMemoryApplication({
+      const downgradeMemory = requireSmokeReadbackValue(
+        await memoryRepository.getMemoryRecordById(memoryRecord.id),
+        "downgrade memory authority",
+        "Memory loop smoke lost memory before downgrade application"
+      );
+      await harnessRunRepository.createContextAssembly({
+        harnessPlanId: harnessPlan.id,
+        status: "assembled",
+        tokenBudget: 256,
+        inclusions: [{
+          subjectType: "memory_record",
+          subjectId: downgradeMemory.id,
+          reason: `Select memory for downgrade feedback ${attempt}.`,
+          expectedUse: "Verify negative application feedback downgrades future activation.",
+          sourceAuthority: "project-decision"
+        }],
+        exclusions: [],
+        metadata: {
+          ...contextAssembly.metadata,
+          smokeId: marker,
+          canonicalRevisionTokens: [{
+            subjectType: "memory_record",
+            subjectId: downgradeMemory.id,
+            updatedAt: downgradeMemory.updatedAt,
+            status: downgradeMemory.status,
+            currentVersionId: downgradeMemory.currentVersionId
+          }]
+        }
+      });
+      const downgradeAggregate = requireSmokeReadbackValue(
+        await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
+        "downgrade application aggregate",
+        "Memory loop smoke could not reconstruct downgrade application authority"
+      );
+      const downgradePacketBinding = currentDecisionPacketBindingForHarnessRun({
+        aggregate: downgradeAggregate,
+        packetGeneratedAt: downgradeAggregate.executionRun.updatedAt,
+        sha256Hex
+      });
+      const downgradeResult = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
         memoryRecordId: memoryRecord.id,
         executionRunId: executionRun.id,
-        taskContractId: taskContract.id,
-        contextAssemblyId: nextCompile.contextAssembly.id,
         expectedUse: "Verify negative application feedback downgrades future activation.",
-      outcome: "hurt",
-      notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
-      packetChecksum: `memory-loop-downgrade-packet-${marker}-${attempt}`,
-      packetGeneratedAt: now,
-      sourceRunLifecycleRevision: executionRun.lifecycleRevision,
-      metadata: {
+        outcome: "hurt",
+        notes: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
+        packetChecksum: downgradePacketBinding.packetChecksum,
+        packetGeneratedAt: downgradePacketBinding.packetGeneratedAt,
+        sourceRunLifecycleRevision: downgradePacketBinding.sourceRunLifecycleRevision,
+        metadata: {
           smokeId: marker,
           feedbackLoop: "downgrade",
           attempt
+        },
+        negativeEffects: {
+          outcome: "hurt",
+          eventType: "demoted",
+          note: `DB-backed memory loop smoke downgrade feedback ${attempt}.`,
+          reason: "The governed memory hurt the smoke outcome.",
+          metadata: {
+            smokeId: marker,
+            feedbackLoop: "downgrade",
+            attempt
+          },
+          candidate: {
+            key: `memory-loop:${marker}:downgrade:${attempt}`,
+            rejectedClaim: downgradeMemory.summary,
+            reason: "The governed memory hurt the smoke outcome.",
+            invalidatedBySourceClaimIds: downgradeMemory.sourceLineage.map(
+              (lineage) => lineage.sourceId
+            ),
+            appliesTo: downgradeMemory.key,
+            summary: `Review memory-loop downgrade ${attempt}.`,
+            body: "Negative application feedback remains reviewable and non-governing.",
+            owner: downgradeMemory.owner,
+            confidence: 70,
+            sourceLineage: downgradeMemory.sourceLineage
+          }
         }
-      }));
+      });
+      downgradedMemoryApplications.push(downgradeResult.application);
     }
     const downgradedMemoryRecord = requireSmokeReadbackValue(
       await memoryRepository.getMemoryRecordById(memoryRecord.id),

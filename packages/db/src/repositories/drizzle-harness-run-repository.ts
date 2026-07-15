@@ -1942,6 +1942,22 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     };
   }
 
+  async readHarnessRunAuthority(
+    tx: KrnDatabaseTransaction,
+    executionRunId: string
+  ): Promise<HarnessRunAggregate | undefined> {
+    const [lockedRun] = await tx
+      .select({ id: executionRuns.id })
+      .from(executionRuns)
+      .where(eq(executionRuns.id, executionRunId))
+      .limit(1)
+      .for("update", { of: executionRuns });
+
+    return lockedRun === undefined
+      ? undefined
+      : this.findHarnessRunAggregate(tx, executionRunId, true);
+  }
+
   async createOperatorIntent(input: CreateOperatorIntentInput): Promise<OperatorIntent> {
     const row = requireReturnedRow(
       await this.db

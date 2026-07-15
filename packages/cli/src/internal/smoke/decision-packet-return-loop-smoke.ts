@@ -1,21 +1,25 @@
 import type {
   Sql
 } from "postgres";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type {
   FeedbackDelta,
+  MemoryRecord,
   SourceUsefulnessOutcomeFeedback
 } from "@krn/core";
 import {
   buildMaintenanceQueueWriteBoundaryReadback,
   buildMemoryStalenessMaintenancePreview,
   createCommandOutputArtifact,
+  currentDecisionPacketBindingForHarnessRun,
   decisionPacketBindingReadbackFromMetadata,
   parseMaintenanceJob
 } from "@krn/core";
+
 import type {
   HarnessCompilerDependencies
 } from "@krn/harness";
@@ -67,6 +71,9 @@ import {
   readStringArray
 } from "./json-readers.js";
 
+const sha256Hex = (value: string | Uint8Array): string =>
+  createHash("sha256").update(value).digest("hex");
+
 const returnChannelCheckpointCommand =
   "decision-packet return-channel checkpoint";
 const returnLoopApplicationPath =
@@ -100,12 +107,12 @@ export interface DecisionPacketReturnLoopSmokeReport {
   nextPacketCaveatedSourceClaimIds: readonly string[];
   nextPacketRetainsActivatedDecision: boolean;
   selectorProofRunId: string;
-  selectorHelpedMemoryRecordId: string;
+  selectorRetainedMemoryRecordId: string;
   selectorStaleMemoryRecordId: string;
-  selectorHelpedMemoryApplicationId: string;
+  selectorRetainedMemoryApplicationId: string;
   selectorStaleMemoryApplicationIds: readonly string[];
   selectorPacketMemoryRefs: readonly string[];
-  selectorPacketIncludesHelpedMemory: boolean;
+  selectorPacketIncludesRetainedMemory: boolean;
   selectorPacketExcludesStaleMemory: boolean;
   selectorMaintenanceCandidateId: string;
   selectorMaintenanceAntiMemoryCandidateId: string;
@@ -213,18 +220,69 @@ interface DecisionPacketSmokeJson {
 interface SelectorFeedbackProofResult {
   proofRunId: string;
   retrievalRunId: string | undefined;
-  helpedMemoryRecordId: string;
+  retainedMemoryRecordId: string;
   staleMemoryRecordId: string;
-  helpedMemoryApplicationId: string;
+  retainedMemoryApplicationId: string;
   staleMemoryApplicationIds: readonly string[];
   packetMemoryRefs: readonly string[];
-  includesHelpedMemory: boolean;
+  includesRetainedMemory: boolean;
   excludesStaleMemory: boolean;
   maintenanceCandidateId: string;
   maintenanceAntiMemoryCandidateId: string;
   maintenanceFeedbackEventId: string;
   maintenanceCandidateLinkedToFeedbackDelta: boolean;
 }
+
+const selectMemoryApplicationAuthority = async (input: {
+  executionRunId: string;
+  expectedUse: string;
+  harnessRunRepository: HarnessRunRepository;
+  marker: string;
+  memoryRecord: MemoryRecord;
+  reason: string;
+}) => {
+  const aggregate = await input.harnessRunRepository.getHarnessRunByExecutionRunId(
+    input.executionRunId
+  );
+  if (aggregate === undefined) {
+    throw new Error("DecisionPacket return-loop smoke lost memory application run");
+  }
+  await input.harnessRunRepository.createContextAssembly({
+    harnessPlanId: aggregate.harnessPlan.id,
+    status: "assembled",
+    tokenBudget: 256,
+    inclusions: [{
+      subjectType: "memory_record",
+      subjectId: input.memoryRecord.id,
+      reason: input.reason,
+      expectedUse: input.expectedUse,
+      sourceAuthority: "project-decision"
+    }],
+    exclusions: [],
+    metadata: {
+      smokeId: input.marker,
+      canonicalRevisionTokens: [{
+        subjectType: "memory_record",
+        subjectId: input.memoryRecord.id,
+        updatedAt: input.memoryRecord.updatedAt,
+        status: input.memoryRecord.status,
+        currentVersionId: input.memoryRecord.currentVersionId
+      }]
+    }
+  });
+  const selectedAggregate = await input.harnessRunRepository.getHarnessRunByExecutionRunId(
+    input.executionRunId
+  );
+  if (selectedAggregate === undefined) {
+    throw new Error("DecisionPacket return-loop smoke lost selected memory authority");
+  }
+
+  return currentDecisionPacketBindingForHarnessRun({
+    aggregate: selectedAggregate,
+    packetGeneratedAt: selectedAggregate.executionRun.updatedAt,
+    sha256Hex
+  });
+};
 
 type FeedbackSourceProof = "helped" | "stale";
 
@@ -1949,10 +2007,6 @@ const runSelectorFeedbackProof = async (
     };
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
-    readonly packetChecksum: string;
-    readonly packetGeneratedAt: string;
-    readonly sourceRunLifecycleRevision: number;
-    readonly verificationEvidenceBundleId: string;
     readonly feedbackDeltaId: string;
     readonly marker: string;
     readonly projectId: string;
@@ -2012,7 +2066,7 @@ const runSelectorFeedbackProof = async (
     supportType: "implementation-boundary",
     consumer: "DecisionPacket return-loop smoke",
     falsifier:
-      "The selector proof packet misses the helped memory or includes the stale memory after store-backed feedback is recorded.",
+      "The selector proof packet misses the retained neutral control or includes stale memory after governed feedback is recorded.",
     revisitWhen: "DecisionPacket feedback or activation selector contracts change.",
     status: "proposed",
     metadata: {
@@ -2038,15 +2092,15 @@ const runSelectorFeedbackProof = async (
     }
   });
 
-  const selectorHelpedCandidate = await memoryRepository.createMemoryCandidate({
+  const selectorRetainedCandidate = await memoryRepository.createMemoryCandidate({
     projectId: input.projectId,
     executionRunId: input.executionRunId,
     proposedBy: "decision-packet-return-loop-smoke",
     kind: "procedure",
     status: "candidate",
-    summary: "DecisionPacket selector feedback memory should be retained",
+    summary: "DecisionPacket selector neutral control should remain eligible",
     body:
-      "Use store-backed memory application feedback when proving the next DecisionPacket selector retained useful Memory Core context.",
+      "Use an eligible neutral control when proving stale feedback changes the next DecisionPacket selector.",
     owner: "kernel",
     confidence: 92,
     applicationGuidance:
@@ -2058,17 +2112,17 @@ const runSelectorFeedbackProof = async (
     validFrom: "2026-07-07T12:00:00.000Z",
     metadata: {
       smokeId: input.marker,
-      selectorFeedbackProof: "helped"
+      selectorFeedbackProof: "retained_control"
     }
   });
-  const selectorHelpedMemory = await memoryRepository.promoteReviewedMemoryCandidate({
-    candidateId: selectorHelpedCandidate.id,
+  const selectorRetainedMemory = await memoryRepository.promoteReviewedMemoryCandidate({
+    candidateId: selectorRetainedCandidate.id,
     reviewer: "decision-packet-return-loop-smoke",
     decision: "accepted",
-    recordKey: `decision-packet-return-loop:${input.marker}:helped-selector-memory`,
+    recordKey: `decision-packet-return-loop:${input.marker}:retained-selector-memory`,
     metadata: {
       smokeId: input.marker,
-      selectorFeedbackProof: "helped"
+      selectorFeedbackProof: "retained_control"
     }
   });
   const selectorStaleCandidate = await memoryRepository.createMemoryCandidate({
@@ -2104,41 +2158,86 @@ const runSelectorFeedbackProof = async (
       selectorFeedbackProof: "stale"
     }
   });
-  const selectorHelpedMemoryApplication = await memoryRepository.recordMemoryApplication({
-    memoryRecordId: selectorHelpedMemory.id,
+  const selectorControlBinding = await selectMemoryApplicationAuthority({
     executionRunId: input.executionRunId,
-    expectedUse: "Retain useful DecisionPacket selector feedback memory on the next packet.",
-    outcome: "helped",
-    notes: "Store-backed helped feedback should keep this memory eligible for next activation.",
-    packetChecksum: input.packetChecksum,
-    packetGeneratedAt: input.packetGeneratedAt,
-    sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
-    evidenceBundleId: input.verificationEvidenceBundleId,
+    expectedUse: "Retain eligible selector feedback memory on the next packet.",
+    harnessRunRepository,
+    marker: input.marker,
+    memoryRecord: selectorRetainedMemory,
+    reason: "Select retained control memory before recording its application."
+  });
+  const selectorRetainedMemoryApplication = await memoryRepository
+    .recordMemoryApplicationWithEffectsOnce({
+    memoryRecordId: selectorRetainedMemory.id,
+    executionRunId: input.executionRunId,
+    expectedUse: "Retain eligible DecisionPacket selector feedback memory on the next packet.",
+    outcome: "neutral",
+    notes: "Selected control memory remains eligible without fabricated positive feedback.",
+    packetChecksum: selectorControlBinding.packetChecksum,
+    packetGeneratedAt: selectorControlBinding.packetGeneratedAt,
+    sourceRunLifecycleRevision: selectorControlBinding.sourceRunLifecycleRevision,
     metadata: {
       smokeId: input.marker,
-      selectorFeedbackProof: "helped"
+      selectorFeedbackProof: "retained_control"
     }
   });
   const selectorStaleMemoryApplicationIds: string[] = [];
 
   for (const attempt of [1, 2, 3]) {
-    const staleApplication = await memoryRepository.recordMemoryApplication({
+    const staleMemory = await memoryRepository.getMemoryRecordById(selectorStaleMemory.id);
+    if (staleMemory === undefined) {
+      throw new Error("DecisionPacket return-loop smoke lost stale selector memory");
+    }
+    const staleBinding = await selectMemoryApplicationAuthority({
+      executionRunId: input.executionRunId,
+      expectedUse: "Demote stale DecisionPacket selector feedback memory on the next packet.",
+      harnessRunRepository,
+      marker: input.marker,
+      memoryRecord: staleMemory,
+      reason: `Select stale feedback memory for application ${attempt}.`
+    });
+    const staleApplication = await memoryRepository.recordMemoryApplicationWithEffectsOnce({
       memoryRecordId: selectorStaleMemory.id,
       executionRunId: input.executionRunId,
       expectedUse: "Demote stale DecisionPacket selector feedback memory on the next packet.",
       outcome: "stale",
       notes: `Store-backed stale feedback ${attempt} should make this memory unsafe for next activation.`,
-      packetChecksum: `${input.packetChecksum}-stale-${attempt}`,
-      packetGeneratedAt: input.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      packetChecksum: staleBinding.packetChecksum,
+      packetGeneratedAt: staleBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: staleBinding.sourceRunLifecycleRevision,
       metadata: {
         smokeId: input.marker,
         selectorFeedbackProof: "stale",
         attempt
+      },
+      negativeEffects: {
+        outcome: "stale",
+        eventType: "stale_detected",
+        note: `Store-backed stale feedback ${attempt}.`,
+        reason: "Selector memory was stale for the governed application.",
+        metadata: {
+          smokeId: input.marker,
+          selectorFeedbackProof: "stale",
+          attempt
+        },
+        candidate: {
+          key: `decision-packet-return-loop:${input.marker}:stale:${attempt}`,
+          rejectedClaim: staleMemory.summary,
+          reason: "Selector memory was stale for the governed application.",
+          invalidatedBySourceClaimIds: staleMemory.sourceLineage.map(
+            (lineage) => lineage.sourceId
+          ),
+          appliesTo: staleMemory.key,
+          summary: `Review stale selector feedback ${attempt}.`,
+          body: "Stale application feedback remains reviewable and non-governing.",
+          owner: staleMemory.owner,
+          confidence: 70,
+          sourceLineage: staleMemory.sourceLineage
+        }
       }
     });
 
-    selectorStaleMemoryApplicationIds.push(staleApplication.id);
+    selectorStaleMemoryApplicationIds.push(staleApplication.application.id);
   }
 
   const selectorStaleMemoryWithFeedback = await memoryRepository.getMemoryRecordById(
@@ -2201,7 +2300,7 @@ const runSelectorFeedbackProof = async (
       constraints: ["use store-backed memory feedback", "render a read-only DecisionPacket"],
       nonGoals: ["no markdown feedback ledger", "no worker daemon", "no live Codex"],
       acceptance: [
-        "helped memory appears in the next DecisionPacket memory refs",
+        "retained neutral control appears in the next DecisionPacket memory refs",
         "stale memory is excluded from the next DecisionPacket context"
       ],
       metadata: {
@@ -2238,7 +2337,9 @@ const runSelectorFeedbackProof = async (
     runId: selectorExecutionRun.id,
     createDatabaseRuntime: async () => input.commandRuntime
   })).stdout);
-  const includesHelpedMemory = selectorPacket.packet.memoryRefs.includes(selectorHelpedMemory.id);
+  const includesRetainedMemory = selectorPacket.packet.memoryRefs.includes(
+    selectorRetainedMemory.id
+  );
   const excludesStaleMemory =
     !selectorPacket.packet.memoryRefs.includes(selectorStaleMemory.id) &&
     selectorPacket.readModel.context.exclusionDetails.some((exclusion) =>
@@ -2254,12 +2355,12 @@ const runSelectorFeedbackProof = async (
       typeof selectorCompile.contextAssembly.metadata.retrievalRunId === "string"
         ? selectorCompile.contextAssembly.metadata.retrievalRunId
         : undefined,
-    helpedMemoryRecordId: selectorHelpedMemory.id,
+    retainedMemoryRecordId: selectorRetainedMemory.id,
     staleMemoryRecordId: selectorStaleMemory.id,
-    helpedMemoryApplicationId: selectorHelpedMemoryApplication.id,
+    retainedMemoryApplicationId: selectorRetainedMemoryApplication.application.id,
     staleMemoryApplicationIds: selectorStaleMemoryApplicationIds,
     packetMemoryRefs: selectorPacket.packet.memoryRefs,
-    includesHelpedMemory,
+    includesRetainedMemory,
     excludesStaleMemory,
     maintenanceCandidateId: maintenanceCandidate.id,
     maintenanceAntiMemoryCandidateId: maintenanceProposal.antiMemoryCandidate.id,
@@ -2754,10 +2855,6 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       baseRuntime,
       commandRuntime,
       executionRunId: executionRun.id,
-      packetChecksum: firstPacket.packetIdentity.checksum,
-      packetGeneratedAt: firstPacket.packetIdentity.generatedAt,
-      sourceRunLifecycleRevision: firstPacket.packetIdentity.sourceRunLifecycleRevision,
-      verificationEvidenceBundleId: aggregateAfterMatching?.evidenceBundles.at(-1)?.id ?? "",
       feedbackDeltaId: staleFeedbackDelta.id,
       marker,
       projectId: project.id,
@@ -2809,7 +2906,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "mismatched feedback stripped", passed: mismatchedFeedbackStripped },
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfNextPacket },
       { label: "next packet retains activated decisions", passed: nextPacketRetainsActivatedDecision },
-      { label: "selector packet includes helped memory", passed: selectorProof.includesHelpedMemory },
+      {
+        label: "selector packet includes retained neutral control memory",
+        passed: selectorProof.includesRetainedMemory
+      },
       { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
       {
         label: "feedback maintenance queue succeeded",
@@ -2942,12 +3042,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       nextPacketCaveatedSourceClaimIds,
       nextPacketRetainsActivatedDecision,
       selectorProofRunId: selectorProof.proofRunId,
-      selectorHelpedMemoryRecordId: selectorProof.helpedMemoryRecordId,
+      selectorRetainedMemoryRecordId: selectorProof.retainedMemoryRecordId,
       selectorStaleMemoryRecordId: selectorProof.staleMemoryRecordId,
-      selectorHelpedMemoryApplicationId: selectorProof.helpedMemoryApplicationId,
+      selectorRetainedMemoryApplicationId: selectorProof.retainedMemoryApplicationId,
       selectorStaleMemoryApplicationIds: selectorProof.staleMemoryApplicationIds,
       selectorPacketMemoryRefs: selectorProof.packetMemoryRefs,
-      selectorPacketIncludesHelpedMemory: selectorProof.includesHelpedMemory,
+      selectorPacketIncludesRetainedMemory: selectorProof.includesRetainedMemory,
       selectorPacketExcludesStaleMemory: selectorProof.excludesStaleMemory,
       selectorMaintenanceCandidateId: selectorProof.maintenanceCandidateId,
       selectorMaintenanceAntiMemoryCandidateId: selectorProof.maintenanceAntiMemoryCandidateId,

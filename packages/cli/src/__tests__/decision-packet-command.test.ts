@@ -592,8 +592,8 @@ const createFixtureDatabaseRuntime = (
     async invalidateMemoryRecord() {
       return notUsed("invalidateMemoryRecord");
     },
-    async recordMemoryApplication() {
-      return notUsed("recordMemoryApplication");
+    async recordMemoryApplicationWithEffectsOnce() {
+      return notUsed("recordMemoryApplicationWithEffectsOnce");
     },
     async createMemoryFeedbackEvent() {
       return notUsed("createMemoryFeedbackEvent");

@@ -1,37 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DrizzleMemoryRepository,
   activeMemorySelectionOrder,
   antiMemoryPromotionMetadata,
   assertAntiMemoryCandidateInvariants,
   assertMemoryCoreInvariants,
   memoryPromotionMetadata
 } from "../drizzle-memory-repository.js";
-
-const methodNames = [
-  "createMemoryCandidate",
-  "getMemoryCandidateById",
-  "promoteMemoryCandidate",
-  "rejectMemoryCandidate",
-  "getMemoryRecordById",
-  "listMemoryRecordsForProject",
-  "invalidateMemoryRecord",
-  "supersedeMemoryRecord",
-  "applyReviewedMemoryRevision",
-  "recordMemoryApplication",
-  "recordMemoryApplicationOnce",
-  "recordMemoryApplicationWithEffectsOnce",
-  "createMemoryFeedbackEvent",
-  "createAntiMemoryCandidate",
-  "getAntiMemoryCandidateById",
-  "promoteReviewedAntiMemoryCandidate",
-  "rejectAntiMemoryCandidate",
-  "listAntiMemoryCandidates",
-  "createAntiMemoryRecord",
-  "listAntiMemoryForProject",
-  "listAntiMemoryForRun"
-] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -67,12 +42,6 @@ const orderDirection = (order: unknown): "asc" | "desc" | undefined => {
 };
 
 describe("DrizzleMemoryRepository", () => {
-  it("exposes M23 memory governance repository methods", () => {
-    for (const methodName of methodNames) {
-      expect(typeof DrizzleMemoryRepository.prototype[methodName]).toBe("function");
-    }
-  });
-
   it("orders active memory before limit by negative feedback, positive feedback, then recency", () => {
     const order = activeMemorySelectionOrder();
 

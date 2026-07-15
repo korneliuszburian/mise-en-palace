@@ -265,10 +265,6 @@ export const runMemoryRecordApplyCommand = async (
     const recordApplicationWithEffectsOnce =
       databaseRuntime.memoryRepository.recordMemoryApplicationWithEffectsOnce;
 
-    if (recordApplicationWithEffectsOnce === undefined) {
-      throw new Error("Atomic packet-bound memory application effects persistence is required");
-    }
-
     const feedbackEventType = feedbackEventTypeForOutcome(applicationInput.outcome);
     const negativeEffects = feedbackEventType === undefined
       ? undefined

@@ -166,8 +166,6 @@ export interface DatabaseRuntime {
     | "getMemoryRecordById"
     | "listMemoryRecordsForProject"
     | "invalidateMemoryRecord"
-    | "recordMemoryApplication"
-    | "recordMemoryApplicationOnce"
     | "recordMemoryApplicationWithEffectsOnce"
     | "createMemoryFeedbackEvent"
     | "createAntiMemoryCandidate"

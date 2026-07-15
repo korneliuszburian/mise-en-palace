@@ -13,6 +13,7 @@ import type {
 import type {
   CreateEvidenceFeedbackOnceInput
 } from "@krn/core/repositories";
+import { MemoryApplicationIdentityConflictError } from "@krn/core/repositories/internal";
 import { eq, sql } from "drizzle-orm";
 import postgres from "postgres";
 
@@ -43,6 +44,7 @@ import {
 
 const memoryGovernanceCheckpointCommand =
   "memory-governance checkpoint: current harness aggregate readback";
+const packetBoundApplicationExpectedUse = "Guide memory governance smoke.";
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
@@ -181,6 +183,33 @@ const assertRejected = async (
   throw new Error(message);
 };
 
+const assertMemoryApplicationIdentityConflict = async (input: {
+  executionRunId: string;
+  memoryRecordId: string;
+  operation: Promise<unknown>;
+  packetChecksum: string;
+  message: string;
+}): Promise<void> => {
+  try {
+    await input.operation;
+  } catch (error) {
+    if (
+      error instanceof MemoryApplicationIdentityConflictError &&
+      error.executionRunId === input.executionRunId &&
+      error.memoryRecordId === input.memoryRecordId &&
+      error.packetChecksum === input.packetChecksum
+    ) {
+      return;
+    }
+
+    throw new Error(
+      `${input.message}: unexpected rejection ${error instanceof Error ? error.message : "unknown error"}`
+    );
+  }
+
+  throw new Error(input.message);
+};
+
 const fulfilledCount = <Value>(
   results: readonly PromiseSettledResult<Value>[]
 ): number => results.filter((result) => result.status === "fulfilled").length;
@@ -235,6 +264,16 @@ export const runMemoryGovernanceSmokeCheck = async (
   let unresolvedOutputReferenceEvidenceRejected = false;
   let mismatchedPacketIssuanceRejected = false;
   let staleLifecycleRevisionRejected = false;
+  let fabricatedApplicationAuthorityRejected = false;
+  let crossRunTaskContextRejected = false;
+  let unselectedMemoryApplicationRejected = false;
+  let conflictingRetryRejected = false;
+  let conflictRaceApplicationCount = 0;
+  let conflictRaceEffectCount = 0;
+  let conflictRaceOutboxExact = false;
+  let conflictRaceCounterUnchanged = false;
+  let conflictRaceWinnerApplicationId: string | undefined;
+  let historicalExactRetryPreserved = false;
 
   const cleanup = async (): Promise<number> => {
     await cleanupMemoryGovernanceSmokeRows({
@@ -262,7 +301,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       project,
       result,
       retrievalRunId: compiledRetrievalRunId,
-      sourceRepository
+      sourceRepository,
+      workspace
     } = await createCompiledSmokeExecution({
       acceptance: "read back memory records and clean smoke rows",
       command: "db:smoke:memory-governance",
@@ -431,6 +471,29 @@ export const runMemoryGovernanceSmokeCheck = async (
       recordKey: `memory-governance-smoke:${marker}`,
       metadata: {
         smokeId: marker
+      }
+    });
+    const applicationContextAssembly = await harnessRunRepository.createContextAssembly({
+      harnessPlanId: result.harnessPlan.id,
+      status: "assembled",
+      tokenBudget: 256,
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: memoryRecord.id,
+        reason: "Select the governed memory before recording its application.",
+        expectedUse: packetBoundApplicationExpectedUse,
+        sourceAuthority: "project-decision"
+      }],
+      exclusions: [],
+      metadata: {
+        smokeId: marker,
+        canonicalRevisionTokens: [{
+          subjectType: "memory_record",
+          subjectId: memoryRecord.id,
+          updatedAt: memoryRecord.updatedAt,
+          status: memoryRecord.status,
+          currentVersionId: memoryRecord.currentVersionId
+        }]
       }
     });
 
@@ -721,7 +784,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       eventType: "smoke.memory_governance.verification_captured",
       eventMessage: "Memory governance verification evidence captured"
     });
-    const packetBoundApplication = {
+    const helpedVerificationApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
       packetChecksum: canonicalVerification.packetBinding.packetChecksum,
@@ -729,21 +792,41 @@ export const runMemoryGovernanceSmokeCheck = async (
       sourceRunLifecycleRevision:
         canonicalVerification.packetBinding.sourceRunLifecycleRevision,
       evidenceBundleId: canonicalVerification.evidenceBundle.id,
-      expectedUse: "Guide memory governance smoke.",
+      expectedUse: packetBoundApplicationExpectedUse,
       outcome: "helped",
       notes: "Verified explicit promotion and application feedback.",
       metadata: {
         smokeId: marker
       }
     } as const;
-
-    if (memoryRepository.recordMemoryApplicationWithEffectsOnce === undefined) {
-      throw new Error("Memory governance smoke requires atomic packet-bound application effects persistence");
+    const applicationAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
+      executionRun.id
+    );
+    if (applicationAggregate === undefined) {
+      throw new Error("Memory governance lost run before packet-bound application");
     }
+    const applicationPacketBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: applicationAggregate,
+      packetGeneratedAt: applicationAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
+    const packetBoundApplication = {
+      memoryRecordId: memoryRecord.id,
+      executionRunId: executionRun.id,
+      packetChecksum: applicationPacketBinding.packetChecksum,
+      packetGeneratedAt: applicationPacketBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: applicationPacketBinding.sourceRunLifecycleRevision,
+      expectedUse: packetBoundApplicationExpectedUse,
+      outcome: "neutral",
+      notes: "Verified current selected memory application authority.",
+      metadata: {
+        smokeId: marker
+      }
+    } as const;
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
-        ...packetBoundApplication,
+        ...helpedVerificationApplication,
         packetChecksum: failedVerification.packetBinding.packetChecksum,
         packetGeneratedAt: failedVerification.packetBinding.packetGeneratedAt,
         sourceRunLifecycleRevision:
@@ -757,7 +840,7 @@ export const runMemoryGovernanceSmokeCheck = async (
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
-        ...packetBoundApplication,
+        ...helpedVerificationApplication,
         packetChecksum: missingRequiredVerification.packetBinding.packetChecksum,
         packetGeneratedAt: missingRequiredVerification.packetBinding.packetGeneratedAt,
         sourceRunLifecycleRevision:
@@ -771,7 +854,7 @@ export const runMemoryGovernanceSmokeCheck = async (
 
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
-        ...packetBoundApplication,
+        ...helpedVerificationApplication,
         packetChecksum: unresolvedOutputVerification.packetBinding.packetChecksum,
         packetGeneratedAt: unresolvedOutputVerification.packetBinding.packetGeneratedAt,
         sourceRunLifecycleRevision:
@@ -846,26 +929,380 @@ export const runMemoryGovernanceSmokeCheck = async (
           Date.parse(packetBoundApplication.packetGeneratedAt) - 1
         ).toISOString()
       }),
-      "helped memory application requires a fresh successful verification EvidenceBundle",
+      "memory application identity conflict",
       "Memory governance accepted verification evidence from a different packet issuance"
     );
     mismatchedPacketIssuanceRejected = true;
 
-    const unboundNegativePacketChecksum =
-      `${packetBoundApplication.packetChecksum}:unbound-negative`;
+    const otherOperatorIntent = await harnessRunRepository.createOperatorIntent({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      source: "cli",
+      rawIntent: `${task} other run`,
+      metadata: { smokeId: marker }
+    });
+    const otherTaskContract = await harnessRunRepository.createTaskContract({
+      operatorIntentId: otherOperatorIntent.id,
+      projectId: project.id,
+      title: `${task} other run`,
+      objective: "Provide valid but cross-run task authority.",
+      constraints: [],
+      nonGoals: [],
+      acceptance: ["Cross-run application authority rejects."],
+      metadata: { smokeId: marker }
+    });
+    const otherHarnessPlan = await harnessRunRepository.createHarnessPlan({
+      taskContractId: otherTaskContract.id,
+      version: 1,
+      status: "running",
+      summary: "Other memory governance run",
+      nextAction: "Remain unrelated to the canonical execution run.",
+      metadata: { smokeId: marker }
+    });
+    const otherContextAssembly = await harnessRunRepository.createContextAssembly({
+      harnessPlanId: otherHarnessPlan.id,
+      status: "assembled",
+      tokenBudget: 128,
+      inclusions: [],
+      exclusions: [],
+      metadata: { smokeId: marker }
+    });
+    const unverifiedPacketApplication = packetBoundApplication;
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...unverifiedPacketApplication,
+        taskContractId: otherTaskContract.id,
+        contextAssemblyId: otherContextAssembly.id,
+        outcome: "neutral",
+        metadata: {
+          smokeId: marker,
+          applicationKind: "cross-run-authority"
+        }
+      }),
+      "memory application identity conflict",
+      "Memory governance accepted valid task and context identities from another run"
+    );
+    crossRunTaskContextRejected = true;
+
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...unverifiedPacketApplication,
+        packetChecksum: `${packetBoundApplication.packetChecksum}:fabricated`,
+        outcome: "neutral",
+        metadata: {
+          smokeId: marker,
+          applicationKind: "fabricated-authority"
+        }
+      }),
+      "memory application authority rejected",
+      "Memory governance accepted fabricated packet authority"
+    );
+    fabricatedApplicationAuthorityRejected = true;
+
+    const unselectedMemoryRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-unselected:${marker}`,
+      kind: "constraint",
+      summary: "Unselected memory application authority probe",
+      body: "A current packet must not authorize memory that it did not select.",
+      owner: "kernel",
+      confidence: 70,
+      applicationGuidance: "Use only as an unselected-subject falsifier.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: { smokeId: marker }
+    });
+    const unselectedAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
+      executionRun.id
+    );
+    if (unselectedAggregate === undefined) {
+      throw new Error("Memory governance lost run before unselected-memory falsifier");
+    }
+    const unselectedPacketBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: unselectedAggregate,
+      packetGeneratedAt: unselectedAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
+    await assertRejected(
+      memoryRepository.recordMemoryApplicationWithEffectsOnce({
+        ...packetBoundApplication,
+        memoryRecordId: unselectedMemoryRecord.id,
+        packetChecksum: unselectedPacketBinding.packetChecksum,
+        packetGeneratedAt: unselectedPacketBinding.packetGeneratedAt,
+        sourceRunLifecycleRevision: unselectedPacketBinding.sourceRunLifecycleRevision,
+        notes: "Unselected memory must be rejected.",
+        metadata: {
+          smokeId: marker,
+          applicationKind: "unselected-memory"
+        }
+      }),
+      "is not selected by the current packet",
+      "Memory governance accepted an unselected memory record"
+    );
+    unselectedMemoryApplicationRejected = true;
+
+    const conflictRaceMemory = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+    if (conflictRaceMemory === undefined) {
+      throw new Error("Memory governance lost memory before conflicting retry race");
+    }
+    await harnessRunRepository.createContextAssembly({
+      harnessPlanId: result.harnessPlan.id,
+      status: "assembled",
+      tokenBudget: 256,
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: conflictRaceMemory.id,
+        reason: "Select memory for conflicting application retry proof.",
+        expectedUse: "Prove conflicting application retries reject.",
+        sourceAuthority: "project-decision"
+      }],
+      exclusions: [],
+      metadata: {
+        smokeId: marker,
+        canonicalRevisionTokens: [{
+          subjectType: "memory_record",
+          subjectId: conflictRaceMemory.id,
+          updatedAt: conflictRaceMemory.updatedAt,
+          status: conflictRaceMemory.status,
+          currentVersionId: conflictRaceMemory.currentVersionId
+        }]
+      }
+    });
+    const conflictRaceAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
+      executionRun.id
+    );
+    if (conflictRaceAggregate === undefined) {
+      throw new Error("Memory governance lost run before conflicting retry race");
+    }
+    const conflictRaceBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: conflictRaceAggregate,
+      packetGeneratedAt: conflictRaceAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
+    const conflictRaceNeutralApplication = {
+      memoryRecordId: memoryRecord.id,
+      executionRunId: executionRun.id,
+      packetChecksum: conflictRaceBinding.packetChecksum,
+      packetGeneratedAt: conflictRaceBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: conflictRaceBinding.sourceRunLifecycleRevision,
+      expectedUse: "Prove conflicting application retries reject.",
+      outcome: "neutral" as const,
+      notes: "The deterministic neutral winner creates no review effects.",
+      metadata: {
+        smokeId: marker,
+        applicationKind: "conflict-race"
+      }
+    };
+    const conflictRaceStaleApplication = {
+      ...conflictRaceNeutralApplication,
+      outcome: "stale" as const,
+      notes: "A conflicting stale retry must not reuse the neutral application identity.",
+      negativeEffects: {
+        outcome: "stale" as const,
+        eventType: "stale_detected" as const,
+        note: "Conflicting stale retry probe.",
+        reason: "The same packet identity already admitted a neutral application.",
+        metadata: {
+          smokeId: marker,
+          applicationKind: "conflict-race"
+        },
+        candidate: {
+          key: `feedback:memory-governance-smoke:${marker}:conflict-race`,
+          rejectedClaim: memoryRecord.summary,
+          reason: "The conflicting retry must not create a candidate.",
+          invalidatedBySourceClaimIds: memoryRecord.sourceLineage.map(
+            (lineage) => lineage.sourceId
+          ),
+          appliesTo: memoryRecord.key,
+          summary: "Conflicting retry must roll back.",
+          body: "This candidate is a falsifier and must never persist.",
+          owner: memoryRecord.owner,
+          confidence: 70,
+          sourceLineage: memoryRecord.sourceLineage
+        }
+      }
+    };
+    const conflictRaceClients = [
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined }),
+      postgres(input.databaseUrl, { max: 1, onnotice: () => undefined })
+    ];
+    const [conflictWinnerClient, conflictLoserClient] = conflictRaceClients;
+    if (conflictWinnerClient === undefined || conflictLoserClient === undefined) {
+      throw new Error("Memory governance did not create conflicting retry clients");
+    }
+    let releaseWinner: () => void = () => {};
+    const winnerRelease = new Promise<void>((resolve) => {
+      releaseWinner = resolve;
+    });
+    let reportWinnerInserted: () => void = () => {};
+    const winnerInserted = new Promise<void>((resolve) => {
+      reportWinnerInserted = resolve;
+    });
+    try {
+      const conflictWinnerRepository = new DrizzleMemoryRepository(
+        createKrnDatabase(conflictWinnerClient),
+        {
+          faultAfterStage: async (stage) => {
+            if (stage === "after_application") {
+              reportWinnerInserted();
+              await winnerRelease;
+            }
+          }
+        }
+      );
+      const conflictLoserRepository = new DrizzleMemoryRepository(
+        createKrnDatabase(conflictLoserClient)
+      );
+      const winnerApplication = conflictWinnerRepository
+        .recordMemoryApplicationWithEffectsOnce(conflictRaceNeutralApplication);
+      await winnerInserted;
+      const loserApplication = conflictLoserRepository
+        .recordMemoryApplicationWithEffectsOnce(conflictRaceStaleApplication);
+      releaseWinner();
+      const winnerResult = await winnerApplication;
+      if (!winnerResult.created || winnerResult.application.outcome !== "neutral") {
+        throw new Error("Memory governance conflicting retry race lacked its neutral winner");
+      }
+      conflictRaceWinnerApplicationId = winnerResult.application.id;
+      await assertMemoryApplicationIdentityConflict({
+        operation: loserApplication,
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        packetChecksum: conflictRaceBinding.packetChecksum,
+        message: "Memory governance conflicting stale retry reused the neutral identity"
+      });
+      await assertMemoryApplicationIdentityConflict({
+        operation: conflictLoserRepository.recordMemoryApplicationWithEffectsOnce({
+          ...conflictRaceNeutralApplication,
+          notes: "Changed notes only."
+        }),
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        packetChecksum: conflictRaceBinding.packetChecksum,
+        message: "Memory governance accepted a notes-only conflicting retry"
+      });
+      await assertMemoryApplicationIdentityConflict({
+        operation: conflictLoserRepository.recordMemoryApplicationWithEffectsOnce({
+          ...conflictRaceNeutralApplication,
+          evidenceBundleId: canonicalVerification.evidenceBundle.id
+        }),
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        packetChecksum: conflictRaceBinding.packetChecksum,
+        message: "Memory governance accepted an evidence-only conflicting retry"
+      });
+      await assertMemoryApplicationIdentityConflict({
+        operation: conflictLoserRepository.recordMemoryApplicationWithEffectsOnce({
+          ...conflictRaceNeutralApplication,
+          outcome: "helped"
+        }),
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        packetChecksum: conflictRaceBinding.packetChecksum,
+        message: "Memory governance accepted an outcome-only conflicting retry"
+      });
+      await assertMemoryApplicationIdentityConflict({
+        operation: conflictLoserRepository.recordMemoryApplicationWithEffectsOnce({
+          ...conflictRaceNeutralApplication,
+          metadata: {
+            ...conflictRaceNeutralApplication.metadata,
+            retryVariant: "metadata-only"
+          }
+        }),
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        packetChecksum: conflictRaceBinding.packetChecksum,
+        message: "Memory governance accepted a metadata-only conflicting retry"
+      });
+      conflictingRetryRejected = true;
+    } finally {
+      releaseWinner();
+      await Promise.all(conflictRaceClients.map((conflictClient) => conflictClient.end()));
+    }
+    const conflictRaceApplicationRows = await db
+      .select()
+      .from(memoryApplications)
+      .where(sql`${memoryApplications.metadata}->>'smokeId' = ${marker}
+        AND ${memoryApplications.metadata}->>'applicationKind' = 'conflict-race'`);
+    conflictRaceApplicationCount = conflictRaceApplicationRows.length;
+    const conflictRaceFeedbackRows = await db
+      .select()
+      .from(memoryFeedbackEvents)
+      .where(sql`${memoryFeedbackEvents.metadata}->>'smokeId' = ${marker}
+        AND ${memoryFeedbackEvents.metadata}->>'applicationKind' = 'conflict-race'`);
+    const conflictRaceCandidateRows = await db
+      .select()
+      .from(antiMemoryCandidates)
+      .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}
+        AND ${antiMemoryCandidates.metadata}->>'applicationKind' = 'conflict-race'`);
+    conflictRaceEffectCount = conflictRaceFeedbackRows.length + conflictRaceCandidateRows.length;
+    const conflictRaceApplicationId = conflictRaceApplicationRows[0]?.id;
+    if (conflictRaceApplicationId !== undefined) {
+      const conflictRaceOutboxRows = await db
+        .select()
+        .from(outboxEvents)
+        .where(sql`${outboxEvents.topic} = 'memory.application.created'
+          AND ${outboxEvents.payload}->>'memoryApplicationId' = ${conflictRaceApplicationId}`);
+      conflictRaceOutboxExact =
+        conflictRaceOutboxRows.length === 1 &&
+        conflictRaceOutboxRows[0]?.topic === "memory.application.created";
+    }
+    const conflictRaceMemoryAfter = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+    conflictRaceCounterUnchanged =
+      conflictRaceMemoryAfter?.positiveFeedbackCount === conflictRaceMemory.positiveFeedbackCount &&
+      conflictRaceMemoryAfter?.negativeFeedbackCount === conflictRaceMemory.negativeFeedbackCount;
+
+    const negativeSelectedMemory = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+    if (negativeSelectedMemory === undefined) {
+      throw new Error("Memory governance lost selected memory before negative application");
+    }
+    await harnessRunRepository.createContextAssembly({
+      harnessPlanId: result.harnessPlan.id,
+      status: "assembled",
+      tokenBudget: 256,
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: negativeSelectedMemory.id,
+        reason: "Select memory for canonical negative feedback.",
+        expectedUse: "Verify stale application creates one review chain.",
+        sourceAuthority: "project-decision"
+      }],
+      exclusions: [],
+      metadata: {
+        smokeId: marker,
+        canonicalRevisionTokens: [{
+          subjectType: "memory_record",
+          subjectId: negativeSelectedMemory.id,
+          updatedAt: negativeSelectedMemory.updatedAt,
+          status: negativeSelectedMemory.status,
+          currentVersionId: negativeSelectedMemory.currentVersionId
+        }]
+      }
+    });
+    const negativeAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
+      executionRun.id
+    );
+    if (negativeAggregate === undefined) {
+      throw new Error("Memory governance lost run before negative application");
+    }
+    const negativePacketBinding = currentDecisionPacketBindingForHarnessRun({
+      aggregate: negativeAggregate,
+      packetGeneratedAt: negativeAggregate.executionRun.updatedAt,
+      sha256Hex
+    });
     const negativePacketApplication = {
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
-      packetChecksum: unboundNegativePacketChecksum,
-      packetGeneratedAt: packetBoundApplication.packetGeneratedAt,
-      sourceRunLifecycleRevision: packetBoundApplication.sourceRunLifecycleRevision,
+      packetChecksum: negativePacketBinding.packetChecksum,
+      packetGeneratedAt: negativePacketBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision: negativePacketBinding.sourceRunLifecycleRevision,
       expectedUse: "Verify stale application creates one review chain.",
       outcome: "stale" as const,
       notes: "Unbound stale feedback must create reviewable negative effects atomically.",
       metadata: {
         smokeId: marker,
-        applicationKind: "negative-race",
-        packetAuthority: "unbound_negative_fixture"
+        applicationKind: "negative-race"
       },
       negativeEffects: {
         outcome: "stale" as const,
@@ -930,10 +1367,18 @@ export const runMemoryGovernanceSmokeCheck = async (
       .from(antiMemoryCandidates)
       .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}
         AND ${antiMemoryCandidates.metadata}->>'applicationKind' = 'negative-race'`);
-    const negativeOutboxRows = await db
-      .select()
-      .from(outboxEvents)
-      .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
+    const negativeOutboxRows = negativeApplication === undefined
+      ? []
+      : await db
+          .select()
+          .from(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'memoryApplicationId' = ${negativeApplication.id}`);
+    const negativeMemoryAfter = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+    const negativeCounterDeltaExact =
+      negativeMemoryAfter?.positiveFeedbackCount ===
+        negativeSelectedMemory.positiveFeedbackCount &&
+      negativeMemoryAfter?.negativeFeedbackCount ===
+        negativeSelectedMemory.negativeFeedbackCount + 1;
 
     const faultStages = [
       "after_application",
@@ -942,9 +1387,57 @@ export const runMemoryGovernanceSmokeCheck = async (
       "after_candidate",
       "after_outbox"
     ] as const;
+    let faultRollbackExact = true;
     for (const stage of faultStages) {
       const faultClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
       try {
+        const faultSelectedMemory = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+        if (faultSelectedMemory === undefined) {
+          throw new Error("Memory governance lost selected memory before fault application");
+        }
+        await harnessRunRepository.createContextAssembly({
+          harnessPlanId: result.harnessPlan.id,
+          status: "assembled",
+          tokenBudget: 256,
+          inclusions: [{
+            subjectType: "memory_record",
+            subjectId: faultSelectedMemory.id,
+            reason: `Select memory for ${stage} rollback proof.`,
+            expectedUse: negativePacketApplication.expectedUse,
+            sourceAuthority: "project-decision"
+          }],
+          exclusions: [],
+          metadata: {
+            smokeId: marker,
+            canonicalRevisionTokens: [{
+              subjectType: "memory_record",
+              subjectId: faultSelectedMemory.id,
+              updatedAt: faultSelectedMemory.updatedAt,
+              status: faultSelectedMemory.status,
+              currentVersionId: faultSelectedMemory.currentVersionId
+            }]
+          }
+        });
+        const faultAggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(
+          executionRun.id
+        );
+        if (faultAggregate === undefined) {
+          throw new Error("Memory governance lost run before fault application");
+        }
+        const faultPacketBinding = currentDecisionPacketBindingForHarnessRun({
+          aggregate: faultAggregate,
+          packetGeneratedAt: faultAggregate.executionRun.updatedAt,
+          sha256Hex
+        });
+        const [faultOutboxBefore] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}
+            AND ${outboxEvents.topic} IN (
+              'memory.application.created',
+              'memory.feedback.created',
+              'anti_memory.candidate.created'
+            )`);
         const faultRepository = new DrizzleMemoryRepository(createKrnDatabase(faultClient), {
           faultAfterStage: (observedStage) => {
             if (observedStage === stage) {
@@ -955,7 +1448,9 @@ export const runMemoryGovernanceSmokeCheck = async (
         await assertRejected(
           faultRepository.recordMemoryApplicationWithEffectsOnce({
             ...negativePacketApplication,
-            packetChecksum: `${unboundNegativePacketChecksum}:fault:${stage}`,
+            packetChecksum: faultPacketBinding.packetChecksum,
+            packetGeneratedAt: faultPacketBinding.packetGeneratedAt,
+            sourceRunLifecycleRevision: faultPacketBinding.sourceRunLifecycleRevision,
             metadata: {
               smokeId: marker,
               faultStage: stage,
@@ -972,6 +1467,21 @@ export const runMemoryGovernanceSmokeCheck = async (
           `fault:${stage}`,
           `Memory governance fault injection did not fail at ${stage}`
         );
+        const faultMemoryAfter = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+        const [faultOutboxAfter] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}
+            AND ${outboxEvents.topic} IN (
+              'memory.application.created',
+              'memory.feedback.created',
+              'anti_memory.candidate.created'
+            )`);
+        faultRollbackExact =
+          faultRollbackExact &&
+          faultMemoryAfter?.positiveFeedbackCount === faultSelectedMemory.positiveFeedbackCount &&
+          faultMemoryAfter?.negativeFeedbackCount === faultSelectedMemory.negativeFeedbackCount &&
+          faultOutboxAfter?.count === faultOutboxBefore?.count;
       } finally {
         await faultClient.end();
       }
@@ -1079,19 +1589,71 @@ export const runMemoryGovernanceSmokeCheck = async (
           integrityProbe: "counter-rebuild",
           packetAuthority: "unbound_legacy_fixture"
         }
+      },
+      {
+        memoryRecordId: legacyOnlyMemoryRecord.id,
+        executionRunId: executionRun.id,
+        decisionPacketChecksum: `fabricated-legacy-packet-${marker}`,
+        expectedUse: "Packet-shaped legacy fixture only.",
+        outcome: "hurt",
+        notes: "Historical arbitrary checksum lacks store-owned admission fingerprint.",
+        metadata: {
+          smokeId: marker,
+          integrityProbe: "packet-shaped-legacy",
+          decisionPacketGeneratedAt: executionRun.updatedAt,
+          decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision,
+          packetAuthority: "fabricated_legacy_fixture"
+        }
       }
     ]);
     await db
       .update(memoryRecords)
       .set({ positiveFeedbackCount: 99, negativeFeedbackCount: 88 })
       .where(sql`${memoryRecords.id} in (${legacyOnlyMemoryRecord.id}, ${counterIntegrityMemoryRecord.id})`);
-    await memoryRepository.recordMemoryApplication({
+    const counterIntegritySelectedMemory = await memoryRepository.getMemoryRecordById(
+      counterIntegrityMemoryRecord.id
+    );
+    if (counterIntegritySelectedMemory === undefined) {
+      throw new Error("Memory governance lost counter-integrity memory before selection");
+    }
+    await harnessRunRepository.createContextAssembly({
+      harnessPlanId: result.harnessPlan.id,
+      status: "assembled",
+      tokenBudget: 256,
+      inclusions: [{
+        subjectType: "memory_record",
+        subjectId: counterIntegritySelectedMemory.id,
+        reason: "Select memory for canonical counter rebuild proof.",
+        expectedUse: "Prove a packet-bound application survives counter rebuild.",
+        sourceAuthority: "project-decision"
+      }],
+      exclusions: [],
+      metadata: {
+        smokeId: marker,
+        canonicalRevisionTokens: [{
+          subjectType: "memory_record",
+          subjectId: counterIntegritySelectedMemory.id,
+          updatedAt: counterIntegritySelectedMemory.updatedAt,
+          status: counterIntegritySelectedMemory.status,
+          currentVersionId: counterIntegritySelectedMemory.currentVersionId
+        }]
+      }
+    });
+    const counterIntegrityVerification = await createCanonicalVerificationEvidence({
+      captureSuffix: "counter-integrity",
+      verificationMode: "successful",
+      reviewBurden: "Memory governance counter rebuild proof.",
+      eventType: "smoke.memory_governance.counter_integrity_verification_captured",
+      eventMessage: "Memory governance counter integrity verification captured"
+    });
+    await memoryRepository.recordMemoryApplicationWithEffectsOnce({
       memoryRecordId: counterIntegrityMemoryRecord.id,
       executionRunId: executionRun.id,
-      packetChecksum: packetBoundApplication.packetChecksum,
-      packetGeneratedAt: packetBoundApplication.packetGeneratedAt,
-      sourceRunLifecycleRevision: packetBoundApplication.sourceRunLifecycleRevision,
-      evidenceBundleId: packetBoundApplication.evidenceBundleId,
+      packetChecksum: counterIntegrityVerification.packetBinding.packetChecksum,
+      packetGeneratedAt: counterIntegrityVerification.packetBinding.packetGeneratedAt,
+      sourceRunLifecycleRevision:
+        counterIntegrityVerification.packetBinding.sourceRunLifecycleRevision,
+      evidenceBundleId: counterIntegrityVerification.evidenceBundle.id,
       expectedUse: "Prove a packet-bound application survives counter rebuild.",
       outcome: "helped",
       notes: "Only this current packet application may contribute positive ranking feedback.",
@@ -1119,38 +1681,46 @@ export const runMemoryGovernanceSmokeCheck = async (
       throw new Error("Memory governance execution run did not transition to running");
     }
     const runningExecutionRun = runningTransition.executionRun;
-    const counterBeforeStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
-      counterIntegrityMemoryRecord.id
+    const historicalRetry = await memoryRepository.recordMemoryApplicationWithEffectsOnce(
+      conflictRaceNeutralApplication
+    );
+    historicalExactRetryPreserved =
+      !historicalRetry.created &&
+      historicalRetry.application.id === conflictRaceWinnerApplicationId;
+    const legacyBeforeStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
+      legacyOnlyMemoryRecord.id
     );
     await assertRejected(
       memoryRepository.recordMemoryApplicationWithEffectsOnce({
         ...packetBoundApplication,
-        memoryRecordId: counterIntegrityMemoryRecord.id,
+        memoryRecordId: legacyOnlyMemoryRecord.id,
         packetChecksum: staleLifecycleVerification.packetBinding.packetChecksum,
         packetGeneratedAt: staleLifecycleVerification.packetBinding.packetGeneratedAt,
         sourceRunLifecycleRevision:
           staleLifecycleVerification.packetBinding.sourceRunLifecycleRevision,
-        evidenceBundleId: staleLifecycleVerification.evidenceBundle.id,
+        outcome: "neutral",
+        notes: "A never-admitted stale lifecycle identity must reject.",
         metadata: {
           smokeId: marker,
-          evidenceFalsifier: "stale-active-lifecycle-revision"
+          evidenceFalsifier: "new-stale-lifecycle-revision"
         }
       }),
-      "helped memory application requires a fresh successful verification EvidenceBundle",
-      "Memory governance accepted helped evidence from an earlier active lifecycle revision"
+      "packet checksum is not the current reconstructed packet checksum",
+      "Memory governance accepted a new application from an earlier lifecycle revision"
     );
     const staleLifecycleApplicationRows = await db
       .select()
       .from(memoryApplications)
-      .where(sql`${memoryApplications.metadata}->>'verificationEvidenceBundleId' = ${staleLifecycleVerification.evidenceBundle.id}`);
-    const counterAfterStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
-      counterIntegrityMemoryRecord.id
+      .where(sql`${memoryApplications.metadata}->>'evidenceFalsifier' = 'new-stale-lifecycle-revision'
+        AND ${memoryApplications.metadata}->>'smokeId' = ${marker}`);
+    const legacyAfterStaleLifecycleApplication = await memoryRepository.getMemoryRecordById(
+      legacyOnlyMemoryRecord.id
     );
     staleLifecycleRevisionRejected =
       runningExecutionRun.lifecycleRevision === executionRun.lifecycleRevision + 1 &&
       staleLifecycleApplicationRows.length === 0 &&
-      counterBeforeStaleLifecycleApplication?.positiveFeedbackCount ===
-        counterAfterStaleLifecycleApplication?.positiveFeedbackCount;
+      legacyBeforeStaleLifecycleApplication?.positiveFeedbackCount ===
+        legacyAfterStaleLifecycleApplication?.positiveFeedbackCount;
 
     const runningStartedAt = runningExecutionRun.startedAt;
 
@@ -1196,6 +1766,7 @@ export const runMemoryGovernanceSmokeCheck = async (
         sourceRunLifecycleRevision:
           terminalVerification.packetBinding.sourceRunLifecycleRevision,
         evidenceBundleId: terminalVerification.evidenceBundle.id,
+        outcome: "helped",
         metadata: {
           smokeId: marker,
           evidenceFalsifier: "inactive-terminal-contract"
@@ -1566,16 +2137,41 @@ export const runMemoryGovernanceSmokeCheck = async (
           replayApplicationResult.application.id === memoryApplication.id
       },
       {
-        label: "packet-bound memory feedback counted once",
-        passed: readBackMemoryRecord?.positiveFeedbackCount === 1
+        label: "neutral packet-bound memory application does not strengthen feedback",
+        passed: readBackMemoryRecord?.positiveFeedbackCount === 0
       },
       {
         label: "different packet issuance cannot reuse verification evidence",
         passed: mismatchedPacketIssuanceRejected
       },
       {
-        label: "earlier active lifecycle revision cannot authorize helped evidence",
+        label: "fabricated packet authority rejects",
+        passed: fabricatedApplicationAuthorityRejected
+      },
+      {
+        label: "cross-run task and context authority rejects",
+        passed: crossRunTaskContextRejected
+      },
+      {
+        label: "unselected memory authority rejects",
+        passed: unselectedMemoryApplicationRejected
+      },
+      {
+        label: "conflicting packet identity retry rejects",
+        passed:
+          conflictingRetryRejected &&
+          conflictRaceApplicationCount === 1 &&
+          conflictRaceEffectCount === 0 &&
+          conflictRaceOutboxExact &&
+          conflictRaceCounterUnchanged
+      },
+      {
+        label: "new write from an earlier lifecycle revision rejects",
         passed: staleLifecycleRevisionRejected
+      },
+      {
+        label: "exact admitted retry survives lifecycle advancement",
+        passed: historicalExactRetryPreserved
       },
       {
         label: "failed command evidence cannot create helped application",
@@ -1595,7 +2191,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       },
       {
         label: "negative packet application won once",
-        passed: negativeApplicationCount === 1 && negativeApplication !== undefined
+        passed:
+          negativeApplicationCount === 1 &&
+          negativeApplication !== undefined &&
+          negativeCounterDeltaExact
       },
       {
         label: "negative feedback effect created once",
@@ -1607,20 +2206,30 @@ export const runMemoryGovernanceSmokeCheck = async (
       },
       {
         label: "negative effect outbox chain exists",
-        passed: negativeOutboxRows.filter((row) =>
-          ["memory.application.created", "memory.feedback.created", "anti_memory.candidate.created"]
-            .includes(row.topic)
-        ).length >= 3
+        passed:
+          negativeOutboxRows.length === 3 &&
+          [
+            "memory.application.created",
+            "memory.feedback.created",
+            "anti_memory.candidate.created"
+          ].every((topic) => negativeOutboxRows.filter((row) => row.topic === topic).length === 1)
       },
       {
         label: "fault injection leaves no partial application effects",
         passed: faultApplicationRows.length === 0 &&
           faultFeedbackRows.length === 0 &&
-          faultCandidateRows.length === 0
+          faultCandidateRows.length === 0 &&
+          faultRollbackExact
       },
       {
         label: "memory application record lineage",
         passed: applicationRows[0]?.memoryRecordId === memoryRecord.id
+      },
+      {
+        label: "memory application derives canonical task and context",
+        passed:
+          applicationRows[0]?.taskContractId === result.taskContract.id &&
+          applicationRows[0]?.contextAssemblyId === applicationContextAssembly.id
       },
       {
         label: "memory application packet checksum is typed and unique",
@@ -1628,7 +2237,7 @@ export const runMemoryGovernanceSmokeCheck = async (
       },
       {
         label: "legacy application rows remain inspectable and unbound",
-        passed: counterRebuild.legacyApplicationCount >= 4
+        passed: counterRebuild.legacyApplicationCount >= 5
       },
       {
         label: "legacy rows do not strengthen counters",

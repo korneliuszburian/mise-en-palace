@@ -18,7 +18,6 @@ import type {
   AntiMemoryCandidate,
   AntiMemoryRecord,
   ExecutionRunId,
-  MemoryApplication,
   MemoryApplicationOutcome,
   MemoryCandidate,
   MemoryFeedbackEvent,
@@ -27,10 +26,12 @@ import type {
   ProjectId
 } from "@krn/core";
 import {
+  authorizeDecisionPacketUsefulness,
   decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
   parseEvidenceContract
 } from "@krn/core";
+import { MemoryApplicationIdentityConflictError } from "@krn/core/repositories/internal";
 import type {
   CreateAntiMemoryRecordInput,
   CreateAntiMemoryCandidateInput,
@@ -49,14 +50,14 @@ import type {
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
   RecordMemoryApplicationOnceInput,
-  RecordMemoryApplicationOnceResult,
   RecordMemoryApplicationWithEffectsOnceInput,
   RecordMemoryApplicationWithEffectsOnceResult,
   RebuildMemoryApplicationCountersResult,
-  SupersedeMemoryRecordInput
+  SupersedeMemoryRecordInput,
+  HarnessRunAggregate
 } from "@krn/core/repositories/internal";
 
-import type { KrnDatabase } from "../database.js";
+import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   antiMemoryRecords,
   antiMemoryCandidates,
@@ -86,9 +87,67 @@ import {
   mapCommandOutputArtifact,
   mapEvidenceBundle
 } from "./mappers.js";
+import { DrizzleHarnessRunRepository } from "./drizzle-harness-run-repository.js";
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
+
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    return `{${Object.entries(value)
+      .filter(([, entry]) => entry !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+};
+
+const memoryApplicationCallerMetadata = (
+  metadata: Record<string, unknown> | undefined
+): Record<string, unknown> => {
+  const callerMetadata = { ...metadata };
+
+  delete callerMetadata.decisionPacketChecksum;
+  delete callerMetadata.decisionPacketGeneratedAt;
+  delete callerMetadata.decisionPacketSourceRunLifecycleRevision;
+  delete callerMetadata.verificationEvidenceBundleId;
+  delete callerMetadata.memoryApplicationRequestFingerprint;
+
+  return callerMetadata;
+};
+
+const memoryApplicationRequestFingerprint = (
+  input: RecordMemoryApplicationWithEffectsOnceInput
+): string => sha256Hex(canonicalJson({
+  memoryRecordId: input.memoryRecordId,
+  executionRunId: input.executionRunId,
+  taskContractId: input.taskContractId ?? null,
+  contextAssemblyId: input.contextAssemblyId ?? null,
+  expectedUse: input.expectedUse,
+  outcome: input.outcome,
+  notes: input.notes,
+  evidenceBundleId: input.evidenceBundleId ?? null,
+  packetChecksum: input.packetChecksum,
+  packetGeneratedAt: input.packetGeneratedAt,
+  sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+  metadata: memoryApplicationCallerMetadata(input.metadata),
+  negativeEffects: input.negativeEffects ?? null
+}));
+
+const memoryApplicationFingerprintFromRow = (
+  row: MemoryApplicationRow
+): string | undefined => {
+  const fingerprint = row.metadata.memoryApplicationRequestFingerprint;
+
+  return typeof fingerprint === "string" && fingerprint.length > 0
+    ? fingerprint
+    : undefined;
+};
 
 const smokePayload = (
   metadata: Record<string, unknown> | undefined
@@ -578,7 +637,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   constructor(
     private readonly db: KrnDatabase,
     private readonly options: {
-      faultAfterStage?: (stage: MemoryApplicationPersistenceStage) => void;
+      faultAfterStage?: (stage: MemoryApplicationPersistenceStage) => void | Promise<void>;
       faultAfterRevisionStage?: (stage: MemoryRevisionPersistenceStage) => void;
     } = {}
   ) {}
@@ -1230,6 +1289,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       decisionPacketChecksum,
       decisionPacketGeneratedAt: input.packetGeneratedAt,
       decisionPacketSourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      memoryApplicationRequestFingerprint: memoryApplicationRequestFingerprint(input),
       ...(input.evidenceBundleId === undefined
         ? {}
         : { verificationEvidenceBundleId: input.evidenceBundleId })
@@ -1254,6 +1314,100 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       );
     }
   };
+
+  private async requireCurrentMemoryApplicationAuthority<
+    TInput extends RecordMemoryApplicationInput
+  >(
+    input: TInput,
+    tx: KrnDatabaseTransaction,
+    aggregate?: HarnessRunAggregate
+  ): Promise<TInput> {
+    const authorityAggregate = aggregate ?? await new DrizzleHarnessRunRepository(this.db)
+      .readHarnessRunAuthority(tx, input.executionRunId);
+    const authority = await this.requireMemoryApplicationProject(
+      input,
+      tx,
+      authorityAggregate
+    );
+    const authorization = authorizeDecisionPacketUsefulness({
+      aggregate: authority.aggregate,
+      runId: input.executionRunId,
+      runtimeProjectId: authority.projectId,
+      callerPacketChecksum: input.packetChecksum,
+      callerPacketGeneratedAt: input.packetGeneratedAt,
+      subjects: [{
+        kind: "memory_record",
+        id: input.memoryRecordId,
+        evidenceRefs: [`packet:${input.packetChecksum}`]
+      }],
+      sha256Hex
+    });
+
+    if (!authorization.authorized) {
+      throw new Error(
+        `memory application authority rejected: ${authorization.reason}`
+      );
+    }
+    if (authorization.sourceRunLifecycleRevision !== input.sourceRunLifecycleRevision) {
+      throw new Error("memory application authority rejected: lifecycle revision mismatch");
+    }
+
+    return this.deriveMemoryApplicationLineage(input, authority.aggregate);
+  }
+
+  private async requireMemoryApplicationProject(
+    input: RecordMemoryApplicationInput,
+    tx: KrnDatabaseTransaction,
+    aggregate: HarnessRunAggregate | undefined
+  ): Promise<{ aggregate: HarnessRunAggregate; projectId: ProjectId }> {
+    const memoryRecord = await tx.query.memoryRecords.findFirst({
+      where: eq(memoryRecords.id, input.memoryRecordId)
+    });
+    const projectId = aggregate?.taskContract.projectId;
+
+    if (
+      aggregate === undefined ||
+      memoryRecord === undefined ||
+      projectId === undefined ||
+      memoryRecord.projectId !== projectId
+    ) {
+      throw new Error(
+        "memory application authority rejected: run, task project, and memory record do not match"
+      );
+    }
+
+    return { aggregate, projectId };
+  }
+
+  private deriveMemoryApplicationLineage<TInput extends RecordMemoryApplicationInput>(
+    input: TInput,
+    aggregate: HarnessRunAggregate
+  ): TInput {
+    if (
+      input.taskContractId !== undefined &&
+      input.taskContractId !== aggregate.taskContract.id
+    ) {
+      throw new Error(
+        "memory application authority rejected: task contract does not match the execution run"
+      );
+    }
+
+    const contextAssemblyId = aggregate.contextAssembly?.id;
+    if (
+      input.contextAssemblyId !== undefined &&
+      input.contextAssemblyId !== contextAssemblyId
+    ) {
+      throw new Error(
+        "memory application authority rejected: context assembly does not match the execution run"
+      );
+    }
+
+    return {
+      ...input,
+      taskContractId: aggregate.taskContract.id,
+      ...(contextAssemblyId === undefined ? {} : { contextAssemblyId })
+    };
+  }
 
   private async applyMemoryApplicationOutcome(
     input: RecordMemoryApplicationInput,
@@ -1332,11 +1486,14 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       harnessPlan: linked.harnessPlan,
       executionRun: linked.executionRun
     });
+    if (activation.status !== "active") {
+      throw new Error(
+        "helped memory application requires a fresh successful verification EvidenceBundle from the active EvidenceContract"
+      );
+    }
     const valid = evidenceBundleProvesHelped({
       bundle,
-      evidenceContract: activation.status === "active"
-        ? activation.evidenceContract
-        : undefined,
+      evidenceContract: activation.evidenceContract,
       packetChecksum: input.packetChecksum,
       packetGeneratedAt: input.packetGeneratedAt,
       sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
@@ -1385,32 +1542,88 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return { ...linked, commandOutputArtifactRows };
   }
 
-  private async insertMemoryApplication(
-    input: RecordMemoryApplicationInput,
-    tx: KrnDatabase,
-    decisionPacketChecksum: string
-  ): Promise<MemoryApplication> {
-    const row = requireReturnedRow(
-      await tx
-        .insert(memoryApplications)
-        .values(this.memoryApplicationInsertValues(input, decisionPacketChecksum))
-        .returning(),
-      "recordMemoryApplication"
-    );
+  private async findMemoryApplicationByPacketIdentity(
+    input: RecordMemoryApplicationOnceInput,
+    tx: KrnDatabase
+  ): Promise<MemoryApplicationRow | undefined> {
+    const [existing] = await tx
+      .select()
+      .from(memoryApplications)
+      .where(and(
+        eq(memoryApplications.memoryRecordId, input.memoryRecordId),
+        eq(memoryApplications.executionRunId, input.executionRunId),
+        eq(memoryApplications.decisionPacketChecksum, input.packetChecksum)
+      ))
+      .limit(1);
 
-    await this.applyMemoryApplicationOutcome(input, tx);
-
-    return mapMemoryApplication(row);
+    return existing;
   }
 
-  async recordMemoryApplication(
-    input: RecordMemoryApplicationInput
-  ): Promise<MemoryApplication> {
-    this.assertPacketBoundApplication(input);
-    return this.db.transaction(async (tx) => {
-      await this.assertHelpedApplicationEvidence(input, tx);
-      return this.insertMemoryApplication(input, tx, input.packetChecksum);
-    });
+  private assertExactMemoryApplicationRetry(
+    input: RecordMemoryApplicationWithEffectsOnceInput,
+    existing: MemoryApplicationRow
+  ): void {
+    const retryInput = {
+      ...input,
+      ...(input.taskContractId !== undefined
+        ? { taskContractId: input.taskContractId }
+        : existing.taskContractId === null
+          ? {}
+          : { taskContractId: existing.taskContractId }),
+      ...(input.contextAssemblyId !== undefined
+        ? { contextAssemblyId: input.contextAssemblyId }
+        : existing.contextAssemblyId === null
+          ? {}
+          : { contextAssemblyId: existing.contextAssemblyId })
+    };
+    const existingFingerprint = memoryApplicationFingerprintFromRow(existing);
+
+    if (
+      existingFingerprint === undefined ||
+      existingFingerprint !== memoryApplicationRequestFingerprint(retryInput)
+    ) {
+      throw new MemoryApplicationIdentityConflictError(
+        input.memoryRecordId,
+        input.executionRunId,
+        input.packetChecksum
+      );
+    }
+  }
+
+  private async readExactMemoryApplicationRetry(
+    input: RecordMemoryApplicationWithEffectsOnceInput,
+    tx: KrnDatabase
+  ): Promise<MemoryApplicationRow | undefined> {
+    const existing = await this.findMemoryApplicationByPacketIdentity(input, tx);
+
+    if (existing !== undefined) {
+      this.assertExactMemoryApplicationRetry(input, existing);
+    }
+
+    return existing;
+  }
+
+  private async admitMemoryApplicationOnce<
+    TInput extends RecordMemoryApplicationWithEffectsOnceInput
+  >(
+    input: TInput,
+    tx: KrnDatabaseTransaction
+  ): Promise<
+    | { kind: "existing"; row: MemoryApplicationRow }
+    | { kind: "admitted"; input: TInput }
+  > {
+    const aggregate = await new DrizzleHarnessRunRepository(this.db)
+      .readHarnessRunAuthority(tx, input.executionRunId);
+    const existing = await this.readExactMemoryApplicationRetry(input, tx);
+
+    if (existing !== undefined) {
+      return { kind: "existing", row: existing };
+    }
+
+    return {
+      kind: "admitted",
+      input: await this.requireCurrentMemoryApplicationAuthority(input, tx, aggregate)
+    };
   }
 
   private async insertMemoryApplicationOnceRow(
@@ -1438,20 +1651,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       return { row: createdRow, created: true };
     }
 
-    const [existing] = await tx
-      .select()
-      .from(memoryApplications)
-      .where(and(
-        eq(memoryApplications.memoryRecordId, input.memoryRecordId),
-        eq(memoryApplications.executionRunId, input.executionRunId),
-        eq(memoryApplications.decisionPacketChecksum, input.packetChecksum)
-      ))
-      .limit(1);
+    const existing = await this.readExactMemoryApplicationRetry(input, tx);
 
     return {
       row: requireReturnedRow(
         existing === undefined ? [] : [existing],
-        "recordMemoryApplicationOnce"
+        "recordMemoryApplicationWithEffectsOnce"
       ),
       created: false
     };
@@ -1541,44 +1746,31 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return mapAntiMemoryCandidate(resolvedCandidateRow);
   }
 
-  async recordMemoryApplicationOnce(
-    input: RecordMemoryApplicationOnceInput
-  ): Promise<RecordMemoryApplicationOnceResult> {
-    this.assertPacketBoundApplication(input);
-    return this.db.transaction(async (tx) => {
-      await this.assertHelpedApplicationEvidence(input, tx);
-      const applicationResult = await this.insertMemoryApplicationOnceRow(input, tx);
-
-      if (applicationResult.created) {
-        await this.applyMemoryApplicationOutcome(input, tx);
-        return {
-          application: mapMemoryApplication(applicationResult.row),
-          created: true
-        };
-      }
-
-      return {
-        application: mapMemoryApplication(applicationResult.row),
-        created: false
-      };
-    });
-  }
-
   async recordMemoryApplicationWithEffectsOnce(
     input: RecordMemoryApplicationWithEffectsOnceInput
   ): Promise<RecordMemoryApplicationWithEffectsOnceResult> {
-    this.assertPacketBoundApplication(input);
+    const authorityInput = structuredClone(input);
+    this.assertPacketBoundApplication(authorityInput);
     if (
-      (input.outcome === "hurt" || input.outcome === "stale") &&
-      (input.negativeEffects === undefined ||
-        input.negativeEffects.outcome !== input.outcome)
+      (authorityInput.outcome === "hurt" || authorityInput.outcome === "stale") &&
+      (authorityInput.negativeEffects === undefined ||
+        authorityInput.negativeEffects.outcome !== authorityInput.outcome)
     ) {
       throw new Error("negative memory application requires its review effects");
     }
 
     return this.db.transaction(async (tx) => {
-      await this.assertHelpedApplicationEvidence(input, tx);
-      const applicationResult = await this.insertMemoryApplicationOnceRow(input, tx);
+      const admission = await this.admitMemoryApplicationOnce(authorityInput, tx);
+      if (admission.kind === "existing") {
+        return {
+          application: mapMemoryApplication(admission.row),
+          ...(await this.readMemoryApplicationEffects(admission.row, tx)),
+          created: false
+        };
+      }
+      const admittedInput = admission.input;
+      await this.assertHelpedApplicationEvidence(admittedInput, tx);
+      const applicationResult = await this.insertMemoryApplicationOnceRow(admittedInput, tx);
 
       if (!applicationResult.created) {
         return {
@@ -1589,14 +1781,14 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       }
 
       await this.options.faultAfterStage?.("after_application");
-      await this.applyMemoryApplicationOutcome(input, tx);
+      await this.applyMemoryApplicationOutcome(admittedInput, tx);
       await this.options.faultAfterStage?.("after_counter");
 
-      if (input.negativeEffects === undefined) {
+      if (admittedInput.negativeEffects === undefined) {
         await tx.insert(outboxEvents).values({
           topic: "memory.application.created",
           payload: {
-            ...smokePayload(input.metadata),
+            ...smokePayload(admittedInput.metadata),
             memoryApplicationId: applicationResult.row.id,
             memoryRecordId: applicationResult.row.memoryRecordId,
             executionRunId: applicationResult.row.executionRunId
@@ -1610,13 +1802,13 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         };
       }
 
-      const feedbackInput = input.negativeEffects;
+      const feedbackInput = admittedInput.negativeEffects;
       const feedbackRow = requireReturnedRow(
         await tx
           .insert(memoryFeedbackEvents)
           .values({
-            memoryRecordId: input.memoryRecordId,
-            executionRunId: input.executionRunId,
+            memoryRecordId: admittedInput.memoryRecordId,
+            executionRunId: admittedInput.executionRunId,
             eventType: feedbackInput.eventType,
             direction: "negative",
             note: feedbackInput.note,
@@ -1627,7 +1819,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
             metadata: {
               ...feedbackInput.metadata,
               memoryApplicationId: applicationResult.row.id,
-              applicationOutcome: input.outcome
+              applicationOutcome: admittedInput.outcome
             }
           })
           .returning(),
@@ -1636,7 +1828,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       await this.options.faultAfterStage?.("after_feedback");
 
       const antiMemoryCandidate = await this.createNegativeMemoryCandidateEffect(
-        input,
+        admittedInput,
         feedbackInput,
         applicationResult.row,
         feedbackRow,
@@ -1647,7 +1839,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         {
           topic: "memory.application.created",
           payload: {
-            ...smokePayload(input.metadata),
+            ...smokePayload(admittedInput.metadata),
             memoryApplicationId: applicationResult.row.id,
             memoryRecordId: applicationResult.row.memoryRecordId,
             executionRunId: applicationResult.row.executionRunId
@@ -1689,7 +1881,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   ): Promise<boolean> {
     const packetIdentity = packetBoundMemoryApplicationIdentity(row);
 
-    if (row.outcome === null || packetIdentity === undefined) {
+    if (
+      row.outcome === null ||
+      packetIdentity === undefined ||
+      memoryApplicationFingerprintFromRow(row) === undefined
+    ) {
       return false;
     }
 

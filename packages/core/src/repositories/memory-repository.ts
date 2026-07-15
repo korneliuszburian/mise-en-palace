@@ -162,6 +162,19 @@ export interface RecordMemoryApplicationWithEffectsOnceResult extends RecordMemo
   antiMemoryCandidate?: AntiMemoryCandidate;
 }
 
+export class MemoryApplicationIdentityConflictError extends Error {
+  constructor(
+    readonly memoryRecordId: MemoryRecord["id"],
+    readonly executionRunId: ExecutionRunId,
+    readonly packetChecksum: string
+  ) {
+    super(
+      `memory application identity conflict for ${memoryRecordId} in run ${executionRunId}: immutable application request differs`
+    );
+    this.name = "MemoryApplicationIdentityConflictError";
+  }
+}
+
 export interface RebuildMemoryApplicationCountersResult {
   canonicalApplicationCount: number;
   legacyApplicationCount: number;
@@ -261,11 +274,7 @@ export interface MemoryRepository {
   applyReviewedMemoryRevision(
     input: ApplyReviewedMemoryRevisionInput
   ): Promise<ApplyReviewedMemoryRevisionResult>;
-  recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
-  recordMemoryApplicationOnce?(
-    input: RecordMemoryApplicationOnceInput
-  ): Promise<RecordMemoryApplicationOnceResult>;
-  recordMemoryApplicationWithEffectsOnce?(
+  recordMemoryApplicationWithEffectsOnce(
     input: RecordMemoryApplicationWithEffectsOnceInput
   ): Promise<RecordMemoryApplicationWithEffectsOnceResult>;
   rebuildMemoryApplicationCounters?(): Promise<RebuildMemoryApplicationCountersResult>;
@@ -301,7 +310,7 @@ export type MemoryCandidateReviewRepository = Pick<
   | "invalidateMemoryRecord"
   | "supersedeMemoryRecord"
   | "applyReviewedMemoryRevision"
-  | "recordMemoryApplication"
+  | "recordMemoryApplicationWithEffectsOnce"
   | "createMemoryFeedbackEvent"
   | "listMemoryCandidates"
   | "createAntiMemoryCandidate"

@@ -10,7 +10,7 @@ import type {
   PromoteMemoryCandidateInput,
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
-  RecordMemoryApplicationInput,
+  RecordMemoryApplicationWithEffectsOnceInput,
   HarnessRunAggregate
 } from "@krn/core/repositories/internal";
 import {
@@ -44,8 +44,10 @@ const unusedMemoryRepository = {
   async listMemoryRecordsForProject(): Promise<never> {
     throw new Error("listMemoryRecordsForProject should not be called");
   },
-  async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
-    throw new Error("recordMemoryApplication should not be called");
+  async recordMemoryApplicationWithEffectsOnce(
+    _input: RecordMemoryApplicationWithEffectsOnceInput
+  ): Promise<never> {
+    throw new Error("recordMemoryApplicationWithEffectsOnce should not be called");
   },
   async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
     throw new Error("createMemoryFeedbackEvent should not be called");

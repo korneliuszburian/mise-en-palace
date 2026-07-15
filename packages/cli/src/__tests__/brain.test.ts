@@ -171,8 +171,8 @@ const createBrainRecallDatabaseRuntime = (
     async invalidateMemoryRecord() {
       throw new Error("invalidateMemoryRecord should not be called");
     },
-    async recordMemoryApplication() {
-      throw new Error("recordMemoryApplication should not be called");
+    async recordMemoryApplicationWithEffectsOnce() {
+      throw new Error("recordMemoryApplicationWithEffectsOnce should not be called");
     },
     async createMemoryFeedbackEvent() {
       throw new Error("createMemoryFeedbackEvent should not be called");
