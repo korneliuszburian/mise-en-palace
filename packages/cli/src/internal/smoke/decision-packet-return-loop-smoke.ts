@@ -63,6 +63,10 @@ import {
   handleDecisionPacketMcpMessage
 } from "../mcp/decision-packet-mcp-server.js";
 import {
+  measureDecisionPacketTransport,
+  type DecisionPacketTransportMeasurement
+} from "../mcp/decision-packet-transport-measurement.js";
+import {
   isRecord,
   readRecordArray,
   readRequiredRecord,
@@ -151,6 +155,8 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceDissentPacketReasons: readonly string[];
   sourceDissentBriefStopsExecution: boolean;
   sourceDissentMcpPreservesDissentAndGap: boolean;
+  sourceDissentMcpMessageUtf8Bytes: number;
+  sourceDissentMcpStructuredContentMeasurement: DecisionPacketTransportMeasurement;
   sourceDissentReadOnlyUsefulnessUnchanged: boolean;
   feedbackMaintenanceQueueRecordId: string;
   feedbackMaintenanceQueueStatus: string;
@@ -365,6 +371,8 @@ interface SourceDissentProofResult {
   packetReasons: readonly string[];
   briefStopsExecution: boolean;
   mcpPreservesDissentAndGap: boolean;
+  mcpMessageUtf8Bytes: number;
+  mcpStructuredContentMeasurement: DecisionPacketTransportMeasurement;
   readOnlyUsefulnessRowsBefore: number;
   readOnlyUsefulnessRowsAfter: number;
   readOnlyUsefulnessUnchanged: boolean;
@@ -543,7 +551,11 @@ const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
 
 const readMcpDecisionPacket = (
   reply: unknown
-): DecisionPacketSmokeJson["packet"] => {
+): {
+  readonly packet: DecisionPacketSmokeJson["packet"];
+  readonly messageUtf8Bytes: number;
+  readonly structuredContentMeasurement: DecisionPacketTransportMeasurement;
+} => {
   if (!isRecord(reply)) {
     throw new Error("DecisionPacket MCP smoke reply was not an object");
   }
@@ -555,7 +567,11 @@ const readMcpDecisionPacket = (
     "DecisionPacket MCP smoke reply missed structuredContent"
   );
 
-  return readPacket(structuredContent);
+  return {
+    packet: readPacket(structuredContent),
+    messageUtf8Bytes: measureDecisionPacketTransport(reply).utf8Bytes,
+    structuredContentMeasurement: measureDecisionPacketTransport(structuredContent)
+  };
 };
 
 const countReadOnlyUsefulnessRows = async (input: {
@@ -1925,7 +1941,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     runId: proofRun.id,
     createDatabaseRuntime: async () => input.commandRuntime
   })).stdout);
-  const mcpPacket = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
+  const mcpReadback = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
     jsonrpc: "2.0",
     id: "unresolved-source-dissent",
     method: "tools/call",
@@ -1946,6 +1962,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       createDatabaseRuntime: async () => input.commandRuntime
     })
   }));
+  const mcpPacket = mcpReadback.packet;
   const brief = await runCodexBriefCommand({
     ...input.baseRuntime,
     runId: proofRun.id,
@@ -1989,6 +2006,8 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       brief.stdout.includes("Do not execute; the DecisionPacket abstains") &&
       !brief.stdout.includes("Stop Condition: Stop before Codex execution or hidden state mutation."),
     mcpPreservesDissentAndGap,
+    mcpMessageUtf8Bytes: mcpReadback.messageUtf8Bytes,
+    mcpStructuredContentMeasurement: mcpReadback.structuredContentMeasurement,
     readOnlyUsefulnessRowsBefore,
     readOnlyUsefulnessRowsAfter,
     readOnlyUsefulnessUnchanged:
@@ -3096,6 +3115,9 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       sourceDissentPacketReasons: sourceDissentProof.packetReasons,
       sourceDissentBriefStopsExecution: sourceDissentProof.briefStopsExecution,
       sourceDissentMcpPreservesDissentAndGap: sourceDissentProof.mcpPreservesDissentAndGap,
+      sourceDissentMcpMessageUtf8Bytes: sourceDissentProof.mcpMessageUtf8Bytes,
+      sourceDissentMcpStructuredContentMeasurement:
+        sourceDissentProof.mcpStructuredContentMeasurement,
       sourceDissentReadOnlyUsefulnessUnchanged:
         sourceDissentProof.readOnlyUsefulnessUnchanged,
       feedbackMaintenanceQueueRecordId: feedbackMaintenanceProof.queueRecordId,

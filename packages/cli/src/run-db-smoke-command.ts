@@ -846,6 +846,17 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Unresolved source dissent packet reasons: ${report.sourceDissentPacketReasons.join(", ")}`,
   `Unresolved source dissent brief stops execution: ${yesNo(report.sourceDissentBriefStopsExecution)}`,
   `Unresolved source dissent MCP preserves dissent and gap: ${yesNo(report.sourceDissentMcpPreservesDissentAndGap)}`,
+  `Unresolved source dissent MCP message bytes: ${report.sourceDissentMcpMessageUtf8Bytes}`,
+  `Unresolved source dissent MCP structured content bytes: ${report.sourceDissentMcpStructuredContentMeasurement.utf8Bytes}`,
+  `Unresolved source dissent MCP collection count: ${report.sourceDissentMcpStructuredContentMeasurement.collectionCount}`,
+  `Unresolved source dissent MCP collection elements: ${report.sourceDissentMcpStructuredContentMeasurement.totalCollectionElements}`,
+  `Unresolved source dissent MCP collection length min/median/p95/max: ${[
+    report.sourceDissentMcpStructuredContentMeasurement.collectionLength.minimum,
+    report.sourceDissentMcpStructuredContentMeasurement.collectionLength.median,
+    report.sourceDissentMcpStructuredContentMeasurement.collectionLength.p95,
+    report.sourceDissentMcpStructuredContentMeasurement.collectionLength.maximum
+  ].join("/")}`,
+  `Unresolved source dissent MCP maximum collection path: ${report.sourceDissentMcpStructuredContentMeasurement.maximumCollectionPath ?? "none"}`,
   `Unresolved source dissent readbacks do not promote usefulness: ${yesNo(report.sourceDissentReadOnlyUsefulnessUnchanged)}`,
   `Selector proof run: ${report.selectorProofRunId}`,
   `Selector retained control memory: ${report.selectorRetainedMemoryRecordId}`,

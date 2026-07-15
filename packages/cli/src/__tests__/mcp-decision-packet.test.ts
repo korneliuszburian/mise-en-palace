@@ -20,6 +20,10 @@ import {
   serveDecisionPacketMcpStdio,
   type DecisionPacketMcpRuntime
 } from "../internal/mcp/decision-packet-mcp-server.js";
+import {
+  decisionPacketTransportBudget,
+  measureDecisionPacketTransport
+} from "../internal/mcp/decision-packet-transport-measurement.js";
 
 const now = "2026-07-07T22:00:00.000Z";
 const weakContextEvidenceGapId = "evidence-gap:run-agent-weak:no-governing-decision";
@@ -854,6 +858,96 @@ describe("DecisionPacket MCP wrapper", () => {
       kind: "krn.decisionPacketReadback.v1",
       packet: []
     }).success).toBe(false);
+  });
+
+  it("measures packet bounds across successful fixtures", async () => {
+    const measurements = [];
+
+    for (const fixture of [
+      packetJson,
+      weakPacketJson,
+      unresolvedSourceDissentPacketJson,
+      noFormalNegativePacketJson
+    ]) {
+      const called = await handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id: `measure-output:${fixture.request.runId}`,
+        method: "tools/call",
+        params: {
+          name: "krn_decision_packet",
+          arguments: { runId: fixture.request.runId }
+        }
+      }, runtime(async () => ({ stdout: JSON.stringify(fixture) })));
+      const calledResponse = requiredRecord(called, "measured tools/call response");
+      const result = requiredRecord(calledResponse["result"], "measured tools/call result");
+      const structuredContent = requiredRecord(
+        result["structuredContent"],
+        "measured structuredContent"
+      );
+
+      measurements.push({
+        fixture: fixture.request.runId,
+        messageUtf8Bytes: measureDecisionPacketTransport(called).utf8Bytes,
+        structuredContent: measureDecisionPacketTransport(structuredContent)
+      });
+    }
+
+    const messageBytes = measurements.map((item) => item.messageUtf8Bytes);
+    const structuredBytes = measurements.map((item) => item.structuredContent.utf8Bytes);
+    const collectionCounts = measurements.map((item) => item.structuredContent.collectionCount);
+    const collectionP95s = measurements.map(
+      (item) => item.structuredContent.collectionLength.p95
+    );
+    const collectionMaximums = measurements.map(
+      (item) => item.structuredContent.collectionLength.maximum
+    );
+
+    expect({
+      fixtures: measurements.map((item) => item.fixture),
+      messageUtf8Bytes: { minimum: Math.min(...messageBytes), maximum: Math.max(...messageBytes) },
+      structuredContentUtf8Bytes: {
+        minimum: Math.min(...structuredBytes),
+        maximum: Math.max(...structuredBytes)
+      },
+      collectionCount: {
+        minimum: Math.min(...collectionCounts),
+        maximum: Math.max(...collectionCounts)
+      },
+      collectionP95: { minimum: Math.min(...collectionP95s), maximum: Math.max(...collectionP95s) },
+      maximumCollectionLength: Math.max(...collectionMaximums)
+    }).toEqual({
+      fixtures: [
+        "run-agent-1",
+        "run-agent-weak",
+        "run-agent-source-dissent",
+        "run-agent-unsafe"
+      ],
+      messageUtf8Bytes: { minimum: 10_316, maximum: 12_508 },
+      structuredContentUtf8Bytes: { minimum: 4_919, maximum: 5_975 },
+      collectionCount: { minimum: 52, maximum: 55 },
+      collectionP95: { minimum: 1, maximum: 2 },
+      maximumCollectionLength: 4
+    });
+
+    for (const measured of measurements) {
+      expect(measured.messageUtf8Bytes).toBeLessThan(
+        decisionPacketTransportBudget.maximumMessageUtf8Bytes
+      );
+      expect(measured.structuredContent.collectionLength.maximum).toBeLessThan(
+        decisionPacketTransportBudget.maximumCollectionElements
+      );
+    }
+
+    const unboundedProbe = measureDecisionPacketTransport({
+      values: Array.from({ length: 10_000 }, () => "element")
+    });
+
+    expect(unboundedProbe.utf8Bytes).toBeGreaterThan(
+      decisionPacketTransportBudget.maximumMessageUtf8Bytes
+    );
+    expect(unboundedProbe.collectionLength.maximum).toBeGreaterThan(
+      decisionPacketTransportBudget.maximumCollectionElements
+    );
   });
 
   it("wraps the existing DecisionPacket contract as structured tool output", async () => {
