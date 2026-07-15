@@ -81,6 +81,10 @@ const protocolVersion = "2025-06-18";
 const serverName = "krn-decision-packet-mcp";
 const serverVersion = "0.0.0";
 const decisionPacketToolName = "krn_decision_packet";
+const decisionPacketExecutionErrorClass = "decision_packet_execution_failed";
+const decisionPacketExecutionErrorText =
+  `KRN DecisionPacket execution failed (error_class=${decisionPacketExecutionErrorClass}). `
+  + "Verify the runId and KRN database readiness, then retry.";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -451,10 +455,10 @@ const runToolCall = async (
       kind: "result",
       result: await runDecisionPacket(runtime, args["runId"].trim())
     };
-  } catch (error) {
+  } catch {
     return {
       kind: "result",
-      result: textResult(error instanceof Error ? error.message : String(error), true)
+      result: textResult(decisionPacketExecutionErrorText, true)
     };
   }
 };

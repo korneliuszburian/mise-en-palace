@@ -9,7 +9,8 @@ import {
 import {
   describe,
   expect,
-  it
+  it,
+  vi
 } from "vitest";
 import {
   z
@@ -804,10 +805,77 @@ describe("DecisionPacket MCP wrapper", () => {
         isError: true,
         content: [{
           type: "text",
-          text: "database unavailable"
+          text: "KRN DecisionPacket execution failed (error_class=decision_packet_execution_failed). Verify the runId and KRN database readiness, then retry."
         }]
       }
     });
+  });
+
+  it("redacts execution errors from MCP results and stderr", async () => {
+    const secretMarkers = [
+      "audit_user:audit_password",
+      "sk-test-secret",
+      "select * from private_table"
+    ];
+    const downstreamErrors = [
+      new Error("connect postgres://audit_user:audit_password@db.invalid:5432/krn"),
+      new Error("provider rejected token=sk-test-secret"),
+      new Error("SQL select * from private_table failed")
+    ];
+    const safeText = "KRN DecisionPacket execution failed (error_class=decision_packet_execution_failed). Verify the runId and KRN database readiness, then retry.";
+
+    for (const [index, downstreamError] of downstreamErrors.entries()) {
+      const response = await handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id: `secret-vector-${index}`,
+        method: "tools/call",
+        params: {
+          name: "krn_decision_packet",
+          arguments: { runId: "run-agent-1" }
+        }
+      }, runtime(async () => {
+        throw downstreamError;
+      }));
+      const serialized = JSON.stringify(response);
+
+      expect(response).toMatchObject({
+        result: {
+          isError: true,
+          content: [{ type: "text", text: safeText }]
+        }
+      });
+      for (const marker of secretMarkers) {
+        expect(serialized).not.toContain(marker);
+      }
+    }
+
+    async function* input(): AsyncIterable<string> {
+      yield "{\"jsonrpc\":\"2.0\",\"id\":\"stdio-secret\",\"method\":\"tools/call\",\"params\":{\"name\":\"krn_decision_packet\",\"arguments\":{\"runId\":\"run-agent-1\"}}}\n";
+    }
+
+    const output: string[] = [];
+    const stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      await serveDecisionPacketMcpStdio(input(), {
+        write: (chunk) => output.push(chunk)
+      }, runtime(async () => {
+        throw new Error(secretMarkers.join(" "));
+      }));
+      expect(stderrWrite).not.toHaveBeenCalled();
+    } finally {
+      stderrWrite.mockRestore();
+    }
+
+    expect(output).toHaveLength(1);
+    expect(JSON.parse(output[0] ?? "null")).toMatchObject({
+      result: {
+        isError: true,
+        content: [{ type: "text", text: safeText }]
+      }
+    });
+    for (const marker of secretMarkers) {
+      expect(output.join("")).not.toContain(marker);
+    }
   });
 
   it("advertises validated output schema with JSON text parity", async () => {
