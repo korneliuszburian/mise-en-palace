@@ -306,7 +306,7 @@ export const runActivationSmokeCheck = async (
       consumer: "M25 activation smoke",
       metadata: { smokeId: marker }
     });
-    await sourceRepository.createSourceDecisionEdge({
+    const expiredSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
       sourceClaimId: expiredSourceClaim.id,
       sourceDecisionId: expiredSourceDecision.id,
       targetType: "harness_run",
@@ -811,12 +811,39 @@ export const runActivationSmokeCheck = async (
     const excludedDecisionCount = countByDecision(activationRecords, "excluded");
     const conflictDecisionCount = countByDecision(activationRecords, "conflict");
     const staleDecisionCount = countByDecision(activationRecords, "stale");
-    const staleMemoryWarningPersisted = activationRecords.some(
+    const staleMemoryDecisionCountForSubject = activationRecords.filter(
       (decision) => decision.subjectId === expiredMemory.id && decision.decision === "stale"
-    );
-    const staleSourceWarningPersisted = activationRecords.some(
+    ).length;
+    const staleSourceDecisionCountForSubject = activationRecords.filter(
       (decision) => decision.subjectId === expiredSourceClaim.id && decision.decision === "stale"
-    );
+    ).length;
+    const staleMemoryWarningPersisted = staleMemoryDecisionCountForSubject === 1;
+    const staleSourceWarningPersisted = staleSourceDecisionCountForSubject === 1;
+    const packetStaleMemoryExclusionCount = issuedPacketReadback.packet.contextExclusions.filter(
+      (exclusion) =>
+        exclusion.subjectType === "memory_record" &&
+        exclusion.subjectId === expiredMemory.id &&
+        exclusion.reason === "stale"
+    ).length;
+    const packetStaleSourceExclusionCount = issuedPacketReadback.packet.contextExclusions.filter(
+      (exclusion) =>
+        exclusion.subjectType === "source_claim" &&
+        exclusion.subjectId === expiredSourceClaim.id &&
+        exclusion.reason === "stale"
+    ).length;
+    const staleMemorySelectedAsAuthority =
+      issuedPacketReadback.packet.memoryRefs.includes(expiredMemory.id) ||
+      issuedPacketReadback.packet.caveatedMemoryRefs.includes(expiredMemory.id) ||
+      issuedPacketReadback.packet.taskStandardDecisions.some(
+        (decision) => decision.memoryRecordId === expiredMemory.id
+      ) ||
+      issuedPacketReadback.packet.brief.includedMemoryRecordIds.includes(expiredMemory.id);
+    const staleSourceSelectedAsAuthority =
+      issuedPacketReadback.packet.sourceClaimIds.includes(expiredSourceClaim.id) ||
+      issuedPacketReadback.packet.caveatedSourceClaimIds.includes(expiredSourceClaim.id) ||
+      issuedPacketReadback.packet.brief.includedSourceClaimIds.includes(expiredSourceClaim.id) ||
+      issuedPacketReadback.packet.governingDecisionIds.includes(expiredSourceDecision.id) ||
+      issuedPacketReadback.packet.sourceDecisionEdgeIds.includes(expiredSourceDecisionEdge.id);
     const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
     const prefixItemCount = observationPrefixItemCount(readBackContextAssembly?.metadata);
     const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
@@ -883,6 +910,10 @@ export const runActivationSmokeCheck = async (
         { label: "stale warning decisions", passed: staleDecisionCount === 2 },
         { label: "stale memory warning persisted", passed: staleMemoryWarningPersisted },
         { label: "stale source warning persisted", passed: staleSourceWarningPersisted },
+        { label: "stale memory appears exactly once in packet exclusions", passed: packetStaleMemoryExclusionCount === 1 },
+        { label: "stale source appears exactly once in packet exclusions", passed: packetStaleSourceExclusionCount === 1 },
+        { label: "stale memory absent from selected packet authority", passed: !staleMemorySelectedAsAuthority },
+        { label: "stale source absent from selected packet authority", passed: !staleSourceSelectedAsAuthority },
         { label: "context items", passed: contextItemCount === 2 },
         { label: "context exclusions", passed: contextExclusionCount === 32 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
