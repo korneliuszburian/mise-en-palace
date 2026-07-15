@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import {
   buildDecisionPacketAuthorityProjection,
   buildDecisionPacketFromReadModel,
+  buildDecisionPacketIssuance,
   currentDecisionPacketBindingForHarnessRun,
   executionRunStatuses,
   stampCurrentDecisionPacketAuthorityMetadata,
@@ -528,6 +529,11 @@ const createFixtureDatabaseRuntime = (
   onClose: () => void
 ): CreateDatabaseRuntime => async (runtimeInput) => {
   const dependencies = createNoStoreCompilerDependencies(runtimeInput);
+  const issuance = buildDecisionPacketIssuance({
+    aggregate: aggregateForReadback,
+    packetGeneratedAt: aggregateForReadback.executionRun.updatedAt,
+    sha256Hex
+  });
   const harnessRunRepository = {
     ...dependencies.harnessRunRepository,
     async createExecutionRun() {
@@ -535,6 +541,9 @@ const createFixtureDatabaseRuntime = (
     },
     async getHarnessRunByExecutionRunId(runId: string) {
       return runId === "run-agent-1" ? aggregateForReadback : undefined;
+    },
+    async getIssuedDecisionPacketForExecutionRun(runId: string) {
+      return runId === "run-agent-1" ? issuance : undefined;
     },
     async createEvidenceBundle() {
       return notUsed("createEvidenceBundle");
@@ -755,7 +764,7 @@ describe("decision packet CLI", () => {
         checksumAlgorithm: "sha256",
         checksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
         evidenceRef: expect.stringMatching(/^packet:[a-f0-9]{64}$/u),
-        generatedAt: now,
+        generatedAt: runUpdatedAt,
         sourceRunUpdatedAt: runUpdatedAt,
         sourceRunLifecycleRevision: 2,
         freshness: {
@@ -917,7 +926,7 @@ describe("decision packet CLI", () => {
     expect(json.packetIdentity.evidenceRef).toBe(`packet:${json.packetIdentity.checksum}`);
     const authorityBinding = currentDecisionPacketBindingForHarnessRun({
       aggregate,
-      packetGeneratedAt: now,
+      packetGeneratedAt: runUpdatedAt,
       sha256Hex
     });
     expect(json.packetIdentity).toMatchObject({

@@ -5,11 +5,8 @@ import {
 import {
   DrizzleHarnessRunRepository
 } from "@krn/db/adapters";
-import {
-  buildDecisionPacketAuthorityProjection
-} from "@krn/core";
 import type {
-  DecisionPacketReadModelInput
+  DecisionPacketContractReadback
 } from "@krn/core";
 import type {
   HarnessRunAggregate,
@@ -48,7 +45,10 @@ export interface RunShowCommandResult {
 }
 
 interface ReadOnlyHarnessRuntime {
-  harnessRunRepository: Pick<HarnessRunRepository, "getHarnessRunByExecutionRunId">;
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    "getHarnessRunByExecutionRunId" | "getIssuedDecisionPacketForExecutionRun"
+  >;
   close(): Promise<void>;
 }
 
@@ -112,20 +112,37 @@ export const runRunShowCommand = async (
 };
 
 export interface DecisionPacketSnapshot {
-  authorityProjection: DecisionPacketReadModelInput;
+  issuance: DecisionPacketContractReadback;
   diagnosticReadModel: DecisionPacketReadModel;
 }
 
 export const readDecisionPacketSnapshot = async (
   runtime: RunShowCommandRuntime
-): Promise<DecisionPacketSnapshot> => readExecutionRunAggregate(runtime, (aggregate) => ({
-  authorityProjection: buildDecisionPacketAuthorityProjection(aggregate),
-  diagnosticReadModel: buildDecisionPacketReadModel(aggregate)
-}));
+): Promise<DecisionPacketSnapshot> => readExecutionRunAggregate(
+  runtime,
+  async (aggregate, repository) => {
+    const getIssuance = repository.getIssuedDecisionPacketForExecutionRun;
+    if (getIssuance === undefined) {
+      throw new Error("DecisionPacket issuance readback is unavailable");
+    }
+    const issuance = await getIssuance.call(repository, runtime.runId);
+    if (issuance === undefined) {
+      throw new Error(`DecisionPacket was not issued for execution run: ${runtime.runId}`);
+    }
+
+    return {
+      issuance,
+      diagnosticReadModel: buildDecisionPacketReadModel(aggregate)
+    };
+  }
+);
 
 const readExecutionRunAggregate = async <TResult>(
   runtime: RunShowCommandRuntime,
-  read: (aggregate: HarnessRunAggregate) => TResult
+  read: (
+    aggregate: HarnessRunAggregate,
+    repository: ReadOnlyHarnessRuntime["harnessRunRepository"]
+  ) => TResult | Promise<TResult>
 ): Promise<TResult> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
@@ -144,7 +161,7 @@ const readExecutionRunAggregate = async <TResult>(
       throw new Error(`Execution run not found: ${runtime.runId}`);
     }
 
-    return read(aggregate);
+    return await read(aggregate, readRuntime.harnessRunRepository);
   } finally {
     await readRuntime.close();
   }

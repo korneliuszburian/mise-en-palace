@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+
+import { buildDecisionPacketIssuance } from "@krn/core";
 
 import type {
   CreateAntiMemoryCandidateInput,
@@ -193,6 +196,11 @@ describe("runCli", () => {
       runEvents: []
     };
     let persistedAggregate: HarnessRunAggregate = aggregate;
+    const issuance = buildDecisionPacketIssuance({
+      aggregate,
+      packetGeneratedAt: aggregate.executionRun.updatedAt,
+      sha256Hex: (value) => createHash("sha256").update(value).digest("hex")
+    });
     const harnessRunRepository = {
       ...dependencies.harnessRunRepository,
       async createExecutionRun(_input: CreateExecutionRunInput) {
@@ -200,6 +208,9 @@ describe("runCli", () => {
       },
       async getHarnessRunByExecutionRunId(runId: string) {
         return runId === "execution-run-1" ? persistedAggregate : undefined;
+      },
+      async getIssuedDecisionPacketForExecutionRun(runId: string) {
+        return runId === "execution-run-1" ? issuance : undefined;
       },
       async createEvidenceBundle(): Promise<never> {
         throw new Error("createEvidenceBundle should not be called");
@@ -310,10 +321,10 @@ describe("runCli", () => {
     expect(terminalResult.exitCode).toBe(0);
     expect(terminalResult.stderr).toBe("");
     expect(terminalResult.stdout).toContain("Packet Status: abstain");
-    expect(terminalResult.stdout).toContain("Active: no (unverified)");
-    expect(terminalResult.stdout).toContain("execution_run_terminal");
+    expect(terminalResult.stdout).toContain("Active: yes");
+    expect(terminalResult.stdout).not.toContain("execution_run_terminal");
     expect(terminalResult.stdout).toContain("Stop Condition: Do not execute");
-    expect(terminalResult.stdout).not.toContain("- pnpm typecheck (required)");
+    expect(terminalResult.stdout).toContain("- pnpm typecheck (required)");
   });
 
   it("requires database config for codex brief", async () => {

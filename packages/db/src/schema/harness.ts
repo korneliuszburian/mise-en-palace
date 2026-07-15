@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -252,6 +253,41 @@ export const executionRuns = pgTable(
   ]
 );
 
+export const decisionPacketIssuances = pgTable(
+  "decision_packet_issuances",
+  {
+    executionRunId: uuid("execution_run_id")
+      .primaryKey()
+      .references(() => executionRuns.id, { onDelete: "cascade" }),
+    packetChecksum: text("packet_checksum").notNull(),
+    packetGeneratedAt: timestamp("packet_generated_at", { withTimezone: true }).notNull(),
+    sourceRunLifecycleRevision: integer("source_run_lifecycle_revision").notNull(),
+    readback: jsonb("readback").notNull(),
+    createdAt: createdAtColumn()
+  },
+  (table) => [
+    uniqueIndex("decision_packet_issuances_checksum_unique").on(table.packetChecksum),
+    uniqueIndex("decision_packet_issuances_application_identity_unique").on(
+      table.executionRunId,
+      table.packetChecksum,
+      table.packetGeneratedAt,
+      table.sourceRunLifecycleRevision
+    ),
+    check(
+      "decision_packet_issuances_packet_checksum_sha256",
+      sql`${table.packetChecksum} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "decision_packet_issuances_lifecycle_revision_positive",
+      sql`${table.sourceRunLifecycleRevision} > 0`
+    ),
+    check(
+      "decision_packet_issuances_generated_before_persisted",
+      sql`${table.packetGeneratedAt} <= ${table.createdAt}`
+    )
+  ]
+);
+
 export const usefulnessApplications = pgTable(
   "usefulness_applications",
   {
@@ -275,6 +311,21 @@ export const usefulnessApplications = pgTable(
     createdAt: createdAtColumn()
   },
   (table) => [
+    foreignKey({
+      columns: [
+        table.executionRunId,
+        table.packetChecksum,
+        table.packetGeneratedAt,
+        table.sourceRunLifecycleRevision
+      ],
+      foreignColumns: [
+        decisionPacketIssuances.executionRunId,
+        decisionPacketIssuances.packetChecksum,
+        decisionPacketIssuances.packetGeneratedAt,
+        decisionPacketIssuances.sourceRunLifecycleRevision
+      ],
+      name: "usefulness_applications_decision_packet_issuance_fk"
+    }).onDelete("cascade"),
     uniqueIndex("usefulness_applications_packet_subject_unique").on(
       table.executionRunId,
       table.packetChecksum,

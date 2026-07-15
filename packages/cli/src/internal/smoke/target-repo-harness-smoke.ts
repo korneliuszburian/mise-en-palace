@@ -1338,9 +1338,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
       await harnessRunRepository.getHarnessRunByExecutionRunId(baselineExecutionRun.id),
       "Target repo harness smoke failed to read back baseline run"
     );
+    const baselineIssuance = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+      baselineExecutionRun.id
+    );
 
     const { renderedBrief: baselineRenderedBrief } = renderCodexBriefFromAggregate({
       aggregate: baselineAggregate,
+      packet: baselineIssuance.packet,
       missingContextMessage: "Target repo harness smoke failed to read back baseline run"
     });
     const baselineProof = assertTargetBaselineReadback({
@@ -1427,9 +1431,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
       await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
       "Target repo harness smoke failed to read back persisted run"
     );
+    const issuance = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+      executionRun.id
+    );
 
     const { renderedBrief } = renderCodexBriefFromAggregate({
       aggregate,
+      packet: issuance.packet,
       missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
     const planProof = assertTargetPlanReadback({

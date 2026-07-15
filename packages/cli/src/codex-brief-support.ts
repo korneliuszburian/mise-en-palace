@@ -1,6 +1,3 @@
-import {
-  createHash
-} from "node:crypto";
 import postgres from "postgres";
 import type {
   Sql
@@ -8,10 +5,7 @@ import type {
 import type {
   ExecutionBrief
 } from "@krn/codex-adapter";
-import {
-  buildDecisionPacketAuthorityProjection,
-  buildDecisionPacketContractReadback
-} from "@krn/core";
+import type { DecisionPacket } from "@krn/core";
 import {
   createExecutionBrief,
   renderExecutionBriefText
@@ -60,7 +54,10 @@ export interface SmokeRepositories {
 }
 
 export interface ReadOnlyHarnessRuntime {
-  harnessRunRepository: Pick<HarnessRunRepository, "getHarnessRunByExecutionRunId">;
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    "getHarnessRunByExecutionRunId" | "getIssuedDecisionPacketForExecutionRun"
+  >;
   close(): Promise<void>;
 }
 
@@ -84,6 +81,7 @@ interface BrainStoreReadiness {
 
 interface RenderCodexBriefFromAggregateInput {
   aggregate: HarnessRunAggregate;
+  packet: DecisionPacket;
   missingContextMessage: string;
 }
 
@@ -92,9 +90,6 @@ export interface RenderedCodexBrief {
   renderedBrief: string;
   evidenceContract: EvidenceContract | undefined;
 }
-
-const sha256Hex = (value: string): string =>
-  createHash("sha256").update(value).digest("hex");
 
 export const normalizeSmokeSlugPart = (value: string): string => {
   const smokeSlugPart = value
@@ -277,11 +272,7 @@ export const renderCodexBriefFromAggregate = (
   }
 
   const readModel = buildDecisionPacketReadModel(input.aggregate);
-  const packet = buildDecisionPacketContractReadback({
-    readModel: buildDecisionPacketAuthorityProjection(input.aggregate),
-    generatedAt: input.aggregate.executionRun.updatedAt,
-    sha256Hex
-  }).packet;
+  const packet = input.packet;
   const brief = createExecutionBrief({
     packet
   });

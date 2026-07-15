@@ -36,15 +36,18 @@ export const contextAssemblyStatuses = [
 
 export type ContextAssemblyStatus = typeof contextAssemblyStatuses[number];
 
-export type ContextSubjectType =
-  | "source_artifact"
-  | "source_chunk"
-  | "source_claim"
-  | "memory_record"
-  | "anti_memory_record"
-  | "task_contract"
-  | "search_document"
-  | "owner_file";
+export const contextSubjectTypes = [
+  "source_artifact",
+  "source_chunk",
+  "source_claim",
+  "memory_record",
+  "anti_memory_record",
+  "task_contract",
+  "search_document",
+  "owner_file"
+] as const;
+
+export type ContextSubjectType = (typeof contextSubjectTypes)[number];
 
 export interface ContextInclusion extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;

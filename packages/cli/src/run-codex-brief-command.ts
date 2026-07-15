@@ -79,8 +79,25 @@ export const runCodexBriefCommand = async (
       throw new Error(`Execution run has no context assembly: ${runtime.runId}`);
     }
 
+    const getIssuance =
+      readRuntime.harnessRunRepository.getIssuedDecisionPacketForExecutionRun;
+
+    if (getIssuance === undefined) {
+      throw new Error("DecisionPacket issuance readback is unavailable");
+    }
+
+    const issuance = await getIssuance.call(
+      readRuntime.harnessRunRepository,
+      runtime.runId
+    );
+
+    if (issuance === undefined) {
+      throw new Error(`Execution run has no issued DecisionPacket: ${runtime.runId}`);
+    }
+
     const { renderedBrief } = renderCodexBriefFromAggregate({
       aggregate,
+      packet: issuance.packet,
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
     const knowledgeSelection = knowledgeSelectionFromMetadata(

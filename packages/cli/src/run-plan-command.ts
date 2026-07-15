@@ -114,7 +114,7 @@ interface CompilerRuntimeResolution {
   harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun"> &
     Partial<Pick<
       HarnessRunRepository,
-      "listFeedbackDeltasForSubjects"
+      "issueDecisionPacketForExecutionRun" | "listFeedbackDeltasForSubjects"
     >>;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
   close(): Promise<void>;
@@ -866,6 +866,15 @@ const createPersistedPlanIdentity = async (
             codexAdapterPlanRef: result.codexAdapterPlanRef
           }
         });
+
+  if (
+    executionRun !== undefined &&
+    compilerRuntime.harnessRunRepository?.issueDecisionPacketForExecutionRun !== undefined
+  ) {
+    await compilerRuntime.harnessRunRepository.issueDecisionPacketForExecutionRun(
+      executionRun.id
+    );
+  }
 
   return executionRun === undefined
     ? undefined

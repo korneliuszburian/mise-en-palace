@@ -646,6 +646,110 @@ describe("DrizzleHarnessRunRepository", () => {
   );
 
   postgresIt(
+    "issues one immutable DecisionPacket artifact and rejects corrupt readback",
+    async () => {
+      const marker = `krn_packet_issuance_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "DecisionPacket issuance authority",
+        workspacePrefix: "krn-packet-issuance",
+        projectSlug: "packet-issuance",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `issue immutable packet ${marker}`,
+        taskContract: {
+          title: "Issue one DecisionPacket",
+          objective: "Persist the exact packet consumed by later read-only surfaces.",
+          constraints: ["real PostgreSQL"],
+          nonGoals: ["do not reconstruct a packet during readback"],
+          acceptance: ["retry returns the original issuance after lifecycle change"]
+        },
+        harnessPlan: {
+          summary: "DecisionPacket issuance falsifier",
+          nextAction: "Persist and read the issued packet."
+        },
+        contextAssembly: {
+          status: "assembled",
+          tokenBudget: 0
+        }
+      });
+
+      try {
+        const run = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "packet-issuance-falsifier",
+          status: "planned",
+          metadata: { smokeId: marker }
+        });
+        const first = await scaffold.harnessRunRepository
+          .issueDecisionPacketForExecutionRun(run.id);
+        const transition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: run.id,
+          expectedStatus: "planned",
+          status: "running",
+          startedAt: "2026-07-15T08:00:00.000Z"
+        });
+        expect(transition.kind).toBe("transitioned");
+
+        const retry = await scaffold.harnessRunRepository
+          .issueDecisionPacketForExecutionRun(run.id);
+        const readback = await scaffold.harnessRunRepository
+          .getIssuedDecisionPacketForExecutionRun(run.id);
+
+        expect(retry).toEqual(first);
+        expect(readback).toEqual(first);
+        expect(first.packetIdentity).toMatchObject({
+          sourceRunStatus: "planned",
+          sourceRunLifecycleRevision: 1,
+          generatedAt: run.updatedAt
+        });
+
+        await expect(scaffold.client`
+          insert into usefulness_applications (
+            application_id,
+            subject_kind,
+            subject_id,
+            project_id,
+            execution_run_id,
+            task_contract_id,
+            packet_checksum,
+            packet_generated_at,
+            source_run_lifecycle_revision
+          ) values (
+            ${`application:${marker}:unissued`},
+            'knowledge',
+            'unissued-knowledge',
+            ${scaffold.project.id},
+            ${run.id},
+            ${scaffold.taskContract.id},
+            ${"f".repeat(64)},
+            ${run.updatedAt},
+            1
+          )
+        `).rejects.toThrow("usefulness_applications_decision_packet_issuance_fk");
+
+        await scaffold.client`
+          update decision_packet_issuances
+          set readback = jsonb_set(
+            readback,
+            '{packetIdentity,generatedAt}',
+            to_jsonb(${"2099-01-01T00:00:00.000Z"}::text)
+          )
+          where execution_run_id = ${run.id}
+        `;
+        await expect(
+          scaffold.harnessRunRepository.getIssuedDecisionPacketForExecutionRun(run.id)
+        ).rejects.toThrow(`DecisionPacket issuance is corrupt for execution run ${run.id}`);
+      } finally {
+        await scaffold.cleanup();
+        await scaffold.client.end();
+      }
+    }
+  );
+
+  postgresIt(
     "persists lifecycle timestamps for direct planned-to-terminal runs",
     async () => {
       const marker = `krn_execution_direct_terminal_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -1926,16 +2030,8 @@ describe("DrizzleHarnessRunRepository", () => {
         })]);
         expect(unprovedHelped.feedbackMaintenanceQueueRecordId).toBeUndefined();
 
-        const aggregateBeforeProvedHelped = await scaffold.harnessRunRepository
-          .getHarnessRunByExecutionRunId(executionRun.id);
-        if (aggregateBeforeProvedHelped === undefined) {
-          throw new Error("proved helped aggregate was not persisted");
-        }
-        const packetBeforeProvedHelped = currentDecisionPacketBindingForHarnessRun({
-          aggregate: aggregateBeforeProvedHelped,
-          packetGeneratedAt: "2026-07-14T20:02:00.000Z",
-          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
-        });
+        const issuedPacket = await scaffold.harnessRunRepository
+          .issueDecisionPacketForExecutionRun(executionRun.id);
         const applicationSnapshot = await collectTargetStateSnapshot(targetRepo);
         const applicationIdentity = {
           applicationId: `application:${marker}:knowledge`,
@@ -1944,9 +2040,10 @@ describe("DrizzleHarnessRunRepository", () => {
           projectId: scaffold.project.id,
           executionRunId: executionRun.id,
           taskContractId: scaffold.taskContract.id,
-          packetChecksum: packetBeforeProvedHelped.packetChecksum,
-          packetGeneratedAt: packetBeforeProvedHelped.packetGeneratedAt,
-          sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+          packetChecksum: issuedPacket.packetIdentity.checksum,
+          packetGeneratedAt: issuedPacket.packetIdentity.generatedAt,
+          sourceRunLifecycleRevision:
+            issuedPacket.packetIdentity.sourceRunLifecycleRevision,
           targetState: {
             targetRepo: targetRepoAlias,
             treeIdentity: applicationSnapshot.treeIdentity,
@@ -1962,6 +2059,11 @@ describe("DrizzleHarnessRunRepository", () => {
             patchIdentity: `sha256:${"f".repeat(64)}`
           }
         })).rejects.toThrow("target state does not match the current repository patch");
+        await expect(scaffold.harnessRunRepository.recordUsefulnessApplicationOnce({
+          ...applicationIdentity,
+          applicationId: `application:${marker}:caller-time`,
+          packetGeneratedAt: "2099-01-01T00:00:00.000Z"
+        })).rejects.toThrow("exact persisted packet identity is required");
         const application = await scaffold.harnessRunRepository
           .recordUsefulnessApplicationOnce(applicationIdentity);
         const applicationRetry = await scaffold.harnessRunRepository
@@ -2005,12 +2107,12 @@ describe("DrizzleHarnessRunRepository", () => {
               appliedAt: application.application.appliedAt,
               outcome: "helped",
               reason: "Strict verification existed, but preceded application.",
-              evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+              evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
               doesNotProve: "Pre-application verification does not prove help."
             }]),
             decisionPacketClaim: {
-              checksum: packetBeforeProvedHelped.packetChecksum,
-              generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+              checksum: issuedPacket.packetIdentity.checksum,
+              generatedAt: issuedPacket.packetIdentity.generatedAt
             },
             evidence: {
               ...captureInput(
@@ -2086,12 +2188,12 @@ describe("DrizzleHarnessRunRepository", () => {
             appliedAt: application.application.appliedAt,
             outcome: "helped" as const,
             reason: "Persisted application preceded strict verification.",
-            evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+            evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
             doesNotProve: "The ordered proof does not establish semantic causality."
           }];
         const provedHelpedCallerClaim = {
-          checksum: packetBeforeProvedHelped.packetChecksum,
-          generatedAt: packetBeforeProvedHelped.packetGeneratedAt
+          checksum: issuedPacket.packetIdentity.checksum,
+          generatedAt: issuedPacket.packetIdentity.generatedAt
         };
         const provedHelpedCallerMaintenance = {
           reason: "Review the repository-admitted helped outcome."
@@ -2356,7 +2458,7 @@ describe("DrizzleHarnessRunRepository", () => {
           appliedAt: sourceClaimApplication.application.appliedAt,
           outcome: "helped" as const,
           reason: "Persisted claim application preceded strict verification.",
-          evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+          evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
           doesNotProve: "Ordered proof does not establish source truth."
         }];
         const sourceClaimHelped = await scaffold.harnessRunRepository

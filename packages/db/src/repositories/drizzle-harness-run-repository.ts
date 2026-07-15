@@ -16,6 +16,7 @@ import type {
 import type {
   ContextAssembly,
   CommandOutputArtifact,
+  DecisionPacketContractReadback,
   EvidenceBundle,
   EvidenceCommand,
   ExecutionRun,
@@ -38,6 +39,8 @@ import {
   assessCommandOutputArtifactIntegrity,
   assessCurrentDecisionPacketHelpedProof,
   authorizeDecisionPacketUsefulness,
+  authorizeIssuedDecisionPacketUsefulness,
+  buildDecisionPacketIssuance,
   canonicalTargetRepoPath,
   collectTargetStateSnapshot,
   decideEvidenceContractActivation,
@@ -52,6 +55,7 @@ import {
   projectDecisionPacketUsefulnessSubjects,
   parseUsefulnessApplicationEvidenceIdentity,
   parseUsefulnessApplicationEvidenceForIdentity,
+  parseDecisionPacketContractReadback,
   stampCurrentDecisionPacketAuthorityMetadata,
   stampUnboundDecisionPacketAuthorityMetadata,
   targetEvidenceFromMetadata,
@@ -96,6 +100,7 @@ import {
 import type { KrnDatabase, KrnDatabaseTransaction } from "../database.js";
 import {
   contextAssemblies,
+  decisionPacketIssuances,
   evidenceCommandArtifacts,
   evidenceBundles,
   executionRuns,
@@ -1283,6 +1288,31 @@ const reviewFeedbackRequestFingerprintFromRow = (
 
 const snapshotRepositoryInput = <TInput>(input: TInput): TInput =>
   structuredClone(input);
+
+type DecisionPacketIssuanceRow = typeof decisionPacketIssuances.$inferSelect;
+
+const mapDecisionPacketIssuance = (
+  row: DecisionPacketIssuanceRow
+): DecisionPacketContractReadback => {
+  const readback = parseDecisionPacketContractReadback({
+    value: row.readback,
+    expectedRunId: row.executionRunId,
+    sha256Hex
+  });
+
+  if (
+    readback === undefined ||
+    readback.packetIdentity.checksum !== row.packetChecksum ||
+    readback.packetIdentity.generatedAt !== row.packetGeneratedAt.toISOString() ||
+    readback.packetIdentity.sourceRunLifecycleRevision !== row.sourceRunLifecycleRevision
+  ) {
+    throw new Error(
+      `DecisionPacket issuance is corrupt for execution run ${row.executionRunId}`
+    );
+  }
+
+  return readback;
+};
 
 const evidenceFeedbackAuthoritySnapshot = (
   input: CreateEvidenceFeedbackOnceInput
@@ -2489,6 +2519,62 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     });
   }
 
+  async issueDecisionPacketForExecutionRun(
+    executionRunId: string
+  ): Promise<DecisionPacketContractReadback> {
+    return this.db.transaction(async (tx) => {
+      const aggregate = await this.readHarnessRunAuthority(tx, executionRunId);
+      if (aggregate === undefined) {
+        throw new Error(`Cannot issue DecisionPacket for missing execution run ${executionRunId}`);
+      }
+      if (aggregate.contextAssembly === undefined) {
+        throw new Error(
+          `Cannot issue DecisionPacket before context assembly exists for execution run ${executionRunId}`
+        );
+      }
+
+      const existing = await tx.query.decisionPacketIssuances.findFirst({
+        where: eq(decisionPacketIssuances.executionRunId, executionRunId)
+      });
+      if (existing !== undefined) {
+        return mapDecisionPacketIssuance(existing);
+      }
+
+      const issuedAt = fromIsoTimestamp(aggregate.executionRun.updatedAt);
+      const readback = buildDecisionPacketIssuance({
+        aggregate,
+        packetGeneratedAt: issuedAt.toISOString(),
+        sha256Hex
+      });
+      const row = requireReturnedRow(
+        await tx
+          .insert(decisionPacketIssuances)
+          .values({
+            executionRunId,
+            packetChecksum: readback.packetIdentity.checksum,
+            packetGeneratedAt: issuedAt,
+            sourceRunLifecycleRevision:
+              readback.packetIdentity.sourceRunLifecycleRevision,
+            readback
+          })
+          .returning(),
+        "issueDecisionPacketForExecutionRun"
+      );
+
+      return mapDecisionPacketIssuance(row);
+    });
+  }
+
+  async getIssuedDecisionPacketForExecutionRun(
+    executionRunId: string
+  ): Promise<DecisionPacketContractReadback | undefined> {
+    const row = await this.db.query.decisionPacketIssuances.findFirst({
+      where: eq(decisionPacketIssuances.executionRunId, executionRunId)
+    });
+
+    return row === undefined ? undefined : mapDecisionPacketIssuance(row);
+  }
+
   async recordUsefulnessApplicationOnce(
     input: UsefulnessApplicationEvidenceIdentity
   ): Promise<RecordUsefulnessApplicationOnceResult> {
@@ -2513,16 +2599,10 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     );
 
     return this.db.transaction(async (tx) => {
-      const lockedRun = await lockHarnessRunAuthority(
+      await lockHarnessRunAuthority(
         tx,
         authorityInput,
         "recordUsefulnessApplicationOnce"
-      );
-      assertSourceRunLifecycleRevision(
-        "recordUsefulnessApplicationOnce",
-        authorityInput.executionRunId,
-        authorityInput.sourceRunLifecycleRevision,
-        lockedRun
       );
       const aggregate = requireLinkedRow(
         await this.findHarnessRunAggregate(tx, authorityInput.executionRunId, true),
@@ -2534,18 +2614,25 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         );
       }
 
-      const authorization = authorizeDecisionPacketUsefulness({
+      const issuanceRow = requireLinkedRow(
+        await tx.query.decisionPacketIssuances.findFirst({
+          where: eq(decisionPacketIssuances.executionRunId, authorityInput.executionRunId)
+        }),
+        "recordUsefulnessApplicationOnce.decisionPacketIssuance"
+      );
+      const authorization = authorizeIssuedDecisionPacketUsefulness({
         aggregate,
+        issuance: mapDecisionPacketIssuance(issuanceRow),
         runId: authorityInput.executionRunId,
         runtimeProjectId: authorityInput.projectId,
         callerPacketChecksum: authorityInput.packetChecksum,
         callerPacketGeneratedAt: authorityInput.packetGeneratedAt,
+        callerSourceRunLifecycleRevision: authorityInput.sourceRunLifecycleRevision,
         subjects: [{
           kind: authorityInput.subjectKind,
           id: authorityInput.subjectId,
           evidenceRefs: [`packet:${authorityInput.packetChecksum}`]
-        }],
-        sha256Hex
+        }]
       });
       if (!authorization.authorized) {
         throw new Error(`recordUsefulnessApplicationOnce rejected: ${authorization.reason}`);

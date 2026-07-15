@@ -510,8 +510,13 @@ export const runCodexAdapterSmokeCheck = async (
       throw new Error("Codex adapter smoke failed to read back persisted run");
     }
 
+    const issuance = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+      executionRun.id
+    );
+
     const rendered = renderCodexBriefFromAggregate({
       aggregate,
+      packet: issuance.packet,
       missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });
     const proof = assertCodexAdapterBoundary({

@@ -14,6 +14,9 @@ import {
   parseEvidenceContract,
   type EvidenceContract
 } from "../evidence-contract.js";
+import {
+  parseDecisionPacketContractReadback
+} from "../decision-packet-contract.js";
 
 const now = "2026-07-08T14:45:00.000Z";
 
@@ -1389,6 +1392,42 @@ describe("DecisionPacket builder", () => {
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);
+  });
+
+  it("validates persisted DecisionPacket readback and rejects malformed or tampered artifacts", () => {
+    const issued = buildDecisionPacketContractReadback({
+      readModel,
+      generatedAt: now,
+      sha256Hex: fakeSha256Hex
+    });
+    const tampered = structuredClone(issued);
+    tampered.packet.nextAction = "Caller replaced the issued action.";
+    const malformed = {
+      ...issued,
+      packet: {
+        ...issued.packet,
+        task: {
+          ...issued.packet.task,
+          status: "unknown"
+        }
+      }
+    };
+
+    expect(parseDecisionPacketContractReadback({
+      value: issued,
+      expectedRunId: issued.request.runId,
+      sha256Hex: fakeSha256Hex
+    })).toEqual(issued);
+    expect(parseDecisionPacketContractReadback({
+      value: tampered,
+      expectedRunId: issued.request.runId,
+      sha256Hex: fakeSha256Hex
+    })).toBeUndefined();
+    expect(parseDecisionPacketContractReadback({
+      value: malformed,
+      expectedRunId: issued.request.runId,
+      sha256Hex: fakeSha256Hex
+    })).toBeUndefined();
   });
 
   it("exposes complete packet scope and abstains without project identity", () => {

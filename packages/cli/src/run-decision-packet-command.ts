@@ -1,11 +1,5 @@
-import {
-  createHash
-} from "node:crypto";
 import type {
   DecisionPacketContractReadback
-} from "@krn/core";
-import {
-  buildDecisionPacketContractReadback
 } from "@krn/core";
 import type {
   DecisionPacketReadModel
@@ -50,26 +44,13 @@ const missingDecisionPacketDatabaseUrlMessage = [
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
 ].join("\n");
 
-const sha256Hex = (value: string): string =>
-  createHash("sha256").update(value).digest("hex");
-
 const buildDecisionPacket = (
-  authorityProjection: Parameters<typeof buildDecisionPacketContractReadback>[0]["readModel"],
-  diagnosticReadModel: DecisionPacketReadModel,
-  generatedAt: string
-): DecisionPacketCommandReadback => {
-  const readback = buildDecisionPacketContractReadback({
-    readModel: authorityProjection,
-    generatedAt,
-    sha256Hex
-  });
-
-  return {
-    ...readback,
-    readModel: diagnosticReadModel,
-    proof: readback.proof
-  };
-};
+  issuance: DecisionPacketContractReadback,
+  diagnosticReadModel: DecisionPacketReadModel
+): DecisionPacketCommandReadback => ({
+  ...issuance,
+  readModel: diagnosticReadModel
+});
 
 export const runDecisionPacketCommand = async (
   runtime: DecisionPacketCommandRuntime
@@ -93,9 +74,8 @@ export const runDecisionPacketCommand = async (
 
   return {
     stdout: `${JSON.stringify(buildDecisionPacket(
-      snapshot.authorityProjection,
-      snapshot.diagnosticReadModel,
-      runtime.now()
+      snapshot.issuance,
+      snapshot.diagnosticReadModel
     ), null, 2)}\n`
   };
 };

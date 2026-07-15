@@ -3,6 +3,7 @@ import type {
   ContextAssemblyCurrentStatus,
   ContextExclusion,
   ContextInclusion,
+  DecisionPacketContractReadback,
   EvidenceBundle,
   EvidenceCommand,
   ExecutionRun,
@@ -241,6 +242,12 @@ export interface HarnessRunRepository {
   updateExecutionRunStatus(
     input: UpdateExecutionRunStatusInput
   ): Promise<UpdateExecutionRunStatusResult>;
+  issueDecisionPacketForExecutionRun?(
+    executionRunId: ExecutionRunId
+  ): Promise<DecisionPacketContractReadback>;
+  getIssuedDecisionPacketForExecutionRun?(
+    executionRunId: ExecutionRunId
+  ): Promise<DecisionPacketContractReadback | undefined>;
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;

@@ -137,17 +137,21 @@ export type DecisionPacketAbstentionStatus =
   | "weak_context"
   | "abstain";
 
+export const decisionPacketAbstentionReasons = [
+  "missing_project_identity",
+  "missing_governing_decision",
+  "missing_decision_linked_source",
+  "caveated_source_authority",
+  "caveated_memory_authority",
+  "stale_authority",
+  "missing_rejected_path_evidence",
+  "conflicting_authority",
+  "unresolved_accepted_source_dissent",
+  "evidence_gap"
+] as const;
+
 export type DecisionPacketAbstentionReason =
-  | "missing_project_identity"
-  | "missing_governing_decision"
-  | "missing_decision_linked_source"
-  | "caveated_source_authority"
-  | "caveated_memory_authority"
-  | "stale_authority"
-  | "missing_rejected_path_evidence"
-  | "conflicting_authority"
-  | "unresolved_accepted_source_dissent"
-  | "evidence_gap";
+  (typeof decisionPacketAbstentionReasons)[number];
 
 export interface DecisionPacketAbstentionScore {
   status: DecisionPacketAbstentionStatus;

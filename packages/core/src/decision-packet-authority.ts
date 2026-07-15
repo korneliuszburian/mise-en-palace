@@ -1,5 +1,7 @@
 import type {
+  DecisionPacket,
   DecisionPacketActivationCandidateInput,
+  DecisionPacketContractReadback,
   DecisionPacketActivationDecisionInput,
   DecisionPacketActivationTraceInput,
   DecisionPacketReadModelInput,
@@ -141,6 +143,12 @@ export type DecisionPacketBindingAuthorizationInput = DecisionPacketAuthorityInp
 export interface DecisionPacketUsefulnessAuthorizationInput
   extends DecisionPacketAuthorityInput {
   subjects: readonly DecisionPacketUsefulnessSubject[];
+}
+
+export interface IssuedDecisionPacketUsefulnessAuthorizationInput
+  extends Omit<DecisionPacketUsefulnessAuthorizationInput, "sha256Hex"> {
+  issuance: DecisionPacketContractReadback;
+  callerSourceRunLifecycleRevision: number;
 }
 
 interface DecisionPacketSourceClaimEdgeInfluence {
@@ -560,7 +568,7 @@ export const buildDecisionPacketAuthorityProjection = (
   };
 };
 
-const currentDecisionPacketReadback = (input: {
+export const buildDecisionPacketIssuance = (input: {
   aggregate: HarnessRunAggregate;
   packetGeneratedAt: IsoTimestamp;
   sha256Hex(value: string): string;
@@ -575,7 +583,7 @@ export const currentDecisionPacketBindingForHarnessRun = (input: {
   packetGeneratedAt: IsoTimestamp;
   sha256Hex(value: string): string;
 }): DecisionPacketBinding => {
-  const packetIdentity = currentDecisionPacketReadback(input).packetIdentity;
+  const packetIdentity = buildDecisionPacketIssuance(input).packetIdentity;
 
   return {
     packetChecksum: packetIdentity.checksum,
@@ -602,7 +610,7 @@ const normalizePacketGeneratedAt = (
 };
 
 const rejectDecisionPacketAuthorization = (
-  input: DecisionPacketBindingAuthorizationInput,
+  input: Pick<DecisionPacketBindingAuthorizationInput, "aggregate">,
   reason: string
 ): DecisionPacketAuthorization => ({
   authorized: false,
@@ -657,13 +665,9 @@ export const authorizeDecisionPacketBinding = (
   };
 };
 
-const selectedSubjectIds = (input: {
-  aggregate: HarnessRunAggregate;
-  packetGeneratedAt: IsoTimestamp;
-  sha256Hex(value: string): string;
-}): ReadonlyMap<DecisionPacketUsefulnessSubjectKind, ReadonlySet<string>> => {
-  const packet = currentDecisionPacketReadback(input).packet;
-
+const selectedSubjectIds = (
+  packet: DecisionPacket
+): ReadonlyMap<DecisionPacketUsefulnessSubjectKind, ReadonlySet<string>> => {
   return new Map([
     ["source_claim", new Set([
       ...packet.sourceClaimIds,
@@ -692,11 +696,11 @@ export const authorizeDecisionPacketUsefulness = (
     return authorization;
   }
 
-  const subjects = selectedSubjectIds({
+  const subjects = selectedSubjectIds(buildDecisionPacketIssuance({
     aggregate: input.aggregate,
     packetGeneratedAt: authorization.packetGeneratedAt,
     sha256Hex: input.sha256Hex
-  });
+  }).packet);
 
   for (const subject of input.subjects) {
     if (!subjects.get(subject.kind)?.has(subject.id)) {
@@ -718,6 +722,70 @@ export const authorizeDecisionPacketUsefulness = (
   }
 
   return authorization;
+};
+
+export const authorizeIssuedDecisionPacketUsefulness = (
+  input: IssuedDecisionPacketUsefulnessAuthorizationInput
+): DecisionPacketAuthorization => {
+  const reject = (reason: string): DecisionPacketAuthorization =>
+    rejectDecisionPacketAuthorization(input, reason);
+  const taskProjectId = input.aggregate.taskContract.projectId;
+  const identity = input.issuance.packetIdentity;
+
+  if (
+    input.runId !== input.aggregate.executionRun.id ||
+    input.runId !== input.issuance.request.runId
+  ) {
+    return reject("DecisionPacket issuance rejected: run identity mismatch");
+  }
+  if (
+    taskProjectId === undefined ||
+    input.runtimeProjectId !== taskProjectId ||
+    input.issuance.request.projectId !== taskProjectId ||
+    input.issuance.packet.task.projectId !== taskProjectId
+  ) {
+    return reject("DecisionPacket issuance rejected: project identity mismatch");
+  }
+  if (
+    input.issuance.request.taskId !== input.aggregate.taskContract.id ||
+    input.issuance.packet.task.id !== input.aggregate.taskContract.id
+  ) {
+    return reject("DecisionPacket issuance rejected: task identity mismatch");
+  }
+  if (
+    normalizePacketGeneratedAt(input.callerPacketGeneratedAt) !== identity.generatedAt ||
+    input.callerPacketChecksum !== identity.checksum ||
+    input.callerSourceRunLifecycleRevision !== identity.sourceRunLifecycleRevision
+  ) {
+    return reject("DecisionPacket issuance rejected: exact persisted packet identity is required");
+  }
+
+  const subjects = selectedSubjectIds(input.issuance.packet);
+
+  for (const subject of input.subjects) {
+    if (!subjects.get(subject.kind)?.has(subject.id)) {
+      return reject(
+        `usefulness write rejected: ${subject.kind}:${subject.id} is not selected by the issued packet`
+      );
+    }
+    if (
+      subject.evidenceRefs !== undefined &&
+      !subject.evidenceRefs.includes(identity.evidenceRef)
+    ) {
+      return reject(
+        `usefulness write rejected: ${subject.kind}:${subject.id} lacks the issued packet evidence ref`
+      );
+    }
+  }
+
+  return {
+    authorized: true,
+    packetChecksum: identity.checksum,
+    packetEvidenceRef: identity.evidenceRef,
+    packetGeneratedAt: identity.generatedAt,
+    sourceRunLifecycleRevision: identity.sourceRunLifecycleRevision,
+    projectId: taskProjectId
+  };
 };
 
 export const decisionPacketUsefulnessAuthorizationDowngradeReason = (

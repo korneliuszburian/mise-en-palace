@@ -117,6 +117,8 @@ export interface DatabaseRuntime {
     | "createFeedbackDelta"
   > & Partial<Pick<
     HarnessRunRepository,
+    | "issueDecisionPacketForExecutionRun"
+    | "getIssuedDecisionPacketForExecutionRun"
     | "createEvidenceFeedbackOnce"
     | "recordUsefulnessApplicationOnce"
     | "updateExecutionRunStatus"
@@ -658,6 +660,10 @@ const createDatabaseRuntimeForClient = async (
   const readbackHarnessRunRepository: DatabaseRuntime["harnessRunRepository"] = {
     createExecutionRun: (...args) => harnessRunRepository.createExecutionRun(...args),
     updateExecutionRunStatus: (...args) => harnessRunRepository.updateExecutionRunStatus(...args),
+    issueDecisionPacketForExecutionRun: (...args) =>
+      harnessRunRepository.issueDecisionPacketForExecutionRun(...args),
+    getIssuedDecisionPacketForExecutionRun: (...args) =>
+      harnessRunRepository.getIssuedDecisionPacketForExecutionRun(...args),
     getHarnessRunByExecutionRunId: (...args) =>
       harnessRunRepository.getHarnessRunByExecutionRunId(...args),
     createEvidenceBundle: (...args) => harnessRunRepository.createEvidenceBundle(...args),
