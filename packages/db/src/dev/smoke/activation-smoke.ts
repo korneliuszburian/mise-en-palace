@@ -411,6 +411,7 @@ export const runActivationSmokeCheck = async (
       body: "Activation readiness uses search candidates, explicit exclusions, anti-memory conflict handling, bounded context, and persisted decisions.",
       searchText: sourceQuery.text,
       sourceAuthority: "project-decision",
+      validFrom: past,
       metadata: {
         smokeId: marker
       }
@@ -424,6 +425,7 @@ export const runActivationSmokeCheck = async (
       body: "This active index row points at a SourceClaim in another project.",
       searchText: sourceQuery.text,
       sourceAuthority: "project-decision",
+      validFrom: past,
       metadata: {
         smokeId: marker
       }
