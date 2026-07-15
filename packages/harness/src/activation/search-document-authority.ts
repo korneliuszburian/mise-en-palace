@@ -1,7 +1,8 @@
-import type {
-  MemoryRecord,
-  ProjectId,
-  SourceClaim
+import {
+  assessTemporalWindow,
+  type MemoryRecord,
+  type ProjectId,
+  type SourceClaim
 } from "@krn/core";
 import type {
   MemoryRepository,
@@ -247,6 +248,7 @@ const resolveLinkedDocument = async (input: {
 
 const resolveSearchDocument = async (input: {
   document: SearchDocumentSearchResult;
+  now: string;
   projectId: ProjectId;
   repositories: SearchDocumentAuthorityRepositories;
   knownClaimsById: ReadonlyMap<string, SourceClaim>;
@@ -257,6 +259,25 @@ const resolveSearchDocument = async (input: {
       input.document,
       "unsafe",
       "SearchDocument project scope does not match the activation project."
+    );
+  }
+
+  if (input.document.validityStatus !== "active") {
+    return rejection(
+      input.document,
+      input.document.validityStatus === "invalidated" ? "invalidated" : "stale",
+      "SearchDocument lifecycle status is not active."
+    );
+  }
+
+  const temporalWindow = assessTemporalWindow(input.document, input.now);
+  if (temporalWindow.status !== "current") {
+    return rejection(
+      input.document,
+      temporalWindow.status === "historical" && temporalWindow.reason === "invalidated"
+        ? "invalidated"
+        : "stale",
+      `SearchDocument is not current at activation time (${temporalWindow.status}:${temporalWindow.reason}).`
     );
   }
 
@@ -283,6 +304,7 @@ const resolveSearchDocument = async (input: {
 
 export const resolveSearchDocumentAuthority = async (input: {
   documents: readonly SearchDocumentSearchResult[];
+  now: string;
   projectId: ProjectId;
   knownMemoryRecords: readonly MemoryRecord[];
   knownSourceClaims: readonly SourceClaim[];
@@ -297,6 +319,7 @@ export const resolveSearchDocumentAuthority = async (input: {
 
   return Promise.all(input.documents.map((document) => resolveSearchDocument({
     document,
+    now: input.now,
     projectId: input.projectId,
     repositories: input.repositories,
     knownClaimsById,

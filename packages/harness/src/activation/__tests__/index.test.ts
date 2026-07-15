@@ -1340,6 +1340,16 @@ describe("activation engine", () => {
         title: "Current memory index"
       }),
       searchDocument({
+        id: "search-expired-memory",
+        subjectType: "memory_record",
+        subjectId: currentMemoryRecord.id,
+        sourceClaimId: undefined,
+        memoryRecordId: currentMemoryRecord.id,
+        title: "Expired memory index",
+        validUntil: "2026-06-20T12:00:00.000Z",
+        lexicalScore: 1_000
+      }),
+      searchDocument({
         id: "search-anti-memory",
         subjectType: "anti_memory_record",
         subjectId: "anti-memory-indexed",
@@ -1420,7 +1430,14 @@ describe("activation engine", () => {
     });
     const included = filtered.candidates.filter((candidate) => candidate.exclusion === undefined);
 
-    expect(included).toEqual(expect.arrayContaining([
+    expect(
+      included,
+      JSON.stringify(result.candidates.map((candidate) => ({
+        id: candidate.id,
+        subjectId: candidate.subjectId,
+        exclusion: candidate.exclusion
+      })))
+    ).toEqual(expect.arrayContaining([
       expect.objectContaining({
         kind: "source",
         subjectType: "source_claim",
@@ -1453,6 +1470,16 @@ describe("activation engine", () => {
         subjectType: "search_document",
         subjectId: "search-cross-project-source",
         exclusion: undefined
+      })
+    ]));
+    expect(result.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "search",
+        subjectId: "search-expired-memory",
+        exclusion: {
+          reason: "stale",
+          explanation: "SearchDocument is not current at activation time (historical:valid_until_elapsed)."
+        }
       })
     ]));
   });

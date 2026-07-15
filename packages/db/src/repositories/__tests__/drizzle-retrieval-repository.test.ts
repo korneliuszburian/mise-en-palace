@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
+import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { eq } from "drizzle-orm";
 
 import { DrizzleRetrievalRepository } from "../drizzle-retrieval-repository.js";
 import { DEFAULT_EMBEDDING_DIMENSIONS } from "../../sql/pgvector.js";
+import {
+  cleanupActivationSmokeRows,
+  countActivationSmokeMarkerRows,
+  createSmokeHarnessScaffold
+} from "../../dev/smoke/db-smoke-support.js";
+import { projects, searchDocuments } from "../../schema/index.js";
+
+const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
+const postgresIt = it.skipIf(databaseUrl === undefined || databaseUrl.length === 0);
+const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
 
 const createdAt = new Date("2026-07-04T00:00:00.000Z");
 
@@ -169,6 +182,173 @@ const methodNames = [
 ] as const;
 
 describe("DrizzleRetrievalRepository", () => {
+  postgresIt("excludes temporally ineligible SearchDocuments from lexical and vector search", async () => {
+    const marker = `krn_search_temporal_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "search document temporal eligibility",
+      workspacePrefix: "krn-search-temporal",
+      projectSlug: "search-temporal",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `search document temporal eligibility ${marker}`,
+      taskContract: {
+        title: "Exclude stale search projections",
+        objective: "Keep current canonical memory free from stale projection boosts.",
+        constraints: ["lexical and vector parity"],
+        nonGoals: ["invalidate the canonical memory"],
+        acceptance: ["only the current projection is searchable"]
+      },
+      harnessPlan: {
+        summary: "Search projection temporal eligibility",
+        nextAction: "Query current, future, expired, and invalidated projections."
+      }
+    });
+
+    try {
+      const selectionNow = "2026-07-15T00:00:00.000Z";
+      const memory = await scaffold.memoryRepository.createMemoryRecord({
+        projectId: scaffold.project.id,
+        key: `memory:search-temporal:${marker}`,
+        kind: "constraint",
+        status: "active",
+        summary: "Current canonical memory",
+        body: "Canonical memory stays current while projections expire.",
+        owner: "kernel",
+        confidence: 90,
+        applicationGuidance: "Use for search projection temporal tests.",
+        invalidationRule: "Remove after the repository test.",
+        sourceLineage: [{ sourceId: `source:${marker}` }],
+        isUserPreference: false,
+        validFrom: "2026-01-01T00:00:00.000Z",
+        metadata: { smokeId: marker }
+      });
+      const createDocument = (
+        suffix: string,
+        validity: { validFrom: string; validUntil?: string },
+        repetitions: number,
+        projectId = scaffold.project.id
+      ) => scaffold.retrievalRepository.createSearchDocument({
+        projectId,
+        subjectType: "memory_record",
+        subjectId: memory.id,
+        memoryRecordId: memory.id,
+        title: `Search temporal ${suffix}`,
+        body: "Projection lifecycle must not change canonical memory freshness.",
+        searchText: Array.from({ length: repetitions }, () => "expired projection boost").join(" "),
+        sourceAuthority: "project-decision",
+        validFrom: validity.validFrom,
+        ...(validity.validUntil === undefined ? {} : { validUntil: validity.validUntil }),
+        metadata: { smokeId: marker, temporalCase: suffix }
+      });
+      const current = await createDocument(
+        "current",
+        { validFrom: selectionNow },
+        1
+      );
+      const beforeValid = await createDocument(
+        "before-valid",
+        { validFrom: "2099-01-01T00:00:00.000Z" },
+        2
+      );
+      const expired = await createDocument(
+        "expired",
+        {
+          validFrom: "2026-01-01T00:00:00.000Z",
+          validUntil: selectionNow
+        },
+        4
+      );
+      const invalidated = await createDocument(
+        "invalidated",
+        { validFrom: "2026-01-01T00:00:00.000Z" },
+        3
+      );
+      await scaffold.db
+        .update(searchDocuments)
+        .set({ invalidatedAt: new Date(selectionNow) })
+        .where(eq(searchDocuments.id, invalidated.id));
+      const [foreignProject] = await scaffold.db
+        .insert(projects)
+        .values({
+          workspaceId: scaffold.project.workspaceId,
+          slug: `search-temporal-foreign-${marker}`,
+          displayName: `search-temporal-foreign-${marker}`,
+          metadata: { smokeId: marker }
+        })
+        .returning({ id: projects.id });
+      if (foreignProject === undefined) {
+        throw new Error("Search temporal test could not create its foreign project");
+      }
+      const foreign = await createDocument(
+        "foreign-current",
+        { validFrom: selectionNow },
+        5,
+        foreignProject.id
+      );
+
+      const embeddingModel = await scaffold.retrievalRepository.createEmbeddingModel({
+        provider: "local-test",
+        model: `search-temporal-${marker}`,
+        dimensions: DEFAULT_EMBEDDING_DIMENSIONS,
+        distanceMetric: "cosine",
+        metadata: { smokeId: marker }
+      });
+      const unitVector = (position: number) => Array.from(
+        { length: DEFAULT_EMBEDDING_DIMENSIONS },
+        (_, index) => index === position ? 1 : 0
+      );
+      for (const [index, document] of [expired, current, beforeValid, invalidated, foreign].entries()) {
+        await scaffold.retrievalRepository.createEmbedding({
+          projectId: document.id === foreign.id ? foreignProject.id : scaffold.project.id,
+          embeddingModelId: embeddingModel.id,
+          subjectType: "search_document",
+          subjectId: document.id,
+          searchDocumentId: document.id,
+          embedding: unitVector(index),
+          contentHash: `search-temporal:${marker}:${index}`,
+          sourceAuthority: "project-decision",
+          metadata: { smokeId: marker }
+        });
+      }
+
+      const lexical = await scaffold.retrievalRepository.searchLexical({
+        projectId: scaffold.project.id,
+        query: "expired projection boost",
+        now: selectionNow,
+        limit: 10
+      });
+      const vector = await scaffold.retrievalRepository.searchVector({
+        projectId: scaffold.project.id,
+        embeddingModelId: embeddingModel.id,
+        embedding: unitVector(0),
+        now: selectionNow,
+        limit: 10
+      });
+      const caseIds = {
+        current: current.id,
+        beforeValid: beforeValid.id,
+        expired: expired.id,
+        invalidated: invalidated.id,
+        foreign: foreign.id
+      };
+
+      expect.soft(
+        lexical.map(({ id }) => id),
+        JSON.stringify({ caseIds, results: lexical.map(({ id, lexicalScore }) => ({ id, lexicalScore })) })
+      ).toEqual([current.id]);
+      expect.soft(
+        vector.map(({ id }) => id),
+        JSON.stringify({ caseIds, results: vector.map(({ id, vectorScore }) => ({ id, vectorScore })) })
+      ).toEqual([current.id]);
+    } finally {
+      await scaffold.cleanup();
+      await scaffold.client.end();
+    }
+  });
+
   it("exposes M24 retrieval substrate repository methods", () => {
     for (const methodName of methodNames) {
       expect(typeof DrizzleRetrievalRepository.prototype[methodName]).toBe("function");
@@ -206,6 +386,30 @@ describe("DrizzleRetrievalRepository", () => {
     } as never)).rejects.toThrow(
       "searchHybrid embeddingModelId is required to avoid mixed-model vector comparison"
     );
+  });
+
+  it("fails closed for a non-ISO search selection time", async () => {
+    const repository = new DrizzleRetrievalRepository(createSearchDb({
+      lexicalRows: [{ document: searchDocumentRow, lexicalScore: 100 }],
+      vectorRows: [{
+        document: searchDocumentRow,
+        embeddingModel: embeddingModelRow,
+        vectorScore: 100
+      }]
+    }) as never);
+    const embedding = Array.from({ length: DEFAULT_EMBEDDING_DIMENSIONS }, () => 0);
+
+    await expect(repository.searchLexical({
+      query: "vector retrieval provenance",
+      now: "July 15, 2026",
+      limit: 1
+    })).resolves.toEqual([]);
+    await expect(repository.searchVector({
+      embeddingModelId: "embedding-model-1",
+      embedding,
+      now: "July 15, 2026",
+      limit: 1
+    })).resolves.toEqual([]);
   });
 
   it("accepts finite embeddings with the configured pgvector dimensions", async () => {

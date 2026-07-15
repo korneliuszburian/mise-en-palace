@@ -513,11 +513,13 @@ const fallbackLexicalSearchQuery = (sourceQuery: ActivationQuery): string | unde
 
 const searchLexicalWithMarkerFallback = async (
   input: Pick<RetrieveActivationCandidatesInput, "taskContract" | "limits" | "repositories">,
-  sourceQuery: ActivationQuery
+  sourceQuery: ActivationQuery,
+  now: string
 ) => {
   const primaryResults = await input.repositories.retrievalRepository.searchLexical({
     ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
     query: sourceQuery.text,
+    now,
     limit: input.limits.search
   });
 
@@ -534,6 +536,7 @@ const searchLexicalWithMarkerFallback = async (
   return input.repositories.retrievalRepository.searchLexical({
     ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
     query: fallbackQuery,
+    now,
     limit: input.limits.search
   });
 };
@@ -646,12 +649,13 @@ export const retrieveActivationCandidates = async (
     input.limits.source,
     { terms: sourceQuery.terms, now: activationNow, includeHistorical: true }
   );
-  const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
+  const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery, activationNow);
   const searchDocumentResolutions = await resolveSearchDocumentAuthority({
     documents: searchResults,
     projectId: input.taskContract.projectId,
     knownMemoryRecords: initialMemoryRecords,
     knownSourceClaims: initialSourceClaims,
+    now: activationNow,
     repositories: {
       memoryRepository: input.repositories.memoryRepository,
       sourceRepository: input.repositories.sourceRepository

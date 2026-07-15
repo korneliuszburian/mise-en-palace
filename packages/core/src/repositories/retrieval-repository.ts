@@ -57,6 +57,7 @@ export interface CreateSearchDocumentInput extends SearchDocumentSubjectFields {
 export interface SearchLexicalInput {
   projectId?: ProjectId;
   query: string;
+  now?: string;
   limit?: number;
 }
 
@@ -64,6 +65,7 @@ export interface SearchVectorInput {
   projectId?: ProjectId;
   embedding: readonly number[];
   embeddingModelId: EmbeddingModelId;
+  now?: string;
   limit?: number;
 }
 

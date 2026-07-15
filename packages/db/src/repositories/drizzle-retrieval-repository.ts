@@ -3,7 +3,10 @@ import {
   asc,
   desc,
   eq,
+  gt,
   inArray,
+  isNull,
+  lte,
   or,
   sql
 } from "drizzle-orm";
@@ -35,6 +38,7 @@ import type {
 } from "@krn/core/repositories/internal";
 import {
   contextExclusionReasons as contextExclusionReasonValues,
+  isIsoTimestamp,
   type ContextExclusionReason
 } from "@krn/core";
 
@@ -390,6 +394,21 @@ const activationDecisionInsertValues = (
   metadata: activationDecisionMetadata(input)
 });
 
+const searchSelectionDate = (value: string | undefined): Date | undefined => {
+  if (value === undefined) {
+    return new Date();
+  }
+
+  return isIsoTimestamp(value) ? new Date(value) : undefined;
+};
+
+const currentSearchDocumentAt = (now: Date) => and(
+  eq(searchDocuments.validityStatus, "active"),
+  lte(searchDocuments.validFrom, now),
+  or(isNull(searchDocuments.validUntil), gt(searchDocuments.validUntil, now)),
+  or(isNull(searchDocuments.invalidatedAt), gt(searchDocuments.invalidatedAt, now))
+);
+
 export class DrizzleRetrievalRepository implements RetrievalRepository {
   constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
@@ -406,6 +425,10 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
   }
 
   async searchLexical(input: SearchLexicalInput): Promise<SearchDocumentSearchResult[]> {
+    const now = searchSelectionDate(input.now);
+    if (now === undefined) {
+      return [];
+    }
     const query = sql`websearch_to_tsquery(${searchDocuments.language}::regconfig, ${input.query})`;
     const lexicalScore = sql<number>`floor(ts_rank_cd(${searchDocuments.searchVector}, ${query}) * 1000)::int`;
     const rows = await this.db
@@ -417,7 +440,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
       .where(
         and(
           sql`${searchDocuments.searchVector} @@ ${query}`,
-          eq(searchDocuments.validityStatus, "active"),
+          currentSearchDocumentAt(now),
           input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId)
         )
       )
@@ -432,6 +455,10 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
 
   async searchVector(input: SearchVectorInput): Promise<SearchDocumentSearchResult[]> {
     const embeddingModelId = requireEmbeddingModelId(input.embeddingModelId, "searchVector");
+    const now = searchSelectionDate(input.now);
+    if (now === undefined) {
+      return [];
+    }
     const vectorDistance = vectorDistanceExpression(input.embedding);
     const vectorScore = vectorScoreExpression(vectorDistance);
     const rows = await this.db
@@ -446,7 +473,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
       .where(
         and(
           eq(embeddings.validityStatus, "active"),
-          eq(searchDocuments.validityStatus, "active"),
+          currentSearchDocumentAt(now),
           input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId),
           eq(embeddings.embeddingModelId, embeddingModelId)
         )
@@ -472,16 +499,19 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     const lexicalWeight = input.lexicalWeight ?? 1;
     const vectorWeight = input.vectorWeight ?? 1;
     const limit = input.limit ?? 10;
+    const now = input.now ?? new Date().toISOString();
     const [lexicalResults, vectorResults] = await Promise.all([
       this.searchLexical({
         query: input.query,
         limit: limit * 2,
+        now,
         ...optionalColumn("projectId", input.projectId)
       }),
       this.searchVector({
         embedding: input.embedding,
         embeddingModelId,
         limit: limit * 2,
+        now,
         ...optionalColumn("projectId", input.projectId)
       })
     ]);
