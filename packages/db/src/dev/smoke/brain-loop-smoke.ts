@@ -24,8 +24,6 @@ import {
   retrieveActivationCandidates
 } from "@krn/harness";
 import {
-  buildDecisionPacketAuthorityProjection,
-  buildDecisionPacketFromReadModel,
   buildMemoryStalenessMaintenancePreview,
   collectTargetStateSnapshot,
   createCommandOutputArtifact,
@@ -708,19 +706,22 @@ export const runBrainLoopSmokeCheck = async (
       "current DecisionPacket aggregate",
       "Memory loop smoke could not reconstruct the current DecisionPacket"
     );
-    const currentDecisionPacket = buildDecisionPacketFromReadModel(
-      buildDecisionPacketAuthorityProjection(packetAggregate)
+    const issuedPacket = await harnessRunRepository.issueDecisionPacketForExecutionRun(
+      executionRun.id
     );
+    const currentDecisionPacket = issuedPacket.packet;
     const decisionPacketGoverningDecisionIds = [
       ...currentDecisionPacket.governingDecisionIds
     ];
     const decisionPacketSelectedMemory =
       currentDecisionPacket.memoryRefs.includes(memoryRecord.id);
-    const packetBinding = currentDecisionPacketBindingForHarnessRun({
-      aggregate: packetAggregate,
-      packetGeneratedAt: packetAggregate.executionRun.updatedAt,
-      sha256Hex
-    });
+    const packetBinding = {
+      packetChecksum: issuedPacket.packetIdentity.checksum,
+      packetEvidenceRef: issuedPacket.packetIdentity.evidenceRef,
+      packetGeneratedAt: issuedPacket.packetIdentity.generatedAt,
+      sourceRunLifecycleRevision:
+        issuedPacket.packetIdentity.sourceRunLifecycleRevision
+    };
     const createEvidenceFeedbackOnce = harnessRunRepository.createEvidenceFeedbackOnce;
 
     if (createEvidenceFeedbackOnce === undefined) {
@@ -746,7 +747,7 @@ export const runBrainLoopSmokeCheck = async (
         taskContractId: taskContract.id,
         packetChecksum: packetBinding.packetChecksum,
         packetGeneratedAt: packetBinding.packetGeneratedAt,
-        sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision,
+        sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
         targetState: {
           targetRepo,
           treeIdentity: targetSnapshot.treeIdentity,
@@ -765,7 +766,7 @@ export const runBrainLoopSmokeCheck = async (
 
     const admittedPacketFeedbackInput = {
       executionRunId: executionRun.id,
-      sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision,
+      sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
       projectId: project.id,
       captureIdentity: `memory-loop:${marker}:packet-feedback`,
       decisionPacketClaim: {
