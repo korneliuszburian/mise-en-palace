@@ -126,6 +126,7 @@ export type FeedbackRecommendationOutcome =
   | "rejected";
 
 export type FeedbackRecommendationAction =
+  | "observe"
   | "retain"
   | "demote"
   | "refresh"
@@ -185,17 +186,27 @@ export const feedbackRecommendationsForOutcome = (
 ): readonly FeedbackRecommendation[] => {
   switch (outcome) {
     case "selected":
+      return [{
+        action: "observe",
+        reason: "Selection proves packet membership; it does not prove application or usefulness.",
+        requiresReview: false
+      }];
     case "used":
+      return [{
+        action: "add_evidence",
+        reason: "Packet-bound application proves use; it does not prove helped or usefulness.",
+        requiresReview: true
+      }];
     case "helped":
       return [{
         action: "retain",
-        reason: "Feedback says this knowledge remained useful for the run.",
+        reason: "Fresh verification after packet-bound application supports usefulness for this run.",
         requiresReview: false
       }];
     case "neutral":
       return [{
-        action: "retain",
-        reason: "Feedback does not justify demotion; keep as weakly useful until stronger evidence appears.",
+        action: "observe",
+        reason: "Neutral application feedback does not establish usefulness or harm for this run.",
         requiresReview: true
       }];
     case "noise":

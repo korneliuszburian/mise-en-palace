@@ -382,6 +382,18 @@ const aggregate: HarnessRunAggregate = {
         doesNotProve:
           "This stale outcome does not alter or deprecate SourceClaim truth."
       }, {
+        sourceClaimId: "claim-selected",
+        outcome: "selected",
+        reason: "Source claim entered the current decision packet.",
+        evidenceRefs: ["packet:packet-run-show"],
+        doesNotProve: "Selection does not prove application or usefulness."
+      }, {
+        sourceClaimId: "claim-used",
+        outcome: "used",
+        reason: "Source claim was applied during the current run.",
+        evidenceRefs: ["packet:packet-run-show", "feedback-1"],
+        doesNotProve: "Application does not prove helped or usefulness."
+      }, {
         sourceClaimId: "claim-incomplete",
         outcome: "helped",
         reason: "Missing doesNotProve should drop this malformed feedback row.",
@@ -535,8 +547,16 @@ describe("runRunShowCommand", () => {
       "doesNotProve: This source outcome does not prove the source selector will choose the same claim in future runs."
     );
     expect(result.stdout).toContain("outcome=stale sourceClaim=claim-weak sourceDecision=none");
+    expect(result.stdout).toContain("outcome=selected sourceClaim=claim-selected sourceDecision=none");
+    expect(result.stdout).toContain("outcome=used sourceClaim=claim-used sourceDecision=none");
     expect(result.stdout).toContain("recommendationMutation: none");
     expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
+    expect(result.stdout).toContain(
+      "recommendation: observe | requiresReview=false | Selection proves packet membership; it does not prove application or usefulness."
+    );
+    expect(result.stdout).toContain(
+      "recommendation: add_evidence | requiresReview=true | Packet-bound application proves use; it does not prove helped or usefulness."
+    );
     expect(result.stdout).toContain("recommendation: refresh | requiresReview=true");
     expect(result.stdout).toContain("recommendation: supersede | requiresReview=true");
     expect(result.stdout).not.toContain("claim-incomplete");
@@ -1018,6 +1038,18 @@ describe("runRunShowCommand", () => {
           evidenceRefs: ["packet:packet-run-show", "context-1"],
           doesNotProve:
             "This stale outcome does not alter or deprecate SourceClaim truth."
+        }, {
+          sourceClaimId: "claim-selected",
+          outcome: "selected",
+          reason: "Source claim entered the current decision packet.",
+          evidenceRefs: ["packet:packet-run-show"],
+          doesNotProve: "Selection does not prove application or usefulness."
+        }, {
+          sourceClaimId: "claim-used",
+          outcome: "used",
+          reason: "Source claim was applied during the current run.",
+          evidenceRefs: ["packet:packet-run-show", "feedback-1"],
+          doesNotProve: "Application does not prove helped or usefulness."
         }],
         knowledgeUsefulnessOutcomes: [{
           knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",

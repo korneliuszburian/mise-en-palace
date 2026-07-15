@@ -603,6 +603,9 @@ const formatReadModel = (readModel: KnowledgeReadModel): string[] => [
     "  usefulnessOutcome: none"
   ] : [
     `  usefulnessOutcome: ${readModel.usefulnessFeedback.outcome}`,
+    ...(readModel.usefulnessFeedback.feedbackLifecycleStatus === undefined
+      ? []
+      : [`  usefulnessFeedbackStatus: ${readModel.usefulnessFeedback.feedbackLifecycleStatus}`]),
     `  usefulnessSummary: ${readModel.usefulnessFeedback.summary}`,
     `  usefulnessEvidenceRefs: ${readModel.usefulnessFeedback.evidenceRefs.join(", ")}`,
     `  usefulnessDoesNotProve: ${readModel.usefulnessFeedback.doesNotProve}`
@@ -639,6 +642,7 @@ const readModelUsefulnessSearchText = (readModel: KnowledgeReadModel): string[] 
 
   return [
     readModel.usefulnessFeedback.outcome,
+    readModel.usefulnessFeedback.feedbackLifecycleStatus ?? "",
     readModel.usefulnessFeedback.summary,
     readModel.usefulnessFeedback.doesNotProve,
     ...readModel.usefulnessFeedback.evidenceRefs
@@ -648,7 +652,7 @@ const readModelUsefulnessSearchText = (readModel: KnowledgeReadModel): string[] 
 const formatUsefulnessFeedbackHtml = (readModel: KnowledgeReadModel): string =>
   readModel.usefulnessFeedback === undefined
     ? ""
-    : `<dt>Usefulness</dt><dd><strong>${escapeHtml(readModel.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(readModel.usefulnessFeedback.summary)}<br>${formatHtmlList(readModel.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(readModel.usefulnessFeedback.doesNotProve)}</span></dd>`;
+    : `<dt>Usefulness</dt><dd><strong>${escapeHtml(readModel.usefulnessFeedback.outcome)}</strong>${readModel.usefulnessFeedback.feedbackLifecycleStatus === undefined ? "" : `<br>feedback status: ${escapeHtml(readModel.usefulnessFeedback.feedbackLifecycleStatus)}`}<br>${escapeHtml(readModel.usefulnessFeedback.summary)}<br>${formatHtmlList(readModel.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(readModel.usefulnessFeedback.doesNotProve)}</span></dd>`;
 
 const formatReadModelDataAttributes = (readModel: KnowledgeReadModel): string =>
   [

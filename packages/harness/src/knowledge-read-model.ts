@@ -113,6 +113,7 @@ export type KnowledgeUsefulnessFeedback = {
   evidenceRefs: string[];
   doesNotProve: string;
   observedAt?: string;
+  feedbackLifecycleStatus?: FeedbackDeltaStatus;
 };
 
 export type KnowledgeReadModel = {
@@ -667,3 +668,4 @@ function pickOptionalString(record: Record<string, unknown>, field: string): Rec
 
   return typeof value === "string" ? { [field]: value } : {};
 }
+import type { FeedbackDeltaStatus } from "@krn/core";

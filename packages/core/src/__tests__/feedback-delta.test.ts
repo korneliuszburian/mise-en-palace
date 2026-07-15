@@ -1,10 +1,36 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildFeedbackRecommendationReadback
+  buildFeedbackRecommendationReadback,
+  feedbackRecommendationsForOutcome
 } from "../feedback-delta.js";
 
 describe("feedback recommendation readback", () => {
+  it.each([
+    ["selected", ["observe"], [false], ["packet membership", "does not prove application"]],
+    ["used", ["add_evidence"], [true], ["application", "does not prove helped"]],
+    ["helped", ["retain"], [false], ["fresh verification", "usefulness for this run"]],
+    ["neutral", ["observe"], [true], ["neutral", "does not establish usefulness"]],
+    ["noise", ["demote"], [true], ["did not help"]],
+    ["stale", ["refresh", "supersede"], [true, true], ["current evidence", "newer decision"]],
+    ["hurt", ["demote", "delete"], [true, true], ["hurt the task", "after review"]],
+    ["rejected", ["delete"], [true], ["rejected"]],
+    ["unknown", ["add_evidence"], [true], ["did not establish usefulness"]]
+  ] as const)(
+    "keeps %s recommendations within their evidence state",
+    (outcome, actions, requiresReview, reasonFragments) => {
+      const recommendations = feedbackRecommendationsForOutcome(outcome);
+      const reasons = recommendations.map((recommendation) => recommendation.reason).join(" ");
+
+      expect(recommendations.map((recommendation) => recommendation.action)).toEqual(actions);
+      expect(recommendations.map((recommendation) => recommendation.requiresReview))
+        .toEqual(requiresReview);
+      for (const fragment of reasonFragments) {
+        expect(reasons.toLowerCase()).toContain(fragment);
+      }
+    }
+  );
+
   it("turns stale and hurt feedback into reviewable recommendations without mutating memory", () => {
     const staleReadback = buildFeedbackRecommendationReadback({
       subjectKind: "memory_record",
