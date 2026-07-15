@@ -13,6 +13,7 @@ import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
 import {
+  decisionPacketContractOutputSchema,
   parseDecisionPacketContractReadback,
   type DecisionPacketJsonObject as JsonObject,
   type DecisionPacketJsonValue as JsonValue
@@ -218,27 +219,11 @@ const jsonResult = (
 ): ToolCallResult => ({
   content: [{
     type: "text",
-    text: packetSummary(value)
+    text: JSON.stringify(value)
   }],
   structuredContent: value,
   isError: false
 });
-
-// fallow-ignore-next-line complexity -- bounded text rendering validates several optional packet fields without copying structured payload
-const packetSummary = (value: JsonValue): string => {
-  if (!isJsonObject(value)) {
-    return "KRN DecisionPacket result";
-  }
-
-  const identity = isJsonObject(value["packetIdentity"]) ? value["packetIdentity"] : undefined;
-  const packet = isJsonObject(value["packet"]) ? value["packet"] : undefined;
-  const packetId = identity?.["packetId"];
-  const checksum = identity?.["checksum"];
-  const governing = stringArray(packet?.["governingDecisionIds"]);
-  const gaps = Array.isArray(packet?.["evidenceGaps"]) ? packet["evidenceGaps"].length : 0;
-
-  return `KRN DecisionPacket ${String(packetId ?? "unknown")} checksum=${String(checksum ?? "unknown")} governing=${governing.length} evidenceGaps=${gaps}`;
-};
 
 const isJsonObject = (
   value: JsonValue | undefined
@@ -351,6 +336,7 @@ const toolDefinition = (): JsonValue => ({
     required: ["runId"],
     additionalProperties: false
   },
+  outputSchema: decisionPacketContractOutputSchema,
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,

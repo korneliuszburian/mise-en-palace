@@ -11,6 +11,9 @@ import {
   expect,
   it
 } from "vitest";
+import {
+  z
+} from "zod";
 
 import {
   handleDecisionPacketMcpMessage,
@@ -347,6 +350,30 @@ const noFormalNegativePacketJson = bindFixtureIdentity({
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const requiredRecord = (value: unknown, name: string): Record<string, unknown> => {
+  if (!isRecord(value)) {
+    throw new Error(`${name} must be an object`);
+  }
+
+  return value;
+};
+
+const requiredArray = (value: unknown, name: string): unknown[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`${name} must be an array`);
+  }
+
+  return value;
+};
+
+const requiredString = (value: unknown, name: string): string => {
+  if (typeof value !== "string") {
+    throw new Error(`${name} must be a string`);
+  }
+
+  return value;
+};
 
 const runtime = (
   handler: DecisionPacketMcpRuntime["runDecisionPacket"] = async () => ({
@@ -779,6 +806,56 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
+  it("advertises validated output schema with JSON text parity", async () => {
+    const listed = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "list-output-schema",
+      method: "tools/list"
+    }, runtime());
+
+    const listedResponse = requiredRecord(listed, "tools/list response");
+    const listedResult = requiredRecord(listedResponse["result"], "tools/list result");
+    const tools = requiredArray(listedResult["tools"], "tools/list tools");
+    const tool = requiredRecord(tools[0], "listed tool");
+    const outputSchema = requiredRecord(
+      tool["outputSchema"],
+      "krn_decision_packet outputSchema"
+    );
+
+    const validator = z.fromJSONSchema(outputSchema);
+
+    for (const fixture of [
+      packetJson,
+      weakPacketJson,
+      unresolvedSourceDissentPacketJson,
+      noFormalNegativePacketJson
+    ]) {
+      const called = await handleDecisionPacketMcpMessage({
+        jsonrpc: "2.0",
+        id: `call-output-schema:${fixture.request.runId}`,
+        method: "tools/call",
+        params: {
+          name: "krn_decision_packet",
+          arguments: { runId: fixture.request.runId }
+        }
+      }, runtime(async () => ({ stdout: JSON.stringify(fixture) })));
+      const calledResponse = requiredRecord(called, "tools/call response");
+      const callResult = requiredRecord(calledResponse["result"], "tools/call result");
+      const structuredContent = callResult["structuredContent"];
+      const content = requiredArray(callResult["content"], "tool result content");
+      const contentItem = requiredRecord(content[0], "tool content item");
+      const text = requiredString(contentItem["text"], "tool content text");
+
+      expect(validator.safeParse(structuredContent).success).toBe(true);
+      expect(JSON.parse(text)).toEqual(structuredContent);
+    }
+
+    expect(validator.safeParse({
+      kind: "krn.decisionPacketReadback.v1",
+      packet: []
+    }).success).toBe(false);
+  });
+
   it("wraps the existing DecisionPacket contract as structured tool output", async () => {
     const seenRunIds: string[] = [];
     const reply = await handleDecisionPacketMcpMessage({
@@ -838,7 +915,7 @@ describe("DecisionPacket MCP wrapper", () => {
     const result = isRecord(reply) ? reply["result"] : undefined;
     expect(isRecord(result) ? result["content"] : undefined).toEqual([{
       type: "text",
-      text: expect.stringContaining(`checksum=${packetJson.packetIdentity.checksum}`)
+      text: expect.stringContaining(packetJson.packetIdentity.checksum)
     }]);
     const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
     expect(isRecord(structuredContent) && !("readModel" in structuredContent)).toBe(true);

@@ -6,6 +6,9 @@ import {
   type DecisionPacket,
   type DecisionPacketIdentity
 } from "@krn/core";
+import {
+  z
+} from "zod";
 
 export type DecisionPacketJsonValue =
   | string
@@ -25,366 +28,283 @@ const transportProof =
 const sha256Hex = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+const stringArraySchema = z.array(z.string());
 
-const isString = (value: unknown): value is string => typeof value === "string";
+const taskSchema = z.strictObject({
+  id: z.string(),
+  projectId: z.string().nullable(),
+  title: z.string(),
+  objective: z.string(),
+  constraints: stringArraySchema,
+  nonGoals: stringArraySchema,
+  acceptance: stringArraySchema,
+  status: z.enum(["draft", "active", "superseded", "closed"]).optional()
+});
 
-const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every(isString);
+const contextInclusionSchema = z.strictObject({
+  subjectType: z.string(),
+  subjectId: z.string(),
+  reason: z.string(),
+  expectedUse: z.string(),
+  sourceAuthority: z.string()
+});
 
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value);
+const contextExclusionSchema = z.strictObject({
+  subjectType: z.string(),
+  subjectId: z.string(),
+  reason: z.string(),
+  explanation: z.string(),
+  sourceAuthority: z.string()
+});
 
-const all = (checks: readonly boolean[]): boolean => checks.every(Boolean);
+const taskStandardSchema = z.strictObject({
+  memoryRecordId: z.string(),
+  key: z.string(),
+  sourceRefs: stringArraySchema,
+  mechanism: z.string(),
+  krnImplication: z.string(),
+  decision: z.string(),
+  consumer: z.string(),
+  falsifier: z.string(),
+  validFrom: z.string(),
+  validUntil: z.string().optional(),
+  rejectedPath: z.string().optional(),
+  doesNotProve: z.string()
+});
 
-const isArrayOf = (
-  value: unknown,
-  predicate: (item: unknown) => boolean
-): boolean => Array.isArray(value) && value.every(predicate);
+const sourceDecisionTargetSchema = z.strictObject({
+  targetType: z.string(),
+  targetId: z.string(),
+  sourceDecisionEdgeIds: stringArraySchema
+});
 
-const hasFields = (
-  value: Record<string, unknown>,
-  fields: readonly string[]
-): boolean => fields.every((field) => field in value);
+const evidenceGapSchema = z.strictObject({
+  id: z.string(),
+  reason: z.string(),
+  verificationRequired: z.string()
+});
 
-const hasOnlyFields = (
-  value: Record<string, unknown>,
-  fields: readonly string[]
-): boolean => {
-  const allowed = new Set(fields);
+const evidenceContractSchema = z.strictObject({
+  commands: z.array(z.strictObject({
+    command: z.string(),
+    required: z.boolean()
+  })),
+  diffRisk: z.enum(["low", "medium", "high"]),
+  reviewBurden: z.string(),
+  rollbackPath: z.string()
+});
 
-  return Object.keys(value).every((field) => allowed.has(field));
-};
+const sourceConsensusSchema = z.strictObject({
+  decisionLinkedSourceClaimIds: stringArraySchema,
+  caveatedSourceClaimIds: stringArraySchema,
+  unsupportedSourceClaimIds: stringArraySchema,
+  conflictingSourceClaimIds: stringArraySchema,
+  unknownSourceClaimIds: stringArraySchema,
+  sourceDecisionEdgeIds: stringArraySchema,
+  sourceDecisionTargets: z.array(sourceDecisionTargetSchema),
+  staleDecisionIds: stringArraySchema,
+  supersededPathIds: stringArraySchema,
+  rejectedPathIds: stringArraySchema,
+  sourceRejectionIds: stringArraySchema,
+  conflictedDecisionIds: stringArraySchema,
+  evidenceGapIds: stringArraySchema,
+  doesNotProve: z.string()
+});
 
-const isStringRecord = (
-  value: unknown,
-  fields: readonly string[]
-): value is Record<string, string> =>
-  isRecord(value) &&
-  hasFields(value, fields) &&
-  fields.every((field) => isString(value[field]));
+const abstentionScoreSchema = z.strictObject({
+  status: z.enum(["ready", "weak_context", "abstain"]),
+  score: z.number(),
+  reasons: stringArraySchema,
+  evidenceGapIds: stringArraySchema,
+  doesNotProve: z.string()
+});
 
-const isTask = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
+const briefSchema = z.strictObject({
+  includedContextCount: z.number(),
+  observationPrefixCount: z.number(),
+  explicitExclusionCount: z.number(),
+  sourceClaimUseCount: z.number(),
+  memoryRecordUseCount: z.number(),
+  includedSourceClaimIds: stringArraySchema,
+  includedMemoryRecordIds: stringArraySchema,
+  excludedSourceClaimIds: stringArraySchema,
+  excludedMemoryRecordIds: stringArraySchema,
+  excludedAntiMemoryRecordIds: stringArraySchema,
+  evidenceGapIds: stringArraySchema
+});
+
+const decisionPacketSchema = z.strictObject({
+  formatVersion: z.literal("krn.decisionPacket.v1"),
+  task: taskSchema,
+  contextInclusions: z.array(contextInclusionSchema),
+  contextExclusions: z.array(contextExclusionSchema),
+  toolBoundaries: stringArraySchema,
+  evidenceContract: evidenceContractSchema.optional(),
+  nextAction: z.string(),
+  governingDecisionIds: stringArraySchema,
+  governingStatements: stringArraySchema,
+  taskStandardDecisions: z.array(taskStandardSchema),
+  sourceClaimIds: stringArraySchema,
+  caveatedSourceClaimIds: stringArraySchema,
+  sourceDecisionEdgeIds: stringArraySchema,
+  sourceDecisionTargets: z.array(sourceDecisionTargetSchema),
+  sourceRejectionIds: stringArraySchema,
+  memoryRefs: stringArraySchema,
+  caveatedMemoryRefs: stringArraySchema,
+  staleDecisionIds: stringArraySchema,
+  staleKnowledgeIds: stringArraySchema,
+  noiseKnowledgeIds: stringArraySchema,
+  unknownKnowledgeIds: stringArraySchema,
+  supersededPathIds: stringArraySchema,
+  rejectedPathIds: stringArraySchema,
+  falsifiers: stringArraySchema,
+  verificationCommands: stringArraySchema,
+  evidenceGaps: z.array(evidenceGapSchema),
+  sourceConsensus: sourceConsensusSchema,
+  abstentionScore: abstentionScoreSchema,
+  doesNotProve: stringArraySchema,
+  nonProofs: stringArraySchema,
+  noiseDecisionIds: stringArraySchema,
+  severeStaleAuthorityIds: stringArraySchema,
+  brief: briefSchema
+});
+
+const packetRequestSchema = z.strictObject({
+  runId: z.string(),
+  taskId: z.string(),
+  projectId: z.string().nullable()
+});
+
+const packetIdentitySchema = z.strictObject({
+  packetId: z.string(),
+  checksumAlgorithm: z.literal("sha256"),
+  checksum: z.string().regex(/^[a-f0-9]{64}$/u),
+  evidenceRef: z.string(),
+  generatedAt: z.string(),
+  sourceRunStatus: z.enum(["planned", "running", "succeeded", "failed", "blocked", "cancelled"]),
+  sourceRunLifecycleRevision: z.number().int(),
+  sourceRunUpdatedAt: z.string(),
+  freshness: z.strictObject({
+    status: z.literal("current_read_model_snapshot"),
+    doesNotProve: z.string()
+  })
+});
+
+const returnChannelsSchema = z.strictObject({
+  evidence: z.strictObject({
+    command: z.string(),
+    persistedCommand: z.string(),
+    doesNotProve: z.string()
+  }),
+  feedback: z.strictObject({
+    memoryRecordApplyExample: z.string(),
+    sourceUsefulnessExample: z.string(),
+    sourceDecisionUsefulnessExample: z.string(),
+    knowledgeUsefulnessExample: z.string(),
+    doesNotProve: z.string()
+  })
+});
+
+const proofSchema = z.strictObject({
+  proves: stringArraySchema,
+  doesNotProve: stringArraySchema
+});
+
+const boundedReadbackSchema = z.strictObject({
+  kind: z.literal("krn.decisionPacketReadback.v1"),
+  access: z.literal("read_only"),
+  mutation: z.literal("none"),
+  surface: z.literal("headless_cli"),
+  request: packetRequestSchema,
+  packetIdentity: packetIdentitySchema,
+  packet: decisionPacketSchema,
+  returnChannels: returnChannelsSchema,
+  proof: proofSchema
+});
+
+const commandReadbackSchema = boundedReadbackSchema.extend({
+  readModel: z.unknown().optional()
+});
+
+const isJsonValue = (value: unknown): value is DecisionPacketJsonValue => {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return true;
   }
 
-  const required = ["id", "projectId", "title", "objective", "constraints", "nonGoals", "acceptance"];
-  const status = value["status"];
-  const projectId = value["projectId"];
-
-  return hasFields(value, required) &&
-    hasOnlyFields(value, [...required, "status"]) &&
-    ["id", "title", "objective"].every((field) => isString(value[field])) &&
-    (projectId === null || isString(projectId)) &&
-    ["constraints", "nonGoals", "acceptance"].every((field) => isStringArray(value[field])) &&
-    (status === undefined || ["draft", "active", "superseded", "closed"].includes(String(status)));
-};
-
-const isContextItem = (value: unknown, exclusion: boolean): boolean => {
-  if (!isRecord(value)) {
-    return false;
+  if (Array.isArray(value)) {
+    return value.every(isJsonValue);
   }
 
-  const fields = exclusion
-    ? ["subjectType", "subjectId", "reason", "explanation", "sourceAuthority"]
-    : ["subjectType", "subjectId", "reason", "expectedUse", "sourceAuthority"];
-
-  return hasFields(value, fields) &&
-    hasOnlyFields(value, fields) &&
-    fields.every((field) => isString(value[field]));
+  return typeof value === "object" &&
+    value !== null &&
+    Object.values(value).every(isJsonValue);
 };
 
-const isTaskStandard = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
+const isJsonObject = (value: unknown): value is DecisionPacketJsonObject =>
+  isJsonValue(value) && typeof value === "object" && value !== null && !Array.isArray(value);
 
-  const stringFields = [
-    "memoryRecordId", "key", "mechanism", "krnImplication", "decision", "consumer",
-    "falsifier", "validFrom", "doesNotProve"
-  ];
-  const allowed = [...stringFields, "sourceRefs", "validUntil", "rejectedPath"];
+const outputSchema = z.toJSONSchema(boundedReadbackSchema);
 
-  return hasFields(value, [...stringFields, "sourceRefs"]) &&
-    hasOnlyFields(value, allowed) &&
-    stringFields.every((field) => isString(value[field])) &&
-    isStringArray(value["sourceRefs"]) &&
-    (value["validUntil"] === undefined || isString(value["validUntil"])) &&
-    (value["rejectedPath"] === undefined || isString(value["rejectedPath"]));
-};
+if (!isJsonObject(outputSchema)) {
+  throw new Error("DecisionPacket output schema is not a JSON object");
+}
 
-const isSourceDecisionTarget = (value: unknown): boolean =>
-  isRecord(value) &&
-  hasFields(value, ["targetType", "targetId", "sourceDecisionEdgeIds"]) &&
-  hasOnlyFields(value, ["targetType", "targetId", "sourceDecisionEdgeIds"]) &&
-  isString(value["targetType"]) &&
-  isString(value["targetId"]) &&
-  isStringArray(value["sourceDecisionEdgeIds"]);
+export const decisionPacketContractOutputSchema = outputSchema;
 
-const isEvidenceGap = (value: unknown): boolean =>
-  isStringRecord(value, ["id", "reason", "verificationRequired"]) &&
-  hasOnlyFields(value, ["id", "reason", "verificationRequired"]);
+const hasExpectedRequestScope = (
+  readback: z.infer<typeof commandReadbackSchema>,
+  requestedRunId: string
+): boolean => readback.request.runId === requestedRunId &&
+  readback.request.taskId === readback.packet.task.id &&
+  readback.request.projectId === readback.packet.task.projectId;
 
-const isEvidenceContract = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const commands = value["commands"];
-
-  return hasFields(value, ["commands", "diffRisk", "reviewBurden", "rollbackPath"]) &&
-    hasOnlyFields(value, ["commands", "diffRisk", "reviewBurden", "rollbackPath"]) &&
-    Array.isArray(commands) &&
-    commands.every((command) =>
-      isRecord(command) &&
-      hasFields(command, ["command", "required"]) &&
-      hasOnlyFields(command, ["command", "required"]) &&
-      isString(command["command"]) &&
-      typeof command["required"] === "boolean"
-    ) &&
-    ["low", "medium", "high"].includes(String(value["diffRisk"])) &&
-    isString(value["reviewBurden"]) &&
-    isString(value["rollbackPath"]);
-};
-
-const sourceConsensusStringArrays = [
-  "decisionLinkedSourceClaimIds", "caveatedSourceClaimIds", "unsupportedSourceClaimIds",
-  "conflictingSourceClaimIds", "unknownSourceClaimIds", "sourceDecisionEdgeIds",
-  "staleDecisionIds", "supersededPathIds", "rejectedPathIds", "sourceRejectionIds",
-  "conflictedDecisionIds", "evidenceGapIds"
-] as const;
-
-const isSourceConsensus = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const fields = [...sourceConsensusStringArrays, "sourceDecisionTargets", "doesNotProve"];
-
-  return hasFields(value, fields) &&
-    hasOnlyFields(value, fields) &&
-    sourceConsensusStringArrays.every((field) => isStringArray(value[field])) &&
-    Array.isArray(value["sourceDecisionTargets"]) &&
-    value["sourceDecisionTargets"].every(isSourceDecisionTarget) &&
-    isString(value["doesNotProve"]);
-};
-
-const isAbstentionScore = (value: unknown): boolean =>
-  isRecord(value) &&
-  hasFields(value, ["status", "score", "reasons", "evidenceGapIds", "doesNotProve"]) &&
-  hasOnlyFields(value, ["status", "score", "reasons", "evidenceGapIds", "doesNotProve"]) &&
-  ["ready", "weak_context", "abstain"].includes(String(value["status"])) &&
-  isFiniteNumber(value["score"]) &&
-  isStringArray(value["reasons"]) &&
-  isStringArray(value["evidenceGapIds"]) &&
-  isString(value["doesNotProve"]);
-
-const briefCountFields = [
-  "includedContextCount", "observationPrefixCount", "explicitExclusionCount",
-  "sourceClaimUseCount", "memoryRecordUseCount"
-] as const;
-
-const briefIdFields = [
-  "includedSourceClaimIds", "includedMemoryRecordIds", "excludedSourceClaimIds",
-  "excludedMemoryRecordIds", "excludedAntiMemoryRecordIds", "evidenceGapIds"
-] as const;
-
-const isBrief = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const fields = [...briefCountFields, ...briefIdFields];
-
-  return hasFields(value, fields) &&
-    hasOnlyFields(value, fields) &&
-    briefCountFields.every((field) => isFiniteNumber(value[field])) &&
-    briefIdFields.every((field) => isStringArray(value[field]));
-};
-
-const packetStringArrays = [
-  "toolBoundaries", "governingDecisionIds", "governingStatements", "sourceClaimIds",
-  "caveatedSourceClaimIds", "sourceDecisionEdgeIds", "sourceRejectionIds", "memoryRefs",
-  "caveatedMemoryRefs", "staleDecisionIds", "staleKnowledgeIds", "noiseKnowledgeIds",
-  "unknownKnowledgeIds", "supersededPathIds", "rejectedPathIds", "falsifiers",
-  "verificationCommands", "doesNotProve", "nonProofs", "noiseDecisionIds",
-  "severeStaleAuthorityIds"
-] as const;
-
-const packetRequiredFields = [
-  "formatVersion", "task", "contextInclusions", "contextExclusions", "nextAction",
-  ...packetStringArrays, "taskStandardDecisions", "sourceDecisionTargets", "evidenceGaps",
-  "sourceConsensus", "abstentionScore", "brief"
-] as const;
-
-const isDecisionPacket = (value: unknown): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const evidenceContract = value["evidenceContract"];
-
-  return all([
-    hasFields(value, packetRequiredFields),
-    hasOnlyFields(value, [...packetRequiredFields, "evidenceContract"]),
-    value["formatVersion"] === "krn.decisionPacket.v1",
-    isTask(value["task"]),
-    isArrayOf(value["contextInclusions"], (item) => isContextItem(item, false)),
-    isArrayOf(value["contextExclusions"], (item) => isContextItem(item, true)),
-    evidenceContract === undefined || isEvidenceContract(evidenceContract),
-    isString(value["nextAction"]),
-    packetStringArrays.every((field) => isStringArray(value[field])),
-    isArrayOf(value["taskStandardDecisions"], isTaskStandard),
-    isArrayOf(value["sourceDecisionTargets"], isSourceDecisionTarget),
-    isArrayOf(value["evidenceGaps"], isEvidenceGap),
-    isSourceConsensus(value["sourceConsensus"]),
-    isAbstentionScore(value["abstentionScore"]),
-    isBrief(value["brief"])
-  ]);
-};
-
-const isPacketIdentity = (
-  value: unknown,
-  runId: string
-): boolean => {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const fields = [
-    "packetId", "checksumAlgorithm", "checksum", "evidenceRef", "generatedAt",
-    "sourceRunStatus", "sourceRunLifecycleRevision", "sourceRunUpdatedAt", "freshness"
-  ];
-  const checksum = value["checksum"];
-  const freshness = value["freshness"];
-
-  if (!isString(checksum) || !isRecord(freshness)) {
-    return false;
-  }
-
-  return all([
-    hasFields(value, fields),
-    hasOnlyFields(value, fields),
-    /^[a-f0-9]{64}$/u.test(checksum),
-    value["checksumAlgorithm"] === "sha256",
-    value["packetId"] === `decision-packet:${runId}:${checksum.slice(0, 16)}`,
-    value["evidenceRef"] === `packet:${checksum}`,
-    isString(value["generatedAt"]),
-    ["planned", "running", "succeeded", "failed", "blocked", "cancelled"].includes(
-      String(value["sourceRunStatus"])
-    ),
-    Number.isInteger(value["sourceRunLifecycleRevision"]),
-    isString(value["sourceRunUpdatedAt"]),
-    hasFields(freshness, ["status", "doesNotProve"]),
-    hasOnlyFields(freshness, ["status", "doesNotProve"]),
-    freshness["status"] === "current_read_model_snapshot",
-    isString(freshness["doesNotProve"])
-  ]);
-};
+const hasExpectedIdentity = (
+  readback: z.infer<typeof commandReadbackSchema>,
+  requestedRunId: string
+): boolean => readback.packetIdentity.packetId ===
+    `decision-packet:${requestedRunId}:${readback.packetIdentity.checksum.slice(0, 16)}` &&
+  readback.packetIdentity.evidenceRef === `packet:${readback.packetIdentity.checksum}`;
 
 const hasExpectedChecksum = (
-  identity: unknown,
-  packet: unknown,
-  request: Record<string, unknown>
+  readback: z.infer<typeof commandReadbackSchema>
 ): boolean => {
-  if (!isRecord(identity)) {
-    return false;
-  }
-
+  const identity = readback.packetIdentity;
   const expected = decisionPacketChecksum({
-    generatedAt: identity["generatedAt"] as string,
-    packet: packet as DecisionPacket,
-    request: {
-      runId: request["runId"] as string,
-      taskId: request["taskId"] as string,
-      projectId: request["projectId"] as string | null
-    },
-    sourceRunStatus: identity["sourceRunStatus"] as DecisionPacketIdentity["sourceRunStatus"],
-    sourceRunLifecycleRevision: identity["sourceRunLifecycleRevision"] as number,
-    sourceRunUpdatedAt: identity["sourceRunUpdatedAt"] as string
+    generatedAt: identity.generatedAt,
+    packet: readback.packet as DecisionPacket,
+    request: readback.request,
+    sourceRunStatus: identity.sourceRunStatus as DecisionPacketIdentity["sourceRunStatus"],
+    sourceRunLifecycleRevision: identity.sourceRunLifecycleRevision,
+    sourceRunUpdatedAt: identity.sourceRunUpdatedAt
   }, sha256Hex);
 
-  return identity["checksum"] === expected;
+  return identity.checksum === expected;
 };
-
-const isPacketRequest = (
-  value: unknown,
-  requestedRunId: string,
-  packet: unknown
-): value is Record<string, unknown> => {
-  if (!isRecord(value) || !isRecord(packet) || !isRecord(packet["task"])) {
-    return false;
-  }
-
-  const projectId = value["projectId"];
-
-  return all([
-    hasFields(value, ["runId", "taskId", "projectId"]),
-    hasOnlyFields(value, ["runId", "taskId", "projectId"]),
-    value["runId"] === requestedRunId,
-    value["taskId"] === packet["task"]["id"],
-    projectId === packet["task"]["projectId"],
-    projectId === null || isString(projectId)
-  ]);
-};
-
-const isReturnChannels = (value: unknown): boolean => {
-  if (!isRecord(value) || !hasOnlyFields(value, ["evidence", "feedback"])) {
-    return false;
-  }
-
-  return isStringRecord(value["evidence"], ["command", "persistedCommand", "doesNotProve"]) &&
-    hasOnlyFields(value["evidence"], ["command", "persistedCommand", "doesNotProve"]) &&
-    isStringRecord(value["feedback"], [
-      "memoryRecordApplyExample", "sourceUsefulnessExample", "sourceDecisionUsefulnessExample",
-      "knowledgeUsefulnessExample", "doesNotProve"
-    ]) &&
-    hasOnlyFields(value["feedback"], [
-      "memoryRecordApplyExample", "sourceUsefulnessExample", "sourceDecisionUsefulnessExample",
-      "knowledgeUsefulnessExample", "doesNotProve"
-    ]);
-};
-
-const isProof = (value: unknown): boolean =>
-  isRecord(value) &&
-  hasFields(value, ["proves", "doesNotProve"]) &&
-  hasOnlyFields(value, ["proves", "doesNotProve"]) &&
-  isStringArray(value["proves"]) &&
-  !value["proves"].includes(transportProof) &&
-  isStringArray(value["doesNotProve"]);
 
 export const parseDecisionPacketContractReadback = (
   value: unknown,
   requestedRunId: string
 ): DecisionPacketJsonObject | undefined => {
-  if (!isRecord(value)) {
+  if (!isJsonObject(value)) {
     return undefined;
   }
 
-  const request = value["request"];
-  const topLevelFields = [
-    "kind", "access", "mutation", "surface", "request", "packetIdentity", "packet",
-    "returnChannels", "proof", "readModel"
-  ];
+  const parsed = commandReadbackSchema.safeParse(value);
 
   if (
-    !hasFields(value, topLevelFields.filter((field) => field !== "readModel")) ||
-    !hasOnlyFields(value, topLevelFields) ||
-    value["kind"] !== "krn.decisionPacketReadback.v1" ||
-    value["access"] !== "read_only" ||
-    value["mutation"] !== "none" ||
-    value["surface"] !== "headless_cli" ||
-    !isDecisionPacket(value["packet"]) ||
-    !isPacketRequest(request, requestedRunId, value["packet"]) ||
-    !isPacketIdentity(value["packetIdentity"], requestedRunId) ||
-    !hasExpectedChecksum(value["packetIdentity"], value["packet"], request) ||
-    !isReturnChannels(value["returnChannels"]) ||
-    !isProof(value["proof"])
+    !parsed.success ||
+    !hasExpectedRequestScope(parsed.data, requestedRunId) ||
+    !hasExpectedIdentity(parsed.data, requestedRunId) ||
+    !hasExpectedChecksum(parsed.data) ||
+    parsed.data.proof.proves.includes(transportProof)
   ) {
     return undefined;
   }
 
-  return value as DecisionPacketJsonObject;
+  return value;
 };
