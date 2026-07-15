@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import postgres from "postgres";
 
 import {
@@ -83,6 +83,85 @@ const orderDirection = (order: unknown): "asc" | "desc" | undefined => {
 };
 
 describe("DrizzleMemoryRepository", () => {
+  postgresIt("retains the most task-relevant active memory before the bounded limit", async () => {
+    const marker = `krn_memory_relevance_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "memory relevance prelimit",
+      workspacePrefix: "krn-memory-relevance-prelimit",
+      projectSlug: "memory-relevance-prelimit",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `memory relevance prelimit ${marker}`,
+      taskContract: {
+        title: "Retain the best task-relevant memory before the limit",
+        objective: "Select an all-term match ahead of one-term distractors.",
+        constraints: ["bounded PostgreSQL query"],
+        nonGoals: ["prove globally optimal semantic ranking"],
+        acceptance: ["the position-26 all-term record is selected"]
+      },
+      harnessPlan: {
+        summary: "Memory relevance prelimit",
+        nextAction: "Compare deterministic lexical relevance before counters."
+      }
+    });
+
+    try {
+      const relevant = await scaffold.memoryRepository.createMemoryRecord({
+        projectId: scaffold.project.id,
+        key: `memory:position-26:all-terms:${marker}`,
+        kind: "constraint",
+        status: "active",
+        summary: "position-26 task-relevant memory",
+        body: "This record matches every bounded retrieval term.",
+        owner: "kernel",
+        confidence: 90,
+        applicationGuidance: "Use for the position-26 relevance boundary.",
+        invalidationRule: "Remove after the repository test.",
+        sourceLineage: [{ sourceId: `source:${marker}:relevant` }],
+        isUserPreference: false,
+        metadata: { smokeId: marker, position26: true }
+      });
+      const distractors = await Promise.all(Array.from({ length: 25 }, async (_, index) =>
+        scaffold.memoryRepository.createMemoryRecord({
+          projectId: scaffold.project.id,
+          key: `memory:position-26:distractor:${index}:${marker}`,
+          kind: "constraint",
+          status: "active",
+          summary: `position-26 generic distractor ${index}`,
+          body: "This record matches only the common retrieval term.",
+          owner: "kernel",
+          confidence: 90,
+          applicationGuidance: "Do not select over the all-term match.",
+          invalidationRule: "Remove after the repository test.",
+          sourceLineage: [{ sourceId: `source:${marker}:distractor:${index}` }],
+          isUserPreference: false,
+          metadata: { smokeId: marker, position26: false }
+        })
+      ));
+      await scaffold.db
+        .update(memoryRecords)
+        .set({ positiveFeedbackCount: 1 })
+        .where(inArray(memoryRecords.id, distractors.map((record) => record.id)));
+
+      const selected = await scaffold.memoryRepository.listActiveMemory(
+        scaffold.project.id,
+        1,
+        { terms: ["position-26", "task-relevant", "bounded"] }
+      );
+
+      expect(
+        selected.map((record) => record.id),
+        `expected ${relevant.id}; returned ${selected.map((record) => record.id).join(",")}`
+      ).toEqual([relevant.id]);
+    } finally {
+      await scaffold.cleanup();
+      await scaffold.client.end();
+    }
+  });
+
   postgresIt("serializes counter rebuild with a concurrent memory application", async () => {
     const marker = `krn_counter_rebuild_race_${crypto.randomUUID().replaceAll("-", "")}`;
     const scaffold = await createSmokeHarnessScaffold({

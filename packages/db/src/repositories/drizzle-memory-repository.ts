@@ -749,6 +749,12 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     const relevanceFilter = terms.length === 0
       ? undefined
       : or(...terms.map((term) => sql`strpos(${searchableText}, ${term}) > 0`));
+    const relevanceScore = terms.length === 0
+      ? undefined
+      : sql<number>`(${sql.join(
+          terms.map((term) => sql`CASE WHEN strpos(${searchableText}, ${term}) > 0 THEN 1 ELSE 0 END`),
+          sql` + `
+        )})`;
     const rows = await this.db.query.memoryRecords.findMany({
       where: and(
         eq(memoryRecords.projectId, projectId),
@@ -758,7 +764,10 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         or(isNull(memoryRecords.invalidatedAt), gt(memoryRecords.invalidatedAt, now)),
         relevanceFilter
       ),
-      orderBy: activeMemorySelectionOrder(),
+      orderBy: [
+        ...(relevanceScore === undefined ? [] : [desc(relevanceScore)]),
+        ...activeMemorySelectionOrder()
+      ],
       limit
     });
 
