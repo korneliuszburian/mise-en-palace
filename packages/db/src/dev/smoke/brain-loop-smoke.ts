@@ -1,4 +1,8 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import {
   eq,
@@ -23,6 +27,7 @@ import {
   buildDecisionPacketAuthorityProjection,
   buildDecisionPacketFromReadModel,
   buildMemoryStalenessMaintenancePreview,
+  collectTargetStateSnapshot,
   createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
@@ -432,6 +437,19 @@ export const runBrainLoopSmokeCheck = async (
     cleanup,
     setContextAssemblyId
   } = scaffold;
+  const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-memory-loop-target-"));
+  execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
+  execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: targetRepo });
+  execFileSync("git", ["config", "user.name", "Fixture"], { cwd: targetRepo });
+  await mkdir(path.join(targetRepo, "src"));
+  await writeFile(path.join(targetRepo, "src/base.ts"), "export const base = true;\n");
+  execFileSync("git", ["add", "src/base.ts"], { cwd: targetRepo });
+  execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+  const targetApplicationPath = "src/application.ts";
+  await writeFile(
+    path.join(targetRepo, targetApplicationPath),
+    "export const selectedMemoryApplied = true;\n"
+  );
 
   try {
     const executionRun = await createRunningSmokeExecutionRun(
@@ -716,6 +734,7 @@ export const runBrainLoopSmokeCheck = async (
     if (recordUsefulnessApplicationOnce === undefined) {
       throw new Error("Memory loop smoke requires usefulness application persistence");
     }
+    const targetSnapshot = await collectTargetStateSnapshot(targetRepo);
     const usefulnessApplication = await recordUsefulnessApplicationOnce.call(
       harnessRunRepository,
       {
@@ -727,7 +746,13 @@ export const runBrainLoopSmokeCheck = async (
         taskContractId: taskContract.id,
         packetChecksum: packetBinding.packetChecksum,
         packetGeneratedAt: packetBinding.packetGeneratedAt,
-        sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision
+        sourceRunLifecycleRevision: packetAggregate.executionRun.lifecycleRevision,
+        targetState: {
+          targetRepo,
+          treeIdentity: targetSnapshot.treeIdentity,
+          patchIdentity: targetSnapshot.patchIdentity,
+          changedFiles: [...targetSnapshot.changedPaths]
+        }
       }
     );
     const checkpoint = packetSelectionCheckpoint({
@@ -780,7 +805,27 @@ export const runBrainLoopSmokeCheck = async (
         metadata: {
           smokeId: marker,
           doesNotProve:
-            "Packet-bound evidence does not promote memory or source truth by itself."
+            "Packet-bound evidence does not promote memory or source truth by itself.",
+          targetEvidence: {
+            targetRepo,
+            mode: "headless_repair",
+            dirtyBefore: "clean",
+            dirtyAfter: "dirty",
+            ownedChanges: "owned_by_current_krn_run",
+            targetStatusFreshness: "fresh_current_task",
+            targetPatchLifecycle: "none",
+            treeIdentity: targetSnapshot.treeIdentity,
+            patchIdentity: targetSnapshot.patchIdentity,
+            allowedWrites: [],
+            forbiddenWrites: [],
+            changedFiles: [{
+              status: "??",
+              path: targetApplicationPath,
+              ownership: "owned_by_current_krn_run"
+            }],
+            commands: [checkpoint.command],
+            doesNotProve: []
+          }
         }
       },
       review: {
@@ -1558,5 +1603,6 @@ export const runBrainLoopSmokeCheck = async (
     };
   } finally {
     await client.end();
+    await rm(targetRepo, { recursive: true, force: true });
   }
 };
