@@ -96,9 +96,7 @@ export type SourceUsefulnessOutcome =
   | "rejected"
   | "unknown";
 
-export interface SourceUsefulnessOutcomeFeedback {
-  sourceClaimId?: SourceClaimId;
-  sourceDecisionId?: SourceDecisionId;
+interface SourceUsefulnessOutcomeFeedbackFields {
   applicationId?: string;
   appliedAt?: IsoTimestamp;
   outcome: SourceUsefulnessOutcome;
@@ -106,6 +104,11 @@ export interface SourceUsefulnessOutcomeFeedback {
   evidenceRefs: string[];
   doesNotProve: string;
 }
+
+export type SourceUsefulnessOutcomeFeedback = SourceUsefulnessOutcomeFeedbackFields & (
+  | { sourceClaimId: SourceClaimId; sourceDecisionId?: never }
+  | { sourceClaimId?: never; sourceDecisionId: SourceDecisionId }
+);
 
 export interface KnowledgeUsefulnessOutcomeFeedback {
   knowledgeId: string;
@@ -290,17 +293,35 @@ const usefulnessApplicationReferenceFromMetadata = (
   };
 };
 
+type SourceUsefulnessSubject =
+  | { sourceClaimId: SourceClaimId }
+  | { sourceDecisionId: SourceDecisionId };
+
+const sourceUsefulnessSubjectFromMetadata = (
+  item: Record<string, unknown>
+): SourceUsefulnessSubject | undefined => {
+  const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
+  const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
+
+  if (sourceClaimId !== undefined && sourceDecisionId === undefined) {
+    return { sourceClaimId };
+  }
+  if (sourceClaimId === undefined && sourceDecisionId !== undefined) {
+    return { sourceDecisionId };
+  }
+  return undefined;
+};
+
 const sourceUsefulnessOutcomeFromMetadata = (
   item: Record<string, unknown>
 ): SourceUsefulnessOutcomeFeedback | undefined => {
-  const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
-  const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
+  const subject = sourceUsefulnessSubjectFromMetadata(item);
   const reason = readMetadataString(item, "reason");
   const doesNotProve = readMetadataString(item, "doesNotProve");
   const application = usefulnessApplicationReferenceFromMetadata(item);
 
   if (
-    (sourceClaimId === undefined && sourceDecisionId === undefined) ||
+    subject === undefined ||
     reason === undefined ||
     doesNotProve === undefined ||
     !application.valid
@@ -310,8 +331,7 @@ const sourceUsefulnessOutcomeFromMetadata = (
   const { valid: _valid, ...applicationFields } = application;
 
   return {
-    ...(sourceClaimId === undefined ? {} : { sourceClaimId }),
-    ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
+    ...subject,
     ...applicationFields,
     outcome: sourceUsefulnessOutcomeField(item),
     reason,

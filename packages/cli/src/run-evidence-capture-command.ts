@@ -1337,9 +1337,8 @@ const explicitUsefulnessApplications = (input: {
 
   return [
     ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
-    const subjectId = outcome.sourceDecisionId ?? outcome.sourceClaimId;
     if (
-      subjectId === undefined ||
+      outcome.sourceClaimId === undefined ||
       outcome.applicationId === undefined ||
       outcome.appliedAt !== undefined
     ) {
@@ -1347,10 +1346,8 @@ const explicitUsefulnessApplications = (input: {
     }
     return [{
       applicationId: outcome.applicationId,
-      subjectKind: outcome.sourceDecisionId === undefined
-        ? "source_claim" as const
-        : "source_decision" as const,
-      subjectId,
+      subjectKind: "source_claim" as const,
+      subjectId: outcome.sourceClaimId,
       projectId: input.projectId,
       executionRunId: input.runId,
       taskContractId: input.aggregate.taskContract.id,

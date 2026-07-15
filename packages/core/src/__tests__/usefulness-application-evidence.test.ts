@@ -46,6 +46,10 @@ describe("UsefulnessApplicationEvidence", () => {
       ...evidence,
       subjectKind: "memory_record"
     })).toBeUndefined();
+    expect(parseUsefulnessApplicationEvidence({
+      ...evidence,
+      subjectKind: "source_decision"
+    })).toBeUndefined();
   });
 
   it("rejects every mismatched immutable identity field", () => {

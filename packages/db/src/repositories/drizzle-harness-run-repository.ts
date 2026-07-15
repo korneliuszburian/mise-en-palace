@@ -1257,6 +1257,9 @@ const applicationForBoundOutcome = async (
   if (outcome.applicationId === undefined || outcome.appliedAt === undefined) {
     return undefined;
   }
+  if (subject.kind === "source_decision") {
+    return undefined;
+  }
   const row = await tx.query.usefulnessApplications.findFirst({
     where: eq(usefulnessApplications.applicationId, outcome.applicationId)
   });

@@ -2177,6 +2177,65 @@ describe("DrizzleHarnessRunRepository", () => {
         })]);
         expect(provedHelped.feedbackMaintenanceQueueRecordId).toEqual(expect.any(String));
 
+        const sourceClaimApplicationIdentity = {
+          ...applicationIdentity,
+          applicationId: `application:${marker}:source-claim`,
+          subjectKind: "source_claim" as const,
+          subjectId: selectedSourceClaim.id
+        };
+        const sourceClaimApplication = await scaffold.harnessRunRepository
+          .recordUsefulnessApplicationOnce(sourceClaimApplicationIdentity);
+        const sourceClaimArtifact = createCommandOutputArtifact({
+          command: "pnpm typecheck",
+          exitCode: 0,
+          startedAt: new Date(
+            Date.parse(sourceClaimApplication.application.appliedAt) + 1_000
+          ).toISOString(),
+          completedAt: new Date(
+            Date.parse(sourceClaimApplication.application.appliedAt) + 2_000
+          ).toISOString(),
+          stdout: new Uint8Array(),
+          stderr: new Uint8Array()
+        }, (value) => crypto.createHash("sha256").update(value).digest("hex"));
+        const {
+          knowledgeUsefulnessOutcomes: _knowledgeUsefulnessOutcomes,
+          ...sourceClaimHelpedBase
+        } = provedHelpedInput;
+        const sourceClaimHelped = await scaffold.harnessRunRepository
+          .createEvidenceFeedbackOnce({
+            ...sourceClaimHelpedBase,
+            captureIdentity: `capture-authority-race:${marker}:source-claim-helped`,
+            sourceUsefulnessOutcomes: [{
+              sourceClaimId: selectedSourceClaim.id,
+              applicationId: sourceClaimApplicationIdentity.applicationId,
+              appliedAt: sourceClaimApplication.application.appliedAt,
+              outcome: "helped",
+              reason: "Persisted claim application preceded strict verification.",
+              evidenceRefs: [packetBeforeProvedHelped.packetEvidenceRef],
+              doesNotProve: "Ordered proof does not establish source truth."
+            }],
+            evidence: {
+              ...provedHelpedInput.evidence,
+              commands: [{
+                command: "pnpm typecheck",
+                status: "passed",
+                provenance: "command_runner",
+                exitCode: 0,
+                capturedAt: sourceClaimArtifact.completedAt,
+                outputRef: sourceClaimArtifact.outputRef,
+                doesNotProve: "Typecheck does not prove runtime behavior."
+              }],
+              commandOutputArtifacts: [sourceClaimArtifact]
+            }
+          });
+        expect(sourceUsefulnessOutcomesFromMetadata(
+          sourceClaimHelped.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          applicationId: sourceClaimApplicationIdentity.applicationId,
+          sourceClaimId: selectedSourceClaim.id,
+          outcome: "helped"
+        })]);
+
         await writeFile(
           path.join(targetRepo, "src/application.ts"),
           "export const mutatedAfterVerification = true;\n"

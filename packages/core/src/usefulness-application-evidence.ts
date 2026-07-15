@@ -9,12 +9,18 @@ import type { IsoTimestamp } from "./time.js";
 
 export const usefulnessApplicationSubjectKinds = [
   "knowledge",
-  "source_claim",
+  "source_claim"
+] as const;
+
+export const persistedUsefulnessApplicationSubjectKinds = [
+  ...usefulnessApplicationSubjectKinds,
   "source_decision"
 ] as const;
 
 export type UsefulnessApplicationSubjectKind =
   typeof usefulnessApplicationSubjectKinds[number];
+export type PersistedUsefulnessApplicationSubjectKind =
+  typeof persistedUsefulnessApplicationSubjectKinds[number];
 
 export interface UsefulnessApplicationTargetState {
   targetRepo: string;
@@ -25,7 +31,7 @@ export interface UsefulnessApplicationTargetState {
 
 export interface UsefulnessApplicationEvidence {
   applicationId: string;
-  subjectKind: UsefulnessApplicationSubjectKind;
+  subjectKind: PersistedUsefulnessApplicationSubjectKind;
   subjectId: string;
   projectId: ProjectId;
   executionRunId: ExecutionRunId;
@@ -39,8 +45,8 @@ export interface UsefulnessApplicationEvidence {
 
 export type UsefulnessApplicationEvidenceIdentity = Omit<
   UsefulnessApplicationEvidence,
-  "appliedAt"
->;
+  "appliedAt" | "subjectKind"
+> & { subjectKind: UsefulnessApplicationSubjectKind };
 
 const packetChecksumPattern = /^[a-f0-9]{64}$/u;
 const requiredTextSchema = z.string().trim().min(1);

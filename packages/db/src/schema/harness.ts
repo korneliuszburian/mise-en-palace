@@ -21,9 +21,9 @@ import {
   feedbackDeltaStatuses,
   harnessPlanStatuses,
   operatorIntentStatuses,
+  persistedUsefulnessApplicationSubjectKinds,
   reviewAssessmentStatuses,
-  taskContractStatuses,
-  usefulnessApplicationSubjectKinds
+  taskContractStatuses
 } from "@krn/core";
 import type { UsefulnessApplicationTargetState } from "@krn/core";
 
@@ -54,7 +54,7 @@ export const feedbackDeltaStatus = pgEnum("feedback_delta_status", feedbackDelta
 
 export const usefulnessApplicationSubjectKind = pgEnum(
   "usefulness_application_subject_kind",
-  usefulnessApplicationSubjectKinds
+  persistedUsefulnessApplicationSubjectKinds
 );
 
 export const workspaces = pgTable(

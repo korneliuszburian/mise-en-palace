@@ -566,25 +566,30 @@ const hasNoFormalRejectionTypedState = (input: {
 const sourceUsefulnessOutcome = (input: {
   readonly applicationId?: string;
   readonly appliedAt?: string;
-  readonly claimId?: string;
-  readonly decisionId?: string;
   readonly evidenceRef: string;
   readonly evidenceRefs?: readonly string[];
   readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
   readonly reason: string;
-}): SourceUsefulnessOutcomeFeedback => ({
-  ...(input.applicationId === undefined ? {} : { applicationId: input.applicationId }),
-  ...(input.appliedAt === undefined ? {} : { appliedAt: input.appliedAt }),
-  ...(input.claimId === undefined ? {} : { sourceClaimId: input.claimId }),
-  ...(input.decisionId === undefined ? {} : { sourceDecisionId: input.decisionId }),
-  outcome: input.outcome,
-  reason: input.reason,
-  evidenceRefs: input.evidenceRefs === undefined
-    ? [input.evidenceRef]
-    : [...input.evidenceRefs],
-  doesNotProve:
-    "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
-});
+} & (
+  | { readonly claimId: string; readonly decisionId?: never }
+  | { readonly claimId?: never; readonly decisionId: string }
+)): SourceUsefulnessOutcomeFeedback => {
+  const feedback = {
+    ...(input.applicationId === undefined ? {} : { applicationId: input.applicationId }),
+    ...(input.appliedAt === undefined ? {} : { appliedAt: input.appliedAt }),
+    outcome: input.outcome,
+    reason: input.reason,
+    evidenceRefs: input.evidenceRefs === undefined
+      ? [input.evidenceRef]
+      : [...input.evidenceRefs],
+    doesNotProve:
+      "Agent-packet return-loop smoke feedback does not prove source truth, Codex obedience, or product readiness."
+  };
+
+  return input.claimId === undefined
+    ? { ...feedback, sourceDecisionId: input.decisionId }
+    : { ...feedback, sourceClaimId: input.claimId };
+};
 
 const capturedCurrentEvidenceMetadata = (
   marker: string,

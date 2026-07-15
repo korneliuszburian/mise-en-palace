@@ -369,7 +369,6 @@ const aggregate: HarnessRunAggregate = {
       reviewability: "needs_more_evidence",
       sourceUsefulnessOutcomes: [{
         sourceClaimId: "claim-1",
-        sourceDecisionId: "source-decision-candidate-1",
         outcome: "helped",
         reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
         evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
@@ -526,7 +525,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("source_decision=1");
     expect(result.stdout).toContain("source usefulness outcomes:");
     expect(result.stdout).toContain(
-      "outcome=helped sourceClaim=claim-1 sourceDecision=source-decision-candidate-1"
+      "outcome=helped sourceClaim=claim-1 sourceDecision=none"
     );
     expect(result.stdout).toContain(
       "reason: Source claim kept command proof boundaries visible in the decision packet read model."
@@ -1007,7 +1006,6 @@ describe("runRunShowCommand", () => {
         }],
         sourceUsefulnessOutcomes: [{
           sourceClaimId: "claim-1",
-          sourceDecisionId: "source-decision-candidate-1",
           outcome: "helped",
           reason: "Source claim kept command proof boundaries visible in the decision packet read model.",
           evidenceRefs: ["packet:packet-run-show", "evidence-1", "feedback-1"],
@@ -1098,8 +1096,8 @@ describe("runRunShowCommand", () => {
     ]);
     expect(parsed.feedbackDeltas[0]?.sourceUsefulnessOutcomes[0]?.recommendation)
       .toMatchObject({
-        subjectKind: "source_decision",
-        subjectId: "source-decision-candidate-1",
+        subjectKind: "source_claim",
+        subjectId: "claim-1",
         outcome: "helped",
         mutation: "none",
         recommendations: [expect.objectContaining({ action: "retain" })]

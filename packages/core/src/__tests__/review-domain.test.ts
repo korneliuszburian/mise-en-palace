@@ -124,14 +124,6 @@ describe("source usefulness outcome feedback", () => {
         doesNotProve: "Unknown outcome does not prove usefulness."
       }]
     })).toEqual([{
-      sourceClaimId: "source-claim-1",
-      sourceDecisionId: "source-decision-1",
-      outcome: "helped",
-      reason: "Source claim prevented overclaiming command proof.",
-      evidenceRefs: ["evidence-1", "feedback-1"],
-      doesNotProve:
-        "This outcome does not prove source selection quality across future runs."
-    }, {
       sourceClaimId: "source-claim-stale",
       outcome: "stale",
       reason: "Source claim is past its revisit boundary.",
