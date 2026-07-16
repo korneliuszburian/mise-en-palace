@@ -190,7 +190,6 @@ describe("paired live Codex repair eval", () => {
     try {
       const result = await runHeldOutRuntimeWorker(
         compileRoot,
-        compileRoot,
         process.cwd(),
         sandboxRoot
       );

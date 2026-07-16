@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { delimiter, join, relative, resolve } from "node:path";
+import { delimiter, dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -19,7 +19,7 @@ import type { PairedRepairScore } from "../internal/eval/paired-live-codex-repai
 
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
-const profileConfig = "model = \"gpt-5.6\"\n";
+const profileConfig = "model = \"gpt-5.6-sol\"\n";
 
 const manifest: PairedTrialManifest = {
   kind: "krn.pairedLiveCodexRepairManifest.v1",
@@ -33,18 +33,21 @@ const manifest: PairedTrialManifest = {
   codex: {
     command: "codex",
     args: [
+      "--ask-for-approval",
+      "never",
       "exec",
       "--model",
-      "gpt-5.6",
+      "gpt-5.6-sol",
       "--profile",
       "trial",
       "--sandbox",
       "workspace-write",
-      "--ask-for-approval",
-      "never",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "--ephemeral",
       "{prompt}"
     ],
-    model: "gpt-5.6",
+    model: "gpt-5.6-sol",
     cliVersion: "codex-test",
     profile: { name: "trial", config: profileConfig, hash: sha256(profileConfig) },
     permissions: { sandbox: "workspace-write", approval: "never" },
@@ -54,7 +57,7 @@ const manifest: PairedTrialManifest = {
   containment: {
     command: "missing-containment-for-test",
     version: "bwrap-test",
-    network: "disabled",
+    network: "model_service_egress",
     workspaceWriteRoot: "{targetRoot}",
     homeRoot: "{sandboxRoot}"
   },
@@ -66,7 +69,11 @@ const packet = {
   request: { runId: "run-1" },
   packetIdentity: { checksum: "a".repeat(64) },
   packet: {
-    task: { id: "weak-json-repair", objective: "Repair weak-json-boundary-typescript safely." },
+    task: {
+      id: "weak-json-repair",
+      projectId: "weak-json-boundary-typescript",
+      objective: "Repair weak-json-boundary-typescript safely."
+    },
     governingDecisionIds: ["decision-1", "decision-2"],
     abstentionScore: { status: "ready" }
   }
@@ -112,10 +119,15 @@ const makeFakeCodex = async (
   armSource: string,
   versionSource = "printf 'claimed-cli-version %s\\n' \"${KRN_TRIAL_HOST_SENTINEL:-missing}\""
 ): Promise<void> => {
+  await writeFile(join(dirname(path), "auth.json"), "{}\n", { encoding: "utf8", mode: 0o600 });
   await writeExecutable(path, [
     "#!/bin/sh",
     "if [ \"$1\" = \"--version\" ]; then",
     `  ${versionSource}`,
+    "  exit 0",
+    "fi",
+    "if [ \"$1\" = \"login\" ] && [ \"$2\" = \"status\" ]; then",
+    "  printf 'Logged in using ChatGPT\\n' >&2",
     "  exit 0",
     "fi",
     armSource
@@ -176,11 +188,16 @@ describe("tracked paired live Codex repair", () => {
     expect(validateTrialPacket({
       ...packet,
       request: { runId: "other-run" },
-      packet: { ...packet.packet, abstentionScore: { status: "abstain" } }
+      packet: {
+        ...packet.packet,
+        task: { ...packet.packet.task, projectId: "other-project" },
+        abstentionScore: { status: "abstain" }
+      }
     }, manifest)).toMatchObject({
       valid: false,
       reasons: expect.arrayContaining([
         "packet runId does not match the trial manifest",
+        "packet task is not bound to the manifest project",
         "packet abstains or is not ready for the trial"
       ])
     });
@@ -339,7 +356,7 @@ describe("tracked paired live Codex repair", () => {
         }
       };
       const result = await withProcessEnvironment({
-        KRN_TRIAL_OPENAI_API_KEY: "trial",
+        KRN_TRIAL_CODEX_HOME: binRoot,
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
       }, () => runTrackedPairedTrial({
         manifest: invalidManifest,
@@ -376,7 +393,7 @@ describe("tracked paired live Codex repair", () => {
       const passedManifest = runnableManifest(binRoot, 1_000);
       let fetchCalls = 0;
       const result = await withProcessEnvironment({
-        KRN_TRIAL_OPENAI_API_KEY: "trial",
+        KRN_TRIAL_CODEX_HOME: binRoot,
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
       }, () => runTrackedPairedTrial({
         manifest: passedManifest,
@@ -420,7 +437,7 @@ describe("tracked paired live Codex repair", () => {
     const gitCredentialCounter = join(root, "git-credentials.txt");
     await mkdir(binRoot, { recursive: true });
     await makeFakeCodex(join(binRoot, "codex"), [
-      "test \"$(cat \"$CODEX_HOME/trial.config.toml\")\" = \"model = \\\"gpt-5.6\\\"\" || exit 3",
+      "test \"$(cat \"$CODEX_HOME/trial.config.toml\")\" = \"model = \\\"gpt-5.6-sol\\\"\" || exit 3",
       `printf x >> \"${armCounter}\"`,
       "exit 1"
     ].join("\n"), [
@@ -457,7 +474,7 @@ describe("tracked paired live Codex repair", () => {
       };
       const [first, replay, mismatched, timeout] = await withProcessEnvironment({
         KRN_TRIAL_HOST_SENTINEL: "host-secret-visible-to-probe",
-        KRN_TRIAL_OPENAI_API_KEY: "trial",
+        KRN_TRIAL_CODEX_HOME: binRoot,
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
       }, async () => {
         const firstResult = await runTrackedPairedTrial({
@@ -468,7 +485,7 @@ describe("tracked paired live Codex repair", () => {
           attemptDirectory: join(root, "first-attempt")
         }, countingChecker);
         const replayResult = await withProcessEnvironment({
-          KRN_TRIAL_OPENAI_API_KEY: undefined
+          KRN_TRIAL_CODEX_HOME: undefined
         }, () => runTrackedPairedTrial({
           manifest: nonzeroManifest,
           sourceRoot: source,
@@ -480,7 +497,7 @@ describe("tracked paired live Codex repair", () => {
           attemptDirectory: join(root, "first-attempt")
         }, countingChecker));
         const mismatchedResult = await withProcessEnvironment({
-          KRN_TRIAL_OPENAI_API_KEY: undefined
+          KRN_TRIAL_CODEX_HOME: undefined
         }, () => runTrackedPairedTrial({
           manifest: mismatchedManifest,
           sourceRoot: source,
@@ -510,7 +527,7 @@ describe("tracked paired live Codex repair", () => {
         }
       });
       expect(first.execution.conditions.requested.codex).toMatchObject({
-        model: "gpt-5.6",
+        model: "gpt-5.6-sol",
         permissions: { sandbox: "workspace-write", approval: "never" },
         timeoutMs: 1_000
       });
@@ -518,6 +535,16 @@ describe("tracked paired live Codex repair", () => {
       expect(first.status).toBe("invalid");
       expect(first.execution.baseline?.exitCode).toBe(1);
       expect(first.execution.krn?.exitCode).toBe(1);
+      expect(first.execution.baseline?.args).toEqual(expect.arrayContaining([
+        "--proc",
+        "/proc",
+        "--dev",
+        "/dev",
+        "--tmpfs",
+        "/tmp",
+        "--dir",
+        "/tmp/.git"
+      ]));
       expect(first.execution.targets?.baseline.before).toMatchObject({
         status: "known",
         trackedFiles: [],
@@ -614,7 +641,7 @@ describe("tracked paired live Codex repair", () => {
         requested: {
           codex: {
             command: "codex",
-            model: "gpt-5.6",
+            model: "gpt-5.6-sol",
             cliVersion: "codex-test",
             profileName: "trial",
             profileHash: "profile",

@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import type { EvalCandidateProposal } from "@krn/core";
 import {
   createBoundedStreamCollector,
@@ -596,51 +596,53 @@ const unknownObservation = (): HeldOutObservation => ({
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const observeInput = (
-  createUser: (...args: unknown[]) => unknown,
-  listUsers: (...args: unknown[]) => unknown,
-  raw: string,
-  env: Record<string, string | undefined>
-): HeldOutObservation => {
+const runtimeWorkerMarker = "KRN_HELD_OUT_RUNTIME:";
+
+const runtimeWorkerSource = `
+const marker = "KRN_HELD_OUT_RUNTIME:";
+const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+const observeInput = (createUser, listUsers, raw) => {
   const before = listUsers();
   const beforeCount = Array.isArray(before) ? before.length : 0;
-
   try {
-    const result = createUser(raw, env);
+    const result = createUser(raw, {});
     const after = listUsers();
     const afterCount = Array.isArray(after) ? after.length : beforeCount;
     const resultRecord = isRecord(result) ? result : undefined;
-    const accepted =
-      resultRecord?.["ok"] === true ||
-      resultRecord?.["kind"] === "created" ||
-      resultRecord?.["status"] === "created";
-    const state = resultRecord === undefined
+    const accepted = resultRecord?.ok === true || resultRecord?.kind === "created" || resultRecord?.status === "created";
+    const resultState = resultRecord === undefined
       ? String(result)
-      : typeof resultRecord["ok"] === "boolean"
-        ? `ok:${String(resultRecord["ok"])}`
-        : typeof resultRecord["kind"] === "string"
-          ? `kind:${resultRecord["kind"]}`
-          : typeof resultRecord["status"] === "string"
-            ? `status:${resultRecord["status"]}`
+      : typeof resultRecord.ok === "boolean"
+        ? "ok:" + String(resultRecord.ok)
+        : typeof resultRecord.kind === "string"
+          ? "kind:" + resultRecord.kind
+          : typeof resultRecord.status === "string"
+            ? "status:" + resultRecord.status
             : "object";
-
-    return {
-      threw: false,
-      accepted,
-      savedUserDelta: afterCount - beforeCount,
-      resultState: state
-    };
+    return { threw: false, accepted, savedUserDelta: afterCount - beforeCount, resultState };
   } catch {
-    return {
-      threw: true,
-      accepted: false,
-      savedUserDelta: 0,
-      resultState: "thrown"
-    };
+    return { threw: true, accepted: false, savedUserDelta: 0, resultState: "thrown" };
   }
 };
-
-const runtimeWorkerMarker = "KRN_HELD_OUT_RUNTIME:";
+try {
+  const moduleValue = await import(process.argv[2]);
+  const service = isRecord(moduleValue) ? moduleValue : {};
+  const createUser = service.createUserFromJson;
+  const listUsers = service.listSavedUsers;
+  if (typeof createUser !== "function" || typeof listUsers !== "function") {
+    throw new Error("held-out target exports are unavailable");
+  }
+  const observations = {
+    invalidJson: observeInput(createUser, listUsers, "{"),
+    missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" })),
+    invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }))
+  };
+  process.stdout.write(marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
+} catch {
+  process.stdout.write(marker + JSON.stringify({ runtimeAvailable: false }) + "\\n");
+  process.exitCode = 1;
+}
+`;
 
 type RuntimeObservations = {
   readonly invalidJson: HeldOutObservation;
@@ -656,7 +658,6 @@ const unknownRuntimeObservations = (): RuntimeObservations => ({
 
 export const runHeldOutRuntimeWorker = async (
   compileRoot: string,
-  targetRoot: string,
   checkerRoot: string,
   sandboxRoot: string
 ): Promise<{
@@ -664,18 +665,17 @@ export const runHeldOutRuntimeWorker = async (
   readonly runtimeAvailable: boolean;
   readonly observations: RuntimeObservations;
 }> => {
+  const workerPath = join(sandboxRoot, "held-out-runtime-worker.mjs");
+  await writeFile(workerPath, runtimeWorkerSource, { encoding: "utf8", flag: "wx", mode: 0o600 });
+  const targetModuleUrl = `${pathToFileURL(join(compileRoot, "src/userService.js")).href}?checker=${Date.now()}`;
   const command = await runCommand(
     process.execPath,
     [
       "--experimental-permission",
       `--allow-fs-read=${compileRoot}`,
-      `--allow-fs-read=${targetRoot}`,
-      `--allow-fs-read=${checkerRoot}`,
-      "--import",
-      "tsx",
-      fileURLToPath(import.meta.url),
-      "--worker-runtime",
-      compileRoot
+      `--allow-fs-read=${workerPath}`,
+      workerPath,
+      targetModuleUrl
     ],
     checkerRoot,
     {
@@ -796,7 +796,6 @@ const runHeldOutTargetRepairChecker = async (
   if (compile.exitCode === 0) {
     const runtime = await runHeldOutRuntimeWorker(
       compileRoot,
-      input.targetRoot,
       input.checkerRoot,
       sandboxRoot
     );
@@ -836,47 +835,3 @@ export const runPairedRepairChecker = async (input: {
 
   return scorePairedRepairs({ baseline, krn });
 };
-
-const runRuntimeWorker = async (compileRoot: string): Promise<void> => {
-  try {
-    const moduleValue: unknown = await import(
-      `${pathToFileURL(join(compileRoot, "src/userService.js")).href}?checker=${Date.now()}`
-    );
-    const service = isRecord(moduleValue) ? moduleValue : {};
-    const createUser = service["createUserFromJson"];
-    const listUsers = service["listSavedUsers"];
-
-    if (typeof createUser !== "function" || typeof listUsers !== "function") {
-      throw new Error("held-out target exports are unavailable");
-    }
-
-    const observations: RuntimeObservations = {
-      invalidJson: observeInput(
-        createUser as (...args: unknown[]) => unknown,
-        listUsers as (...args: unknown[]) => unknown,
-        "{",
-        {}
-      ),
-      missingEmail: observeInput(
-        createUser as (...args: unknown[]) => unknown,
-        listUsers as (...args: unknown[]) => unknown,
-        JSON.stringify({ role: "admin" }),
-        {}
-      ),
-      invalidRole: observeInput(
-        createUser as (...args: unknown[]) => unknown,
-        listUsers as (...args: unknown[]) => unknown,
-        JSON.stringify({ email: "held-out@example.com", role: "owner" }),
-        {}
-      )
-    };
-    process.stdout.write(`${runtimeWorkerMarker}${JSON.stringify({ runtimeAvailable: true, observations })}\n`);
-  } catch {
-    process.stdout.write(`${runtimeWorkerMarker}${JSON.stringify({ runtimeAvailable: false })}\n`);
-    process.exitCode = 1;
-  }
-};
-
-if (process.argv[2] === "--worker-runtime" && process.argv[3] !== undefined) {
-  await runRuntimeWorker(process.argv[3]);
-}

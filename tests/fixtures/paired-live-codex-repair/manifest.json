@@ -14,23 +14,26 @@
   "codex": {
     "command": "codex",
     "args": [
+      "--ask-for-approval",
+      "never",
       "exec",
       "--model",
-      "gpt-5.6",
+      "gpt-5.6-sol",
       "--profile",
       "paired-live",
       "--sandbox",
       "workspace-write",
-      "--ask-for-approval",
-      "never",
+      "--ignore-user-config",
+      "--ignore-rules",
+      "--ephemeral",
       "{prompt}"
     ],
-    "model": "gpt-5.6",
+    "model": "gpt-5.6-sol",
     "cliVersion": "codex-cli 0.144.5",
     "profile": {
       "name": "paired-live",
-      "config": "model = \"gpt-5.6\"\n",
-      "hash": "b947b08a6cf9e5226a22b7aafe60a562bd9df912f08758e707ca8e93ac22a49f"
+      "config": "model = \"gpt-5.6-sol\"\n",
+      "hash": "55c869c4c8995e217603d6fcf5422de479973f564b9243d4cae5920a4ed52e1e"
     },
     "permissions": {
       "sandbox": "workspace-write",
@@ -44,7 +47,7 @@
   "containment": {
     "command": "bwrap",
     "version": "bubblewrap 0.11.2",
-    "network": "disabled",
+    "network": "model_service_egress",
     "workspaceWriteRoot": "{targetRoot}",
     "homeRoot": "{sandboxRoot}"
   },
