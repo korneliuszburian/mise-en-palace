@@ -30,7 +30,9 @@ import {
   buildPairedRepairPrompts,
   runCommand,
   runPairedRepairChecker,
+  selectHeldOutRuntimePermissionFlag,
   type CommandResult,
+  type HeldOutRuntimePermissionFlag,
   type PairedRepairScore
 } from "./paired-live-codex-repair.js";
 import {
@@ -205,6 +207,10 @@ type TrialConditions = {
     readonly environmentProfileHash?: string;
     readonly environmentVariableNames?: readonly string[];
     readonly credentialProvided?: boolean;
+    readonly checkerRuntime?: {
+      readonly nodeVersion: string;
+      readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
+    };
   };
 };
 
@@ -928,6 +934,18 @@ const isRequestedTrialConditions = (value: unknown): boolean => {
     isManifestChecker(value["checker"]);
 };
 
+const isHeldOutRuntimePermissionFlag = (value: unknown): boolean =>
+  value === "--permission" ||
+  value === "--experimental-permission" ||
+  value === "unsupported";
+
+const isObservedCheckerRuntime = (value: unknown): boolean =>
+  value === undefined || (
+    isRecord(value) &&
+    readString(value["nodeVersion"]) !== undefined &&
+    isHeldOutRuntimePermissionFlag(value["permissionFlag"])
+  );
+
 const isObservedTrialConditions = (value: unknown): boolean => {
   if (!isRecord(value)) return false;
   return optionalValue(value, "containment", isTrialToolObservation) &&
@@ -935,7 +953,8 @@ const isObservedTrialConditions = (value: unknown): boolean => {
     optionalValue(value, "profileHash", isPresentString) &&
     optionalValue(value, "environmentProfileHash", isPresentString) &&
     optionalValue(value, "environmentVariableNames", isStringArray) &&
-    optionalValue(value, "credentialProvided", (credential) => typeof credential === "boolean");
+    optionalValue(value, "credentialProvided", (credential) => typeof credential === "boolean") &&
+    isObservedCheckerRuntime(value["checkerRuntime"]);
 };
 
 const isTrialConditions = (value: unknown): value is TrialConditions => {
@@ -1158,7 +1177,8 @@ const isClaimedPhaseDetail = (detail: unknown, artifact: TrackedTrialArtifact): 
 const isObservedConditionsPhaseDetail = (detail: unknown, artifact: TrackedTrialArtifact): boolean =>
   isRecord(detail) &&
   sameJson(detail["containment"], artifact.execution.conditions.observed?.containment) &&
-  sameJson(detail["codex"], artifact.execution.conditions.observed?.codex);
+  sameJson(detail["codex"], artifact.execution.conditions.observed?.codex) &&
+  sameJson(detail["checkerRuntime"], artifact.execution.conditions.observed?.checkerRuntime);
 
 const isMaterializedPhaseDetail = (detail: unknown, artifact: TrackedTrialArtifact): boolean =>
   isRecord(detail) &&
@@ -1407,12 +1427,16 @@ const trialPrerequisiteFailure = (input: {
   readonly containment: TrialToolObservation;
   readonly codex: TrialToolObservation;
   readonly manifest: PairedTrialManifest;
+  readonly runtimePermissionFlag: HeldOutRuntimePermissionFlag | undefined;
 }): { readonly status: TrackedTrialStatus; readonly reason: string } | undefined => [
   unavailableTool(input.containment)
     ? { status: "blocked" as const, reason: "explicit containment command is unavailable" }
     : undefined,
   unavailableTool(input.codex)
     ? { status: "blocked" as const, reason: "pinned Codex CLI is unavailable" }
+    : undefined,
+  input.runtimePermissionFlag === undefined
+    ? { status: "blocked" as const, reason: "held-out checker runtime does not support Node filesystem permissions" }
     : undefined,
   versionMismatch(input.containment, input.manifest.containment.version)
     ? { status: "invalid" as const, reason: "observed containment version does not match the manifest" }
@@ -1451,6 +1475,11 @@ const prepareTrackedTrial = async (input: {
       timeoutMs: 10_000
     })
   ]);
+  const runtimePermissionFlag = selectHeldOutRuntimePermissionFlag();
+  const checkerRuntime = {
+    nodeVersion: process.version,
+    permissionFlag: runtimePermissionFlag ?? "unsupported"
+  } as const;
   let conditions: TrialConditions = {
     ...input.context.conditions,
     observed: {
@@ -1458,14 +1487,21 @@ const prepareTrackedTrial = async (input: {
       codex,
       authentication,
       environmentVariableNames: Object.keys(probeEnvironment).sort(),
-      credentialProvided: hasChatGptAuthentication(authentication)
+      credentialProvided: hasChatGptAuthentication(authentication),
+      checkerRuntime
     }
   };
-  const prerequisite = trialPrerequisiteFailure({ containment, codex, manifest: input.context.manifest });
+  const prerequisite = trialPrerequisiteFailure({
+    containment,
+    codex,
+    manifest: input.context.manifest,
+    runtimePermissionFlag
+  });
   await input.journal.phase("conditions_observed", {
     containment,
     codex,
     authentication: authentication.exitCode === 0 ? "chatgpt" : "unavailable",
+    checkerRuntime,
     prerequisite: prerequisite?.reason
   });
   if (!hasChatGptAuthentication(authentication)) {

@@ -118,6 +118,24 @@ const withProcessEnvironment = async <Value>(
   }
 };
 
+const withNodeEnvironmentFlags = async <Value>(
+  flags: ReadonlySet<string>,
+  run: () => Promise<Value>
+): Promise<Value> => {
+  const descriptor = Object.getOwnPropertyDescriptor(process, "allowedNodeEnvironmentFlags");
+  Object.defineProperty(process, "allowedNodeEnvironmentFlags", {
+    configurable: true,
+    value: flags
+  });
+
+  try {
+    return await run();
+  } finally {
+    if (descriptor === undefined) delete (process as Partial<NodeJS.Process>).allowedNodeEnvironmentFlags;
+    else Object.defineProperty(process, "allowedNodeEnvironmentFlags", descriptor);
+  }
+};
+
 const makeFakeCodex = async (
   path: string,
   armSource: string,
@@ -465,6 +483,57 @@ describe("tracked paired live Codex repair", () => {
       });
       expect(await readTrackedTrialArtifact(join(root, "failed-persistence-attempt")))
         .toEqual(failedPersistence);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("blocks before either arm when the checker runtime has no filesystem permission model", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-runtime-preflight-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    const armCounter = join(root, "arms.txt");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), `printf x >> "${armCounter}"\nexit 0`);
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const blockedManifest = runnableManifest(binRoot, 1_000);
+      const result = await withNodeEnvironmentFlags(new Set(), () => withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: blockedManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: { ...packet, request: { runId: blockedManifest.runId } },
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker)));
+
+      expect(result).toMatchObject({
+        status: "blocked",
+        execution: {
+          invalidReasons: ["held-out checker runtime does not support Node filesystem permissions"],
+          conditions: {
+            observed: {
+              checkerRuntime: {
+                nodeVersion: process.version,
+                permissionFlag: "unsupported"
+              }
+            }
+          }
+        }
+      });
+      expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
+        "claimed",
+        "conditions_observed",
+        "finalized"
+      ]);
+      expect(result.execution.baseline).toBeUndefined();
+      expect(result.execution.krn).toBeUndefined();
+      await expect(readFile(armCounter, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+      expect(await readTrackedTrialArtifact(join(root, "attempt"))).toEqual(result);
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(source, { recursive: true, force: true });
