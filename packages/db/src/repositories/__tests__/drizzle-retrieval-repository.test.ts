@@ -443,6 +443,7 @@ describe("DrizzleRetrievalRepository", () => {
       const subjectChain = await createSourceChain(scaffold.project.id, "subject-a");
       const sameProjectChain = await createSourceChain(scaffold.project.id, "same-project-b");
       const crossProjectChain = await createSourceChain(foreignProject.id, "cross-project-b");
+      const selectionNow = "2026-07-15T00:00:00.000Z";
       const createMismatch = (
         label: string,
         chain: typeof sameProjectChain,
@@ -459,6 +460,7 @@ describe("DrizzleRetrievalRepository", () => {
         body: "Claim A is intentionally combined with artifact, chunk, and decision B.",
         searchText,
         sourceAuthority: "project-decision",
+        validFrom: "2026-01-01T00:00:00.000Z",
         metadata: { smokeId: scaffold.marker, mismatch: label }
       });
       const sameProjectSearchText = `incoherent ancillary provenance same project wrong chain ${marker}`;
@@ -475,11 +477,13 @@ describe("DrizzleRetrievalRepository", () => {
         scaffold.retrievalRepository.searchLexical({
           projectId: scaffold.project.id,
           query: sameProjectSearchText,
+          now: selectionNow,
           limit: 10
         }),
         scaffold.retrievalRepository.searchLexical({
           projectId: scaffold.project.id,
           query: crossProjectSearchText,
+          now: selectionNow,
           limit: 10
         })
       ]);
