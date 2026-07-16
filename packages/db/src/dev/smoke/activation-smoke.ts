@@ -71,6 +71,20 @@ export interface ActivationSmokeReport {
   lowerAuthorityCandidateScore: number;
   lowerAuthorityPeerCandidateScore: number;
   lowerAuthorityPacketExclusionMatched: boolean;
+  temporalGoverningSourceClaimId: string;
+  temporalRankedDownSourceClaimId: string;
+  temporalBoundarySourceClaimId: string;
+  currentSourceClaimEdgeId: string;
+  expiredSourceClaimEdgeId: string;
+  equalSourceClaimEdgeId: string;
+  temporalPacketSourceClaimIds: readonly string[];
+  temporalPacketBriefSourceClaimIds: readonly string[];
+  temporalPacketSourceDecisionEdgeIds: readonly string[];
+  temporalPersistedRankDownEdgeIds: readonly string[];
+  temporalPersistedRankDownGoverningSourceClaimIds: readonly string[];
+  currentSourceClaimEdgePacketRefCount: number;
+  expiredSourceClaimEdgePacketRefCount: number;
+  equalSourceClaimEdgePacketRefCount: number;
   memoryRecordCount: number;
   relevantMemoryRetrieved: boolean;
   relevantMemoryCandidateCount: number;
@@ -123,6 +137,37 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const hasSerializedReference = (value: unknown, id: string): boolean =>
   JSON.stringify(value).includes(id);
+
+const stringList = (value: unknown): readonly string[] | undefined =>
+  Array.isArray(value) && value.every((item) => typeof item === "string")
+    ? value
+    : undefined;
+
+const persistedSourceClaimEdgeRankDown = (
+  metadata: Record<string, unknown> | undefined
+): {
+  edgeIds: readonly string[];
+  governingSourceClaimIds: readonly string[];
+} | undefined => {
+  const value = metadata?.sourceClaimEdgeRankDown;
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const edgeIds = stringList(value.edgeIds);
+  const governingSourceClaimIds = stringList(value.governingSourceClaimIds);
+
+  return edgeIds === undefined || governingSourceClaimIds === undefined
+    ? undefined
+    : { edgeIds, governingSourceClaimIds };
+};
+
+const containsExactly = (
+  actual: readonly string[],
+  expected: readonly string[]
+): boolean =>
+  actual.length === expected.length && expected.every((id) => actual.includes(id));
 
 const rawEvidenceRecallTriggerCount = (
   metadata: unknown
@@ -350,6 +395,115 @@ export const runActivationSmokeCheck = async (
       confidence: "high",
       notes: "Expired guidance remains warning-only.",
       metadata: { smokeId: marker }
+    });
+    const temporalGraphClaimInput = {
+      sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      executionRunId: executionRun.id,
+      mechanism: "Persisted SourceClaimEdges must affect activation only inside their current temporal window.",
+      krnImplication: "DecisionPacket authority must contain only current relation effects and exact governing IDs.",
+      doesNotProve: "A temporally current relation does not prove either endpoint claim is true.",
+      sourceAuthority: "project-decision" as const,
+      supportType: "implementation-boundary" as const,
+      consumer: "temporal source relation DecisionPacket proof",
+      falsifier: "An expired or equal-boundary SourceClaimEdge governs the persisted DecisionPacket.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
+      status: "proposed" as const,
+      metadata: {
+        ...sourceEvidenceMetadata,
+        temporalRelationProof: true
+      }
+    };
+    const temporalGoverningSourceClaim = await sourceRepository.createSourceClaim({
+      ...temporalGraphClaimInput,
+      claim: "Current source relation guidance governs KRN doctor activation readiness."
+    });
+    const temporalRankedDownSourceClaim = await sourceRepository.createSourceClaim({
+      ...temporalGraphClaimInput,
+      claim: "Older source relation guidance governs KRN doctor activation readiness."
+    });
+    const temporalBoundarySourceClaim = await sourceRepository.createSourceClaim({
+      ...temporalGraphClaimInput,
+      claim: "Equal-boundary source guidance must remain historical in KRN doctor activation.",
+      metadata: {
+        ...temporalGraphClaimInput.metadata,
+        validUntil: now
+      }
+    });
+    const temporalGoverningSourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: temporalGoverningSourceClaim.id,
+      status: "adopt",
+      decision: "Adopt the current temporal source relation guidance.",
+      rationale: "The current endpoint provides the governing side of the persisted temporal relation falsifier.",
+      falsifier: "The current endpoint cannot govern a supported current relation.",
+      consumer: "temporal source relation DecisionPacket proof",
+      metadata: { smokeId: marker }
+    });
+    const temporalRankedDownSourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: temporalRankedDownSourceClaim.id,
+      status: "adopt",
+      decision: "Adopt the older temporal source relation guidance before supersession.",
+      rationale: "Both endpoints must be decision-linked so only relation time selects the governing effect.",
+      falsifier: "The older endpoint is unavailable to the current supersession relation.",
+      consumer: "temporal source relation DecisionPacket proof",
+      metadata: { smokeId: marker }
+    });
+    const temporalGoverningSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: temporalGoverningSourceClaim.id,
+      sourceDecisionId: temporalGoverningSourceDecision.id,
+      targetType: "harness_run",
+      targetId: executionRun.id,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "Current temporal relation endpoint support.",
+      metadata: { smokeId: marker }
+    });
+    const temporalRankedDownSourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: temporalRankedDownSourceClaim.id,
+      sourceDecisionId: temporalRankedDownSourceDecision.id,
+      targetType: "harness_run",
+      targetId: executionRun.id,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "Historical temporal relation endpoint support.",
+      metadata: { smokeId: marker }
+    });
+    const currentSourceClaimEdge = await sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: temporalGoverningSourceClaim.id,
+      toSourceClaimId: temporalRankedDownSourceClaim.id,
+      kind: "supersedes",
+      metadata: {
+        smokeId: marker,
+        consumer: "temporal source relation DecisionPacket proof",
+        evidenceRef: executionRun.id,
+        doesNotProve: "Current supersession does not prove endpoint truth."
+      }
+    });
+    const expiredSourceClaimEdge = await sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: temporalRankedDownSourceClaim.id,
+      toSourceClaimId: temporalGoverningSourceClaim.id,
+      kind: "invalidates",
+      metadata: {
+        smokeId: marker,
+        consumer: "temporal source relation DecisionPacket proof",
+        evidenceRef: executionRun.id,
+        doesNotProve: "Expired invalidation does not prove current endpoint authority.",
+        validUntil: expiredValidUntil
+      }
+    });
+    const equalSourceClaimEdge = await sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: temporalRankedDownSourceClaim.id,
+      toSourceClaimId: temporalGoverningSourceClaim.id,
+      kind: "supersedes",
+      metadata: {
+        smokeId: marker,
+        consumer: "temporal source relation DecisionPacket proof",
+        evidenceRef: executionRun.id,
+        doesNotProve: "Equal-boundary supersession does not prove current endpoint authority.",
+        validUntil: now
+      }
     });
     const baselineMemory = await memoryRepository.createMemoryRecord({
       projectId: project.id,
@@ -618,11 +772,31 @@ export const runActivationSmokeCheck = async (
       (candidate) =>
         candidate.subjectId === expiredSourceClaim.id && candidate.exclusion?.reason === "stale"
     );
+    const temporalBoundaryWarningRetrieved = filterResult.candidates.some(
+      (candidate) =>
+        candidate.subjectId === temporalBoundarySourceClaim.id &&
+        candidate.exclusion?.reason === "stale"
+    );
+    const temporalRankedDownCandidate = filterResult.candidates.find(
+      (candidate) => candidate.subjectId === temporalRankedDownSourceClaim.id
+    );
+    const temporalGoverningCandidate = filterResult.candidates.find(
+      (candidate) => candidate.subjectId === temporalGoverningSourceClaim.id
+    );
+    const currentSourceClaimEdgeGoverned =
+      temporalRankedDownCandidate?.exclusion?.reason === "superseded" &&
+      hasSerializedReference(
+        temporalRankedDownCandidate.sourceClaimEdgeRankDown,
+        currentSourceClaimEdge.id
+      );
+    const expiredOrEqualSourceClaimEdgeGoverned =
+      hasSerializedReference(temporalGoverningCandidate, expiredSourceClaimEdge.id) ||
+      hasSerializedReference(temporalGoverningCandidate, equalSourceClaimEdge.id);
     const filteredCandidates = applyContextROI(
       filterResult.candidates,
       {
         tokenBudget: 420,
-        maxInclusions: 2,
+        maxInclusions: 3,
         minimumDiverseKinds: ["memory", "source"]
       }
     );
@@ -808,7 +982,10 @@ export const runActivationSmokeCheck = async (
       lowerAuthorityPeerClaim,
       lowerAuthorityClaim,
       crawlerClaim,
-      expiredSourceClaim
+      expiredSourceClaim,
+      temporalGoverningSourceClaim,
+      temporalRankedDownSourceClaim,
+      temporalBoundarySourceClaim
     ].length + 1;
     const memoryRecordCount = 2 + relevanceDistractorCount + 1;
     const relevantMemoryCandidateCount = candidates.filter(
@@ -838,6 +1015,16 @@ export const runActivationSmokeCheck = async (
     const persistedRelevantMemory = candidates.find(
       (candidate) => candidate.subjectId === relevantMemory.id
     );
+    const temporalPersistedRankedDownCandidate = candidates.find(
+      (candidate) => candidate.subjectId === temporalRankedDownSourceClaim.id
+    );
+    const temporalPersistedRankDown = persistedSourceClaimEdgeRankDown(
+      temporalPersistedRankedDownCandidate?.metadata
+    );
+    const temporalPersistedRankDownEdgeIds =
+      temporalPersistedRankDown?.edgeIds ?? [];
+    const temporalPersistedRankDownGoverningSourceClaimIds =
+      temporalPersistedRankDown?.governingSourceClaimIds ?? [];
     const relevantMemoryCanonicalScore = canonicalRelevantMemory.totalScore;
     const relevantMemoryPersistedScore = persistedRelevantMemory?.totalScore ?? Number.NaN;
     const lowerAuthorityPersistedCandidate = candidates.find(
@@ -953,6 +1140,51 @@ export const runActivationSmokeCheck = async (
       issuedPacketReadback.packet.brief.includedSourceClaimIds.includes(expiredSourceClaim.id) ||
       issuedPacketReadback.packet.governingDecisionIds.includes(expiredSourceDecision.id) ||
       issuedPacketReadback.packet.sourceDecisionEdgeIds.includes(expiredSourceDecisionEdge.id);
+    const temporalBoundaryPacketExclusionCount =
+      issuedPacketReadback.packet.contextExclusions.filter(
+        (exclusion) =>
+          exclusion.subjectType === "source_claim" &&
+          exclusion.subjectId === temporalBoundarySourceClaim.id &&
+          exclusion.reason === "stale"
+      ).length;
+    const temporalBoundarySelectedAsAuthority =
+      issuedPacketReadback.packet.sourceClaimIds.includes(temporalBoundarySourceClaim.id) ||
+      issuedPacketReadback.packet.caveatedSourceClaimIds.includes(temporalBoundarySourceClaim.id) ||
+      issuedPacketReadback.packet.brief.includedSourceClaimIds.includes(
+        temporalBoundarySourceClaim.id
+      );
+    const temporalSourceClaimIds = [
+      temporalGoverningSourceClaim.id,
+      temporalRankedDownSourceClaim.id,
+      temporalBoundarySourceClaim.id
+    ];
+    const temporalPacketSourceClaimIds = issuedPacketReadback.packet.sourceClaimIds.filter(
+      (id) => temporalSourceClaimIds.includes(id)
+    );
+    const temporalPacketBriefSourceClaimIds =
+      issuedPacketReadback.packet.brief.includedSourceClaimIds.filter(
+        (id) => temporalSourceClaimIds.includes(id)
+      );
+    const temporalSourceDecisionEdgeIds = [
+      temporalGoverningSourceDecisionEdge.id,
+      temporalRankedDownSourceDecisionEdge.id
+    ];
+    const temporalPacketSourceDecisionEdgeIds =
+      issuedPacketReadback.packet.sourceDecisionEdgeIds.filter(
+        (id) => temporalSourceDecisionEdgeIds.includes(id)
+      );
+    const currentSourceClaimEdgePacketRefCount = hasSerializedReference(
+      issuedPacketReadback.packet,
+      currentSourceClaimEdge.id
+    ) ? 1 : 0;
+    const expiredSourceClaimEdgePacketRefCount = hasSerializedReference(
+      issuedPacketReadback.packet,
+      expiredSourceClaimEdge.id
+    ) ? 1 : 0;
+    const equalSourceClaimEdgePacketRefCount = hasSerializedReference(
+      issuedPacketReadback.packet,
+      equalSourceClaimEdge.id
+    ) ? 1 : 0;
     const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
     const prefixItemCount = observationPrefixItemCount(readBackContextAssembly?.metadata);
     const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
@@ -962,7 +1194,19 @@ export const runActivationSmokeCheck = async (
         { label: "context assembly exists", passed: readBackContextAssembly !== undefined },
         { label: "context assembly retrieval run", passed: readBackContextAssembly?.retrievalRunId === retrievalRun.id },
         { label: "retrieval run exists", passed: readBackRetrievalRun !== undefined },
-        { label: "source claims", passed: sourceClaimCount === 6 },
+        { label: "source claims", passed: sourceClaimCount === 9 },
+        {
+          label: "only current SourceClaimEdge governs activation",
+          passed: currentSourceClaimEdgeGoverned && !expiredOrEqualSourceClaimEdgeGoverned
+        },
+        {
+          label: "persisted temporal rank-down names the exact current edge and governing claim",
+          passed:
+            containsExactly(temporalPersistedRankDownEdgeIds, [currentSourceClaimEdge.id]) &&
+            containsExactly(temporalPersistedRankDownGoverningSourceClaimIds, [
+              temporalGoverningSourceClaim.id
+            ])
+        },
         {
           label: "lower authority stored below artifact",
           passed:
@@ -1052,22 +1296,64 @@ export const runActivationSmokeCheck = async (
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
         { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
         { label: "persisted stale source retrieved as warning", passed: staleSourceWarningRetrieved },
+        {
+          label: "equal-boundary source retrieved as warning",
+          passed: temporalBoundaryWarningRetrieved
+        },
         { label: "persisted stale memory retrieved as warning", passed: staleMemoryWarningRetrieved },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
-        { label: "retrieval candidates", passed: retrievalCandidateCount === 36 },
-        { label: "activation decisions", passed: activationDecisionCount === 36 },
-        { label: "included decisions", passed: includedDecisionCount === 2 },
-        { label: "excluded decisions", passed: excludedDecisionCount === 31 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 39 },
+        { label: "activation decisions", passed: activationDecisionCount === 39 },
+        { label: "included decisions", passed: includedDecisionCount === 3 },
+        { label: "excluded decisions", passed: excludedDecisionCount === 32 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
-        { label: "stale warning decisions", passed: staleDecisionCount === 2 },
+        { label: "stale warning decisions", passed: staleDecisionCount === 3 },
         { label: "stale memory warning persisted", passed: staleMemoryWarningPersisted },
         { label: "stale source warning persisted", passed: staleSourceWarningPersisted },
         { label: "stale memory appears exactly once in packet exclusions", passed: packetStaleMemoryExclusionCount === 1 },
         { label: "stale source appears exactly once in packet exclusions", passed: packetStaleSourceExclusionCount === 1 },
         { label: "stale memory absent from selected packet authority", passed: !staleMemorySelectedAsAuthority },
         { label: "stale source absent from selected packet authority", passed: !staleSourceSelectedAsAuthority },
-        { label: "context items", passed: contextItemCount === 2 },
-        { label: "context exclusions", passed: contextExclusionCount === 34 },
+        {
+          label: "equal-boundary source appears once in packet exclusions",
+          passed: temporalBoundaryPacketExclusionCount === 1
+        },
+        {
+          label: "equal-boundary source absent from selected packet authority",
+          passed: !temporalBoundarySelectedAsAuthority
+        },
+        {
+          label: "DecisionPacket selects exactly the current temporal source claim",
+          passed: containsExactly(temporalPacketSourceClaimIds, [
+            temporalGoverningSourceClaim.id
+          ])
+        },
+        {
+          label: "DecisionPacket brief includes exactly the current temporal source claim",
+          passed: containsExactly(temporalPacketBriefSourceClaimIds, [
+            temporalGoverningSourceClaim.id
+          ])
+        },
+        {
+          label: "DecisionPacket carries exactly the current temporal SourceDecisionEdge",
+          passed: containsExactly(temporalPacketSourceDecisionEdgeIds, [
+            temporalGoverningSourceDecisionEdge.id
+          ])
+        },
+        {
+          label: "current SourceClaimEdge persists in DecisionPacket",
+          passed: currentSourceClaimEdgePacketRefCount === 1
+        },
+        {
+          label: "expired SourceClaimEdge absent from DecisionPacket",
+          passed: expiredSourceClaimEdgePacketRefCount === 0
+        },
+        {
+          label: "equal-boundary SourceClaimEdge absent from DecisionPacket",
+          passed: equalSourceClaimEdgePacketRefCount === 0
+        },
+        { label: "context items", passed: contextItemCount === 3 },
+        { label: "context exclusions", passed: contextExclusionCount === 36 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
         { label: "raw recall trigger readback", passed: rawRecallTriggerCount >= 0 }
       ],
@@ -1103,6 +1389,20 @@ export const runActivationSmokeCheck = async (
       lowerAuthorityCandidateScore,
       lowerAuthorityPeerCandidateScore,
       lowerAuthorityPacketExclusionMatched,
+      temporalGoverningSourceClaimId: temporalGoverningSourceClaim.id,
+      temporalRankedDownSourceClaimId: temporalRankedDownSourceClaim.id,
+      temporalBoundarySourceClaimId: temporalBoundarySourceClaim.id,
+      currentSourceClaimEdgeId: currentSourceClaimEdge.id,
+      expiredSourceClaimEdgeId: expiredSourceClaimEdge.id,
+      equalSourceClaimEdgeId: equalSourceClaimEdge.id,
+      temporalPacketSourceClaimIds,
+      temporalPacketBriefSourceClaimIds,
+      temporalPacketSourceDecisionEdgeIds,
+      temporalPersistedRankDownEdgeIds,
+      temporalPersistedRankDownGoverningSourceClaimIds,
+      currentSourceClaimEdgePacketRefCount,
+      expiredSourceClaimEdgePacketRefCount,
+      equalSourceClaimEdgePacketRefCount,
       memoryRecordCount,
       relevantMemoryRetrieved,
       relevantMemoryCandidateCount,
