@@ -398,6 +398,7 @@ interface EvidenceContractScenario {
   readonly taskStatus: HarnessRunAggregate["taskContract"]["status"];
   readonly runStatus: HarnessRunAggregate["executionRun"]["status"];
   readonly bindingTaskContractId?: string;
+  readonly evidenceContractOverrides?: Readonly<Record<string, unknown>>;
   readonly expectedActivation:
     | { readonly status: "active" }
     | { readonly status: "inactive"; readonly reason: EvidenceContractInactiveReason };
@@ -477,6 +478,32 @@ const plannedEvidenceContractScenario = {
   }
 } as const satisfies EvidenceContractScenario;
 
+const blankEvidenceContractScenarios = [{
+  label: "blank command",
+  evidenceContractOverrides: {
+    commands: [{ command: "   ", required: true }]
+  }
+}, {
+  label: "blank review burden",
+  evidenceContractOverrides: {
+    reviewBurden: "   "
+  }
+}, {
+  label: "blank rollback path",
+  evidenceContractOverrides: {
+    rollbackPath: "   "
+  }
+}].map((scenario): EvidenceContractScenario => ({
+  ...scenario,
+  taskStatus: "active",
+  runStatus: "running",
+  bindingTaskContractId: "task-agent-1",
+  expectedActivation: {
+    status: "inactive",
+    reason: "invalid_evidence_contract"
+  }
+}));
+
 const bindingEvidenceContractScenarios = [
   inactiveCommandRenderingScenarios[0],
   inactiveCommandRenderingScenarios[4]
@@ -510,7 +537,8 @@ const aggregateForEvidenceContractScenario = (
         diffRisk: "medium",
         reviewBurden: "Review frontend bootstrap output against the current project standard.",
         rollbackPath: "Revert the frontend bootstrap slice.",
-        metadata: {}
+        metadata: {},
+        ...scenario.evidenceContractOverrides
       }
     }
   },
@@ -1003,6 +1031,22 @@ describe("decision packet CLI", () => {
 
     expect(json.packet.verificationCommands).toEqual([]);
   });
+
+  it.each(blankEvidenceContractScenarios)(
+    "rejects $label before it becomes packet verification authority",
+    async (scenario) => {
+      const json = await expectScenarioDecisionPacketReadback(scenario);
+
+      expect(json.readModel.evidenceContractActivation).toMatchObject({
+        status: "inactive",
+        reason: "invalid_evidence_contract"
+      });
+      expect(json.readModel.evidenceContract).toBeUndefined();
+      expect(json.packet.evidenceContract).toBeUndefined();
+      expect(json.packet.verificationCommands).toEqual([]);
+      expect(json.packet.abstentionScore.status).toBe("abstain");
+    }
+  );
 
   it.each(inactiveEvidenceContractScenarios)(
     "does not render $label as an active EvidenceContract",

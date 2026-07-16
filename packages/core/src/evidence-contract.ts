@@ -87,7 +87,12 @@ export const parseEvidenceContract = (value: unknown): EvidenceContract | undefi
   }
 
   const commands = value.commands.map((item): EvidenceContractCommand | undefined => {
-    if (!isRecord(item) || typeof item.command !== "string" || typeof item.required !== "boolean") {
+    if (
+      !isRecord(item) ||
+      typeof item.command !== "string" ||
+      item.command.trim().length === 0 ||
+      typeof item.required !== "boolean"
+    ) {
       return undefined;
     }
 
@@ -104,7 +109,9 @@ export const parseEvidenceContract = (value: unknown): EvidenceContract | undefi
     value.taskContractId.trim().length === 0 ||
     !isDiffRisk(value.diffRisk) ||
     typeof value.reviewBurden !== "string" ||
-    typeof value.rollbackPath !== "string"
+    value.reviewBurden.trim().length === 0 ||
+    typeof value.rollbackPath !== "string" ||
+    value.rollbackPath.trim().length === 0
   ) {
     return undefined;
   }
