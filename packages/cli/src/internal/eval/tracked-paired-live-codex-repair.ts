@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import {
   access,
+  chmod,
+  copyFile,
   cp,
   lstat,
   mkdir,
@@ -67,7 +69,7 @@ export type PairedTrialManifest = {
   readonly containment: {
     readonly command: string;
     readonly version: string;
-    readonly network: "disabled";
+    readonly network: "model_service_egress";
     readonly workspaceWriteRoot: "{targetRoot}";
     readonly homeRoot: "{sandboxRoot}";
   };
@@ -178,6 +180,7 @@ type TrialConditions = {
   readonly observed?: {
     readonly containment?: TrialToolObservation;
     readonly codex?: TrialToolObservation;
+    readonly authentication?: CommandResult;
     readonly profileHash?: string;
     readonly environmentProfileHash?: string;
     readonly environmentVariableNames?: readonly string[];
@@ -278,7 +281,7 @@ const isManifestCodex = (value: unknown): boolean => {
 const isManifestContainment = (value: unknown): boolean =>
   isRecord(value) &&
   hasRequiredStrings(value, ["command", "version", "workspaceWriteRoot", "homeRoot"]) &&
-  value["network"] === "disabled" &&
+  value["network"] === "model_service_egress" &&
   value["workspaceWriteRoot"] === "{targetRoot}" &&
   value["homeRoot"] === "{sandboxRoot}";
 
@@ -320,7 +323,7 @@ const packetShapeReasons = (
     missingReason(request?.["runId"] === manifest.runId, "packet runId does not match the trial manifest"),
     missingReason(checksum !== undefined, "packet checksum is missing"),
     missingReason(task?.["id"] === manifest.taskId, "packet task id does not match the trial manifest"),
-    missingReason(typeof task?.["objective"] === "string" && task["objective"].includes(manifest.projectId), "packet task is not bound to the manifest project")
+    missingReason(task?.["projectId"] === manifest.projectId, "packet task is not bound to the manifest project")
   ].filter((reason): reason is string => reason !== undefined);
 
   return { reasons, ...(body === undefined ? {} : { body }), ...(checksum === undefined ? {} : { checksum }) };
@@ -411,8 +414,7 @@ const runProcess = (
 
 const allowlistedEnvironment = (
   sandboxRoot: string,
-  targetRoot: string,
-  includeCredentials: boolean
+  targetRoot: string
 ): NodeJS.ProcessEnv => ({
   PATH: process.env.PATH,
   CI: "1",
@@ -422,11 +424,26 @@ const allowlistedEnvironment = (
   TMPDIR: sandboxRoot,
   TMP: sandboxRoot,
   TEMP: sandboxRoot,
-  KRN_TRIAL_TARGET_ROOT: targetRoot,
-  ...(!includeCredentials || process.env.KRN_TRIAL_OPENAI_API_KEY === undefined
-    ? {}
-    : { OPENAI_API_KEY: process.env.KRN_TRIAL_OPENAI_API_KEY })
+  KRN_TRIAL_TARGET_ROOT: targetRoot
 });
+
+const materializeChatGptAuth = async (sandboxRoot: string): Promise<string | undefined> => {
+  const hostCodexHome = process.env.KRN_TRIAL_CODEX_HOME?.trim();
+  if (hostCodexHome === undefined || hostCodexHome.length === 0) {
+    return "explicit host Codex home is unavailable";
+  }
+  const source = join(hostCodexHome, "auth.json");
+  const destination = join(sandboxRoot, "auth.json");
+  try {
+    const metadata = await lstat(source);
+    if (!metadata.isFile() || metadata.isSymbolicLink()) return "host Codex ChatGPT authentication is unavailable";
+    await copyFile(source, destination, constants.COPYFILE_EXCL);
+    await chmod(destination, 0o600);
+    return undefined;
+  } catch {
+    return "host Codex ChatGPT authentication is unavailable";
+  }
+};
 
 const replaceArgument = (argument: string, replacements: Readonly<Record<string, string>>): string =>
   Object.entries(replacements).reduce((result, [key, value]) => result.replaceAll(key, value), argument);
@@ -526,13 +543,14 @@ const hasAmbiguousCodexArgument = (argument: string): boolean =>
   (argument.startsWith("-c") && argument.length > 2) ||
   argument === "--yolo" ||
   argument === "--dangerously-bypass-approvals-and-sandbox" ||
-  argument === "--ignore-user-config" ||
   ["--model", "--profile", "--sandbox", "--ask-for-approval"].some((flag) =>
     argument.startsWith(`${flag}=`)
   );
 
 const manifestConditionReasons = (manifest: PairedTrialManifest): readonly string[] => {
   const profileHash = sha256(manifest.codex.profile.config);
+  const execIndex = manifest.codex.args.indexOf("exec");
+  const approvalIndex = manifest.codex.args.indexOf("--ask-for-approval");
 
   return [
     missingReason(manifest.codex.command.trim().length > 0, "Codex command is missing"),
@@ -544,6 +562,10 @@ const manifestConditionReasons = (manifest: PairedTrialManifest): readonly strin
     missingReason(exactFlagValue(manifest.codex.args, "--profile") === manifest.codex.profile.name, "Codex --profile does not match the manifest"),
     missingReason(exactFlagValue(manifest.codex.args, "--sandbox") === manifest.codex.permissions.sandbox, "Codex --sandbox does not match the manifest"),
     missingReason(exactFlagValue(manifest.codex.args, "--ask-for-approval") === manifest.codex.permissions.approval, "Codex approval mode does not match the manifest"),
+    missingReason(execIndex >= 0 && approvalIndex >= 0 && approvalIndex < execIndex, "Codex approval mode must be configured before exec"),
+    missingReason(manifest.codex.args.includes("--ignore-user-config"), "Codex user config must be ignored"),
+    missingReason(manifest.codex.args.includes("--ignore-rules"), "Codex user rules must be ignored"),
+    missingReason(manifest.codex.args.includes("--ephemeral"), "Codex session persistence must be disabled"),
     missingReason(manifest.codex.args.filter((argument) => argument.includes("{prompt}")).length === 1, "Codex args must contain exactly one prompt placeholder"),
     missingReason(/^[A-Za-z0-9_-]+$/u.test(manifest.codex.profile.name), "Codex profile name is unsafe"),
     missingReason(profileHash === manifest.codex.profile.hash, "Codex profile content does not match its pinned hash"),
@@ -1323,6 +1345,10 @@ const trialPrerequisiteFailure = (input: {
     : undefined
 ].find((candidate) => candidate !== undefined);
 
+const hasChatGptAuthentication = (result: CommandResult): boolean =>
+  result.exitCode === 0 &&
+  `${result.stdout}\n${result.stderr}`.includes("Logged in using ChatGPT");
+
 const prepareTrackedTrial = async (input: {
   readonly context: TrialContext;
   readonly sourceRoot: string;
@@ -1330,8 +1356,8 @@ const prepareTrackedTrial = async (input: {
   readonly sandboxRoot: string;
   readonly journal: TrialJournal;
 }): Promise<TrialPreparation> => {
-  const probeEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot, false);
-  const [containment, codex] = await Promise.all([
+  const probeEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot);
+  const [containment, codex, authentication] = await Promise.all([
     observeTool({
       command: input.context.manifest.containment.command,
       cwd: input.sourceRoot,
@@ -1341,6 +1367,11 @@ const prepareTrackedTrial = async (input: {
       command: input.context.manifest.codex.command,
       cwd: input.sourceRoot,
       environment: probeEnvironment
+    }),
+    runProcess(input.context.manifest.codex.command, ["login", "status"], {
+      cwd: input.sourceRoot,
+      env: probeEnvironment,
+      timeoutMs: 10_000
     })
   ]);
   let conditions: TrialConditions = {
@@ -1348,16 +1379,21 @@ const prepareTrackedTrial = async (input: {
     observed: {
       containment,
       codex,
+      authentication,
       environmentVariableNames: Object.keys(probeEnvironment).sort(),
-      credentialProvided: false
+      credentialProvided: hasChatGptAuthentication(authentication)
     }
   };
   const prerequisite = trialPrerequisiteFailure({ containment, codex, manifest: input.context.manifest });
   await input.journal.phase("conditions_observed", {
     containment,
     codex,
+    authentication: authentication.exitCode === 0 ? "chatgpt" : "unavailable",
     prerequisite: prerequisite?.reason
   });
+  if (!hasChatGptAuthentication(authentication)) {
+    return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
+  }
   if (prerequisite !== undefined) return { kind: "rejected", ...prerequisite, conditions };
 
   const profilePath = join(input.sandboxRoot, `${input.context.manifest.codex.profile.name}.config.toml`);
@@ -1421,7 +1457,7 @@ const prepareComparableTrial = async (input: {
   readonly journal: TrialJournal;
 }): Promise<ComparableTrialPreparation> => {
   let context = input.context;
-  const materializationEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot, false);
+  const materializationEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot);
   const baseline = await materializeTarget(input.sourceRoot, join(input.trialRoot, "baseline"), materializationEnvironment);
   const krn = await materializeTarget(input.sourceRoot, join(input.trialRoot, "krn"), materializationEnvironment);
   await input.journal.phase("materialized", { baselineTreeHash: baseline.treeHash, krnTreeHash: krn.treeHash });
@@ -1438,10 +1474,10 @@ const prepareComparableTrial = async (input: {
     };
   }
 
-  const baselineArmEnvironment = allowlistedEnvironment(input.sandboxRoot, baseline.root, true);
-  const krnArmEnvironment = allowlistedEnvironment(input.sandboxRoot, krn.root, true);
-  const baselineObservationEnvironment = allowlistedEnvironment(input.sandboxRoot, baseline.root, false);
-  const krnObservationEnvironment = allowlistedEnvironment(input.sandboxRoot, krn.root, false);
+  const baselineArmEnvironment = allowlistedEnvironment(input.sandboxRoot, baseline.root);
+  const krnArmEnvironment = allowlistedEnvironment(input.sandboxRoot, krn.root);
+  const baselineObservationEnvironment = allowlistedEnvironment(input.sandboxRoot, baseline.root);
+  const krnObservationEnvironment = allowlistedEnvironment(input.sandboxRoot, krn.root);
   const environmentHash = environmentProfileHash(baselineArmEnvironment, input.sandboxRoot, baseline.root);
   context = {
     ...context,
@@ -1451,7 +1487,7 @@ const prepareComparableTrial = async (input: {
         ...context.conditions.observed,
         environmentProfileHash: environmentHash,
         environmentVariableNames: Object.keys(baselineArmEnvironment).sort(),
-        credentialProvided: baselineArmEnvironment.OPENAI_API_KEY !== undefined
+        credentialProvided: context.conditions.observed?.credentialProvided === true
       }
     }
   };
@@ -1527,7 +1563,9 @@ const executeComparableTrial = async (input: {
       replaceArgument(argument, { "{prompt}": prompt, "{targetRoot}": target.root })
     );
     return runProcess(input.containmentExecutable, [
-      "--die-with-parent", "--unshare-net", "--bind", target.root, target.root,
+      "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
+      "--tmpfs", "/tmp", "--dir", "/tmp/.git",
+      "--bind", target.root, target.root,
       "--bind", input.sandboxRoot, input.sandboxRoot, "--", input.codexExecutable, ...args
     ], {
       cwd: target.root,
@@ -1689,19 +1727,20 @@ export const runTrackedPairedTrial = async (
   if (initialFailure !== undefined) {
     return finalizeTrackedTrial({ context, journal: journalResult.journal, artifact: initialFailure });
   }
-  if (process.env.KRN_TRIAL_OPENAI_API_KEY === undefined) {
-    return finalizeTrackedTrial({
-      context,
-      journal: journalResult.journal,
-      artifact: {
-        status: "blocked",
-        invalidReasons: ["explicit trial Codex credentials are unavailable"]
-      }
-    });
-  }
   const trialRoot = await mkdtemp(join(tmpdir(), "krn-tracked-paired-trial-"));
   const sandboxRoot = await mkdtemp(join(trialRoot, "sandbox-"));
   try {
+    const authenticationFailure = await materializeChatGptAuth(sandboxRoot);
+    if (authenticationFailure !== undefined) {
+      return finalizeTrackedTrial({
+        context,
+        journal: journalResult.journal,
+        artifact: {
+          status: "blocked",
+          invalidReasons: [authenticationFailure]
+        }
+      });
+    }
     const preparation = await prepareTrackedTrial({
       context,
       sourceRoot: input.sourceRoot,
