@@ -1081,7 +1081,7 @@ describe("runCli", () => {
     ]).size).toBe(4);
   }, 15_000);
 
-  it("replays reviewable caller feedback after the first capture changes packet authority", async () => {
+  it("replays reviewable caller feedback after captured feedback becomes governing", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-retry`
@@ -1114,7 +1114,10 @@ describe("runCli", () => {
         storedResult = await createEvidenceFeedbackOnce(input);
         aggregate.evidenceBundles.push(storedResult.evidenceBundle);
         aggregate.reviewAssessments.push(storedResult.reviewAssessment);
-        aggregate.feedbackDeltas.push(storedResult.feedbackDelta);
+        aggregate.feedbackDeltas.push({
+          ...storedResult.feedbackDelta,
+          status: "accepted"
+        });
 
         return storedResult;
       }
@@ -2424,7 +2427,7 @@ describe("runCli", () => {
       feedbackDeltas: [{
         id: "feedback-delta-1",
         reviewAssessmentId: "review-assessment-1",
-        status: "candidate",
+        status: "accepted",
         memoryCandidates: [],
         sourceDecisions: [],
         evalCandidates: [],
@@ -2805,7 +2808,7 @@ describe("runCli", () => {
       feedbackDeltas: [{
         id: "feedback-delta-stale-selected-decision",
         reviewAssessmentId: "review-assessment-stale-selected-decision",
-        status: "candidate",
+        status: "accepted",
         memoryCandidates: [],
         sourceDecisions: [],
         evalCandidates: [],
