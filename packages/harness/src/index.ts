@@ -4,7 +4,6 @@ export * from "./knowledge-read-model.js";
 export * from "./knowledge-usefulness.js";
 export * from "./observations/index.js";
 export * from "./compiler/index.js";
-export * from "./corpus/index.js";
 export * from "./behavior-fixture-runner.js";
 export {
   validateClaimedCodexOutputEvidence
