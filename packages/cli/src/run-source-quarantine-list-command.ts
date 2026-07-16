@@ -33,6 +33,14 @@ interface SourceQuarantineListReport extends SourceAuthorityQuarantineReadbackRe
   };
 }
 
+const formatQuarantineItem = (
+  item: SourceAuthorityQuarantineReadbackReport["items"][number]
+): string =>
+  `- ${item.id} entity:${item.entityType}/${item.entityId} reason:${item.reason} project:${item.projectId ?? "unknown"} authority:${item.currentAuthority} resolution:${item.resolution} at:${item.quarantinedAt}`;
+
+const formatQuarantineItems = (report: SourceQuarantineListReport): readonly string[] =>
+  report.items.length === 0 ? ["- none"] : report.items.map(formatQuarantineItem);
+
 const formatText = (report: SourceQuarantineListReport): string => [
   "KRN Source Authority Quarantine Readback",
   "Persistence: read-only (Postgres)",
@@ -48,16 +56,33 @@ const formatText = (report: SourceQuarantineListReport): string => [
   `Truncated: ${report.truncated ? "yes" : "no"}`,
   "",
   "Quarantines:",
-  ...(report.items.length === 0
-    ? ["- none"]
-    : report.items.map((item) =>
-        `- ${item.id} entity:${item.entityType}/${item.entityId} reason:${item.reason} project:${item.projectId ?? "unknown"} authority:${item.currentAuthority} resolution:${item.resolution} at:${item.quarantinedAt}`
-      )),
+  ...formatQuarantineItems(report),
   "",
   "Proof:",
   ...report.proof.proves.map((item) => `- proves: ${item}`),
   ...report.proof.doesNotProve.map((item) => `- doesNotProve: ${item}`)
 ].join("\n");
+
+const createReport = (
+  readback: SourceAuthorityQuarantineReadbackReport
+): SourceQuarantineListReport => ({
+  kind: "source_authority_quarantine_readback",
+  persistence: "read_only_postgres",
+  snapshotConsistency: "repeatable_read",
+  dbWrites: "none",
+  mutation: "none",
+  ...readback,
+  proof: {
+    proves: [
+      "bounded keyset readback exposes quarantine reason, entity, time, project, current authority, and resolution",
+      "one repeatable-read read-only snapshot keeps counts and rows consistent"
+    ],
+    doesNotProve: ["source truth", "safe automatic restore or deletion", "production readiness"]
+  }
+});
+
+const renderReport = (report: SourceQuarantineListReport, json: boolean): string =>
+  json ? `${JSON.stringify(report, null, 2)}\n` : `${formatText(report)}\n`;
 
 export const runSourceQuarantineListCommand = async (
   runtime: SourceQuarantineListCommandRuntime
@@ -74,29 +99,8 @@ export const runSourceQuarantineListCommand = async (
     ...(runtime.command.projectId === undefined ? {} : { projectId: runtime.command.projectId }),
     ...(runtime.command.afterId === undefined ? {} : { afterId: runtime.command.afterId })
   });
-  const report: SourceQuarantineListReport = {
-    kind: "source_authority_quarantine_readback",
-    persistence: "read_only_postgres",
-    snapshotConsistency: "repeatable_read",
-    dbWrites: "none",
-    mutation: "none",
-    ...readback,
-    proof: {
-      proves: [
-        "bounded keyset readback exposes quarantine reason, entity, time, project, current authority, and resolution",
-        "one repeatable-read read-only snapshot keeps counts and rows consistent"
-      ],
-      doesNotProve: [
-        "source truth",
-        "safe automatic restore or deletion",
-        "production readiness"
-      ]
-    }
-  };
 
   return {
-    stdout: runtime.command.json === true
-      ? `${JSON.stringify(report, null, 2)}\n`
-      : `${formatText(report)}\n`
+    stdout: renderReport(createReport(readback), runtime.command.json === true)
   };
 };

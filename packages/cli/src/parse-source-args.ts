@@ -1902,6 +1902,27 @@ const parseSourceQuarantineAfterOption = (
   return { matched: true, nextIndex: parsed.nextIndex };
 };
 
+const parseSourceQuarantineListToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceQuarantineListCommand
+): SourceTokenParseResult => {
+  const after = parseSourceQuarantineAfterOption(rest, index, sourceCommand);
+
+  if ("error" in after) {
+    return { kind: "error", error: after.error };
+  }
+
+  return after.matched
+    ? { kind: "next", nextIndex: after.nextIndex }
+    : parseSourceDecisionReadbackToken(
+        rest,
+        index,
+        sourceCommand,
+        formatSourceQuarantineListUsage()
+      );
+};
+
 const parseSourceQuarantineListArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return { command: { kind: "sourceQuarantineListHelp" } };
@@ -1910,21 +1931,7 @@ const parseSourceQuarantineListArgs = (rest: readonly string[]): ParseArgsResult
   const sourceCommand: SourceQuarantineListCommand = { kind: "sourceQuarantineList" };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const after = parseSourceQuarantineAfterOption(rest, index, sourceCommand);
-    if ("error" in after) {
-      return { error: after.error };
-    }
-    if (after.matched) {
-      index = after.nextIndex;
-      continue;
-    }
-
-    const parsed = parseSourceDecisionReadbackToken(
-      rest,
-      index,
-      sourceCommand,
-      formatSourceQuarantineListUsage()
-    );
+    const parsed = parseSourceQuarantineListToken(rest, index, sourceCommand);
     if (parsed.kind === "help") {
       return { command: { kind: "sourceQuarantineListHelp" } };
     }
