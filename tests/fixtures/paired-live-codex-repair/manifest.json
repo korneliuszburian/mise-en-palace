@@ -4,7 +4,7 @@
   "sourcePath": "tests/fixtures/target-repos/weak-json-boundary-typescript",
   "projectId": "weak-json-boundary-typescript",
   "taskId": "weak-json-repair",
-  "task": "Repair the weak JSON input and typed result boundary in this controlled TypeScript target.",
+  "task": "Make the controlled user-creation boundary satisfy its observable invalid-input contract.",
   "requiredDecisionIds": [
     "weak-json-parse-unknown",
     "weak-json-result-union",
