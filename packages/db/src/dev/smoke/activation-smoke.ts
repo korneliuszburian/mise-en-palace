@@ -84,6 +84,10 @@ export interface ActivationSmokeReport {
   temporalPacketSourceDecisionEdgeIds: readonly string[];
   temporalPersistedRankDownEdgeIds: readonly string[];
   temporalPersistedRankDownGoverningSourceClaimIds: readonly string[];
+  expandedEndpointLexicalSeedCount: number;
+  expandedEndpointPacketExclusionCount: number;
+  expandedEndpointSupersededPathCount: number;
+  expandedEndpointGoverningRefCount: number;
   currentSourceClaimEdgePacketRefCount: number;
   expiredSourceClaimEdgePacketRefCount: number;
   equalSourceClaimEdgePacketRefCount: number;
@@ -423,7 +427,12 @@ export const runActivationSmokeCheck = async (
     });
     const temporalRankedDownSourceClaim = await sourceRepository.createSourceClaim({
       ...temporalGraphClaimInput,
-      claim: "Older source relation guidance governs KRN doctor activation readiness."
+      claim: "Cerulean widgets rotate clockwise before sunrise.",
+      mechanism: "A brass escapement turns four teeth at dawn.",
+      krnImplication: "Retain the obsolete widget route solely as a discarded path.",
+      doesNotProve: "Widget folklore is correct.",
+      consumer: "cerulean-widget-archive",
+      falsifier: "The cerulean route vanishes."
     });
     const temporalBoundarySourceClaim = await sourceRepository.createSourceClaim({
       ...temporalGraphClaimInput,
@@ -654,6 +663,14 @@ export const runActivationSmokeCheck = async (
     });
 
     const sourceQuery = buildSourceQuery(taskContract);
+    const lexicalSourceSeeds = await sourceRepository.listClaimsForProject(
+      project.id,
+      25,
+      { terms: sourceQuery.terms, now }
+    );
+    const expandedEndpointLexicalSeedCount = lexicalSourceSeeds.filter(
+      (claim) => claim.id === temporalRankedDownSourceClaim.id
+    ).length;
     const [foreignProject] = await db
       .insert(projects)
       .values({
@@ -1240,6 +1257,30 @@ export const runActivationSmokeCheck = async (
       issuedPacketReadback.packet.sourceDecisionEdgeIds.filter(
         (id) => temporalSourceDecisionEdgeIds.includes(id)
       );
+    const expandedEndpointPacketExclusionCount =
+      issuedPacketReadback.packet.contextExclusions.filter(
+        (exclusion) =>
+          exclusion.subjectType === "source_claim" &&
+          exclusion.subjectId === temporalRankedDownSourceClaim.id &&
+          exclusion.reason === "superseded"
+      ).length;
+    const expandedEndpointSupersededPathCount =
+      issuedPacketReadback.packet.supersededPathIds.filter(
+        (id) => id === temporalRankedDownSourceClaim.id
+      ).length;
+    const expandedEndpointGoverningIds = new Set([
+      temporalRankedDownSourceClaim.id,
+      temporalRankedDownSourceDecision.id,
+      temporalRankedDownSourceDecisionEdge.id
+    ]);
+    const expandedEndpointGoverningRefCount = [
+      ...issuedPacketReadback.packet.sourceClaimIds,
+      ...issuedPacketReadback.packet.caveatedSourceClaimIds,
+      ...issuedPacketReadback.packet.brief.includedSourceClaimIds,
+      ...issuedPacketReadback.packet.governingDecisionIds,
+      ...issuedPacketReadback.packet.sourceDecisionIds,
+      ...issuedPacketReadback.packet.sourceDecisionEdgeIds
+    ].filter((id) => expandedEndpointGoverningIds.has(id)).length;
     const currentSourceClaimEdgePacketRefCount = hasSerializedReference(
       issuedPacketReadback.packet,
       currentSourceClaimEdge.id
@@ -1277,6 +1318,22 @@ export const runActivationSmokeCheck = async (
             containsExactly(temporalPersistedRankDownGoverningSourceClaimIds, [
               temporalGoverningSourceClaim.id
             ])
+        },
+        {
+          label: "graph-expanded endpoint is absent from lexical source seeds",
+          passed: expandedEndpointLexicalSeedCount === 0
+        },
+        {
+          label: "graph-expanded endpoint appears once as a superseded packet exclusion",
+          passed: expandedEndpointPacketExclusionCount === 1
+        },
+        {
+          label: "graph-expanded endpoint appears once in packet superseded paths",
+          passed: expandedEndpointSupersededPathCount === 1
+        },
+        {
+          label: "graph-expanded endpoint remains absent from packet governing references",
+          passed: expandedEndpointGoverningRefCount === 0
         },
         {
           label: "lower authority stored below artifact",
@@ -1477,6 +1534,10 @@ export const runActivationSmokeCheck = async (
       temporalPacketSourceDecisionEdgeIds,
       temporalPersistedRankDownEdgeIds,
       temporalPersistedRankDownGoverningSourceClaimIds,
+      expandedEndpointLexicalSeedCount,
+      expandedEndpointPacketExclusionCount,
+      expandedEndpointSupersededPathCount,
+      expandedEndpointGoverningRefCount,
       currentSourceClaimEdgePacketRefCount,
       expiredSourceClaimEdgePacketRefCount,
       equalSourceClaimEdgePacketRefCount,

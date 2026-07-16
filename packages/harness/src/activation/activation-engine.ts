@@ -619,7 +619,7 @@ const expandGovernedSourceClaimEndpoints = async (input: {
 
   const endpointClaims = await Promise.all(
     governedEndpointIds(input.sourceClaims, input.edges, input.now).map((sourceClaimId) =>
-      getSourceClaimForProject(input.projectId, sourceClaimId)
+      input.sourceRepository.getSourceClaimForProject?.(input.projectId, sourceClaimId)
     )
   );
 
