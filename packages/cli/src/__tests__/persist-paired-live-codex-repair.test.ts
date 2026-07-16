@@ -226,7 +226,10 @@ describe("paired live Codex repair persistence", () => {
     const failedScore: PairedRepairScore = {
       outcome: "invalid",
       baseline: arm("fail"),
-      krn: arm(),
+      krn: {
+        ...arm(),
+        checks: [{ name: "finite_result_state", passed: true, details: "partial observation" }]
+      },
       reason: "baseline failed"
     };
     const prepared = prepare(artifact({ status: "invalid", score: failedScore }));
@@ -242,6 +245,7 @@ describe("paired live Codex repair persistence", () => {
       outcome: "invalid",
       usefulnessOutcome: "unknown"
     });
+    expect(prepared.decisionApplications).toEqual([]);
   });
 
   it("persists a blocked attempt only as an unknown observation", () => {

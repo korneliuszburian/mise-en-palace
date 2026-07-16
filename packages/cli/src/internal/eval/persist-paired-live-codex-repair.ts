@@ -427,7 +427,8 @@ export const preparePairedTrialPersistence = (input: {
   }
 
   const evidenceRefs = artifactEvidenceRefs(input.artifact);
-  const observedApplications = input.artifact.score === undefined
+  const observedApplications = input.artifact.score === undefined ||
+    input.artifact.score.outcome === "invalid"
     ? []
     : observedPairedDecisionApplications({
         score: input.artifact.score,
