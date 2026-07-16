@@ -57,6 +57,7 @@ export interface DecisionCorpusImportDbSmokeReport {
   readonly coverage: SourceCoverageReport;
   readonly replayStable: boolean;
   readonly replayPersistedArtifactCount: number;
+  readonly partialTupleMutationRejected: boolean;
   readonly partialReplayRejected: boolean;
   readonly changedReplayRejected: boolean;
   readonly atomicFailureRolledBack: boolean;
@@ -369,6 +370,7 @@ interface DecisionCorpusImportReconciliationProofInput {
   readonly smokeId: string;
   readonly partialSmokeId: string;
   readonly partialSourceArtifactId: string;
+  readonly partialDecisionId: string;
   readonly partialSourceChunkIds: readonly string[];
   readonly now: string;
   readonly repoRoot: string;
@@ -423,7 +425,8 @@ const proveDecisionCorpusImportReconciliation = async (
   const equivalentImport = requiredReconciledImport(readback.full, equivalentSmokeId);
   const boundedImport = requiredReconciledImport(readback.bounded, input.smokeId);
   const pagedImport = requiredReconciledImport(readback.paged, equivalentSmokeId);
-  const expectedEquivalentImportIds = [equivalentSmokeId];
+  const expectedEquivalentImportIds = [equivalentSmokeId, input.partialSmokeId].sort();
+  const expectedBoundedEquivalentImportIds = expectedEquivalentImportIds.slice(0, 1);
   const decisionCount = input.fixture.decisions.length;
   const partialRow = partialImport.rows.items.find(
     (row) => row.sourceArtifactId === input.partialSourceArtifactId
@@ -449,12 +452,11 @@ const proveDecisionCorpusImportReconciliation = async (
   requireSmokeEqual(partialImport.rowCount, decisionCount, "partial import row count");
   requireSmokeEqual(partialImport.completeRowCount, decisionCount - 1, "partial complete row count");
   requireSmokeEqual(partialImport.partialRowCount, 1, "partial row count");
-  requireSmokeEqual(partialRow.decisionId, null, "partial missing decision identity");
+  requireSmokeEqual(partialRow.decisionId, input.partialDecisionId, "partial decision identity");
   requireSmokeEqual(partialRow.lifecycle, "partial", "partial tuple lifecycle");
   requireSmokeEqual(
     partialRow.violations,
     [
-      "missing_import_row_id",
       "source_chunk_cardinality",
       "search_document_cardinality"
     ],
@@ -491,7 +493,7 @@ const proveDecisionCorpusImportReconciliation = async (
   );
   requireSmokeEqual(
     boundedImport.equivalentImportIds.items,
-    expectedEquivalentImportIds,
+    expectedBoundedEquivalentImportIds,
     "bounded equivalent import IDs"
   );
   requireSmokeEqual(readback.paged.afterImportId, input.smokeId, "paged reconciliation cursor");
@@ -627,11 +629,17 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       delete from search_documents
       where id = ${partialCurrentRow.searchDocumentId}
     `;
-    await client`
-      update source_artifacts
-      set import_row_id = null
-      where id = ${partialCurrentRow.sourceArtifactId}
-    `;
+    let partialTupleMutationRejected = false;
+    try {
+      await client`
+        update source_artifacts
+        set import_row_id = null
+        where id = ${partialCurrentRow.sourceArtifactId}
+      `;
+    } catch (error) {
+      partialTupleMutationRejected = error instanceof Error &&
+        error.message.includes("source_artifacts_import_tuple_complete");
+    }
     let partialReplayRejected = false;
     try {
       await persistDecisionCorpusImport({
@@ -655,6 +663,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       smokeId: input.smokeId,
       partialSmokeId,
       partialSourceArtifactId: partialCurrentRow.sourceArtifactId,
+      partialDecisionId: partialCurrentRow.decisionId,
       partialSourceChunkIds: [partialCurrentRow.sourceChunkId, duplicateChunkId],
       now: input.now,
       repoRoot: input.repoRoot,
@@ -754,6 +763,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     if (
       !replayStable ||
       replayPersistedArtifactCount !== fixture.decisions.length ||
+      !partialTupleMutationRejected ||
       !partialReplayRejected ||
       !changedReplayRejected ||
       !atomicFailureRolledBack
@@ -918,6 +928,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       coverage,
       replayStable,
       replayPersistedArtifactCount,
+      partialTupleMutationRejected,
       partialReplayRejected,
       changedReplayRejected,
       atomicFailureRolledBack,
