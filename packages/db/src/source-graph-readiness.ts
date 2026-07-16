@@ -102,13 +102,20 @@ const runSourceGraphReadinessProbe = async (
   client: postgres.Sql
 ): Promise<boolean> => {
   const marker = sourceGraphProbeMarker();
+  const evidenceContentHash = `sha256:${marker}:captured-evidence`;
+  const evidenceMetadata = {
+    marker,
+    evidenceStatus: "captured",
+    evidenceContentHash,
+    evidenceFreshness: "current"
+  };
 
   await client`begin`;
 
   try {
     const [workspace] = await client<{ id: string }[]>`
       insert into workspaces (slug, display_name, metadata)
-      values (${marker}, 'Source graph readiness probe', ${client.json({ marker })})
+      values (${marker}, 'Source graph readiness probe', ${JSON.stringify({ marker })}::jsonb)
       returning id
     `;
 
@@ -118,7 +125,12 @@ const runSourceGraphReadinessProbe = async (
 
     const [project] = await client<{ id: string }[]>`
       insert into projects (workspace_id, slug, display_name, metadata)
-      values (${workspace.id}, ${marker}, 'Source graph readiness probe', ${client.json({ marker })})
+      values (
+        ${workspace.id},
+        ${marker},
+        'Source graph readiness probe',
+        ${JSON.stringify({ marker })}::jsonb
+      )
       returning id
     `;
 
@@ -143,7 +155,7 @@ const runSourceGraphReadinessProbe = async (
         ${`probe://${marker}`},
         'Source graph readiness probe',
         ${`sha256:${marker}`},
-        ${client.json({ marker })}
+        ${JSON.stringify(evidenceMetadata)}::jsonb
       )
       returning id
     `;
@@ -164,8 +176,8 @@ const runSourceGraphReadinessProbe = async (
         ${artifact.id},
         0,
         'source graph readiness probe chunk',
-        ${`sha256:${marker}:chunk`},
-        ${client.json({ marker })}
+        ${evidenceContentHash},
+        ${JSON.stringify(evidenceMetadata)}::jsonb
       )
       returning id
     `;
@@ -199,7 +211,7 @@ const runSourceGraphReadinessProbe = async (
         'mechanism',
         'db readiness',
         'delete or break a source graph required table',
-        ${client.json({ marker })}
+        ${JSON.stringify(evidenceMetadata)}::jsonb
       )
       returning id
     `;
@@ -229,7 +241,7 @@ const runSourceGraphReadinessProbe = async (
         'mechanism',
         'db readiness',
         'delete or break source claim edge writes',
-        ${client.json({ marker })}
+        ${JSON.stringify(evidenceMetadata)}::jsonb
       )
       returning id
     `;
@@ -249,8 +261,14 @@ const runSourceGraphReadinessProbe = async (
         ${sourceClaim.id},
         ${relatedClaim.id},
         'supports',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}::jsonb
       )
+    `;
+
+    await client`
+      update source_claims
+      set status = 'accepted'
+      where id = ${sourceClaim.id}
     `;
 
     const [sourceDecision] = await client<{ id: string }[]>`
@@ -272,7 +290,7 @@ const runSourceGraphReadinessProbe = async (
         'The probe inserts and reads live source graph tables.',
         'source graph readiness probe fails',
         'db readiness',
-        ${client.json({ marker })}
+        ${JSON.stringify(evidenceMetadata)}::jsonb
       )
       returning id
     `;
@@ -284,6 +302,7 @@ const runSourceGraphReadinessProbe = async (
     await client`
       insert into source_decision_edges (
         source_claim_id,
+        source_decision_id,
         target_type,
         target_id,
         support_type,
@@ -293,12 +312,13 @@ const runSourceGraphReadinessProbe = async (
       )
       values (
         ${sourceClaim.id},
+        ${sourceDecision.id},
         'architecture_decision',
         ${marker},
         'mechanism',
         'high',
         'source graph readiness probe decision edge',
-        ${client.json({ marker, sourceDecisionId: sourceDecision.id })}
+        ${JSON.stringify({ marker, sourceDecisionId: sourceDecision.id })}::jsonb
       )
     `;
 
@@ -325,7 +345,7 @@ const runSourceGraphReadinessProbe = async (
         'The related probe claim is only structural support.',
         'This rejection does not prove source quality.',
         'db readiness',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}::jsonb
       )
     `;
 
@@ -340,7 +360,7 @@ const runSourceGraphReadinessProbe = async (
         ${artifact.id},
         ${`probe://${marker}/snapshot`},
         ${`sha256:${marker}:snapshot`},
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}::jsonb
       )
     `;
 
