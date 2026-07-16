@@ -81,7 +81,13 @@ export interface HarnessCompilerRepositories {
   sourceRepository: Required<Pick<
     SourceRepository,
     "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
-  >> & Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
+  >> & Partial<Pick<
+    SourceRepository,
+    | "getSourceClaimForProject"
+    | "getSourceDecisionForProject"
+    | "listSourceRejectionsForClaim"
+    | "listHistoricalClaimWarningsForProject"
+  >>;
   retrievalRepository: Pick<
     RetrievalRepository,
     | "startRetrievalRun"

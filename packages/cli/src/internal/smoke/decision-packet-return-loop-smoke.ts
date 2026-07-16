@@ -90,6 +90,8 @@ const activationSourceRepositoryFor = (
   }
 
   const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+  const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
+  const listSourceRejectionsForClaim = sourceRepository.listSourceRejectionsForClaim;
 
   return {
     listClaimsForProject(projectId, limit, options) {
@@ -107,7 +109,28 @@ const activationSourceRepositoryFor = (
           getSourceClaimForProject(projectId: string, sourceClaimId: string) {
             return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
           }
-        })
+        }),
+    ...(getSourceDecisionForProject === undefined
+      ? {}
+      : {
+          getSourceDecisionForProject(projectId: string, sourceDecisionId: string) {
+            return getSourceDecisionForProject.call(
+              sourceRepository,
+              projectId,
+              sourceDecisionId
+            );
+          }
+        }),
+    ...(listSourceRejectionsForClaim === undefined
+      ? {}
+      : {
+          listSourceRejectionsForClaim(sourceClaimId: string) {
+            return listSourceRejectionsForClaim.call(sourceRepository, sourceClaimId);
+          }
+        }),
+    listHistoricalClaimWarningsForProject(projectId, limit, options) {
+      return sourceRepository.listHistoricalClaimWarningsForProject(projectId, limit, options);
+    }
   };
 };
 
