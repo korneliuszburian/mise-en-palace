@@ -727,29 +727,42 @@ export const runActivationSmokeCheck = async (
         temporalCase: "expired-memory-projection"
       }
     });
-    // Simulate a legacy or direct-SQL row so the read boundary remains independently fail-closed.
-    // Repository writes reject this tuple; database-level prevention belongs to the next slice.
-    const [crossProjectSearchDocument] = await db
-      .insert(searchDocuments)
-      .values({
-        projectId: project.id,
-        subjectType: "source_claim",
-        subjectId: foreignClaim.id,
-        sourceClaimId: foreignClaim.id,
-        title: "Activation smoke cross-project search document",
-        body: "This active index row points at a SourceClaim in another project.",
-        searchText: sourceQuery.text,
-        searchVector: sql`to_tsvector('english', ${sourceQuery.text})`,
-        sourceAuthority: "project-decision",
-        validFrom: new Date(past),
-        metadata: {
-          smokeId: marker
-        }
-      })
-      .returning({ id: searchDocuments.id });
+    let crossProjectDirectWriteRejected = false;
+    try {
+      await db
+        .insert(searchDocuments)
+        .values({
+          projectId: project.id,
+          subjectType: "source_claim",
+          subjectId: foreignClaim.id,
+          sourceClaimId: foreignClaim.id,
+          title: "Activation smoke cross-project search document",
+          body: "This active index row points at a SourceClaim in another project.",
+          searchText: sourceQuery.text,
+          searchVector: sql`to_tsvector('english', ${sourceQuery.text})`,
+          sourceAuthority: "project-decision",
+          validFrom: new Date(past),
+          metadata: {
+            smokeId: marker
+          }
+        });
+    } catch (error) {
+      const causeMessage = error instanceof Error && error.cause instanceof Error
+        ? error.cause.message
+        : "";
+      if (
+        !(error instanceof Error) ||
+        !`${error.message} ${causeMessage}`.includes(
+          "active SearchDocument canonical provenance is incoherent"
+        )
+      ) {
+        throw error;
+      }
+      crossProjectDirectWriteRejected = true;
+    }
 
-    if (crossProjectSearchDocument === undefined) {
-      throw new Error("Activation smoke could not create its direct-SQL cross-project fixture");
+    if (!crossProjectDirectWriteRejected) {
+      throw new Error("Activation smoke accepted a direct-SQL cross-project SearchDocument");
     }
     const historicallyEligibleSearchResults = await retrievalRepository.searchLexical({
       projectId: project.id,
@@ -1148,9 +1161,8 @@ export const runActivationSmokeCheck = async (
     const indexOnlySearchExcluded = !contextAssembly.inclusions.some(
       (inclusion) => inclusion.subjectId === searchDocument.id
     );
-    const crossProjectIndexExcluded = !contextAssembly.inclusions.some(
-      (inclusion) => inclusion.subjectId === crossProjectSearchDocument.id
-    );
+    const crossProjectIndexExcluded = crossProjectDirectWriteRejected &&
+      !contextAssembly.inclusions.some((inclusion) => inclusion.subjectId === foreignClaim.id);
     const searchCandidateCount = candidates.filter((candidate) =>
       candidate.kind === "search" || hasMergedSearchSignal(candidate.metadata)
     ).length;
@@ -1351,9 +1363,9 @@ export const runActivationSmokeCheck = async (
         { label: "expired projection absent from context provenance", passed: staleProjectionContextRefCount === 0 },
         { label: "expired projection absent from DecisionPacket provenance", passed: staleProjectionPacketRefCount === 0 },
         { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
-        { label: "search documents", passed: searchDocumentCount === 3 },
+        { label: "search documents", passed: searchDocumentCount === 2 },
         { label: "index-only stale search excluded", passed: indexOnlySearchExcluded },
-        { label: "cross-project search excluded", passed: crossProjectIndexExcluded },
+        { label: "cross-project direct search rejected", passed: crossProjectIndexExcluded },
         { label: "persisted stale source retrieved as warning", passed: staleSourceWarningRetrieved },
         {
           label: "equal-boundary source retrieved as warning",
@@ -1361,10 +1373,10 @@ export const runActivationSmokeCheck = async (
         },
         { label: "persisted stale memory retrieved as warning", passed: staleMemoryWarningRetrieved },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
-        { label: "retrieval candidates", passed: retrievalCandidateCount === 40 },
-        { label: "activation decisions", passed: activationDecisionCount === 40 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 39 },
+        { label: "activation decisions", passed: activationDecisionCount === 39 },
         { label: "included decisions", passed: includedDecisionCount === 3 },
-        { label: "excluded decisions", passed: excludedDecisionCount === 33 },
+        { label: "excluded decisions", passed: excludedDecisionCount === 32 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
         { label: "stale warning decisions", passed: staleDecisionCount === 3 },
         { label: "stale memory warning persisted", passed: staleMemoryWarningPersisted },
@@ -1416,7 +1428,7 @@ export const runActivationSmokeCheck = async (
           passed: expiredDissentSourceClaimEdgePacketRefCount === 0
         },
         { label: "context items", passed: contextItemCount === 3 },
-        { label: "context exclusions", passed: contextExclusionCount === 37 },
+        { label: "context exclusions", passed: contextExclusionCount === 36 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
         { label: "raw recall trigger readback", passed: rawRecallTriggerCount >= 0 }
       ],

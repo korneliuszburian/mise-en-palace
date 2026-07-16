@@ -1081,6 +1081,395 @@ describe("SourceClaim provenance migration", () => {
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "quarantines legacy SearchDocument provenance and rejects future direct mismatches",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      let pre0043Migrations: Awaited<ReturnType<typeof createMigrationsFolderThrough>> | undefined;
+      const marker = `search-document-provenance-${crypto.randomUUID()}`;
+      const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+
+      try {
+        pre0043Migrations = await createMigrationsFolderThrough(
+          42,
+          "0042_source_claim_authority_ceiling"
+        );
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0043Migrations.migrationsFolder
+        });
+        const [fixture] = await client<{
+          projectId: string;
+          claimId: string;
+          canonicalArtifactId: string;
+          canonicalChunkId: string;
+          wrongArtifactId: string;
+          wrongChunkId: string;
+          searchDocumentId: string;
+        }[]>`
+          with workspace as (
+            insert into workspaces (slug, display_name, metadata)
+            values (${marker}, ${marker}, ${client.json({ smokeId: marker })})
+            returning id
+          ), fixture_projects as (
+            insert into projects (workspace_id, slug, display_name, metadata)
+            select id, ${`${marker}-a`}, 'Search provenance A', ${client.json({ smokeId: marker })}
+            from workspace
+            union all
+            select id, ${`${marker}-b`}, 'Search provenance B', ${client.json({ smokeId: marker })}
+            from workspace
+            returning id, slug
+          ), artifacts as (
+            insert into source_artifacts (
+              project_id, kind, trust_tier, uri, title, content_hash, metadata
+            )
+            select
+              id,
+              'doc',
+              'project-decision',
+              ${`search-provenance://${marker}/`} || slug,
+              slug,
+              ${`sha256:${marker}:`} || slug,
+              ${client.json({ smokeId: marker })}
+            from fixture_projects
+            returning id, project_id
+          ), chunks as (
+            insert into source_chunks (
+              source_artifact_id, ordinal, content, content_hash, metadata
+            )
+            select
+              id,
+              0,
+              'SearchDocument provenance migration fixture',
+              ${`sha256:${marker}:chunk:`} || id::text,
+              ${client.json({ smokeId: marker })}
+            from artifacts
+            returning id, source_artifact_id
+          ), canonical_claim as (
+            insert into source_claims (
+              source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+              does_not_prove, trust_tier, support_type, consumer, status, metadata
+            )
+            select
+              artifact.id,
+              chunk.id,
+              'SearchDocument provenance must remain coherent.',
+              'The canonical claim owns one artifact and chunk.',
+              'Direct projections must preserve that chain.',
+              'This fixture does not prove source truth.',
+              'project-decision',
+              'implementation-boundary',
+              'SearchDocument provenance migration',
+              'proposed',
+              ${client.json({ smokeId: marker })}
+            from fixture_projects project
+            join artifacts artifact on artifact.project_id = project.id
+            join chunks chunk on chunk.source_artifact_id = artifact.id
+            where project.slug = ${`${marker}-a`}
+            returning id, source_artifact_id, source_chunk_id
+          ), legacy_search as (
+            insert into search_documents (
+              project_id, subject_type, subject_id, source_artifact_id,
+              source_chunk_id, source_claim_id, title, body, search_text,
+              validity_status, metadata
+            )
+            select
+              project.id,
+              'source_claim',
+              claim.id,
+              wrong_artifact.id,
+              wrong_chunk.id,
+              claim.id,
+              'Legacy incoherent SearchDocument',
+              'Claim A is attributed to chain B.',
+              'legacy incoherent search provenance',
+              'active',
+              ${client.json({ smokeId: marker })}
+            from fixture_projects project
+            join canonical_claim claim on true
+            join fixture_projects wrong_project on wrong_project.slug = ${`${marker}-b`}
+            join artifacts wrong_artifact on wrong_artifact.project_id = wrong_project.id
+            join chunks wrong_chunk on wrong_chunk.source_artifact_id = wrong_artifact.id
+            where project.slug = ${`${marker}-a`}
+            returning id, project_id, source_artifact_id, source_chunk_id, source_claim_id
+          )
+          select
+            legacy_search.project_id as "projectId",
+            legacy_search.source_claim_id as "claimId",
+            claim.source_artifact_id as "canonicalArtifactId",
+            claim.source_chunk_id as "canonicalChunkId",
+            legacy_search.source_artifact_id as "wrongArtifactId",
+            legacy_search.source_chunk_id as "wrongChunkId",
+            legacy_search.id as "searchDocumentId"
+          from legacy_search
+          join canonical_claim claim on claim.id = legacy_search.source_claim_id
+        `;
+        if (fixture === undefined) {
+          throw new Error("SearchDocument provenance migration fixture was not created");
+        }
+
+        const report = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+        expect(report).toMatchObject({
+          expectedMigrationCount: 44,
+          appliedMigrationCount: 44,
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
+
+        const quarantineRows = await client<{
+          entityId: string;
+          reason: string;
+          provenanceViolation: string | null;
+        }[]>`
+          select
+            entity_id as "entityId",
+            reason,
+            metadata->>'provenanceViolation' as "provenanceViolation"
+          from source_authority_quarantines
+          where entity_type = 'search_document'
+            and entity_id = ${fixture.searchDocumentId}
+        `;
+        expect(quarantineRows).toEqual([{
+          entityId: fixture.searchDocumentId,
+          reason: "incoherent_search_document_provenance",
+          provenanceViolation: "claim_chunk_mismatch"
+        }]);
+
+        const [legacyReadback] = await client<{
+          validityStatus: string;
+          invalidated: boolean;
+          quarantineReason: string | null;
+          provenanceViolation: string | null;
+        }[]>`
+          select
+            validity_status::text as "validityStatus",
+            invalidated_at is not null as invalidated,
+            metadata->>'quarantineReason' as "quarantineReason",
+            metadata->>'provenanceViolation' as "provenanceViolation"
+          from search_documents
+          where id = ${fixture.searchDocumentId}
+        `;
+        expect(legacyReadback).toEqual({
+          validityStatus: "invalidated",
+          invalidated: true,
+          quarantineReason: "incoherent_search_document_provenance",
+          provenanceViolation: "claim_chunk_mismatch"
+        });
+
+        const [coherentSearchDocument] = await client<{ id: string }[]>`
+          insert into search_documents (
+            project_id, subject_type, subject_id, source_artifact_id,
+            source_chunk_id, source_claim_id, title, body, search_text,
+            validity_status, metadata
+          ) values (
+            ${fixture.projectId},
+            'source_claim',
+            ${fixture.claimId},
+            ${fixture.canonicalArtifactId},
+            ${fixture.canonicalChunkId},
+            ${fixture.claimId},
+            'Coherent SearchDocument',
+            'The reverse guard must preserve this canonical chain.',
+            'coherent reverse provenance guard',
+            'active',
+            ${client.json({ smokeId: marker })}
+          )
+          returning id
+        `;
+        expect(coherentSearchDocument).toBeDefined();
+
+        await expect(client`
+          update source_claims
+          set source_artifact_id = ${fixture.wrongArtifactId},
+              source_chunk_id = ${fixture.wrongChunkId}
+          where id = ${fixture.claimId}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "search_documents_provenance_coherence",
+          message: expect.stringContaining(
+            "canonical source mutation would make active SearchDocument"
+          )
+        });
+
+        await client`
+          update search_documents
+          set validity_status = 'invalidated',
+              invalidated_at = now()
+          where id = ${coherentSearchDocument!.id}
+        `;
+        await client`
+          update search_documents
+          set source_claim_id = null
+          where validity_status = 'invalidated'
+            and metadata->>'smokeId' = ${marker}
+        `;
+        await client`
+          insert into search_documents (
+            project_id, subject_type, subject_id, title, body, search_text,
+            validity_status, metadata
+          ) values (
+            ${fixture.projectId},
+            'source_claim',
+            ${fixture.claimId},
+            'Subject-derived SearchDocument',
+            'The reverse guard must preserve an omitted nullable canonical link.',
+            'subject derived reverse provenance guard',
+            'active',
+            ${client.json({ smokeId: marker })}
+          )
+        `;
+
+        await expect(client`
+          update source_claims
+          set id = ${crypto.randomUUID()}
+          where id = ${fixture.claimId}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "search_documents_provenance_coherence",
+          message: expect.stringContaining(
+            "canonical source mutation would make active SearchDocument"
+          )
+        });
+
+        await expect(client`
+          delete from source_claims
+          where id = ${fixture.claimId}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "search_documents_provenance_coherence",
+          message: expect.stringContaining(
+            "canonical source mutation would make active SearchDocument"
+          )
+        });
+
+        await expect(client.begin(
+          "isolation level repeatable read",
+          async (transaction) => transaction`
+            update source_claims
+            set source_artifact_id = source_artifact_id
+            where id = ${fixture.claimId}
+          `
+        )).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "search_documents_provenance_coherence",
+          message: expect.stringContaining(
+            "SearchDocument provenance writes require read committed isolation"
+          )
+        });
+
+        await expect(client`
+          insert into search_documents (
+            project_id, subject_type, subject_id, source_artifact_id,
+            source_chunk_id, source_claim_id, title, body, search_text,
+            validity_status, metadata
+          ) values (
+            ${fixture.projectId},
+            'source_claim',
+            ${fixture.claimId},
+            ${fixture.wrongArtifactId},
+            ${fixture.wrongChunkId},
+            ${fixture.claimId},
+            'Rejected direct SearchDocument',
+            'The trigger must reject this wrong chain.',
+            'rejected direct search provenance',
+            'active',
+            ${client.json({ smokeId: marker })}
+          )
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "search_documents_provenance_coherence",
+          message: expect.stringContaining(
+            "active SearchDocument canonical provenance is incoherent"
+          )
+        });
+
+        await client`
+          alter table search_documents
+          disable trigger search_documents_provenance_coherence
+        `;
+        let readinessFixtureId: string | undefined;
+        try {
+          const [readinessFixture] = await client<{ id: string }[]>`
+            insert into search_documents (
+              project_id, subject_type, subject_id, source_artifact_id,
+              source_chunk_id, source_claim_id, title, body, search_text,
+              validity_status, metadata
+            ) values (
+              ${fixture.projectId},
+              'source_claim',
+              ${fixture.claimId},
+              ${fixture.wrongArtifactId},
+              ${fixture.wrongChunkId},
+              ${fixture.claimId},
+              'Readiness-only incoherent SearchDocument',
+              'This privileged fixture proves the read-only integrity probe.',
+              'readiness incoherent search provenance',
+              'active',
+              ${client.json({ smokeId: marker })}
+            )
+            returning id
+          `;
+          readinessFixtureId = readinessFixture?.id;
+        } finally {
+          await client`
+            alter table search_documents
+            enable trigger search_documents_provenance_coherence
+          `;
+        }
+        expect(readinessFixtureId).toBeDefined();
+
+        const detectedIntegrity = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          schemaIdentity: "post-0043-search-document-provenance-damaged"
+        });
+        expect(detectedIntegrity).toMatchObject({
+          schemaReady: true,
+          violationCount: 2,
+          violations: [
+            {
+              id: `active_search_without_canonical_authority:${readinessFixtureId}`,
+              kind: "active_search_without_canonical_authority",
+              subjectId: readinessFixtureId
+            },
+            {
+              id: `incoherent_search_document_provenance:${readinessFixtureId}`,
+              kind: "incoherent_search_document_provenance",
+              subjectId: readinessFixtureId,
+              detail: expect.stringContaining("claim_chunk_mismatch")
+            }
+          ],
+          integrityReady: false
+        });
+
+        await client`
+          delete from search_documents
+          where id = ${readinessFixtureId!}
+        `;
+
+        const integrity = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          schemaIdentity: "post-0043-search-document-provenance"
+        });
+        expect(integrity).toMatchObject({
+          schemaReady: true,
+          violationCount: 0,
+          violations: [],
+          integrityReady: true
+        });
+      } finally {
+        await client.end();
+        await Promise.all([
+          pre0043Migrations?.cleanup() ?? Promise.resolve(),
+          disposable.cleanup()
+        ]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "fails closed for authority labels not classified by the SQL projection",
     async () => {
       const disposable = await createDisposableDatabase(databaseUrl!);

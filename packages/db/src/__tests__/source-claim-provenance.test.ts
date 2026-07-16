@@ -137,7 +137,8 @@ const selectClaimChunkTuple = async (
   .where(eq(sourceClaims.id, sourceClaimId));
 
 const withRolledBackTransaction = async (
-  test: (transaction: KrnDatabaseTransaction, marker: string) => Promise<void>
+  test: (transaction: KrnDatabaseTransaction, marker: string) => Promise<void>,
+  isolationLevel: "read committed" | "repeatable read" = "repeatable read"
 ): Promise<void> => {
   const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
   const database = createKrnDatabase(client);
@@ -151,7 +152,7 @@ const withRolledBackTransaction = async (
           await test(transaction, marker);
           throw expectedFixtureRollback;
         },
-        { isolationLevel: "repeatable read" }
+        { isolationLevel }
       );
     } catch (error) {
       if (error !== expectedFixtureRollback) {
@@ -674,7 +675,7 @@ describe("source claim provenance", () => {
           sourceArtifactId: claimArtifact.artifactId,
           sourceChunkId: null
         });
-      });
+      }, "read committed");
     }
   );
 
@@ -759,7 +760,7 @@ describe("source claim provenance", () => {
           sourceChunkId: claimArtifact.chunkId,
           chunkSourceArtifactId: claimArtifact.artifactId
         }]);
-      });
+      }, "read committed");
     }
   );
 });

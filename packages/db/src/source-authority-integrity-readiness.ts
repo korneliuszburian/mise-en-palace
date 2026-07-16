@@ -9,6 +9,7 @@ export type SourceAuthorityIntegrityViolationKind =
   | "conflicting_terminal_review"
   | "claim_decision_status_mismatch"
   | "governing_edge_without_current_reviewed_decision"
+  | "incoherent_search_document_provenance"
   | "active_search_without_canonical_authority"
   | "incomplete_import_lifecycle"
   | "captured_evidence_missing_or_mismatched"
@@ -127,6 +128,45 @@ const inspectNonCurrentGoverningEvidence = async (
       `governing SourceDecision evidence freshness is ${row.evidenceFreshness}, not current`,
     ...row
   }));
+};
+
+const inspectSearchDocumentProvenanceViolations = async (
+  client: Sql | TransactionSql
+): Promise<SourceAuthorityIntegrityViolation[]> => {
+  const [functionInspection] = await client<{ available: boolean }[]>`
+    select to_regprocedure(
+      'krn_search_document_provenance_violation(search_documents)'
+    ) is not null as available
+  `;
+
+  if (functionInspection?.available !== true) {
+    return [];
+  }
+
+  const rows = await client<RawViolation[]>`
+    select
+      concat(
+        'incoherent_search_document_provenance:',
+        search.id::text
+      ) as id,
+      'incoherent_search_document_provenance'::text as kind,
+      search.id::text as "subjectId",
+      concat(
+        'active SearchDocument canonical provenance is incoherent: ',
+        krn_search_document_provenance_violation(search)
+      )::text as detail
+    from search_documents search
+    where krn_search_document_provenance_violation(search) is not null
+      and not exists (
+        select 1 from source_authority_quarantines quarantine
+        where quarantine.entity_type = 'search_document'
+          and quarantine.entity_id = search.id
+          and quarantine.reason = 'incoherent_search_document_provenance'
+      )
+    order by search.id
+  `;
+
+  return rows.map((row) => violation(row.kind, row.subjectId, row.detail));
 };
 
 const inspectViolations = async (
@@ -354,9 +394,15 @@ const inspectViolations = async (
   `;
 
   const violations = rows.map((row) => violation(row.kind, row.subjectId, row.detail));
+  const incoherentSearchDocumentProvenance =
+    await inspectSearchDocumentProvenanceViolations(client);
   const nonCurrentGoverningEvidence = await inspectNonCurrentGoverningEvidence(client);
 
-  return [...violations, ...nonCurrentGoverningEvidence].sort((left, right) =>
+  return [
+    ...violations,
+    ...incoherentSearchDocumentProvenance,
+    ...nonCurrentGoverningEvidence
+  ].sort((left, right) =>
     left.kind === right.kind
       ? left.subjectId.localeCompare(right.subjectId)
       : left.kind.localeCompare(right.kind)
