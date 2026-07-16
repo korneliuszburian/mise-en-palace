@@ -211,6 +211,48 @@ describe("compareMigrationIdentities", () => {
     expect(compareMigrationIdentities(expected, [migration("different", "100"), expected[1]!]))
       .toMatchObject({ status: "mismatched" });
   });
+
+  it("accepts only the exact converged legacy 0029/0030 lineage", () => {
+    const expected = Array.from({ length: 45 }, (_, index) =>
+      migration(`canonical-${index}`, String(index))
+    );
+    expected[29] = migration(
+      "057e6c47e46905aa711853a7d39ff086f826272360470349a13b7cec8c1b9e86",
+      "1783737041990"
+    );
+    expected[30] = migration(
+      "86d45017c2faf6d4a829833c58674a25fc3c09b9a763ebe477cd601a76cce78a",
+      "1783996876609"
+    );
+    const legacy = expected.map((identity) => ({ ...identity }));
+    legacy[29] = migration(
+      "a560a99e7aba80b3e7acc82fb2b06c3d1c93ed0226b4a0eb25ccbe3d02870f80",
+      "1783737041990"
+    );
+    legacy[30] = migration(
+      "e9ed37609e9db2d1076ec4b583929f3d44e863ed2488e944cd3735c1a28638d0",
+      "1783996876609"
+    );
+
+    expect(compareMigrationIdentities(expected, legacy)).toEqual({
+      status: "verified",
+      details: ["Approved migration lineage: legacy-precommit-0029-0030-v1"]
+    });
+    expect(compareMigrationIdentities(expected.slice(0, 44), legacy.slice(0, 44)))
+      .toMatchObject({ status: "mismatched" });
+
+    const unknown = legacy.map((identity) => ({ ...identity }));
+    unknown[29] = migration("unknown-lineage", "1783737041990");
+    expect(compareMigrationIdentities(expected, unknown)).toMatchObject({
+      status: "mismatched"
+    });
+
+    const rewrittenCanonical = expected.map((identity) => ({ ...identity }));
+    rewrittenCanonical[29] = migration("rewritten-canonical", "1783737041990");
+    expect(compareMigrationIdentities(rewrittenCanonical, legacy)).toMatchObject({
+      status: "mismatched"
+    });
+  });
 });
 
 describe("migration readiness boundary", () => {

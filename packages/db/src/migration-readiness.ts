@@ -32,6 +32,44 @@ export interface MigrationIdentityComparison {
   details: readonly string[];
 }
 
+interface ApprovedMigrationLineage {
+  id: string;
+  minimumMigrationCount: number;
+  identityOverrides: ReadonlyMap<number, {
+    canonical: MigrationIdentity;
+    applied: MigrationIdentity;
+  }>;
+}
+
+const approvedMigrationLineages: readonly ApprovedMigrationLineage[] = [
+  {
+    id: "legacy-precommit-0029-0030-v1",
+    minimumMigrationCount: 45,
+    identityOverrides: new Map([
+      [29, {
+        canonical: {
+          hash: "057e6c47e46905aa711853a7d39ff086f826272360470349a13b7cec8c1b9e86",
+          createdAt: "1783737041990"
+        },
+        applied: {
+          hash: "a560a99e7aba80b3e7acc82fb2b06c3d1c93ed0226b4a0eb25ccbe3d02870f80",
+          createdAt: "1783737041990"
+        }
+      }],
+      [30, {
+        canonical: {
+          hash: "86d45017c2faf6d4a829833c58674a25fc3c09b9a763ebe477cd601a76cce78a",
+          createdAt: "1783996876609"
+        },
+        applied: {
+          hash: "e9ed37609e9db2d1076ec4b583929f3d44e863ed2488e944cd3735c1a28638d0",
+          createdAt: "1783996876609"
+        }
+      }]
+    ])
+  }
+];
+
 export interface MigrationReadinessReport {
   migrationsFolder: string;
   expectedMigrationCount: number;
@@ -59,6 +97,22 @@ const containsAll = (
   expected: readonly string[]
 ): boolean => expected.every((value) => values.includes(value));
 
+const matchesApprovedLineage = (
+  expected: readonly MigrationIdentity[],
+  applied: readonly MigrationIdentity[],
+  lineage: ApprovedMigrationLineage
+): boolean =>
+  expected.length === applied.length &&
+  expected.length >= lineage.minimumMigrationCount &&
+  expected.every((identity, index) => {
+    const override = lineage.identityOverrides.get(index);
+    if (override === undefined) {
+      return migrationIdentityKey(identity) === migrationIdentityKey(applied[index]!);
+    }
+    return migrationIdentityKey(identity) === migrationIdentityKey(override.canonical) &&
+      migrationIdentityKey(applied[index]!) === migrationIdentityKey(override.applied);
+  });
+
 export const compareMigrationIdentities = (
   expected: readonly MigrationIdentity[],
   applied: readonly MigrationIdentity[]
@@ -70,6 +124,16 @@ export const compareMigrationIdentities = (
     return {
       status: "verified",
       details: []
+    };
+  }
+
+  const approvedLineage = approvedMigrationLineages.find((lineage) =>
+    matchesApprovedLineage(expected, applied, lineage)
+  );
+  if (approvedLineage !== undefined) {
+    return {
+      status: "verified",
+      details: [`Approved migration lineage: ${approvedLineage.id}`]
     };
   }
 
