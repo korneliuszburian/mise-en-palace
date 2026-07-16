@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, not, or, sql } from "drizzle-orm";
 import type {
   ExecutionRunId,
   ProjectId,
@@ -15,6 +15,7 @@ import type {
 import {
   assessSourceDecisionReviewSignals,
   decisionGradeSourceSupportTypes,
+  isIsoTimestamp,
   isDecisionGradeSourceSupportType,
   rankSourceAuthority as rankCanonicalSourceAuthority
 } from "@krn/core";
@@ -115,7 +116,15 @@ const sourceClaimProjection = {
 } as const;
 
 const selectionDate = (value: string | undefined): Date | undefined => {
-  const timestamp = value === undefined ? Date.now() : Date.parse(value);
+  if (value === undefined) {
+    return new Date();
+  }
+
+  if (!isIsoTimestamp(value)) {
+    return undefined;
+  }
+
+  const timestamp = Date.parse(value);
 
   return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
 };
@@ -154,22 +163,144 @@ const sourceRelevanceScore = (
 
 const sourceLifecycleFilter = () => inArray(sourceClaims.status, ["proposed", "accepted"]);
 
-const sourceTemporalFilter = (nowIso: string) => sql`CASE
+const isoTimestampSqlPattern =
+  "^(0[1-9][0-9]{2}|[1-9][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T"
+  + "([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)?"
+  + "(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$";
+const isoTimestampTimezoneSuffixSqlPattern = "(Z|[+-][0-9]{2}:[0-9]{2})$";
+const isoTimestampFractionBeyondMillisecondsSqlPattern = "(\\.[0-9]{3})[0-9]+$";
+const isoTimestampMillisecondReplacement = "\\1";
+const ecmaScriptTrimCharacters =
+  "\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u1680"
+  + "\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A"
+  + "\u2028\u2029\u202F\u205F\u3000\uFEFF";
+
+const sourceTimestampIsValid = (value: ReturnType<typeof sql<string>>) => sql`(
+  ${value} ~ ${isoTimestampSqlPattern}
+  AND pg_input_is_valid(
+    regexp_replace(
+      regexp_replace(${value}, ${isoTimestampTimezoneSuffixSqlPattern}, ''),
+      ${isoTimestampFractionBeyondMillisecondsSqlPattern},
+      ${isoTimestampMillisecondReplacement}
+    ),
+    'timestamp without time zone'
+  )
+)`;
+
+const sourceTimestampUtc = (value: ReturnType<typeof sql<string>>) => sql`(
+  regexp_replace(
+    regexp_replace(${value}, ${isoTimestampTimezoneSuffixSqlPattern}, ''),
+    ${isoTimestampFractionBeyondMillisecondsSqlPattern},
+    ${isoTimestampMillisecondReplacement}
+  )::timestamp without time zone
+  - CASE
+      WHEN right(${value}, 1) = 'Z' THEN interval '0 minutes'
+      ELSE make_interval(
+        hours => substring(right(${value}, 6) from 2 for 2)::integer,
+        mins => substring(right(${value}, 6) from 5 for 2)::integer
+      ) * CASE WHEN left(right(${value}, 6), 1) = '-' THEN -1 ELSE 1 END
+    END
+)`;
+
+const selectionNowUtc = (nowIso: string) =>
+  sql`(${nowIso}::timestamp with time zone AT TIME ZONE 'UTC')`;
+
+const sourceMetadataTimestampText = (field: string) =>
+  sql<string>`btrim(${sourceClaims.metadata} ->> ${field}, ${ecmaScriptTrimCharacters})`;
+
+const sourceMetadataTimestampIsValid = (field: string) => {
+  const value = sourceMetadataTimestampText(field);
+
+  return sql`CASE
+    WHEN NOT (${sourceClaims.metadata} ? ${field}) THEN true
+    WHEN jsonb_typeof(${sourceClaims.metadata} -> ${field}) <> 'string' THEN false
+    ELSE ${sourceTimestampIsValid(value)}
+  END`;
+};
+
+const sourceMetadataTimestampIsAfter = (field: string, nowIso: string) => {
+  const value = sourceMetadataTimestampText(field);
+
+  return sql`CASE
+    WHEN NOT (${sourceClaims.metadata} ? ${field}) THEN false
+    WHEN NOT (${sourceMetadataTimestampIsValid(field)}) THEN false
+    ELSE ${sourceTimestampUtc(value)} > ${selectionNowUtc(nowIso)}
+  END`;
+};
+
+const sourceMetadataTimestampIsAtOrBefore = (field: string, nowIso: string) => {
+  const value = sourceMetadataTimestampText(field);
+
+  return sql`CASE
+    WHEN NOT (${sourceClaims.metadata} ? ${field}) THEN false
+    WHEN NOT (${sourceMetadataTimestampIsValid(field)}) THEN false
+    ELSE ${sourceTimestampUtc(value)} <= ${selectionNowUtc(nowIso)}
+  END`;
+};
+
+const sourceRevisitTimestampIsValid = () => sql`CASE
   WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
-  WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
-    THEN ${sourceClaims.revisitWhen} > ${nowIso}
-  ELSE false
+  ELSE ${sourceTimestampIsValid(sql<string>`${sourceClaims.revisitWhen}`)}
 END`;
 
-const sourceHistoricalWarningFilter = (nowIso: string) => or(
-  inArray(sourceClaims.status, ["rejected", "deprecated"]),
+const sourceMetadataTemporalCurrent = (nowIso: string) => and(
+  sourceMetadataTimestampIsValid("validFrom"),
+  sourceMetadataTimestampIsValid("validUntil"),
+  sourceMetadataTimestampIsValid("invalidatedAt"),
+  not(sourceMetadataTimestampIsAfter("validFrom", nowIso)),
+  not(sourceMetadataTimestampIsAtOrBefore("validUntil", nowIso)),
+  not(sourceMetadataTimestampIsAtOrBefore("invalidatedAt", nowIso))
+);
+
+const sourceTemporalFilter = (nowIso: string) => and(
+  sourceMetadataTemporalCurrent(nowIso),
   sql`CASE
-    WHEN ${sourceClaims.revisitWhen} IS NULL THEN false
-    WHEN ${sourceClaims.revisitWhen} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$'
-      THEN ${sourceClaims.revisitWhen} <= ${nowIso}
-    ELSE false
+    WHEN ${sourceClaims.revisitWhen} IS NULL THEN true
+    WHEN NOT (${sourceRevisitTimestampIsValid()}) THEN false
+    ELSE ${sourceTimestampUtc(sql<string>`${sourceClaims.revisitWhen}`)}
+      > ${selectionNowUtc(nowIso)}
   END`
 );
+
+const sourceHistoricalWarningFilter = (nowIso: string) => {
+  const metadataTimestampsValid = sql`(
+    ${sourceMetadataTimestampIsValid("validFrom")}
+    AND ${sourceMetadataTimestampIsValid("validUntil")}
+    AND ${sourceMetadataTimestampIsValid("invalidatedAt")}
+  )`;
+  const metadataExpiredOrInvalidated = and(
+    metadataTimestampsValid,
+    not(sourceMetadataTimestampIsAfter("validFrom", nowIso)),
+    or(
+      sourceMetadataTimestampIsAtOrBefore("validUntil", nowIso),
+      sourceMetadataTimestampIsAtOrBefore("invalidatedAt", nowIso)
+    )
+  );
+  const revisitElapsedOrInvalid = and(
+    sourceMetadataTemporalCurrent(nowIso),
+    sql`${sourceClaims.revisitWhen} IS NOT NULL`,
+    or(
+      not(sourceRevisitTimestampIsValid()),
+      sql`CASE
+        WHEN NOT (${sourceRevisitTimestampIsValid()}) THEN false
+        ELSE ${sourceTimestampUtc(sql<string>`${sourceClaims.revisitWhen}`)}
+          <= ${selectionNowUtc(nowIso)}
+      END`
+    )
+  );
+
+  return or(
+    inArray(sourceClaims.status, ["rejected", "deprecated"]),
+    and(
+      sourceLifecycleFilter(),
+      or(
+        not(metadataTimestampsValid),
+        metadataExpiredOrInvalidated,
+        revisitElapsedOrInvalid
+      )
+    )
+  );
+};
 
 const sourceDecisionEdgeProjection = {
   id: sourceDecisionEdges.id,

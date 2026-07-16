@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { assessSourceClaimTemporalValidity } from "@krn/core";
+
 import {
   cleanupActivationSmokeRows,
   countActivationSmokeMarkerRows,
@@ -165,7 +167,8 @@ describe("historical warning repository selection", () => {
         sourceArtifactId: string;
         label: string;
         claim: string;
-        revisitWhen: string;
+        revisitWhen?: string;
+        metadata?: Record<string, unknown>;
       }) => scaffold.sourceRepository.createSourceClaim({
         sourceArtifactId: input.sourceArtifactId,
         claim: input.claim,
@@ -176,9 +179,9 @@ describe("historical warning repository selection", () => {
         supportType: "risk",
         consumer: "historical warning repository test",
         falsifier: "A stale source disappears or becomes current authority.",
-        revisitWhen: input.revisitWhen,
+        ...(input.revisitWhen === undefined ? {} : { revisitWhen: input.revisitWhen }),
         status: "proposed",
-        metadata: { smokeId: marker, label: input.label }
+        metadata: { smokeId: marker, label: input.label, ...input.metadata }
       });
 
       const relevantExpired = await createClaim({
@@ -187,7 +190,7 @@ describe("historical warning repository selection", () => {
         claim: "historical warning exact source",
         revisitWhen: now
       });
-      await Promise.all(Array.from({ length: 3 }, (_, index) => createClaim({
+      const expiredDistractors = await Promise.all(Array.from({ length: 3 }, (_, index) => createClaim({
         sourceArtifactId: artifact.id,
         label: `expired-distractor-${index}`,
         claim: "historical source distractor",
@@ -199,6 +202,82 @@ describe("historical warning repository selection", () => {
         claim: "historical warning exact source current",
         revisitWhen: future
       });
+      const startsAtBoundary = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "starts-at-boundary",
+        claim: "temporal source boundary start",
+        metadata: { validFrom: now }
+      });
+      const offsetCurrent = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "offset-current",
+        claim: "temporal source offset current",
+        metadata: { validUntil: "2026-07-15T14:00:01+02:00" }
+      });
+      const highOffsetCurrent = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "high-offset-current",
+        claim: "temporal source high offset current",
+        metadata: { validUntil: "2026-07-16T12:00:01+23:59" }
+      });
+      const paddedMetadataCurrent = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "padded-metadata-current",
+        claim: "temporal source padded metadata current",
+        metadata: { validUntil: "\t2026-07-15T14:00:01+02:00\n" }
+      });
+      const expiresAtBoundary = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "expires-at-boundary",
+        claim: "temporal source boundary expiry",
+        metadata: { validUntil: now }
+      });
+      const submillisecondExpiry = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "submillisecond-expiry",
+        claim: "temporal source submillisecond expiry",
+        metadata: { validUntil: "2026-07-15T12:00:00.0000009Z" }
+      });
+      const invalidatedAtBoundary = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "invalidated-at-boundary",
+        claim: "temporal source boundary invalidation",
+        metadata: { invalidatedAt: now }
+      });
+      const beforeValid = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "before-valid",
+        claim: "temporal source before valid",
+        metadata: { validFrom: future }
+      });
+      const invalidTimestamp = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "invalid-timestamp",
+        claim: "temporal source invalid timestamp",
+        metadata: { validUntil: "2026-02-30T00:00:00.000Z" }
+      });
+      const invalidLowYear = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "invalid-low-year",
+        claim: "temporal source invalid low year",
+        metadata: { validUntil: "0099-01-01T00:00:00.000Z" }
+      });
+      const invalidRevisitWhen = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "invalid-revisit-when",
+        claim: "temporal source invalid revisit timestamp",
+        revisitWhen: ` ${future} `
+      });
+      const claimToDeprecate = await createClaim({
+        sourceArtifactId: artifact.id,
+        label: "deprecated",
+        claim: "temporal source deprecated lifecycle",
+        revisitWhen: future
+      });
+      const deprecated = await scaffold.sourceRepository.deprecateSourceClaim({
+        sourceClaimId: claimToDeprecate.id,
+        revisitWhen: future
+      });
       const foreignExpired = await createClaim({
         sourceArtifactId: foreignArtifact.id,
         label: "foreign-expired",
@@ -208,7 +287,12 @@ describe("historical warning repository selection", () => {
 
       const currentRows = await scaffold.sourceRepository.listClaimsForProject(
         scaffold.project.id,
-        10,
+        20,
+        { now }
+      );
+      const limitedCurrent = await scaffold.sourceRepository.listClaimsForProject(
+        scaffold.project.id,
+        1,
         { now, terms: ["historical", "warning", "exact"] }
       );
       const limitedWarnings = await scaffold.sourceRepository.listHistoricalClaimWarningsForProject(
@@ -218,16 +302,61 @@ describe("historical warning repository selection", () => {
       );
       const allWarnings = await scaffold.sourceRepository.listHistoricalClaimWarningsForProject(
         scaffold.project.id,
-        10,
+        20,
         { now }
       );
+      const invalidNowCurrent = await scaffold.sourceRepository.listClaimsForProject(
+        scaffold.project.id,
+        10,
+        { now: "July 15, 2026 12:00:00 UTC" }
+      );
+      const invalidNowWarnings = await scaffold.sourceRepository
+        .listHistoricalClaimWarningsForProject(
+          scaffold.project.id,
+          10,
+          { now: "July 15, 2026 12:00:00 UTC" }
+        );
       const warningIds = allWarnings.map((claim) => claim.id);
+      const temporalClaims = [
+        relevantExpired,
+        ...expiredDistractors,
+        current,
+        startsAtBoundary,
+        offsetCurrent,
+        highOffsetCurrent,
+        paddedMetadataCurrent,
+        expiresAtBoundary,
+        submillisecondExpiry,
+        invalidatedAtBoundary,
+        beforeValid,
+        invalidTimestamp,
+        invalidLowYear,
+        invalidRevisitWhen,
+        deprecated
+      ];
+      const expectedCurrentIds = temporalClaims
+        .filter((claim) => assessSourceClaimTemporalValidity(claim, now).status === "current")
+        .map((claim) => claim.id)
+        .sort();
+      const expectedWarningIds = temporalClaims
+        .filter((claim) => {
+          const assessment = assessSourceClaimTemporalValidity(claim, now);
 
-      expect(currentRows.map((claim) => claim.id)).toEqual([current.id]);
+          return assessment.status === "invalid" ||
+            assessment.status === "inactive" ||
+            (assessment.status === "historical" && assessment.reason !== "before_valid_from");
+        })
+        .map((claim) => claim.id)
+        .sort();
+
+      expect(currentRows.map((claim) => claim.id).sort()).toEqual(expectedCurrentIds);
+      expect(limitedCurrent.map((claim) => claim.id)).toEqual([current.id]);
       expect(limitedWarnings.map((claim) => claim.id)).toEqual([relevantExpired.id]);
-      expect(warningIds).toContain(relevantExpired.id);
-      expect(warningIds).not.toContain(current.id);
+      expect(warningIds.sort()).toEqual(expectedWarningIds);
+      expect(warningIds).not.toContain(beforeValid.id);
       expect(warningIds).not.toContain(foreignExpired.id);
+      expect(invalidNowCurrent).toEqual([]);
+      expect(invalidNowWarnings).toEqual([]);
     } finally {
       await scaffold.cleanup();
       await scaffold.client.end();
