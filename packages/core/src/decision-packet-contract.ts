@@ -131,6 +131,7 @@ const decisionPacketSchema = z.strictObject({
   evidenceContract: evidenceContractSchema.optional(),
   nextAction: z.string(),
   governingDecisionIds: stringArraySchema,
+  sourceDecisionIds: stringArraySchema,
   governingStatements: stringArraySchema,
   taskStandardDecisions: z.array(taskStandardSchema),
   sourceClaimIds: stringArraySchema,

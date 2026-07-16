@@ -513,6 +513,7 @@ describe("runDecisionPacketEval", () => {
       },
       nextAction: "Use the governed decision packet before coding.",
       governingDecisionIds: ["store-backed-memory-no-markdown"],
+      sourceDecisionIds: [],
       governingStatements: [
         "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
       ],

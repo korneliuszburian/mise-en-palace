@@ -374,6 +374,7 @@ export interface DecisionPacket {
   evidenceContract?: DecisionPacketEvidenceContract;
   nextAction: string;
   governingDecisionIds: readonly string[];
+  sourceDecisionIds: readonly string[];
   governingStatements: readonly string[];
   taskStandardDecisions: readonly DecisionPacketTaskStandard[];
   sourceClaimIds: readonly string[];
@@ -663,12 +664,17 @@ const includedActivationCandidatesFor = (
 };
 
 const sourceDecisionIdsFor = (
-  readModel: DecisionPacketReadModelInput
-): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
-  candidate.subjectType === "source_claim"
+  readModel: DecisionPacketReadModelInput,
+  sourceClaimIds: readonly string[]
+): string[] => {
+  const allowedSourceClaimIds = new Set(sourceClaimIds);
+
+  return unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
+  candidate.subjectType === "source_claim" && allowedSourceClaimIds.has(candidate.subjectId)
     ? candidate.sourceDecisionSupportBoost?.sourceDecisionIds ?? []
     : []
-));
+  ));
+};
 
 const sourceClaimAuthorityCandidateFor = (
   readModel: DecisionPacketReadModelInput,
@@ -768,7 +774,10 @@ const sourceDecisionIdsWithUsefulness = (
   readModel: DecisionPacketReadModelInput,
   outcomes: readonly SourceUsefulnessOutcome[]
 ): string[] => {
-  const selectedSourceDecisionIds = new Set(sourceDecisionIdsFor(readModel));
+  const selectedSourceDecisionIds = new Set(sourceDecisionIdsFor(
+    readModel,
+    sourceClaimIdsFor(readModel)
+  ));
 
   return unique(readModel.feedbackDeltas.flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
@@ -1083,6 +1092,10 @@ export const buildDecisionPacketFromReadModel = (
     readModel,
     governingSourceClaimIds
   );
+  const sourceDecisionIds = sourceDecisionIdsFor(
+    readModel,
+    governingSourceClaimIds
+  );
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
   const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
   const memoryRefs = memoryRefsFor(readModel);
@@ -1199,6 +1212,7 @@ export const buildDecisionPacketFromReadModel = (
     nextAction: readModel.nextAction ??
       "Review the DecisionPacket evidence gaps before taking an implementation action.",
     governingDecisionIds,
+    sourceDecisionIds,
     governingStatements,
     taskStandardDecisions,
     sourceClaimIds,
@@ -1308,7 +1322,7 @@ export const buildDecisionPacketReturnChannels = (input: {
       sourceUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       sourceDecisionUsefulnessExample:
-        "Unavailable: the DecisionPacket does not expose canonical selected SourceDecision ids; use claim-scoped feedback.",
+        "Unavailable: canonical selected SourceDecision ids are exposed for provenance, but source-decision usefulness authorization is not enabled; use claim-scoped feedback.",
       knowledgeUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:

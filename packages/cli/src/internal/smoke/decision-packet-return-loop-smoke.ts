@@ -192,6 +192,7 @@ interface DecisionPacketSmokeJson {
   };
   packet: {
     governingDecisionIds: readonly string[];
+    sourceDecisionIds: readonly string[];
     contextExclusions: readonly DecisionPacketSmokeExclusion[];
     memoryRefs: readonly string[];
     rejectedPathIds: readonly string[];
@@ -510,6 +511,7 @@ const readPacket = (
 
   return {
     governingDecisionIds: readStringArray(packet, "governingDecisionIds"),
+    sourceDecisionIds: readStringArray(packet, "sourceDecisionIds"),
     contextExclusions: readRecordArray(packet, "contextExclusions")
       .flatMap((item) => {
         const exclusion = readContextExclusion(item);
@@ -2858,7 +2860,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     const returnChannelHasChecksum =
       firstPacket.returnChannels.evidence.persistedCommand.includes(firstPacket.packetIdentity.checksum) &&
       firstPacket.returnChannels.feedback.sourceDecisionUsefulnessExample.includes(
-        "does not expose canonical selected SourceDecision ids"
+        "source-decision usefulness authorization is not enabled"
       );
 
     if (!returnChannelHasChecksum) {

@@ -42,6 +42,7 @@ interface DecisionPacketJson {
   };
   readonly packet: {
     readonly governingDecisionIds: readonly string[];
+    readonly sourceDecisionIds: readonly string[];
     readonly taskStandardDecisions: readonly {
       readonly decision: string;
       readonly rejectedPath?: string;
@@ -778,6 +779,7 @@ describe("decision packet CLI", () => {
           projectId: "project-1"
         },
         governingDecisionIds: ["frontend-bootstrap-standard"],
+        sourceDecisionIds: ["source-decision-canonical-agent-1"],
         governingStatements: expect.arrayContaining([
           "Use the refreshed frontend bootstrap standard for matching new frontend projects."
         ]),
@@ -907,7 +909,7 @@ describe("decision packet CLI", () => {
             ),
           sourceUsefulnessExample: expect.stringContaining("packet:"),
           sourceDecisionUsefulnessExample: expect.stringContaining(
-            "does not expose canonical selected SourceDecision ids"
+            "source-decision usefulness authorization is not enabled"
           )
         }
       },
@@ -934,6 +936,9 @@ describe("decision packet CLI", () => {
       evidenceRef: authorityBinding.packetEvidenceRef
     });
     expect(json.packet.sourceClaimIds).toContain("claim-agent-1");
+    expect(json.packet.sourceDecisionIds).toEqual([
+      "source-decision-canonical-agent-1"
+    ]);
     expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
     expect(json.packet.caveatedSourceClaimIds).toEqual([
       "claim-agent-1",
@@ -949,7 +954,7 @@ describe("decision packet CLI", () => {
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
-      "does not expose canonical selected SourceDecision ids"
+      "source-decision usefulness authorization is not enabled"
     );
     expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(closed).toBe(true);

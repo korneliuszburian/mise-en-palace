@@ -158,6 +158,7 @@ export const decisionPacketForCompiledPlan = (
     evidenceContract: result.evidenceContract,
     nextAction: result.nextAction,
     governingDecisionIds: [],
+    sourceDecisionIds: [],
     governingStatements: [],
     taskStandardDecisions: [],
     sourceClaimIds,

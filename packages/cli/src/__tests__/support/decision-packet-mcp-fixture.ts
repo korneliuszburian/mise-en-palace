@@ -84,6 +84,7 @@ export const decisionPacketMcpFixture = bindDecisionPacketFixtureIdentity({
     toolBoundaries: ["read_only"],
     nextAction: "Use the governed frontend bootstrap standard.",
     governingDecisionIds: ["frontend-project-standard-packet"],
+    sourceDecisionIds: ["source-decision:frontend-project-standard-packet"],
     governingStatements: ["Use the governed frontend bootstrap standard."],
     taskStandardDecisions: [{
       memoryRecordId: "memory:decision:frontend-project-standard-packet",
@@ -180,7 +181,7 @@ export const decisionPacketMcpFixture = bindDecisionPacketFixtureIdentity({
       sourceUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness claim:<id>=helped",
       sourceDecisionUsefulnessExample:
-        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness decision:<id>=helped",
+        "Unavailable: canonical selected SourceDecision ids are exposed for provenance, but source-decision usefulness authorization is not enabled; use claim-scoped feedback.",
       knowledgeUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --memory-usefulness knowledge=helped",
       doesNotProve: "Feedback does not promote truth without review gates."

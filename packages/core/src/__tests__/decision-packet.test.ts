@@ -638,7 +638,7 @@ describe("DecisionPacket builder", () => {
     });
   });
 
-  it("falsifies that the packet exposes canonical selected SourceDecision ids", () => {
+  it("exposes canonical selected SourceDecision ids", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-canonical-source-decision",
@@ -648,12 +648,25 @@ describe("DecisionPacket builder", () => {
       },
       ...activeEvidenceContractResourcesFor("run-canonical-source-decision"),
       context: {
-        inclusions: 1,
-        exclusions: 0,
+        inclusions: 2,
+        exclusions: 2,
         inclusionDetails: [{
           subjectType: "source_claim",
           subjectId: "claim-canonical-source-decision",
           sourceAuthority: "project-decision"
+        }, {
+          subjectType: "source_claim",
+          subjectId: "claim-conflicting-source-decision",
+          sourceAuthority: "project-decision"
+        }],
+        exclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-stale-source-decision",
+          reason: "stale"
+        }, {
+          subjectType: "source_claim",
+          subjectId: "claim-rejected-source-decision",
+          reason: "rejected"
         }],
         activationTrace: {
           candidates: [{
@@ -661,26 +674,78 @@ describe("DecisionPacket builder", () => {
             subjectId: "claim-canonical-source-decision",
             sourceDecisionSupportBoost: {
               sourceDecisionEdgeIds: ["edge-canonical-source-decision"],
-              sourceDecisionIds: ["source-decision-canonical-id"],
+              sourceDecisionIds: [
+                "source-decision-canonical-id",
+                "source-decision-canonical-id"
+              ],
               targets: [{
                 sourceDecisionEdgeId: "edge-canonical-source-decision",
                 targetType: "architecture_decision",
                 targetId: "architecture-target-opaque-id"
               }]
             }
+          }, {
+            subjectType: "source_claim",
+            subjectId: "claim-conflicting-source-decision",
+            sourceClaimEdgeInfluence: {
+              edgeIds: ["edge-conflicting-claim"],
+              edgeKinds: ["contradicts"],
+              seedSourceClaimIds: ["claim-canonical-source-decision"],
+              doesNotProve: "The relation does not prove either endpoint true."
+            },
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-conflicting-source-decision"],
+              sourceDecisionIds: ["source-decision-conflicting-id"],
+              targets: [{
+                sourceDecisionEdgeId: "edge-conflicting-source-decision",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-conflicting-id"
+              }]
+            }
+          }, {
+            subjectType: "source_claim",
+            subjectId: "claim-stale-source-decision",
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-stale-source-decision"],
+              sourceDecisionIds: ["source-decision-stale-id"],
+              targets: []
+            }
+          }, {
+            subjectType: "source_claim",
+            subjectId: "claim-rejected-source-decision",
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["edge-rejected-source-decision"],
+              sourceDecisionIds: ["source-decision-rejected-id"],
+              targets: []
+            }
           }],
           decisions: []
         }
       },
       evidenceBundles: [],
-      feedbackDeltas: [],
+      feedbackDeltas: [{
+        candidates: [],
+        sourceUsefulnessOutcomes: [{
+          sourceDecisionId: "source-decision-feedback-only-id",
+          outcome: "used",
+          reason: "Feedback alone cannot select a canonical decision."
+        }],
+        knowledgeUsefulnessOutcomes: []
+      }],
       proof: {
         doesNotProve: ["source truth"]
       }
     });
 
     expect(packet.governingDecisionIds).toEqual(["architecture-target-opaque-id"]);
-    expect(packet).not.toHaveProperty("sourceDecisionIds");
+    expect(packet.sourceDecisionIds).toEqual(["source-decision-canonical-id"]);
+    expect(packet.sourceDecisionIds).not.toEqual(expect.arrayContaining([
+      "architecture-target-opaque-id",
+      "source-decision-conflicting-id",
+      "source-decision-stale-id",
+      "source-decision-rejected-id",
+      "source-decision-feedback-only-id"
+    ]));
   });
 
   it("keeps project-scoped owner-file directives out of governing authority", () => {
@@ -1413,7 +1478,7 @@ describe("DecisionPacket builder", () => {
       `--decision-packet-generated-at ${first.packetIdentity.generatedAt}`
     );
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
-      "does not expose canonical selected SourceDecision ids"
+      "source-decision usefulness authorization is not enabled"
     );
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
@@ -1427,7 +1492,7 @@ describe("DecisionPacket builder", () => {
       sha256Hex: fakeSha256Hex
     });
     const tampered = structuredClone(issued);
-    tampered.packet.nextAction = "Caller replaced the issued action.";
+    tampered.packet.sourceDecisionIds = ["source-decision-forged-id"];
     const malformed = {
       ...issued,
       packet: {

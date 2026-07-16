@@ -49,6 +49,7 @@ const weakPacketJson = bindFixtureIdentity({
   packet: {
     ...packetJson.packet,
     governingDecisionIds: [],
+    sourceDecisionIds: [],
     governingStatements: [],
     taskStandardDecisions: [],
     sourceClaimIds: [],
@@ -812,9 +813,9 @@ describe("DecisionPacket MCP wrapper", () => {
         "run-agent-source-dissent",
         "run-agent-unsafe"
       ],
-      messageUtf8Bytes: { minimum: 10_316, maximum: 12_508 },
-      structuredContentUtf8Bytes: { minimum: 4_919, maximum: 5_975 },
-      collectionCount: { minimum: 52, maximum: 55 },
+      messageUtf8Bytes: { minimum: 10_462, maximum: 12_756 },
+      structuredContentUtf8Bytes: { minimum: 4_991, maximum: 6_097 },
+      collectionCount: { minimum: 53, maximum: 56 },
       collectionP95: { minimum: 1, maximum: 2 },
       maximumCollectionLength: 4
     });
@@ -1087,7 +1088,9 @@ describe("DecisionPacket MCP wrapper", () => {
               persistedCommand: expect.stringContaining("--decision-packet-checksum")
             },
             feedback: {
-              sourceDecisionUsefulnessExample: expect.stringContaining("decision:<id>=helped")
+              sourceDecisionUsefulnessExample: expect.stringContaining(
+                "source-decision usefulness authorization is not enabled"
+              )
             }
           },
           proof: {
@@ -1097,6 +1100,7 @@ describe("DecisionPacket MCP wrapper", () => {
             doesNotProve: expect.arrayContaining(["memory/source promotion", "broad MCP product readiness"])
           },
           packet: {
+            sourceDecisionIds: ["source-decision:frontend-project-standard-packet"],
             abstentionScore: {
               status: "ready",
               reasons: []
