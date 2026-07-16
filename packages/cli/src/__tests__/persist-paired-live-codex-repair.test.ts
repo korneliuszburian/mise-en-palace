@@ -35,7 +35,8 @@ const manifest: PairedTrialManifest = {
   task: "Repair the controlled target.",
   requiredDecisionIds: ["decision-1"],
   decisionApplications: [{
-    sourceDecisionId: "decision-1",
+    governingDecisionId: "decision-1",
+    sourceDecisionId: "source-decision-1",
     check: "finite_result_state",
     changedFiles: ["src/index.ts"]
   }],
@@ -176,6 +177,7 @@ const packetReadback = (overrides: Record<string, unknown> = {}) => ({
   packet: {
     task: { id: manifest.taskId, projectId: manifest.projectId },
     governingDecisionIds: manifest.requiredDecisionIds,
+    sourceDecisionIds: manifest.decisionApplications.map((rule) => rule.sourceDecisionId),
     abstentionScore: { status: "ready" }
   },
   readModel: { feedbackDeltas: [] },
@@ -333,9 +335,9 @@ describe("paired live Codex repair persistence", () => {
       baseline: { ...score.baseline, checks: [mappedCheck] },
       krn: { ...score.krn, checks: [mappedCheck] }
     };
-    const applicationId = pairedDecisionApplicationId(manifest.runId, "decision-1");
+    const applicationId = pairedDecisionApplicationId(manifest.runId, "source-decision-1");
     const applicationOutcome = {
-      sourceDecisionId: "decision-1",
+      sourceDecisionId: "source-decision-1",
       applicationId,
       appliedAt: "2026-07-16T11:00:00.000Z",
       outcome: "used"

@@ -63,10 +63,12 @@ const score = (outcome: "win" | "tie", krnUntracked = false): PairedRepairScore 
 });
 
 const rules = [{
+  governingDecisionId: "governing-unknown-first",
   sourceDecisionId: "decision-unknown-first",
   check: "unknown_first" as const,
   changedFiles: ["src/config.ts"]
 }, {
+  governingDecisionId: "governing-unobserved",
   sourceDecisionId: "decision-unobserved",
   check: "finite_result_state" as const,
   changedFiles: ["src/userService.ts"]
@@ -75,6 +77,7 @@ const rules = [{
 describe("paired decision applications", () => {
   it("requires both a mapped passing check and its owned changed files", () => {
     expect(observedPairedDecisionApplications({ score: score("tie"), rules })).toEqual([{
+      governingDecisionId: "governing-unknown-first",
       sourceDecisionId: "decision-unknown-first",
       check: "unknown_first",
       changedFiles: ["src/config.ts"],

@@ -2,16 +2,6 @@
   "schemaVersion": "fixture-ownership.v1",
   "fixtures": [
     {
-      "path": "tests/fixtures/paired-live-codex-repair/manifest.json",
-      "consumer": "tracked paired live Codex repair runner",
-      "provenance": "repository-owned bounded trial manifest",
-      "capturedAt": "2026-07-11",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
       "path": "tests/fixtures/activation/noisy-brain-selection.json",
       "consumer": "decision-packet/eval test",
       "provenance": "repository-owned test/eval fixture",

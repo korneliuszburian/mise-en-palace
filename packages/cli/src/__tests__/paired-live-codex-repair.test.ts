@@ -100,12 +100,9 @@ describe("paired live Codex repair eval", () => {
       "../../tests/fixtures/target-repos/weak-json-boundary-typescript"
     );
     const scenarioRoot = join(fixtureRoot, "scenarios/weak-json-boundary/files");
-    const trackedManifest = JSON.parse(await readFile(resolve(
-      process.cwd(),
-      "../../tests/fixtures/paired-live-codex-repair/manifest.json"
-    ), "utf8")) as { readonly task: string };
+    const task = "Make the controlled user-creation boundary satisfy its observable invalid-input contract.";
     const prompts = buildPairedRepairPrompts({
-      task: trackedManifest.task,
+      task,
       decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } }
     });
 
@@ -117,7 +114,7 @@ describe("paired live Codex repair eval", () => {
       ], fixtureRoot);
       expect(materialized.exitCode).toBe(0);
 
-      expect(prompts.baseline).toContain(`Task: ${trackedManifest.task}`);
+      expect(prompts.baseline).toContain(`Task: ${task}`);
       expect(prompts.baseline).not.toContain("private-packet-marker");
       expect(prompts.krn).toContain("private-packet-marker");
 
