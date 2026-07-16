@@ -159,16 +159,15 @@ interface DecisionPacketSourceClaimEdgeInfluence {
   doesNotProve: string;
 }
 
-interface DecisionPacketSourceDecisionSupportTarget {
+interface DecisionPacketSourceDecisionSupportEdge {
   sourceDecisionEdgeId: string;
+  sourceDecisionId: string;
   targetType: SourceDecisionTargetType;
   targetId: string;
 }
 
 interface DecisionPacketSourceDecisionSupportBoost {
-  sourceDecisionEdgeIds: string[];
-  sourceDecisionIds?: string[];
-  targets: DecisionPacketSourceDecisionSupportTarget[];
+  edges: DecisionPacketSourceDecisionSupportEdge[];
   confidence: string[];
   supportTypes: string[];
   doesNotProve: string;
@@ -281,16 +280,16 @@ export const sourceClaimAuthorityFromMetadata = (
   return { status, reasons };
 };
 
-const sourceDecisionSupportTargetsFromMetadata = (
+const sourceDecisionSupportEdgesFromMetadata = (
   metadata: Record<string, unknown>
-): DecisionPacketSourceDecisionSupportTarget[] => {
-  const value = metadata.targets;
+): DecisionPacketSourceDecisionSupportEdge[] => {
+  const value = metadata.edges;
 
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((item) => {
+  const edges = value.flatMap((item) => {
     const record = metadataRecordValue(item);
 
     if (record === undefined) {
@@ -298,11 +297,13 @@ const sourceDecisionSupportTargetsFromMetadata = (
     }
 
     const sourceDecisionEdgeId = readMetadataString(record, "sourceDecisionEdgeId");
+    const sourceDecisionId = readMetadataString(record, "sourceDecisionId");
     const targetType = readMetadataString(record, "targetType");
     const targetId = readMetadataString(record, "targetId");
 
     if (
       sourceDecisionEdgeId === undefined ||
+      sourceDecisionId === undefined ||
       targetType === undefined ||
       !includesValue(sourceDecisionTargetTypes, targetType) ||
       targetId === undefined
@@ -310,8 +311,10 @@ const sourceDecisionSupportTargetsFromMetadata = (
       return [];
     }
 
-    return [{ sourceDecisionEdgeId, targetType, targetId }];
+    return [{ sourceDecisionEdgeId, sourceDecisionId, targetType, targetId }];
   });
+
+  return edges.length === value.length ? edges : [];
 };
 
 export const sourceDecisionSupportBoostFromMetadata = (
@@ -323,16 +326,14 @@ export const sourceDecisionSupportBoostFromMetadata = (
     return undefined;
   }
 
-  const sourceDecisionEdgeIds = readMetadataStringList(value, "sourceDecisionEdgeIds");
-  const sourceDecisionIds = readMetadataStringList(value, "sourceDecisionIds");
-  const targets = sourceDecisionSupportTargetsFromMetadata(value);
+  const edges = sourceDecisionSupportEdgesFromMetadata(value);
   const confidence = readMetadataStringList(value, "confidence");
   const supportTypes = readMetadataStringList(value, "supportTypes");
   const doesNotProve = readMetadataString(value, "doesNotProve");
 
   if (
-    sourceDecisionEdgeIds.length === 0 ||
-    targets.length === 0 ||
+    edges.length === 0 ||
+    new Set(edges.map((edge) => edge.sourceDecisionEdgeId)).size !== edges.length ||
     confidence.length === 0 ||
     supportTypes.length === 0 ||
     doesNotProve === undefined
@@ -341,9 +342,7 @@ export const sourceDecisionSupportBoostFromMetadata = (
   }
 
   return {
-    sourceDecisionEdgeIds,
-    ...(sourceDecisionIds.length === 0 ? {} : { sourceDecisionIds }),
-    targets,
+    edges,
     confidence,
     supportTypes,
     doesNotProve

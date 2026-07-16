@@ -156,6 +156,7 @@ const packet: DecisionPacket = {
   evidenceContract,
   nextAction: "Execute the bounded source repair.",
   governingDecisionIds: [],
+  sourceDecisionIds: [],
   governingStatements: [],
   taskStandardDecisions: [],
   sourceClaimIds: ["claim-codex-brief-contract"],

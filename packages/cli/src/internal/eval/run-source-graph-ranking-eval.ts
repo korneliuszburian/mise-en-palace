@@ -468,6 +468,7 @@ const rowDocument = (
 const rowDecisionEdge = (row: SourceGraphRankingRow): SourceDecisionEdge => ({
   id: `decision-edge:${row.id}`,
   sourceClaimId: row.id,
+  sourceDecisionId: `source-decision:${row.id}`,
   targetType: "eval_candidate",
   targetId: `source-graph-ranking:${row.id}`,
   supportType: "implementation-boundary",

@@ -253,10 +253,9 @@ const aggregate: HarnessRunAggregate = {
             "SourceClaimEdge influence does not prove SourceDecisionEdge support."
         },
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
-          sourceDecisionIds: ["source-decision-canonical-agent-1"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "source-decision-edge-agent-1",
+            sourceDecisionId: "source-decision-canonical-agent-1",
             targetType: "architecture_decision",
             targetId: "frontend-bootstrap-standard"
           }],
@@ -884,10 +883,9 @@ describe("decision packet CLI", () => {
                 edgeIds: ["source-claim-edge-agent-1"]
               },
               sourceDecisionSupportBoost: {
-                sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
-                sourceDecisionIds: ["source-decision-canonical-agent-1"],
-                targets: [{
+                edges: [{
                   sourceDecisionEdgeId: "source-decision-edge-agent-1",
+                  sourceDecisionId: "source-decision-canonical-agent-1",
                   targetType: "architecture_decision",
                   targetId: "frontend-bootstrap-standard"
                 }]

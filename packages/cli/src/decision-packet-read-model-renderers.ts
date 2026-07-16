@@ -205,9 +205,8 @@ const renderActivationCandidateTrace = (
     ? []
     : [
         "    sourceDecisionSupportBoost:",
-        `      sourceDecisionEdgeIds: ${candidate.sourceDecisionSupportBoost.sourceDecisionEdgeIds.join(", ")}`,
-        `      targets: ${candidate.sourceDecisionSupportBoost.targets
-          .map((target) => `${target.sourceDecisionEdgeId}->${target.targetType}/${target.targetId}`)
+        `      edges: ${candidate.sourceDecisionSupportBoost.edges
+          .map((edge) => `${edge.sourceDecisionEdgeId}->${edge.sourceDecisionId}->${edge.targetType}/${edge.targetId}`)
           .join(", ")}`,
         `      confidence: ${candidate.sourceDecisionSupportBoost.confidence.join(", ")}`,
         `      supportTypes: ${candidate.sourceDecisionSupportBoost.supportTypes.join(", ")}`,

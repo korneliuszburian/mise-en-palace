@@ -131,6 +131,7 @@ const sourceDecisionEdge = (
 ): SourceDecisionEdge => ({
   id: "73e266bb-e957-4a07-aa62-fe74cb7178a0" as SourceDecisionEdge["id"],
   sourceClaimId,
+  sourceDecisionId: "source-decision:activation-utility-follow-up",
   targetType: "eval_candidate",
   targetId: "activation-utility-source-eval-follow-up-imr-38",
   supportType: "implementation-boundary",
@@ -976,6 +977,9 @@ describe("runSourceSearchCommand", () => {
     );
     expect(sourceDecisionSupport).toHaveLength(1);
     expect(decisionSupport.sourceClaimId).toBe(sourceClaimId);
+    expect(decisionSupport.sourceDecisionId).toBe(
+      "source-decision:activation-utility-follow-up"
+    );
     expect(decisionSupport.sourceDecisionEdgeId).toBe("73e266bb-e957-4a07-aa62-fe74cb7178a0");
     expect(decisionSupport.targetType).toBe("eval_candidate");
     expect(decisionSupport.targetId).toBe("activation-utility-source-eval-follow-up-imr-38");

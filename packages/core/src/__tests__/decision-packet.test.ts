@@ -107,15 +107,24 @@ const readModel = {
         subjectId: "claim-current",
         sourceRejectionIds: ["source-rejection-current"],
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-current"],
-          sourceDecisionIds: [
-            "source-decision-current",
-            "source-decision-stale",
-            "source-decision-noise",
-            "source-decision-conflicted"
-          ],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "source-decision-edge-current",
+            sourceDecisionId: "source-decision-current",
+            targetType: "architecture_decision",
+            targetId: "source-decision-current"
+          }, {
+            sourceDecisionEdgeId: "source-decision-edge-stale",
+            sourceDecisionId: "source-decision-stale",
+            targetType: "architecture_decision",
+            targetId: "source-decision-current"
+          }, {
+            sourceDecisionEdgeId: "source-decision-edge-noise",
+            sourceDecisionId: "source-decision-noise",
+            targetType: "architecture_decision",
+            targetId: "source-decision-current"
+          }, {
+            sourceDecisionEdgeId: "source-decision-edge-conflicted",
+            sourceDecisionId: "source-decision-conflicted",
             targetType: "architecture_decision",
             targetId: "source-decision-current"
           }]
@@ -260,9 +269,9 @@ const relationReadModel = (
             "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
         },
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-relation"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "source-decision-edge-relation",
+            sourceDecisionId: "source-decision-relation-current",
             targetType: "architecture_decision",
             targetId: "source-decision-relation-current"
           }]
@@ -335,9 +344,9 @@ const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInpu
             "The relation makes dissent reviewable; it does not resolve which accepted claim is true."
         },
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-governing"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "source-decision-edge-governing",
+            sourceDecisionId: "source-decision-governing",
             targetType: "architecture_decision",
             targetId: "decision-unresolved-source-dissent"
           }]
@@ -348,9 +357,9 @@ const unresolvedAcceptedSourceDissentReadModel = (): DecisionPacketReadModelInpu
         sourceClaimAuthorityStatus: "accepted",
         sourceClaimAuthorityReasons: ["current_decision_linked_authority"],
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["source-decision-edge-dissenting"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "source-decision-edge-dissenting",
+            sourceDecisionId: "source-decision-dissenting",
             targetType: "architecture_decision",
             targetId: "decision-unresolved-source-dissent"
           }]
@@ -413,9 +422,9 @@ const sourceClaimExclusionReadModel = (input: {
         subjectType: "source_claim",
         subjectId: "claim-governing",
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["edge-governing"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "edge-governing",
+            sourceDecisionId: "source-decision-governing",
             targetType: "architecture_decision",
             targetId: "decision-governing"
           }]
@@ -470,9 +479,9 @@ const deferredSourceDissentReadModel = (): DecisionPacketReadModelInput => ({
         subjectId: "claim-deferred-current",
         sourceRejectionIds: ["source-rejection-deferred"],
         sourceDecisionSupportBoost: {
-          sourceDecisionEdgeIds: ["edge-deferred-current"],
-          targets: [{
+          edges: [{
             sourceDecisionEdgeId: "edge-deferred-current",
+            sourceDecisionId: "source-decision-deferred-current",
             targetType: "architecture_decision",
             targetId: "decision-deferred-current"
           }]
@@ -595,11 +604,21 @@ describe("DecisionPacket builder", () => {
       "claim-current",
       "claim-caveated"
     ]);
-    expect(packet.sourceDecisionEdgeIds).toEqual(["source-decision-edge-current"]);
+    expect(packet.sourceDecisionEdgeIds).toEqual([
+      "source-decision-edge-current",
+      "source-decision-edge-stale",
+      "source-decision-edge-noise",
+      "source-decision-edge-conflicted"
+    ]);
     expect(packet.sourceDecisionTargets).toEqual([{
       targetType: "architecture_decision",
       targetId: "source-decision-current",
-      sourceDecisionEdgeIds: ["source-decision-edge-current"]
+      sourceDecisionEdgeIds: [
+        "source-decision-edge-current",
+        "source-decision-edge-stale",
+        "source-decision-edge-noise",
+        "source-decision-edge-conflicted"
+      ]
     }]);
     expect(packet.memoryRefs).toEqual(["memory-current"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
@@ -614,7 +633,10 @@ describe("DecisionPacket builder", () => {
     expect(packet.rejectedPathIds).toEqual(["anti-memory-superseded-template"]);
     expect(packet.sourceRejectionIds).toEqual(["source-rejection-current"]);
     expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
-    expect(packet.severeStaleAuthorityIds).toEqual([]);
+    expect(packet.severeStaleAuthorityIds).toEqual([
+      "source-decision-stale",
+      "source-decision-conflicted"
+    ]);
     expect(packet.falsifiers).toEqual([
       "A matching app setup packet omits the current template decision."
     ]);
@@ -622,7 +644,9 @@ describe("DecisionPacket builder", () => {
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-caveated",
-      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current"
+      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current",
+      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-stale",
+      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
     ]);
     expect(packet.rejectedPathIds).not.toContain("anti-memory-candidate-pending-feedback");
     expect(packet.sourceConsensus.supersededPathIds).toEqual(["claim-superseded"]);
@@ -633,7 +657,8 @@ describe("DecisionPacket builder", () => {
         "evidence_gap",
         "missing_decision_linked_source",
         "caveated_source_authority",
-        "caveated_memory_authority"
+        "caveated_memory_authority",
+        "stale_authority"
       ]
     });
   });
@@ -673,13 +698,9 @@ describe("DecisionPacket builder", () => {
             subjectType: "source_claim",
             subjectId: "claim-canonical-source-decision",
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-canonical-source-decision"],
-              sourceDecisionIds: [
-                "source-decision-canonical-id",
-                "source-decision-canonical-id"
-              ],
-              targets: [{
+              edges: [{
                 sourceDecisionEdgeId: "edge-canonical-source-decision",
+                sourceDecisionId: "source-decision-canonical-id",
                 targetType: "architecture_decision",
                 targetId: "architecture-target-opaque-id"
               }]
@@ -694,10 +715,9 @@ describe("DecisionPacket builder", () => {
               doesNotProve: "The relation does not prove either endpoint true."
             },
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-conflicting-source-decision"],
-              sourceDecisionIds: ["source-decision-conflicting-id"],
-              targets: [{
+              edges: [{
                 sourceDecisionEdgeId: "edge-conflicting-source-decision",
+                sourceDecisionId: "source-decision-conflicting-id",
                 targetType: "architecture_decision",
                 targetId: "architecture-target-conflicting-id"
               }]
@@ -706,17 +726,23 @@ describe("DecisionPacket builder", () => {
             subjectType: "source_claim",
             subjectId: "claim-stale-source-decision",
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-stale-source-decision"],
-              sourceDecisionIds: ["source-decision-stale-id"],
-              targets: []
+              edges: [{
+                sourceDecisionEdgeId: "edge-stale-source-decision",
+                sourceDecisionId: "source-decision-stale-id",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-stale-id"
+              }]
             }
           }, {
             subjectType: "source_claim",
             subjectId: "claim-rejected-source-decision",
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-rejected-source-decision"],
-              sourceDecisionIds: ["source-decision-rejected-id"],
-              targets: []
+              edges: [{
+                sourceDecisionEdgeId: "edge-rejected-source-decision",
+                sourceDecisionId: "source-decision-rejected-id",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-rejected-id"
+              }]
             }
           }],
           decisions: []
@@ -802,10 +828,9 @@ describe("DecisionPacket builder", () => {
               subjectType: "source_claim",
               subjectId: "claim-excluded",
               sourceDecisionSupportBoost: {
-                sourceDecisionEdgeIds: ["hidden-edge"],
-                sourceDecisionIds: ["hidden-decision"],
-                targets: [{
+                edges: [{
                   sourceDecisionEdgeId: "hidden-edge",
+                  sourceDecisionId: "hidden-decision",
                   targetType: "architecture_decision",
                   targetId: "hidden-architecture-decision"
                 }],
@@ -1105,10 +1130,9 @@ describe("DecisionPacket builder", () => {
             subjectType: "source_claim",
             subjectId: "claim-governing",
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-governing"],
-              sourceDecisionIds: ["decision-governing"],
-              targets: [{
+              edges: [{
                 sourceDecisionEdgeId: "edge-governing",
+                sourceDecisionId: "decision-governing",
                 targetType: "architecture_decision",
                 targetId: "decision-governing"
               }]
@@ -1315,9 +1339,9 @@ describe("DecisionPacket builder", () => {
             subjectType: "source_claim",
             subjectId: "claim-governing",
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["edge-governing"],
-              targets: [{
+              edges: [{
                 sourceDecisionEdgeId: "edge-governing",
+                sourceDecisionId: "source-decision-governing",
                 targetType: "architecture_decision",
                 targetId: "decision-governing"
               }]

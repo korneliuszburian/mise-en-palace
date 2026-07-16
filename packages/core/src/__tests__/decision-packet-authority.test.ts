@@ -5,7 +5,8 @@ import {
 } from "vitest";
 
 import {
-  projectDecisionPacketUsefulnessSubjects
+  projectDecisionPacketUsefulnessSubjects,
+  sourceDecisionSupportBoostFromMetadata
 } from "../decision-packet-authority.js";
 
 describe("DecisionPacket authority projections", () => {
@@ -49,5 +50,55 @@ describe("DecisionPacket authority projections", () => {
       id: "knowledge-1",
       evidenceRefs: ["evidence:knowledge-1"]
     }]);
+  });
+
+  it("accepts only structured edge-to-canonical-decision provenance", () => {
+    const canonicalBoost = {
+      sourceDecisionSupportBoost: {
+        edges: [{
+          sourceDecisionEdgeId: "source-decision-edge-1",
+          sourceDecisionId: "source-decision-1",
+          targetType: "architecture_decision",
+          targetId: "architecture-target-1"
+        }],
+        confidence: ["high"],
+        supportTypes: ["decision"],
+        doesNotProve: "The edge association does not prove decision truth."
+      }
+    };
+
+    expect(sourceDecisionSupportBoostFromMetadata(canonicalBoost)).toEqual(
+      canonicalBoost.sourceDecisionSupportBoost
+    );
+    expect(sourceDecisionSupportBoostFromMetadata({
+      sourceDecisionSupportBoost: {
+        sourceDecisionEdgeIds: ["source-decision-edge-1"],
+        sourceDecisionIds: ["source-decision-forged"],
+        targets: [{
+          sourceDecisionEdgeId: "source-decision-edge-1",
+          targetType: "architecture_decision",
+          targetId: "architecture-target-1"
+        }],
+        confidence: ["high"],
+        supportTypes: ["decision"],
+        doesNotProve: "Parallel lists do not prove an edge association."
+      }
+    })).toBeUndefined();
+    expect(sourceDecisionSupportBoostFromMetadata({
+      sourceDecisionSupportBoost: {
+        ...canonicalBoost.sourceDecisionSupportBoost,
+        edges: [{
+          sourceDecisionEdgeId: "source-decision-edge-1",
+          sourceDecisionId: "source-decision-1",
+          targetType: "architecture_decision",
+          targetId: "architecture-target-1"
+        }, {
+          sourceDecisionEdgeId: "source-decision-edge-1",
+          sourceDecisionId: "source-decision-forged",
+          targetType: "architecture_decision",
+          targetId: "architecture-target-1"
+        }]
+      }
+    })).toBeUndefined();
   });
 });

@@ -2652,10 +2652,9 @@ describe("runCli", () => {
           reason: "Selected source claim supports an architecture target.",
           metadata: {
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["source-decision-edge-1"],
-              sourceDecisionIds: ["source-decision-canonical-1"],
-              targets: [{
+              edges: [{
                 sourceDecisionEdgeId: "source-decision-edge-1",
+                sourceDecisionId: "source-decision-canonical-1",
                 targetType: "architecture_decision",
                 targetId: "architecture-target-1"
               }],
@@ -2683,9 +2682,12 @@ describe("runCli", () => {
           reason: "Stale source decision is not selected by the current packet.",
           metadata: {
             sourceDecisionSupportBoost: {
-              sourceDecisionEdgeIds: ["source-decision-edge-stale"],
-              sourceDecisionIds: ["source-decision-stale-1"],
-              targets: [],
+              edges: [{
+                sourceDecisionEdgeId: "source-decision-edge-stale",
+                sourceDecisionId: "source-decision-stale-1",
+                targetType: "architecture_decision",
+                targetId: "architecture-target-stale-1"
+              }],
               confidence: ["high"],
               supportTypes: ["decision"],
               doesNotProve: "Historical support cannot authorize current usefulness."

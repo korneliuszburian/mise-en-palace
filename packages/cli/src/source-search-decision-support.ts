@@ -20,7 +20,7 @@ export type SourceSearchDecisionSupportState =
 
 export interface SourceSearchDecisionSupport {
   sourceClaimId: SourceClaim["id"];
-  sourceDecisionId?: string;
+  sourceDecisionId: string;
   sourceDecisionEdgeId: string;
   targetType: SourceDecisionEdge["targetType"];
   targetId: string;
@@ -58,20 +58,22 @@ const metadataString = (
 
 const sourceDecisionSupportFromEdge = (
   edge: SourceDecisionEdge
-): SourceSearchDecisionSupport => ({
-  sourceClaimId: edge.sourceClaimId,
-  ...(edge.sourceDecisionId === undefined ? {} : { sourceDecisionId: edge.sourceDecisionId }),
-  sourceDecisionEdgeId: edge.id,
-  targetType: edge.targetType,
-  targetId: edge.targetId,
-  supportType: edge.supportType,
-  confidence: edge.confidence,
-  notes: edge.notes,
-  doesNotProve:
-    metadataString(edge.metadata, "doesNotProve") ??
-    "SourceDecisionEdge support does not prove source truth, target correctness, eval promotion, or Memory Core mutation.",
-  createdAt: edge.createdAt
-});
+): SourceSearchDecisionSupport | undefined => edge.sourceDecisionId === undefined
+  ? undefined
+  : ({
+      sourceClaimId: edge.sourceClaimId,
+      sourceDecisionId: edge.sourceDecisionId,
+      sourceDecisionEdgeId: edge.id,
+      targetType: edge.targetType,
+      targetId: edge.targetId,
+      supportType: edge.supportType,
+      confidence: edge.confidence,
+      notes: edge.notes,
+      doesNotProve:
+        metadataString(edge.metadata, "doesNotProve") ??
+        "SourceDecisionEdge support does not prove source truth, target correctness, eval promotion, or Memory Core mutation.",
+      createdAt: edge.createdAt
+    });
 
 export const buildSourceDecisionSupport = async (input: {
   candidates: readonly RankedActivationCandidate[];
@@ -80,7 +82,10 @@ export const buildSourceDecisionSupport = async (input: {
   const sourceClaimIds = sourceClaimIdsForCandidates(input.candidates);
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) =>
     (await input.sourceRepository.listSourceDecisionEdgesForClaim(sourceClaimId))
-      .map(sourceDecisionSupportFromEdge)
+      .flatMap((edge) => {
+        const support = sourceDecisionSupportFromEdge(edge);
+        return support === undefined ? [] : [support];
+      })
   ));
 
   return edgeGroups.flat();
@@ -164,16 +169,16 @@ const sourceDecisionSupportScore = (
     : 0)
 ));
 
-const sourceDecisionSupportTargets = (
+const sourceDecisionSupportEdges = (
   support: readonly SourceSearchDecisionSupport[]
 ): readonly {
-  sourceDecisionId?: string;
   sourceDecisionEdgeId: string;
+  sourceDecisionId: string;
   targetType: SourceDecisionEdge["targetType"];
   targetId: string;
 }[] => support.map((item) => ({
-  ...(item.sourceDecisionId === undefined ? {} : { sourceDecisionId: item.sourceDecisionId }),
   sourceDecisionEdgeId: item.sourceDecisionEdgeId,
+  sourceDecisionId: item.sourceDecisionId,
   targetType: item.targetType,
   targetId: item.targetId
 }));
@@ -214,8 +219,7 @@ export const applySourceDecisionSupportBoost = (
         ...candidate.metadata,
         sourceDecisionSupportBoost: {
           score,
-          sourceDecisionEdgeIds: support.map((item) => item.sourceDecisionEdgeId),
-          targets: sourceDecisionSupportTargets(support),
+          edges: sourceDecisionSupportEdges(support),
           confidence: support.map((item) => item.confidence),
           supportTypes: support.map((item) => item.supportType),
           doesNotProve:

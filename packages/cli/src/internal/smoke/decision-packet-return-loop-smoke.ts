@@ -2160,10 +2160,9 @@ const runUnresolvedAcceptedSourceDissentProof = async (
           "This persisted relation makes accepted dissent reviewable; it does not resolve which claim is true."
       },
       sourceDecisionSupportBoost: {
-        sourceDecisionEdgeIds: [governingSourceDecisionEdge.id],
-        sourceDecisionIds: [governingSourceDecision.id],
-        targets: [{
+        edges: [{
           sourceDecisionEdgeId: governingSourceDecisionEdge.id,
+          sourceDecisionId: governingSourceDecision.id,
           targetType: "architecture_decision",
           targetId: governingDecisionId
         }],
@@ -2192,10 +2191,9 @@ const runUnresolvedAcceptedSourceDissentProof = async (
         reasons: ["current_decision_linked_authority"]
       },
       sourceDecisionSupportBoost: {
-        sourceDecisionEdgeIds: [dissentingSourceDecisionEdge.id],
-        sourceDecisionIds: [dissentingSourceDecision.id],
-        targets: [{
+        edges: [{
           sourceDecisionEdgeId: dissentingSourceDecisionEdge.id,
+          sourceDecisionId: dissentingSourceDecision.id,
           targetType: "architecture_decision",
           targetId: governingDecisionId
         }],

@@ -222,6 +222,7 @@ const packetForBrief = (input: {
   ...(input.evidenceContract === undefined ? {} : { evidenceContract: input.evidenceContract }),
   nextAction: input.nextAction,
   governingDecisionIds: [],
+  sourceDecisionIds: [],
   governingStatements: [],
   taskStandardDecisions: [],
   sourceClaimIds: input.contextAssembly.inclusions
@@ -324,7 +325,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 19,
+      maxRenderedSections: 20,
       maxRenderedItems: 80,
       status: "within_budget"
     });
@@ -334,6 +335,76 @@ describe("renderExecutionBrief", () => {
       itemCount: 0,
       emptyBehavior: "omit_when_empty"
     });
+  });
+
+  it("preserves canonical SourceDecision ids without substituting targets or stale ids", () => {
+    const packet: DecisionPacket = {
+      ...packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Use only the canonical selected SourceDecision provenance."
+      }),
+      sourceDecisionIds: ["source-decision-canonical-1"],
+      sourceDecisionTargets: [{
+        targetType: "architecture_decision",
+        targetId: "architecture-target-opaque-1",
+        sourceDecisionEdgeIds: ["source-decision-edge-1"]
+      }],
+      staleDecisionIds: ["source-decision-stale-1"]
+    };
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceDecisionIds).toEqual(["source-decision-canonical-1"]);
+    expect(rendered).toContain("Canonical SourceDecision IDs:");
+    expect(rendered).toContain("- source-decision-canonical-1");
+    expect(rendered).not.toContain("architecture-target-opaque-1");
+    expect(rendered).not.toContain("source-decision-stale-1");
+  });
+
+  it("keeps stale canonical provenance visible while preserving packet abstention", () => {
+    const staleSourceDecisionId = "source-decision-stale-overlap";
+    const staleEvidenceGapId = `evidence-gap:task-1:stale-authority:${staleSourceDecisionId}`;
+    const basePacket = packetForBrief({
+      taskContract,
+      contextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Stop until stale canonical authority is resolved."
+    });
+    const packet: DecisionPacket = {
+      ...basePacket,
+      sourceDecisionIds: [staleSourceDecisionId],
+      staleDecisionIds: [staleSourceDecisionId],
+      severeStaleAuthorityIds: [staleSourceDecisionId],
+      evidenceGaps: [{
+        id: staleEvidenceGapId,
+        reason: `SourceDecision ${staleSourceDecisionId} is both governing and stale.`,
+        verificationRequired: "Replace or revalidate the stale canonical SourceDecision."
+      }],
+      sourceConsensus: {
+        ...basePacket.sourceConsensus,
+        staleDecisionIds: [staleSourceDecisionId],
+        evidenceGapIds: [staleEvidenceGapId]
+      },
+      abstentionScore: {
+        ...basePacket.abstentionScore,
+        status: "abstain",
+        score: 0,
+        reasons: ["stale_authority", "evidence_gap"],
+        evidenceGapIds: [staleEvidenceGapId]
+      }
+    };
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceDecisionIds).toEqual([staleSourceDecisionId]);
+    expect(brief.abstentionStatus).toBe("abstain");
+    expect(rendered).toContain(`- ${staleSourceDecisionId}`);
+    expect(rendered).toContain(staleEvidenceGapId);
+    expect(rendered).toContain("Do not execute");
   });
 
   it("renders a bounded Codex execution brief with exclusions and evidence", () => {
@@ -411,6 +482,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).not.toContain("Observation Prefix:");
     expect(rendered).not.toContain("Untrusted Context Warnings:");
     expect(rendered).not.toContain("Source Claims Selected:");
+    expect(rendered).not.toContain("Canonical SourceDecision IDs:");
     expect(rendered).not.toContain("Memory Records Selected:");
     expect(rendered).not.toContain("Anti-memory Warnings:");
     expect(rendered).not.toContain("Evidence Gaps:");

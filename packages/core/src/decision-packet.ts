@@ -463,10 +463,9 @@ export interface DecisionPacketActivationCandidateInput {
     doesNotProve: string;
   };
   sourceDecisionSupportBoost?: {
-    sourceDecisionEdgeIds: readonly string[];
-    sourceDecisionIds?: readonly string[];
-    targets: readonly {
+    edges: readonly {
       sourceDecisionEdgeId: string;
+      sourceDecisionId: string;
       targetType: SourceDecisionTargetType;
       targetId: string;
     }[];
@@ -603,7 +602,7 @@ const sourceDecisionEdgeIdsFor = (
   sourceClaimIds: readonly string[]
 ): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.subjectType === "source_claim" && sourceClaimIds.includes(candidate.subjectId)
-    ? candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds ?? []
+    ? candidate.sourceDecisionSupportBoost?.edges.map((edge) => edge.sourceDecisionEdgeId) ?? []
     : []
 ) ?? []);
 
@@ -620,7 +619,7 @@ const sourceDecisionTargetsFor = (
 
   for (const target of includedActivationCandidatesFor(readModel).flatMap((candidate) =>
     candidate.subjectType === "source_claim" && allowedSourceClaimIds.has(candidate.subjectId)
-      ? candidate.sourceDecisionSupportBoost?.targets ?? []
+      ? candidate.sourceDecisionSupportBoost?.edges ?? []
       : []
   ) ?? []) {
     const key = `${target.targetType}:${target.targetId}`;
@@ -671,7 +670,7 @@ const sourceDecisionIdsFor = (
 
   return unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.subjectType === "source_claim" && allowedSourceClaimIds.has(candidate.subjectId)
-    ? candidate.sourceDecisionSupportBoost?.sourceDecisionIds ?? []
+    ? candidate.sourceDecisionSupportBoost?.edges.map((edge) => edge.sourceDecisionId) ?? []
     : []
   ));
 };
@@ -734,7 +733,7 @@ const sourceClaimIdsWithDecisionSupportFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => unique(includedActivationCandidatesFor(readModel).flatMap((candidate) =>
   candidate.subjectType === "source_claim" &&
-  (candidate.sourceDecisionSupportBoost?.sourceDecisionEdgeIds.length ?? 0) > 0
+  (candidate.sourceDecisionSupportBoost?.edges.length ?? 0) > 0
     ? [candidate.subjectId]
     : []
 ) ?? []);
@@ -972,12 +971,12 @@ const sourceClaimAuthorityReasonIdsFor = (
 };
 
 const severeStaleAuthorityIdsFor = (input: {
-  readonly governingDecisionIds: readonly string[];
+  readonly sourceDecisionIds: readonly string[];
   readonly staleDecisionIds: readonly string[];
 }): string[] => {
   const staleDecisionIds = new Set(input.staleDecisionIds);
 
-  return input.governingDecisionIds.filter((id) => staleDecisionIds.has(id));
+  return input.sourceDecisionIds.filter((id) => staleDecisionIds.has(id));
 };
 
 const evidenceGapsFor = (input: {
@@ -1127,7 +1126,7 @@ export const buildDecisionPacketFromReadModel = (
     ...antiMemoryBlockedPathIdsFor(readModel)
   ]);
   const severeStaleAuthorityIds = severeStaleAuthorityIdsFor({
-    governingDecisionIds,
+    sourceDecisionIds,
     staleDecisionIds
   });
   const task = readModel.task ?? {

@@ -100,9 +100,7 @@ export interface DecisionPacketReadModelSourceClaimEdgeInfluence {
 }
 
 export interface DecisionPacketReadModelSourceDecisionSupportBoost {
-  sourceDecisionEdgeIds: string[];
-  sourceDecisionIds?: string[];
-  targets: DecisionPacketReadModelSourceDecisionSupportTarget[];
+  edges: DecisionPacketReadModelSourceDecisionSupportEdge[];
   confidence: string[];
   supportTypes: string[];
   doesNotProve: string;
@@ -115,8 +113,9 @@ export interface DecisionPacketReadModelPendingAntiMemoryReview {
   doesNotProve: string;
 }
 
-export interface DecisionPacketReadModelSourceDecisionSupportTarget {
+export interface DecisionPacketReadModelSourceDecisionSupportEdge {
   sourceDecisionEdgeId: string;
+  sourceDecisionId: string;
   targetType: SourceDecisionTargetType;
   targetId: string;
 }

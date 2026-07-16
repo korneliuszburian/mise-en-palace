@@ -577,21 +577,22 @@ const sourceDecisionEdgesForClaims = async (
 const sourceDecisionSupportBoostMetadata = (
   edges: readonly SourceDecisionEdge[]
 ): Record<string, unknown> => {
-  if (edges.length === 0) {
+  const canonicalEdges = edges.flatMap((edge) => edge.sourceDecisionId === undefined
+    ? []
+    : [{
+        sourceDecisionEdgeId: edge.id,
+        sourceDecisionId: edge.sourceDecisionId,
+        targetType: edge.targetType,
+        targetId: edge.targetId
+      }]);
+
+  if (canonicalEdges.length === 0 || canonicalEdges.length !== edges.length) {
     return {};
   }
 
   return {
     sourceDecisionSupportBoost: {
-      sourceDecisionEdgeIds: edges.map((edge) => edge.id),
-      sourceDecisionIds: [...new Set(edges.flatMap((edge) =>
-        edge.sourceDecisionId === undefined ? [] : [edge.sourceDecisionId]
-      ))],
-      targets: edges.map((edge) => ({
-        sourceDecisionEdgeId: edge.id,
-        targetType: edge.targetType,
-        targetId: edge.targetId
-      })),
+      edges: canonicalEdges,
       confidence: [...new Set(edges.map((edge) => edge.confidence))],
       supportTypes: [...new Set(edges.map((edge) => edge.supportType))],
       doesNotProve:
