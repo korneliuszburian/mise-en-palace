@@ -93,6 +93,16 @@ const planBackfillMemory = (index: number): MemoryRecord => ({
   updatedAt: now
 });
 
+const renderedDecisionPacket = (stdout: string): string => {
+  const packetStart = stdout.indexOf("KRN Codex Execution Brief");
+
+  if (packetStart < 0) {
+    throw new Error("Persisted plan output did not render a DecisionPacket execution brief");
+  }
+
+  return stdout.slice(packetStart);
+};
+
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
     const result = await runCli(["plan", "--task", "improve KRN doctor brain store readiness"], {
@@ -422,6 +432,47 @@ describe("runCli", () => {
         }
       }
     });
+  });
+
+  it("keeps diagnostic feedback out of ContextAssembly and DecisionPacket authority", async () => {
+    const memoryRecords = Array.from(
+      { length: 21 },
+      (_, index) => planBackfillMemory(index + 1)
+    );
+    const baseline = await runPersistedPlanWithCapturedMetadata("bounded backfill", {
+      memoryRecords
+    });
+    const feedbackFiltered = await runPersistedPlanWithCapturedMetadata("bounded backfill", {
+      memoryRecords,
+      feedbackDeltas: memoryRecords.slice(0, 20).map((_record, index) =>
+        knowledgeFeedbackDelta(`knowledge:backfill-${index + 1}`, "stale")
+      )
+    });
+
+    expect(baseline.executionRunMetadata).toMatchObject({
+      knowledgeSelection: {
+        status: "selected",
+        selectedKnowledgeIds: [
+          "backfill-1",
+          "backfill-2",
+          "backfill-3",
+          "backfill-4",
+          "backfill-5"
+        ]
+      }
+    });
+    expect(feedbackFiltered.executionRunMetadata).toMatchObject({
+      knowledgeSelection: {
+        status: "selected",
+        selectedKnowledgeIds: ["backfill-21"]
+      }
+    });
+    expect(feedbackFiltered.result.stdout).toContain(
+      "Selected KRN context IDs: backfill-21"
+    );
+    expect(renderedDecisionPacket(feedbackFiltered.result.stdout)).toBe(
+      renderedDecisionPacket(baseline.result.stdout)
+    );
   });
 
   it("reports exhausted plan knowledge scan when the first hundred records are blocked", async () => {
