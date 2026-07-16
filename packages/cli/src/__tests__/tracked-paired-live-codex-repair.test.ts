@@ -29,6 +29,10 @@ const manifest: PairedTrialManifest = {
   taskId: "weak-json-repair",
   task: "Repair weak-json-boundary-typescript with bounded validation.",
   requiredDecisionIds: ["decision-1", "decision-2"],
+  decisionApplications: [
+    { sourceDecisionId: "decision-1", check: "unknown_first", changedFiles: ["src/config.ts"] },
+    { sourceDecisionId: "decision-2", check: "finite_result_state", changedFiles: ["src/userService.ts"] }
+  ],
   runId: "run-1",
   codex: {
     command: "codex",
@@ -259,6 +263,13 @@ describe("tracked paired live Codex repair", () => {
     expect(() => parseTrackedTrialManifest({ kind: manifest.kind, codex: {} })).toThrow(
       "Invalid tracked paired-trial manifest"
     );
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      decisionApplications: manifest.decisionApplications.map((rule) => ({
+        ...rule,
+        check: "unknown_first"
+      }))
+    })).toThrow("Invalid tracked paired-trial manifest");
 
     const root = await mkdtemp(join(
       resolve(process.cwd(), "../../tests/fixtures/paired-live-codex-repair"),
@@ -392,6 +403,7 @@ describe("tracked paired live Codex repair", () => {
     try {
       const passedManifest = runnableManifest(binRoot, 1_000);
       let fetchCalls = 0;
+      let applicationRecorderCalls = 0;
       const result = await withProcessEnvironment({
         KRN_TRIAL_CODEX_HOME: binRoot,
         PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
@@ -402,6 +414,14 @@ describe("tracked paired live Codex repair", () => {
         fetchPacket: async () => {
           fetchCalls += 1;
           return { packet: { ...packet, request: { runId: passedManifest.runId } } };
+        },
+        recordDecisionApplications: async (input) => {
+          applicationRecorderCalls += 1;
+          expect(input.score.outcome).toBe("tie");
+          expect(input.rules).toEqual(passedManifest.decisionApplications);
+          expect(await readFile(join(input.krnTarget.targetRoot, "src/target.ts"), "utf8"))
+            .toContain("fixture");
+          return [];
         },
         attemptDirectory: join(root, "attempt")
       }, passingChecker));
@@ -418,9 +438,33 @@ describe("tracked paired live Codex repair", () => {
         "finalized"
       ]);
       expect(fetchCalls).toBe(1);
+      expect(applicationRecorderCalls).toBe(1);
       expect(await readFile(packetPromptMarker, "utf8")).toBe("packet");
       expect(verifyTrackedTrialArtifact(result)).toBe(true);
       expect(await readTrackedTrialArtifact(join(root, "attempt"))).toEqual(result);
+
+      const failedPersistence = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+          manifest: passedManifest,
+          sourceRoot: source,
+          checkerRoot: process.cwd(),
+          packet: { ...packet, request: { runId: passedManifest.runId } },
+          recordDecisionApplications: async () => {
+            throw new Error("simulated persistence failure");
+          },
+          attemptDirectory: join(root, "failed-persistence-attempt")
+        }, passingChecker));
+      expect(failedPersistence).toMatchObject({
+        status: "unverified",
+        execution: {
+          invalidReasons: ["decision application persistence could not be verified"]
+        },
+        score: { outcome: "tie" }
+      });
+      expect(await readTrackedTrialArtifact(join(root, "failed-persistence-attempt")))
+        .toEqual(failedPersistence);
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(source, { recursive: true, force: true });

@@ -10,6 +10,23 @@
     "weak-json-result-union",
     "weak-json-invalid-json-test"
   ],
+  "decisionApplications": [
+    {
+      "sourceDecisionId": "weak-json-parse-unknown",
+      "check": "unknown_first",
+      "changedFiles": ["src/config.ts"]
+    },
+    {
+      "sourceDecisionId": "weak-json-result-union",
+      "check": "finite_result_state",
+      "changedFiles": ["src/userService.ts"]
+    },
+    {
+      "sourceDecisionId": "weak-json-invalid-json-test",
+      "check": "focused_tests",
+      "changedFiles": ["tests/userService.test.ts"]
+    }
+  ],
   "runId": "paired-live-codex-repair-current",
   "codex": {
     "command": "codex",
