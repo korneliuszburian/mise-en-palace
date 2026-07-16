@@ -1072,8 +1072,10 @@ describe("runCli", () => {
       "Persistence boundary: helped requires the two-phase evidence capture return channel."
     );
     expect(result.stdout).toContain("Memory Core mutation: none");
-    expect(result.stdout).toContain("recommendationOutcome: helped");
-    expect(result.stdout).toContain("recommendation: retain | requiresReview=false");
+    expect(result.stdout).toContain("recommendationOutcome: unknown");
+    expect(result.stdout).toContain("recommendation: add_evidence | requiresReview=true");
+    expect(result.stdout).not.toContain("recommendation: retain");
+    expect(result.stdout).not.toContain("Fresh verification after packet-bound application");
     expect(result.stdout).toContain("recommendationMutation: none");
     expect(result.stdout).toContain("Feedback event: none");
     expect(result.stdout).toContain("Follow-up candidate: none");

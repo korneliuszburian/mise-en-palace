@@ -68,14 +68,14 @@ const memoryFeedbackDoesNotProve =
 
 const memoryFeedbackRecommendationReadback = (input: {
   memoryRecordId: string;
-  outcome: MemoryApplicationOutcome;
+  outcome: FeedbackRecommendationOutcome;
   reason: string;
   evidenceRefs?: readonly string[];
 }): FeedbackRecommendationReadback =>
   buildFeedbackRecommendationReadback({
     subjectKind: "memory_record",
     subjectId: input.memoryRecordId,
-    outcome: feedbackRecommendationOutcome(input.outcome),
+    outcome: input.outcome,
     reason: input.reason,
     ...(input.evidenceRefs === undefined ? {} : { evidenceRefs: input.evidenceRefs }),
     doesNotProve: memoryFeedbackDoesNotProve
@@ -98,8 +98,12 @@ const formatPreview = (
 ): string => {
   const recommendation = memoryFeedbackRecommendationReadback({
     memoryRecordId: application.memoryRecordId,
-    outcome: application.outcome,
-    reason: application.notes ?? application.expectedUse
+    outcome: application.outcome === "helped"
+      ? "unknown"
+      : feedbackRecommendationOutcome(application.outcome),
+    reason: application.outcome === "helped"
+      ? "Requested helped is unverified until application and later target-bound verification are persisted."
+      : application.notes ?? application.expectedUse
   });
 
   return [
@@ -337,7 +341,7 @@ export const runMemoryRecordApplyCommand = async (
     const memoryApplication = applicationResult.application;
     const baseRecommendationInput = {
       memoryRecordId: applicationInput.memoryRecordId,
-      outcome: applicationInput.outcome,
+      outcome: feedbackRecommendationOutcome(applicationInput.outcome),
       reason: applicationInput.notes ?? applicationInput.expectedUse
     } as const;
 
