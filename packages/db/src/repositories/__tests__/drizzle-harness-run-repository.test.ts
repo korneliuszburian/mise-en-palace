@@ -182,6 +182,34 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
+  it("rejects JavaScript-parseable non-ISO lifecycle timestamps", async () => {
+    const nonIsoTimestamp = "July 13, 2026 10:00:00 GMT";
+    const runningRepository = new DrizzleHarnessRunRepository(
+      fakeExecutionRunDatabase(executionRunRow("planned")).db
+    );
+    const terminalRepository = new DrizzleHarnessRunRepository(
+      fakeExecutionRunDatabase(executionRunRow("planned")).db
+    );
+
+    await expect(runningRepository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      expectedStatus: "planned",
+      status: "running",
+      startedAt: nonIsoTimestamp
+    })).rejects.toThrow(
+      "execution run lifecycle startedAt must be a valid ISO timestamp"
+    );
+    await expect(terminalRepository.updateExecutionRunStatus({
+      executionRunId: "execution-run-1",
+      expectedStatus: "planned",
+      status: "blocked",
+      startedAt: "2026-07-13T09:59:00.000Z",
+      completedAt: nonIsoTimestamp
+    })).rejects.toThrow(
+      "execution run lifecycle completedAt must be a valid ISO timestamp"
+    );
+  });
+
   it("does not append a second event for a same-state retry", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("running"));
     const repository = new DrizzleHarnessRunRepository(fake.db);

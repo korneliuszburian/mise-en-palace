@@ -51,6 +51,7 @@ import {
   executionRunLifecycleTransitionedEventType,
   ExecutionRunLifecycleConflictError,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
+  isIsoTimestamp,
   isReviewableFeedbackOutcome,
   projectDecisionPacketUsefulnessSubjects,
   parseUsefulnessApplicationEvidenceIdentity,
@@ -184,13 +185,11 @@ const executionRunTransitionIsAllowed = (
 };
 
 const requireValidTimestamp = (value: string, field: string): Date => {
-  const timestamp = fromIsoTimestamp(value);
-
-  if (Number.isNaN(timestamp.getTime())) {
+  if (!isIsoTimestamp(value)) {
     throw new Error(`execution run lifecycle ${field} must be a valid ISO timestamp`);
   }
 
-  return timestamp;
+  return fromIsoTimestamp(value);
 };
 
 const validateExecutionRunCreation = (input: CreateExecutionRunInput): void => {
