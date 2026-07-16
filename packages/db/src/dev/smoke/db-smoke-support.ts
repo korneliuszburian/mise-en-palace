@@ -755,6 +755,7 @@ export const countActivationSmokeMarkerRows = async (
 ): Promise<number> => countSmokeBaseMarkerRows({
   ...input,
   extraTasks: [
+    () => countSmokeRows(input.db, outboxEvents, sql`${outboxEvents.payload}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${input.marker}`),
     () => countMemoryRecordVersionsForSmoke(input.db, input.marker),
     () => countSmokeRows(input.db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`),
@@ -1027,6 +1028,7 @@ export const cleanupActivationSmokeRows = async (
   await cleanupSmokeBaseRows({
     ...input,
     beforeSourceClaimDeleteTasks: [
+      deleteSmokeOutboxEventsTask(input),
       async () => {
         await input.db
           .delete(sourceDecisionEdges)
