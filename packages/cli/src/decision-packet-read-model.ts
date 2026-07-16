@@ -252,6 +252,10 @@ export interface DecisionPacketReadModelCandidate {
   summary: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: string[];
+  sourceEvidence?: string[];
+  observedOutcome?: string;
+  usefulnessOutcome?: string;
+  artifactHash?: string;
 }
 
 export interface DecisionPacketReadModelSourceUsefulnessOutcome {

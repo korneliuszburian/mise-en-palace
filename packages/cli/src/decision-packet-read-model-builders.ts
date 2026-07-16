@@ -11,6 +11,7 @@ import {
   projectDecisionPacketTask,
   readMetadataObjectList,
   readMetadataString,
+  readMetadataStringList,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
@@ -267,9 +268,21 @@ const candidateResource = (input: {
   status: string | undefined;
   summary: string;
   metadata: Record<string, unknown>;
+  sourceEvidence?: readonly string[];
 }): DecisionPacketReadModelCandidate => {
   const reviewability = candidateReviewability(input.metadata);
   const reviewabilityReasons = candidateReviewabilityReasons(input.metadata);
+  const observedOutcome = input.sourceEvidence === undefined
+    ? undefined
+    : readMetadataString(input.metadata, "outcome");
+  const usefulnessOutcome = input.sourceEvidence === undefined
+    ? undefined
+    : readMetadataString(input.metadata, "usefulnessOutcome");
+  const artifactHash = input.sourceEvidence === undefined
+    ? undefined
+    : readMetadataString(input.metadata, "artifactHash") ??
+      readMetadataStringList(input.metadata, "evidenceRefs")
+        .find((reference) => reference.startsWith("artifact:sha256:"))?.slice("artifact:sha256:".length);
 
   return {
     kind: input.kind,
@@ -277,6 +290,12 @@ const candidateResource = (input: {
     status: input.status ?? "unknown",
     summary: input.summary,
     reviewability,
+    ...(input.sourceEvidence === undefined
+      ? {}
+      : { sourceEvidence: [...input.sourceEvidence] }),
+    ...(observedOutcome === undefined ? {} : { observedOutcome }),
+    ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
+    ...(artifactHash === undefined ? {} : { artifactHash }),
     reviewabilityReasons:
       reviewabilityReasons.length > 0
         ? reviewabilityReasons
@@ -350,7 +369,8 @@ export const decisionPacketReadModelCandidates = (
     id: candidate.id,
     status: candidate.status,
     summary: candidate.title,
-    metadata: candidate.metadata
+    metadata: candidate.metadata,
+    sourceEvidence: candidate.sourceEvidence
   })),
   ...metadataCandidateResources(
     feedback.metadata,
