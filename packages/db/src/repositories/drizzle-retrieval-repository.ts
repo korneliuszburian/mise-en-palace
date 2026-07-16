@@ -51,7 +51,11 @@ import {
   embeddings,
   retrievalCandidates,
   retrievalRuns,
-  searchDocuments
+  searchDocuments,
+  sourceArtifacts,
+  sourceChunks,
+  sourceClaims,
+  sourceDecisions
 } from "../schema/index.js";
 import {
   DEFAULT_EMBEDDING_DIMENSIONS
@@ -409,17 +413,292 @@ const currentSearchDocumentAt = (now: Date) => and(
   or(isNull(searchDocuments.invalidatedAt), gt(searchDocuments.invalidatedAt, now))
 );
 
+type SearchDocumentWriteDatabase = KrnDatabase | KrnDatabaseTransaction;
+
+const incoherentSearchDocumentProvenance = (detail: string): Error => new Error(
+  `createSearchDocument canonical provenance is incoherent: ${detail}`
+);
+
+const requiredProvenanceRow = <Row>(
+  rows: readonly Row[],
+  label: string,
+  id: string
+): Row => {
+  const row = rows[0];
+
+  if (row === undefined) {
+    throw incoherentSearchDocumentProvenance(`${label} ${id} does not exist`);
+  }
+
+  return row;
+};
+
+const validateSubjectProvenanceLink = (
+  input: CreateSearchDocumentInput
+): void => {
+  const expectedLink = (() => {
+    switch (input.subjectType) {
+      case "source_artifact":
+        return input.sourceArtifactId;
+      case "source_chunk":
+        return input.sourceChunkId;
+      case "source_claim":
+        return input.sourceClaimId;
+      case "architecture_decision":
+        return input.sourceDecisionId;
+      default:
+        return undefined;
+    }
+  })();
+
+  if (expectedLink !== undefined && expectedLink !== input.subjectId) {
+    throw incoherentSearchDocumentProvenance(
+      `${input.subjectType} subject ${input.subjectId} does not match its canonical link ${expectedLink}`
+    );
+  }
+};
+
+type SearchDocumentSourceAnchors = {
+  subjectArtifactId: string | undefined;
+  subjectChunkId: string | undefined;
+  subjectClaimId: string | undefined;
+  subjectDecisionId: string | undefined;
+};
+
+const searchDocumentSourceAnchors = (
+  input: CreateSearchDocumentInput
+): SearchDocumentSourceAnchors => ({
+  subjectArtifactId: input.subjectType === "source_artifact" ? input.subjectId : undefined,
+  subjectChunkId: input.subjectType === "source_chunk" ? input.subjectId : undefined,
+  subjectClaimId: input.subjectType === "source_claim" ? input.subjectId : undefined,
+  subjectDecisionId: input.subjectType === "architecture_decision" ? input.subjectId : undefined
+});
+
+const hasSearchDocumentSourceProvenance = (
+  input: CreateSearchDocumentInput,
+  anchors: SearchDocumentSourceAnchors
+): boolean => [
+  ...Object.values(anchors),
+  input.sourceArtifactId,
+  input.sourceChunkId,
+  input.sourceClaimId,
+  input.sourceDecisionId
+].some((id) => id !== undefined);
+
+const firstDefined = <Value>(
+  ...values: readonly (Value | undefined)[]
+): Value | undefined => values.find((value) => value !== undefined);
+
+const hasNonDecisionSourceAnchor = (
+  input: CreateSearchDocumentInput,
+  anchors: SearchDocumentSourceAnchors
+): boolean => [
+  anchors.subjectArtifactId,
+  anchors.subjectChunkId,
+  anchors.subjectClaimId,
+  input.sourceArtifactId,
+  input.sourceChunkId,
+  input.sourceClaimId
+].some((id) => id !== undefined);
+
+const sourceDecisionForSearchDocument = async (
+  db: SearchDocumentWriteDatabase,
+  id: string | undefined
+) => id === undefined
+  ? undefined
+  : requiredProvenanceRow(
+      await db
+        .select({
+          id: sourceDecisions.id,
+          projectId: sourceDecisions.projectId,
+          sourceClaimId: sourceDecisions.sourceClaimId
+        })
+        .from(sourceDecisions)
+        .where(eq(sourceDecisions.id, id))
+        .limit(1),
+      "SourceDecision",
+      id
+    );
+
+const sourceClaimForSearchDocument = async (
+  db: SearchDocumentWriteDatabase,
+  id: string | undefined
+) => id === undefined
+  ? undefined
+  : requiredProvenanceRow(
+      await db
+        .select({
+          id: sourceClaims.id,
+          sourceArtifactId: sourceClaims.sourceArtifactId,
+          sourceChunkId: sourceClaims.sourceChunkId
+        })
+        .from(sourceClaims)
+        .where(eq(sourceClaims.id, id))
+        .limit(1),
+      "SourceClaim",
+      id
+    );
+
+const sourceChunkForSearchDocument = async (
+  db: SearchDocumentWriteDatabase,
+  id: string | undefined
+) => id === undefined
+  ? undefined
+  : requiredProvenanceRow(
+      await db
+        .select({ id: sourceChunks.id, sourceArtifactId: sourceChunks.sourceArtifactId })
+        .from(sourceChunks)
+        .where(eq(sourceChunks.id, id))
+        .limit(1),
+      "SourceChunk",
+      id
+    );
+
+const sourceArtifactForSearchDocument = async (
+  db: SearchDocumentWriteDatabase,
+  id: string | undefined
+) => id === undefined
+  ? undefined
+  : requiredProvenanceRow(
+      await db
+        .select({ id: sourceArtifacts.id, projectId: sourceArtifacts.projectId })
+        .from(sourceArtifacts)
+        .where(eq(sourceArtifacts.id, id))
+        .limit(1),
+      "SourceArtifact",
+      id
+    );
+
+const validateSearchDocumentDecisionChain = (input: {
+  decision: Awaited<ReturnType<typeof sourceDecisionForSearchDocument>>;
+  chainClaimId: string | undefined;
+  hasNonDecisionSourceAnchor: boolean;
+}): void => {
+  if (
+    input.chainClaimId !== undefined &&
+    input.decision !== undefined &&
+    input.decision.sourceClaimId !== input.chainClaimId
+  ) {
+    throw incoherentSearchDocumentProvenance(
+      `SourceDecision ${input.decision.id} does not belong to SourceClaim ${input.chainClaimId}`
+    );
+  }
+
+  if (input.decision?.sourceClaimId === null && input.hasNonDecisionSourceAnchor) {
+    throw incoherentSearchDocumentProvenance(
+      `SourceDecision ${input.decision.id} has no canonical SourceClaim chain`
+    );
+  }
+};
+
+const validateSearchDocumentClaimChunk = (input: {
+  claim: Awaited<ReturnType<typeof sourceClaimForSearchDocument>>;
+  chainChunkId: string | undefined;
+}): void => {
+  if (
+    input.chainChunkId !== undefined &&
+    input.claim !== undefined &&
+    input.claim.sourceChunkId !== input.chainChunkId
+  ) {
+    throw incoherentSearchDocumentProvenance(
+      `SourceChunk ${input.chainChunkId} does not belong to SourceClaim ${input.claim.id}`
+    );
+  }
+};
+
+const canonicalSearchDocumentArtifactId = (input: {
+  subjectArtifactId: string | undefined;
+  sourceArtifactId: string | undefined;
+  chunkArtifactId: string | undefined;
+  claimArtifactId: string | undefined;
+}): string | undefined => {
+  const artifactIds = new Set(Object.values(input).filter(
+    (id): id is string => id !== undefined
+  ));
+
+  if (artifactIds.size > 1) {
+    throw incoherentSearchDocumentProvenance(
+      "SourceArtifact, SourceChunk, and SourceClaim do not form one canonical chain"
+    );
+  }
+
+  return artifactIds.values().next().value;
+};
+
+const validateSearchDocumentProjectScope = (input: {
+  artifact: Awaited<ReturnType<typeof sourceArtifactForSearchDocument>>;
+  decision: Awaited<ReturnType<typeof sourceDecisionForSearchDocument>>;
+  projectId: string | null;
+}): void => {
+  if (input.artifact !== undefined && input.artifact.projectId !== input.projectId) {
+    throw incoherentSearchDocumentProvenance(
+      `SourceArtifact ${input.artifact.id} is outside SearchDocument project scope`
+    );
+  }
+
+  if (input.decision !== undefined && input.decision.projectId !== input.projectId) {
+    throw incoherentSearchDocumentProvenance(
+      `SourceDecision ${input.decision.id} is outside SearchDocument project scope`
+    );
+  }
+};
+
+const validateSearchDocumentSourceProvenance = async (
+  db: SearchDocumentWriteDatabase,
+  input: CreateSearchDocumentInput
+): Promise<void> => {
+  validateSubjectProvenanceLink(input);
+  const anchors = searchDocumentSourceAnchors(input);
+
+  if (!hasSearchDocumentSourceProvenance(input, anchors)) {
+    return;
+  }
+
+  const decision = await sourceDecisionForSearchDocument(
+    db,
+    firstDefined(input.sourceDecisionId, anchors.subjectDecisionId)
+  );
+  const chainClaimId = firstDefined(
+    input.sourceClaimId,
+    anchors.subjectClaimId,
+    decision?.sourceClaimId ?? undefined
+  );
+  validateSearchDocumentDecisionChain({
+    decision,
+    chainClaimId,
+    hasNonDecisionSourceAnchor: hasNonDecisionSourceAnchor(input, anchors)
+  });
+
+  const claim = await sourceClaimForSearchDocument(db, chainClaimId);
+  const chainChunkId = firstDefined(input.sourceChunkId, anchors.subjectChunkId);
+  const chunk = await sourceChunkForSearchDocument(db, chainChunkId);
+  validateSearchDocumentClaimChunk({ claim, chainChunkId });
+
+  const chainArtifactId = canonicalSearchDocumentArtifactId({
+    subjectArtifactId: anchors.subjectArtifactId,
+    sourceArtifactId: input.sourceArtifactId,
+    chunkArtifactId: chunk?.sourceArtifactId,
+    claimArtifactId: claim?.sourceArtifactId
+  });
+  const artifact = await sourceArtifactForSearchDocument(db, chainArtifactId);
+  validateSearchDocumentProjectScope({ artifact, decision, projectId: input.projectId ?? null });
+};
+
 export class DrizzleRetrievalRepository implements RetrievalRepository {
   constructor(private readonly db: KrnDatabase | KrnDatabaseTransaction) {}
 
   async createSearchDocument(input: CreateSearchDocumentInput): Promise<SearchDocumentRecord> {
-    const row = requireReturnedRow(
-      await this.db
-        .insert(searchDocuments)
-        .values(searchDocumentInsertValues(input))
-        .returning(),
-      "createSearchDocument"
-    );
+    const row = await this.db.transaction(async (tx) => {
+      await validateSearchDocumentSourceProvenance(tx, input);
+
+      return requireReturnedRow(
+        await tx
+          .insert(searchDocuments)
+          .values(searchDocumentInsertValues(input))
+          .returning(),
+        "createSearchDocument"
+      );
+    });
 
     return mapSearchDocument(row);
   }

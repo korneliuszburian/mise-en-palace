@@ -144,6 +144,7 @@ export interface DatabaseRuntime {
     | "deprecateSourceClaim"
     | "createSourceDecision"
     | "getSourceDecisionById"
+    | "getSourceDecisionForProject"
     | "listSourceDecisionKnowledgeSources"
     | "listRejectedSourceDecisionKnowledgeSources"
     | "listSourceRejectionsForClaim"
@@ -556,6 +557,8 @@ const createDatabaseRuntimeTransactionRepositories = (
     createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
     createSourceDecision: (...args) => sourceRepository.createSourceDecision(...args),
     getSourceDecisionById: (...args) => sourceRepository.getSourceDecisionById(...args),
+    getSourceDecisionForProject: (...args) =>
+      sourceRepository.getSourceDecisionForProject(...args),
     listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
     listSourceClaimEdgesForProject: (...args) =>
       sourceRepository.listSourceClaimEdgesForProject(...args),

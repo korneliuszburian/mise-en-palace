@@ -4,6 +4,7 @@ import type {
   MemoryRecord,
   ObservationItem,
   SourceClaim,
+  SourceDecision,
   SourceDecisionEdge,
   SourceClaimEdge,
   TaskContract
@@ -1484,31 +1485,64 @@ describe("activation engine", () => {
     ]));
   });
 
-  it("accepts incoherent SearchDocument ancillary provenance", async () => {
+  it("rejects incoherent SearchDocument provenance", async () => {
     const currentSourceClaim = sourceClaim({
       id: "claim-provenance-a",
-      sourceArtifactId: "artifact-provenance-a"
+      sourceArtifactId: "artifact-provenance-a",
+      sourceChunkId: "chunk-provenance-a"
     });
+    const wrongChainDecision: SourceDecision = {
+      id: "decision-provenance-b",
+      projectId: task.projectId,
+      sourceClaimId: "claim-provenance-b",
+      status: "adopt",
+      decision: "Adopt provenance chain B.",
+      rationale: "Fixture for an incoherent SearchDocument decision link.",
+      falsifier: "The read boundary accepts this decision for claim A.",
+      consumer: "activation-engine-test",
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    };
+    const currentDecision: SourceDecision = {
+      ...wrongChainDecision,
+      id: "decision-provenance-a",
+      sourceClaimId: currentSourceClaim.id,
+      decision: "Adopt provenance chain A."
+    };
     const sourceDecisionSupport = sourceDecisionEdge({
       id: "edge-provenance-a",
       sourceClaimId: currentSourceClaim.id
     });
     const incoherentDocuments = [
       searchDocument({
-        id: "search-cross-project-provenance",
+        id: "search-wrong-artifact-provenance",
         subjectId: currentSourceClaim.id,
         sourceClaimId: currentSourceClaim.id,
-        sourceArtifactId: "artifact-project-b",
-        sourceChunkId: "chunk-project-b",
-        sourceDecisionId: "decision-project-b"
+        sourceArtifactId: "artifact-provenance-b"
       }),
       searchDocument({
-        id: "search-same-project-wrong-chain",
+        id: "search-wrong-chunk-provenance",
         subjectId: currentSourceClaim.id,
         sourceClaimId: currentSourceClaim.id,
-        sourceArtifactId: "artifact-same-project-chain-b",
-        sourceChunkId: "chunk-same-project-chain-b",
-        sourceDecisionId: "decision-same-project-chain-b"
+        sourceArtifactId: currentSourceClaim.sourceArtifactId,
+        sourceChunkId: "chunk-provenance-b"
+      }),
+      searchDocument({
+        id: "search-wrong-decision-provenance",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        sourceArtifactId: currentSourceClaim.sourceArtifactId,
+        sourceChunkId: currentSourceClaim.sourceChunkId,
+        sourceDecisionId: wrongChainDecision.id
+      }),
+      searchDocument({
+        id: "search-coherent-provenance",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        sourceArtifactId: currentSourceClaim.sourceArtifactId,
+        sourceChunkId: currentSourceClaim.sourceChunkId,
+        sourceDecisionId: currentDecision.id
       })
     ];
     const observations = await Promise.all(incoherentDocuments.map(async (document) => {
@@ -1538,6 +1572,17 @@ describe("activation engine", () => {
                 ? currentSourceClaim
                 : undefined;
             },
+            async getSourceDecisionForProject(projectId, id) {
+              if (projectId !== task.projectId) {
+                return undefined;
+              }
+
+              return id === wrongChainDecision.id
+                ? wrongChainDecision
+                : id === currentDecision.id
+                  ? currentDecision
+                  : undefined;
+            },
             async listSourceClaimEdgesForClaim() {
               return [];
             },
@@ -1553,43 +1598,49 @@ describe("activation engine", () => {
         }
       });
       const candidate = result.candidates[0];
-      const propagated = candidate?.metadata.searchDocument as Record<string, unknown> | undefined;
 
       return {
         searchDocumentId: document.id,
-        suppliedSourceArtifactId: document.sourceArtifactId,
-        suppliedSourceChunkId: document.sourceChunkId,
-        suppliedSourceDecisionId: document.sourceDecisionId,
         acceptedSubjectId: candidate?.subjectId,
         exclusion: candidate?.exclusion,
-        searchDocumentAuthority: candidate?.metadata.searchDocumentAuthority,
-        propagatedSourceArtifactId: propagated?.sourceArtifactId,
-        propagatedSourceChunkId: propagated?.sourceChunkId
+        searchDocumentAuthority: candidate?.metadata.searchDocumentAuthority
       };
     }));
 
     expect(observations).toEqual([
       {
-        searchDocumentId: "search-cross-project-provenance",
-        suppliedSourceArtifactId: "artifact-project-b",
-        suppliedSourceChunkId: "chunk-project-b",
-        suppliedSourceDecisionId: "decision-project-b",
-        acceptedSubjectId: currentSourceClaim.id,
-        exclusion: undefined,
-        searchDocumentAuthority: "canonical_projection",
-        propagatedSourceArtifactId: "artifact-project-b",
-        propagatedSourceChunkId: "chunk-project-b"
+        searchDocumentId: "search-wrong-artifact-provenance",
+        acceptedSubjectId: "search-wrong-artifact-provenance",
+        exclusion: {
+          reason: "unsafe",
+          explanation: "SearchDocument source artifact does not belong to its canonical source claim."
+        },
+        searchDocumentAuthority: undefined
       },
       {
-        searchDocumentId: "search-same-project-wrong-chain",
-        suppliedSourceArtifactId: "artifact-same-project-chain-b",
-        suppliedSourceChunkId: "chunk-same-project-chain-b",
-        suppliedSourceDecisionId: "decision-same-project-chain-b",
+        searchDocumentId: "search-wrong-chunk-provenance",
+        acceptedSubjectId: "search-wrong-chunk-provenance",
+        exclusion: {
+          reason: "unsafe",
+          explanation: "SearchDocument source chunk does not belong to its canonical source claim."
+        },
+        searchDocumentAuthority: undefined
+      },
+      {
+        searchDocumentId: "search-wrong-decision-provenance",
+        acceptedSubjectId: "search-wrong-decision-provenance",
+        exclusion: {
+          reason: "unsafe",
+          explanation:
+            "SearchDocument source decision does not belong to its canonical source claim and project."
+        },
+        searchDocumentAuthority: undefined
+      },
+      {
+        searchDocumentId: "search-coherent-provenance",
         acceptedSubjectId: currentSourceClaim.id,
         exclusion: undefined,
-        searchDocumentAuthority: "canonical_projection",
-        propagatedSourceArtifactId: "artifact-same-project-chain-b",
-        propagatedSourceChunkId: "chunk-same-project-chain-b"
+        searchDocumentAuthority: "canonical_projection"
       }
     ]);
   });

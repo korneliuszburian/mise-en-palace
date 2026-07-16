@@ -40,7 +40,10 @@ type SearchDocumentAuthorityRepositories = {
   memoryRepository: Pick<MemoryRepository, "listActiveMemory"> &
     Partial<Pick<MemoryRepository, "getMemoryRecordById">>;
   sourceRepository: Pick<SourceRepository, "listClaimsForProject"> &
-    Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
+    Partial<Pick<
+      SourceRepository,
+      "getSourceClaimForProject" | "getSourceDecisionForProject"
+    >>;
 };
 
 const canonicalLinkNames = [
@@ -151,6 +154,52 @@ const canonicalLinkExclusion = (
   return undefined;
 };
 
+const sourceClaimProvenanceExclusion = async (input: {
+  document: SearchDocumentSearchResult;
+  claim: SourceClaim;
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+}): Promise<ActivationExclusion | undefined> => {
+  if (
+    input.document.sourceArtifactId !== undefined &&
+    input.document.sourceArtifactId !== input.claim.sourceArtifactId
+  ) {
+    return {
+      reason: "unsafe",
+      explanation: "SearchDocument source artifact does not belong to its canonical source claim."
+    };
+  }
+
+  if (
+    input.document.sourceChunkId !== undefined &&
+    input.document.sourceChunkId !== input.claim.sourceChunkId
+  ) {
+    return {
+      reason: "unsafe",
+      explanation: "SearchDocument source chunk does not belong to its canonical source claim."
+    };
+  }
+
+  if (input.document.sourceDecisionId === undefined) {
+    return undefined;
+  }
+
+  const decision = input.repositories.sourceRepository.getSourceDecisionForProject === undefined
+    ? undefined
+    : await input.repositories.sourceRepository.getSourceDecisionForProject(
+        input.projectId,
+        input.document.sourceDecisionId
+      );
+
+  return decision?.sourceClaimId === input.claim.id
+    ? undefined
+    : {
+        reason: "unsafe",
+        explanation:
+          "SearchDocument source decision does not belong to its canonical source claim and project."
+      };
+};
+
 const resolveSourceClaimDocument = async (input: {
   document: SearchDocumentSearchResult;
   projectId: ProjectId;
@@ -177,6 +226,15 @@ const resolveSourceClaimDocument = async (input: {
       input.document,
       claim.status === "deprecated" ? "stale" : "unsafe",
       `SearchDocument source claim is not current: ${claim.status}.`
+    );
+  }
+
+  const provenanceExclusion = await sourceClaimProvenanceExclusion({ ...input, claim });
+  if (provenanceExclusion !== undefined) {
+    return rejection(
+      input.document,
+      provenanceExclusion.reason,
+      provenanceExclusion.explanation
     );
   }
 

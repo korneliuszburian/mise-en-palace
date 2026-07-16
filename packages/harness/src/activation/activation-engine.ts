@@ -90,7 +90,10 @@ export interface ActivationCandidateRepositories {
     "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
   > & Partial<Pick<
     SourceRepository,
-    "getSourceClaimForProject" | "listSourceRejectionsForClaim" | "listHistoricalClaimWarningsForProject"
+    | "getSourceClaimForProject"
+    | "getSourceDecisionForProject"
+    | "listSourceRejectionsForClaim"
+    | "listHistoricalClaimWarningsForProject"
   >>;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }

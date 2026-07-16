@@ -349,28 +349,28 @@ describe("DrizzleRetrievalRepository", () => {
     }
   });
 
-  postgresIt("accepts incoherent SearchDocument ancillary provenance", async () => {
+  postgresIt("rejects incoherent SearchDocument canonical provenance atomically", async () => {
     const marker = `krn_search_provenance_${crypto.randomUUID().replaceAll("-", "")}`;
     const scaffold = await createSmokeHarnessScaffold({
       databaseUrl: databaseUrl!,
       migrationsFolder,
       smokeId: marker,
-      smokeName: "search document ancillary provenance",
+      smokeName: "search document canonical provenance",
       workspacePrefix: "krn-search-provenance",
       projectSlug: "search-provenance",
       cleanupRows: cleanupActivationSmokeRows,
       countMarkerRows: countActivationSmokeMarkerRows,
       rawIntent: `search document ancillary provenance ${marker}`,
       taskContract: {
-        title: "Falsify incoherent search provenance",
-        objective: "Observe whether a SearchDocument can join unrelated canonical source chains.",
-        constraints: ["preserve exact provenance ids"],
-        nonGoals: ["repair the write boundary in this falsifier"],
-        acceptance: ["repository readback exposes the mismatched tuple"]
+        title: "Enforce coherent search provenance",
+        objective: "Reject SearchDocuments that join unrelated canonical source chains.",
+        constraints: ["preserve exact provenance ids", "fail atomically"],
+        nonGoals: ["repair mismatched provenance aliases"],
+        acceptance: ["every pairwise mismatch is rejected", "valid source and memory projections remain readable"]
       },
       harnessPlan: {
-        summary: "SearchDocument ancillary provenance falsifier",
-        nextAction: "Insert cross-project and same-project wrong-chain projections."
+        summary: "SearchDocument canonical provenance boundary",
+        nextAction: "Reject mismatches and read back valid projections."
       }
     });
 
@@ -443,51 +443,127 @@ describe("DrizzleRetrievalRepository", () => {
       const subjectChain = await createSourceChain(scaffold.project.id, "subject-a");
       const sameProjectChain = await createSourceChain(scaffold.project.id, "same-project-b");
       const crossProjectChain = await createSourceChain(foreignProject.id, "cross-project-b");
+      const standaloneDecision = await scaffold.sourceRepository.createSourceDecision({
+        projectId: scaffold.project.id,
+        status: "defer",
+        decision: "Keep this decision outside a canonical claim chain.",
+        rationale: "Fixture for rejecting a standalone decision combined with source evidence.",
+        falsifier: "A SearchDocument joins this decision to an artifact or chunk.",
+        consumer: "SearchDocument canonical provenance boundary",
+        metadata: { smokeId: scaffold.marker, provenanceChain: "standalone-decision" }
+      });
       const selectionNow = "2026-07-15T00:00:00.000Z";
-      const createMismatch = (
-        label: string,
-        chain: typeof sameProjectChain,
-        searchText: string
-      ) => scaffold.retrievalRepository.createSearchDocument({
+      const mismatchCases = [
+        {
+          label: "subject-link",
+          provenance: { sourceClaimId: sameProjectChain.claim.id }
+        },
+        {
+          label: "claim-artifact",
+          provenance: {
+            sourceClaimId: subjectChain.claim.id,
+            sourceArtifactId: sameProjectChain.artifact.id
+          }
+        },
+        {
+          label: "subject-claim-artifact-without-claim-link",
+          provenance: { sourceArtifactId: sameProjectChain.artifact.id }
+        },
+        {
+          label: "claim-chunk",
+          provenance: {
+            sourceClaimId: subjectChain.claim.id,
+            sourceChunkId: sameProjectChain.chunk.id
+          }
+        },
+        {
+          label: "claim-decision",
+          provenance: {
+            sourceClaimId: subjectChain.claim.id,
+            sourceDecisionId: sameProjectChain.decision.id
+          }
+        },
+        {
+          label: "subject-claim-decision-without-claim-link",
+          provenance: { sourceDecisionId: sameProjectChain.decision.id }
+        },
+        {
+          label: "artifact-chunk",
+          subjectType: "source_artifact",
+          subjectId: subjectChain.artifact.id,
+          provenance: {
+            sourceArtifactId: subjectChain.artifact.id,
+            sourceChunkId: sameProjectChain.chunk.id
+          }
+        },
+        {
+          label: "artifact-subject-standalone-decision",
+          subjectType: "source_artifact",
+          subjectId: subjectChain.artifact.id,
+          provenance: { sourceDecisionId: standaloneDecision.id }
+        },
+        {
+          label: "chunk-subject-standalone-decision",
+          subjectType: "source_chunk",
+          subjectId: subjectChain.chunk.id,
+          provenance: { sourceDecisionId: standaloneDecision.id }
+        },
+        {
+          label: "cross-project-artifact",
+          provenance: { sourceArtifactId: crossProjectChain.artifact.id }
+        },
+        {
+          label: "cross-project-decision",
+          provenance: { sourceDecisionId: crossProjectChain.decision.id }
+        }
+      ] as const;
+
+      for (const mismatch of mismatchCases) {
+        const searchText = `rejected incoherent provenance ${mismatch.label} ${marker}`;
+        await expect(scaffold.retrievalRepository.createSearchDocument({
+          projectId: scaffold.project.id,
+          subjectType: mismatch.subjectType ?? "source_claim",
+          subjectId: mismatch.subjectId ?? subjectChain.claim.id,
+          ...mismatch.provenance,
+          title: `Rejected SearchDocument provenance ${mismatch.label}`,
+          body: "Canonical provenance identifiers intentionally come from distinct chains.",
+          searchText,
+          sourceAuthority: "project-decision",
+          validFrom: "2026-01-01T00:00:00.000Z",
+          metadata: { smokeId: scaffold.marker, mismatch: mismatch.label }
+        })).rejects.toThrow("createSearchDocument canonical provenance is incoherent");
+
+        await expect(scaffold.retrievalRepository.searchLexical({
+          projectId: scaffold.project.id,
+          query: searchText,
+          now: selectionNow,
+          limit: 10
+        })).resolves.toEqual([]);
+      }
+
+      const validSourceSearchText = `valid canonical source projection ${marker}`;
+      const validSource = await scaffold.retrievalRepository.createSearchDocument({
         projectId: scaffold.project.id,
         subjectType: "source_claim",
         subjectId: subjectChain.claim.id,
         sourceClaimId: subjectChain.claim.id,
-        sourceArtifactId: chain.artifact.id,
-        sourceChunkId: chain.chunk.id,
-        sourceDecisionId: chain.decision.id,
-        title: `Incoherent SearchDocument provenance ${label}`,
-        body: "Claim A is intentionally combined with artifact, chunk, and decision B.",
-        searchText,
+        sourceArtifactId: subjectChain.artifact.id,
+        sourceChunkId: subjectChain.chunk.id,
+        sourceDecisionId: subjectChain.decision.id,
+        title: "Valid canonical source projection",
+        body: "The SearchDocument preserves one complete canonical source chain.",
+        searchText: validSourceSearchText,
         sourceAuthority: "project-decision",
         validFrom: "2026-01-01T00:00:00.000Z",
-        metadata: { smokeId: scaffold.marker, mismatch: label }
+        metadata: { smokeId: scaffold.marker, projection: "source" }
       });
-      const sameProjectSearchText = `incoherent ancillary provenance same project wrong chain ${marker}`;
-      const crossProjectSearchText = `incoherent ancillary provenance cross project ${marker}`;
-      const inserted = [
-        await createMismatch(
-          "same-project-wrong-chain",
-          sameProjectChain,
-          sameProjectSearchText
-        ),
-        await createMismatch("cross-project", crossProjectChain, crossProjectSearchText)
-      ];
-      const readback = await Promise.all([
-        scaffold.retrievalRepository.searchLexical({
-          projectId: scaffold.project.id,
-          query: sameProjectSearchText,
-          now: selectionNow,
-          limit: 10
-        }),
-        scaffold.retrievalRepository.searchLexical({
-          projectId: scaffold.project.id,
-          query: crossProjectSearchText,
-          now: selectionNow,
-          limit: 10
-        })
-      ]);
-      const exactTuple = (document: typeof inserted[number]) => ({
+      const readback = await scaffold.retrievalRepository.searchLexical({
+        projectId: scaffold.project.id,
+        query: validSourceSearchText,
+        now: selectionNow,
+        limit: 10
+      });
+      const exactTuple = (document: typeof validSource) => ({
         projectId: document.projectId,
         subjectId: document.subjectId,
         sourceClaimId: document.sourceClaimId,
@@ -496,27 +572,15 @@ describe("DrizzleRetrievalRepository", () => {
         sourceDecisionId: document.sourceDecisionId
       });
 
-      expect(inserted.map(exactTuple)).toEqual([
+      expect(readback.map(exactTuple)).toEqual([
         {
           projectId: scaffold.project.id,
           subjectId: subjectChain.claim.id,
           sourceClaimId: subjectChain.claim.id,
-          sourceArtifactId: sameProjectChain.artifact.id,
-          sourceChunkId: sameProjectChain.chunk.id,
-          sourceDecisionId: sameProjectChain.decision.id
-        },
-        {
-          projectId: scaffold.project.id,
-          subjectId: subjectChain.claim.id,
-          sourceClaimId: subjectChain.claim.id,
-          sourceArtifactId: crossProjectChain.artifact.id,
-          sourceChunkId: crossProjectChain.chunk.id,
-          sourceDecisionId: crossProjectChain.decision.id
+          sourceArtifactId: subjectChain.artifact.id,
+          sourceChunkId: subjectChain.chunk.id,
+          sourceDecisionId: subjectChain.decision.id
         }
-      ]);
-      expect(readback.map((results) => results.map(exactTuple))).toEqual([
-        [exactTuple(inserted[0]!)],
-        [exactTuple(inserted[1]!)]
       ]);
       expect(crossProjectChain.artifact.projectId).toBe(foreignProject.id);
       expect(crossProjectChain.decision.projectId).toBe(foreignProject.id);
