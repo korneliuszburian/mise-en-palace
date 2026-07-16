@@ -443,10 +443,10 @@ describe("DrizzleRetrievalRepository", () => {
       const subjectChain = await createSourceChain(scaffold.project.id, "subject-a");
       const sameProjectChain = await createSourceChain(scaffold.project.id, "same-project-b");
       const crossProjectChain = await createSourceChain(foreignProject.id, "cross-project-b");
-      const searchText = `incoherent ancillary provenance ${marker}`;
       const createMismatch = (
         label: string,
-        chain: typeof sameProjectChain
+        chain: typeof sameProjectChain,
+        searchText: string
       ) => scaffold.retrievalRepository.createSearchDocument({
         projectId: scaffold.project.id,
         subjectType: "source_claim",
@@ -461,15 +461,28 @@ describe("DrizzleRetrievalRepository", () => {
         sourceAuthority: "project-decision",
         metadata: { smokeId: scaffold.marker, mismatch: label }
       });
-      const inserted = await Promise.all([
-        createMismatch("same-project-wrong-chain", sameProjectChain),
-        createMismatch("cross-project", crossProjectChain)
+      const sameProjectSearchText = `incoherent ancillary provenance same project wrong chain ${marker}`;
+      const crossProjectSearchText = `incoherent ancillary provenance cross project ${marker}`;
+      const inserted = [
+        await createMismatch(
+          "same-project-wrong-chain",
+          sameProjectChain,
+          sameProjectSearchText
+        ),
+        await createMismatch("cross-project", crossProjectChain, crossProjectSearchText)
+      ];
+      const readback = await Promise.all([
+        scaffold.retrievalRepository.searchLexical({
+          projectId: scaffold.project.id,
+          query: sameProjectSearchText,
+          limit: 10
+        }),
+        scaffold.retrievalRepository.searchLexical({
+          projectId: scaffold.project.id,
+          query: crossProjectSearchText,
+          limit: 10
+        })
       ]);
-      const readback = await scaffold.retrievalRepository.searchLexical({
-        projectId: scaffold.project.id,
-        query: searchText,
-        limit: 10
-      });
       const exactTuple = (document: typeof inserted[number]) => ({
         projectId: document.projectId,
         subjectId: document.subjectId,
@@ -497,7 +510,10 @@ describe("DrizzleRetrievalRepository", () => {
           sourceDecisionId: crossProjectChain.decision.id
         }
       ]);
-      expect(readback.map(exactTuple)).toEqual(expect.arrayContaining(inserted.map(exactTuple)));
+      expect(readback.map((results) => results.map(exactTuple))).toEqual([
+        [exactTuple(inserted[0]!)],
+        [exactTuple(inserted[1]!)]
+      ]);
       expect(crossProjectChain.artifact.projectId).toBe(foreignProject.id);
       expect(crossProjectChain.decision.projectId).toBe(foreignProject.id);
       expect(sameProjectChain.claim.id).not.toBe(subjectChain.claim.id);
