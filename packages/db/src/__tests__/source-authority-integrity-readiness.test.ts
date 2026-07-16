@@ -84,7 +84,9 @@ const createGoverningEvidenceFixture = async (
       ? {}
       : { decisionCorpusStatus: input.decisionCorpusStatus })
   };
-  const rows = await client<GoverningEvidenceFixture[]>`
+  const rows = await client.begin(async (transaction) => {
+    await transaction`set local session_replication_role = 'replica'`;
+    return transaction<GoverningEvidenceFixture[]>`
     with artifact as (
       insert into source_artifacts (
         project_id, import_id, import_row_id, kind, trust_tier, uri, title, content_hash, metadata
@@ -98,12 +100,12 @@ const createGoverningEvidenceFixture = async (
         ${evidenceRef},
         ${input.marker},
         ${artifactContentHash},
-        ${client.json(metadata)}
+        ${transaction.json(metadata)}
       )
       returning id, project_id, uri
     ), chunk as (
       insert into source_chunks (source_artifact_id, ordinal, content, content_hash, metadata)
-      select id, 0, 'captured fixture evidence', ${evidenceContentHash}, ${client.json(metadata)}
+      select id, 0, 'captured fixture evidence', ${evidenceContentHash}, ${transaction.json(metadata)}
       from artifact
       returning id
     ), claim as (
@@ -122,7 +124,7 @@ const createGoverningEvidenceFixture = async (
         'implementation-boundary',
         'source authority integrity readiness',
         ${lifecycle === "governing" ? "accepted" : "deprecated"},
-        ${client.json(metadata)}
+        ${transaction.json(metadata)}
       from artifact, chunk
       returning id
     ), decision as (
@@ -137,7 +139,7 @@ const createGoverningEvidenceFixture = async (
         'fixture rationale',
         'non-current evidence remains governing',
         'source authority integrity readiness',
-        ${client.json(metadata)}
+        ${transaction.json(metadata)}
       from artifact, claim
       returning id
     ), edge as (
@@ -153,7 +155,7 @@ const createGoverningEvidenceFixture = async (
         'implementation-boundary',
         'high',
         'fixture governing edge',
-        ${client.json({ smokeId: input.marker })}
+        ${transaction.json({ smokeId: input.marker })}
       from claim, decision
       where ${lifecycle} = 'governing'
       returning id
@@ -176,7 +178,7 @@ const createGoverningEvidenceFixture = async (
         'fixture governing search',
         'fixture governing search body',
         'fixture governing search',
-        ${client.json({ smokeId: input.marker })}
+        ${transaction.json({ smokeId: input.marker })}
       from artifact, chunk, claim, decision
       returning id
     )
@@ -188,7 +190,8 @@ const createGoverningEvidenceFixture = async (
       decision.id::text as "sourceDecisionId",
       artifact.uri as "evidenceRef"
     from artifact, chunk, claim, decision, search
-  `;
+    `;
+  });
   const fixture = rows[0];
 
   if (fixture === undefined) {
@@ -599,19 +602,30 @@ describe("source authority integrity readiness", () => {
         `;
         const projectOne = projects[0]!.id;
         const projectTwo = projects[1]!.id;
+        const evidenceMetadata = {
+          smokeId: marker,
+          evidenceStatus: "captured",
+          evidenceContentHash: `sha256:${marker}:evidence`,
+          evidenceFreshness: "current"
+        };
         const artifact = await client<{ id: string }[]>`
           insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash, metadata)
-          values (${projectOne}, 'doc', 'project-decision', ${`source-authority://${marker}/artifact`}, 'constraint artifact', ${`sha256:${marker}`}, ${client.json({ smokeId: marker })})
+          values (${projectOne}, 'doc', 'project-decision', ${`source-authority://${marker}/artifact`}, 'constraint artifact', ${`sha256:${marker}`}, ${client.json(evidenceMetadata)})
+          returning id
+        `;
+        const chunk = await client<{ id: string }[]>`
+          insert into source_chunks (source_artifact_id, ordinal, content, content_hash, metadata)
+          values (${artifact[0]!.id}, 0, 'captured constraint evidence', ${`sha256:${marker}:chunk`}, ${client.json(evidenceMetadata)})
           returning id
         `;
         const claim = await client<{ id: string }[]>`
-          insert into source_claims (source_artifact_id, claim, mechanism, krn_implication, does_not_prove, trust_tier, support_type, consumer, status, metadata)
-          values (${artifact[0]!.id}, 'constraint claim', 'mechanism', 'implication', 'non-proof', 'project-decision', 'implementation-boundary', 'constraint smoke', 'accepted', ${client.json({ smokeId: marker })})
+          insert into source_claims (source_artifact_id, source_chunk_id, claim, mechanism, krn_implication, does_not_prove, trust_tier, support_type, consumer, status, metadata)
+          values (${artifact[0]!.id}, ${chunk[0]!.id}, 'constraint claim', 'mechanism', 'implication', 'non-proof', 'project-decision', 'implementation-boundary', 'constraint smoke', 'accepted', ${client.json(evidenceMetadata)})
           returning id
         `;
         const decision = await client<{ id: string }[]>`
           insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
-          values (${projectOne}, ${claim[0]!.id}, 'adopt', 'adopted', 'rationale', 'falsifier', 'constraint smoke', ${client.json({ smokeId: marker })})
+          values (${projectOne}, ${claim[0]!.id}, 'adopt', 'adopted', 'rationale', 'falsifier', 'constraint smoke', ${client.json(evidenceMetadata)})
           returning id
         `;
 

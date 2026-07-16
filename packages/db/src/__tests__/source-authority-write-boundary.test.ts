@@ -247,6 +247,109 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
       }
     });
 
+    it("rejects direct SQL adoption without captured evidence", async () => {
+      const fixture = await createFixture(databaseUrl!);
+
+      try {
+        const sourceArtifact = await fixture.sourceRepository.createSourceArtifact({
+          projectId: fixture.projectId,
+          kind: "doc",
+          sourceAuthority: "project-decision",
+          uri: fixture.sourceUri,
+          title: "Direct SQL uncaptured source",
+          contentHash: `sha256:${fixture.marker}:direct-sql`,
+          metadata: { smokeId: fixture.marker }
+        });
+        const sourceClaim = await fixture.sourceRepository.createSourceClaim({
+          sourceArtifactId: sourceArtifact.id,
+          claim: "Direct SQL must not bypass captured evidence.",
+          mechanism: "The PostgreSQL trigger validates governing source identity.",
+          krnImplication: "An uncaptured direct write remains non-governing.",
+          doesNotProve: "This does not prove source truth.",
+          sourceAuthority: "project-decision",
+          supportType: "implementation-boundary",
+          consumer: "source authority SQL boundary",
+          falsifier: "The raw adopted SourceDecision commits.",
+          metadata: { smokeId: fixture.marker }
+        });
+        await fixture.client`
+          update source_claims
+          set status = 'accepted'
+          where id = ${sourceClaim.id}
+        `;
+
+        await expect(fixture.client`
+          insert into source_decisions (
+            project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata
+          ) values (
+            ${fixture.projectId}, ${sourceClaim.id}, 'adopt',
+            'Bypass captured evidence', 'Raw SQL attempted to bypass the repository',
+            'The row commits', 'source authority SQL boundary',
+            ${JSON.stringify({ smokeId: fixture.marker })}::jsonb
+          )
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "source_decisions_captured_evidence"
+        });
+
+        const decisionCount = await fixture.client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_decisions
+          where source_claim_id = ${sourceClaim.id}
+        `;
+        expect(decisionCount).toEqual([{ count: 0 }]);
+      } finally {
+        await cleanupFixture(fixture);
+      }
+    });
+
+    it("rejects direct SQL corruption of retained captured authority", async () => {
+      const fixture = await createFixture(databaseUrl!);
+
+      try {
+        const { sourceArtifact, sourceClaim } = await createCapturedClaim(fixture);
+        const sourceDecision = await fixture.sourceRepository.createSourceDecision(
+          governingDecisionInput(fixture, sourceClaim.id)
+        );
+
+        await expect(fixture.client`
+          update source_decisions
+          set metadata = metadata - 'evidenceContentHash'
+          where id = ${sourceDecision.id}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "source_decisions_captured_evidence"
+        });
+        await expect(fixture.client`
+          update source_artifacts
+          set metadata = jsonb_set(metadata, '{evidenceFreshness}', '"stale"'::jsonb)
+          where id = ${sourceArtifact.id}
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "retained_captured_source_authority"
+        });
+
+        const retainedIdentity = await fixture.client<{
+          artifactFreshness: string;
+          decisionHash: string;
+        }[]>`
+          select
+            artifact.metadata->>'evidenceFreshness' as "artifactFreshness",
+            decision.metadata->>'evidenceContentHash' as "decisionHash"
+          from source_decisions decision
+          join source_claims claim on claim.id = decision.source_claim_id
+          join source_artifacts artifact on artifact.id = claim.source_artifact_id
+          where decision.id = ${sourceDecision.id}
+        `;
+        expect(retainedIdentity).toEqual([{
+          artifactFreshness: "current",
+          decisionHash: capturedEvidenceMetadata(fixture).evidenceContentHash
+        }]);
+      } finally {
+        await cleanupFixture(fixture);
+      }
+    });
+
     it.each([
       {
         name: "mismatched evidence hash",
@@ -448,6 +551,20 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           notes: "This edge must remain absent.",
           metadata: { smokeId: fixture.marker }
         })).rejects.toThrow("SourceDecisionEdge requires coherent captured-current evidence");
+        await expect(fixture.client`
+          insert into source_decision_edges (
+            source_claim_id, source_decision_id, target_type, target_id,
+            support_type, confidence, notes, metadata
+          ) values (
+            ${sourceClaim.id}, ${sourceDecisionId}, 'architecture_decision',
+            ${`${fixture.marker}-direct-legacy-target`}, 'implementation-boundary',
+            'high', 'Direct SQL edge must remain absent',
+            ${JSON.stringify({ smokeId: fixture.marker })}::jsonb
+          )
+        `).rejects.toMatchObject({
+          code: "23514",
+          constraint_name: "source_decision_edges_captured_evidence"
+        });
 
         const edgeCount = await fixture.client<{ count: number }[]>`
           select count(*)::int as count

@@ -1644,6 +1644,161 @@ describe("SourceClaim provenance migration", () => {
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "quarantines legacy uncaptured adoption before enforcing the direct SQL boundary",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      const pre0047Migrations = await createMigrationsFolderThrough(
+        46,
+        "0046_useful_mystique"
+      );
+      const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+      const marker = `legacy-uncaptured-authority-${crypto.randomUUID()}`;
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0047Migrations.migrationsFolder
+        });
+        const [fixture] = await client<{
+          claimId: string;
+          decisionId: string;
+          edgeId: string;
+          searchId: string;
+        }[]>`
+          with workspace as (
+            insert into workspaces (slug, display_name)
+            values (${marker}, 'Legacy uncaptured authority')
+            returning id
+          ), project as (
+            insert into projects (workspace_id, slug, display_name)
+            select id, ${marker}, 'Legacy uncaptured authority' from workspace
+            returning id
+          ), artifact as (
+            insert into source_artifacts (
+              project_id, kind, trust_tier, uri, title, content_hash, metadata
+            )
+            select id, 'doc', 'project-decision', ${`legacy://${marker}`},
+              'Legacy uncaptured artifact', ${`sha256:${marker}`},
+              ${client.json({ smokeId: marker })}
+            from project
+            returning id, project_id
+          ), chunk as (
+            insert into source_chunks (
+              source_artifact_id, ordinal, content, content_hash, metadata
+            )
+            select id, 0, 'legacy uncaptured bytes', ${`sha256:${marker}:chunk`},
+              ${client.json({ smokeId: marker })}
+            from artifact
+            returning id, source_artifact_id
+          ), claim as (
+            insert into source_claims (
+              source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+              does_not_prove, trust_tier, support_type, consumer, status, metadata
+            )
+            select artifact.id, chunk.id, 'Legacy uncaptured claim',
+              'Pre-0047 SQL admitted governing rows without captured identity',
+              'Migration must remove governing authority',
+              'Does not prove source truth', 'project-decision',
+              'implementation-boundary', '0047 migration proof', 'accepted',
+              ${client.json({ smokeId: marker })}
+            from artifact, chunk
+            returning id, source_artifact_id
+          ), decision as (
+            insert into source_decisions (
+              project_id, source_claim_id, status, decision, rationale,
+              falsifier, consumer, metadata
+            )
+            select artifact.project_id, claim.id, 'adopt', 'Legacy uncaptured adoption',
+              'Pre-0047 direct SQL', 'The row remains governing',
+              '0047 migration proof', ${client.json({ smokeId: marker })}
+            from artifact, claim
+            returning id, source_claim_id
+          ), edge as (
+            insert into source_decision_edges (
+              source_claim_id, source_decision_id, target_type, target_id,
+              support_type, confidence, notes, metadata
+            )
+            select claim.id, decision.id, 'architecture_decision', ${marker},
+              'implementation-boundary', 'high', 'Legacy governing edge',
+              ${client.json({ smokeId: marker })}
+            from claim, decision
+            returning id
+          ), search as (
+            insert into search_documents (
+              project_id, subject_type, subject_id, source_artifact_id,
+              source_chunk_id, source_claim_id, source_decision_id, trust_tier,
+              validity_status, title, body, search_text, metadata
+            )
+            select artifact.project_id, 'source_claim', claim.id, artifact.id,
+              chunk.id, claim.id, decision.id, 'project-decision', 'active',
+              'Legacy uncaptured search', 'Legacy uncaptured search body',
+              'legacy uncaptured search', ${client.json({ smokeId: marker })}
+            from artifact, chunk, claim, decision
+            returning id
+          )
+          select
+            claim.id::text as "claimId",
+            decision.id::text as "decisionId",
+            edge.id::text as "edgeId",
+            search.id::text as "searchId"
+          from claim, decision, edge, search
+        `;
+
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+
+        const [lifecycle] = await client<{
+          claimStatus: string;
+          decisionProjectId: string | null;
+          decisionStatus: string;
+          edgeCount: number;
+          searchInvalidated: boolean;
+          searchStatus: string;
+        }[]>`
+          select
+            claim.status::text as "claimStatus",
+            decision.project_id::text as "decisionProjectId",
+            decision.status::text as "decisionStatus",
+            (select count(*)::int from source_decision_edges edge
+              where edge.id = ${fixture!.edgeId}) as "edgeCount",
+            search.invalidated_at is not null as "searchInvalidated",
+            search.validity_status::text as "searchStatus"
+          from source_claims claim
+          join source_decisions decision on decision.source_claim_id = claim.id
+          join search_documents search on search.id = ${fixture!.searchId}
+          where decision.id = ${fixture!.decisionId}
+        `;
+        const quarantines = await client<{ entityId: string; entityType: string }[]>`
+          select entity_id::text as "entityId", entity_type as "entityType"
+          from source_authority_quarantines
+          where reason = 'captured_evidence_missing_or_mismatched'
+            and entity_id in (${fixture!.decisionId}, ${fixture!.edgeId}, ${fixture!.searchId})
+          order by entity_type
+        `;
+        expect(lifecycle).toEqual({
+          claimStatus: "proposed",
+          decisionProjectId: null,
+          decisionStatus: "lab_test",
+          edgeCount: 0,
+          searchInvalidated: true,
+          searchStatus: "invalidated"
+        });
+        expect(quarantines).toEqual([
+          { entityId: fixture!.searchId, entityType: "search_document" },
+          { entityId: fixture!.decisionId, entityType: "source_decision" },
+          { entityId: fixture!.edgeId, entityType: "source_decision_edge" }
+        ]);
+      } finally {
+        await client.end();
+        await Promise.all([pre0047Migrations.cleanup(), disposable.cleanup()]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "fails closed for authority labels not classified by the SQL projection",
     async () => {
       const disposable = await createDisposableDatabase(databaseUrl!);

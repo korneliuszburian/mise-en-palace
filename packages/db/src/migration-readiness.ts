@@ -67,6 +67,42 @@ const approvedMigrationLineages: readonly ApprovedMigrationLineage[] = [
         }
       }]
     ])
+  },
+  {
+    id: "legacy-precommit-0029-0030-local-0047-v1",
+    minimumMigrationCount: 49,
+    identityOverrides: new Map([
+      [29, {
+        canonical: {
+          hash: "057e6c47e46905aa711853a7d39ff086f826272360470349a13b7cec8c1b9e86",
+          createdAt: "1783737041990"
+        },
+        applied: {
+          hash: "a560a99e7aba80b3e7acc82fb2b06c3d1c93ed0226b4a0eb25ccbe3d02870f80",
+          createdAt: "1783737041990"
+        }
+      }],
+      [30, {
+        canonical: {
+          hash: "86d45017c2faf6d4a829833c58674a25fc3c09b9a763ebe477cd601a76cce78a",
+          createdAt: "1783996876609"
+        },
+        applied: {
+          hash: "e9ed37609e9db2d1076ec4b583929f3d44e863ed2488e944cd3735c1a28638d0",
+          createdAt: "1783996876609"
+        }
+      }],
+      [47, {
+        canonical: {
+          hash: "2f408bd77309fafa46d1a6e00debdf90ecf9ee5c9802b134a6d714386d349d9e",
+          createdAt: "1784207979037"
+        },
+        applied: {
+          hash: "1a35e12cfb91f47c56a99a25da69719f96924096ca1e6c1aac593f7d5b220a45",
+          createdAt: "1784207979037"
+        }
+      }]
+    ])
   }
 ];
 

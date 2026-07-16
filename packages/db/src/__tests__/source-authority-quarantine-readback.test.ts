@@ -53,26 +53,37 @@ describe("source authority quarantine readback", () => {
           insert into projects (workspace_id, slug, display_name)
           values (${workspace!.id}, 'quarantine-readback-other', 'Quarantine readback other') returning id
         `;
+        const evidenceMetadata = {
+          evidenceStatus: "captured",
+          evidenceContentHash: "sha256:quarantine-readback:evidence",
+          evidenceFreshness: "current"
+        };
         const [artifact] = await client<{ id: string }[]>`
-          insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash)
-          values (${project!.id}, 'doc', 'project-decision', 'quarantine://artifact', 'artifact', 'sha256:artifact') returning id
+          insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash, metadata)
+          values (${project!.id}, 'doc', 'project-decision', 'quarantine://artifact', 'artifact', 'sha256:artifact', ${client.json(evidenceMetadata)}) returning id
         `;
         const [otherArtifact] = await client<{ id: string }[]>`
           insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash)
           values (${otherProject!.id}, 'doc', 'project-decision', 'quarantine://other', 'other', 'sha256:other') returning id
         `;
+        const [chunk] = await client<{ id: string }[]>`
+          insert into source_chunks (source_artifact_id, ordinal, content, content_hash, metadata)
+          values (${artifact!.id}, 0, 'captured quarantine evidence', 'sha256:quarantine-readback:chunk', ${client.json(evidenceMetadata)})
+          returning id
+        `;
         const [claim] = await client<{ id: string }[]>`
           insert into source_claims (
-            source_artifact_id, claim, mechanism, krn_implication, does_not_prove,
-            trust_tier, support_type, consumer, status
+            source_artifact_id, source_chunk_id, claim, mechanism, krn_implication, does_not_prove,
+            trust_tier, support_type, consumer, status, metadata
           ) values (
-            ${artifact!.id}, 'claim', 'mechanism', 'implication', 'non-proof',
-            'project-decision', 'implementation-boundary', 'quarantine test', 'accepted'
+            ${artifact!.id}, ${chunk!.id}, 'claim', 'mechanism', 'implication', 'non-proof',
+            'project-decision', 'implementation-boundary', 'quarantine test', 'accepted',
+            ${client.json(evidenceMetadata)}
           ) returning id
         `;
         const [decision] = await client<{ id: string }[]>`
-          insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer)
-          values (${project!.id}, ${claim!.id}, 'adopt', 'decision', 'rationale', 'falsifier', 'quarantine test') returning id
+          insert into source_decisions (project_id, source_claim_id, status, decision, rationale, falsifier, consumer, metadata)
+          values (${project!.id}, ${claim!.id}, 'adopt', 'decision', 'rationale', 'falsifier', 'quarantine test', ${client.json(evidenceMetadata)}) returning id
         `;
         const [edge] = await client<{ id: string }[]>`
           insert into source_decision_edges (

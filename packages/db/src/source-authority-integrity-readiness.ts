@@ -108,14 +108,26 @@ const inspectNonCurrentGoverningEvidence = async (
       decision.id::text as "sourceDecisionId",
       coalesce(nullif(sa.metadata->>'evidenceRef', ''), sa.uri) as "evidenceRef",
       case
-        when sa.metadata->>'evidenceFreshness' = 'stale' then 'stale'
+        when sa.metadata->>'evidenceFreshness' = 'stale'
+          or sc.metadata->>'evidenceFreshness' = 'stale'
+          or chunk.metadata->>'evidenceFreshness' = 'stale'
+          or decision.metadata->>'evidenceFreshness' = 'stale'
+          then 'stale'
         else 'unknown'
       end as "evidenceFreshness"
     from source_decisions decision
     join source_claims sc on sc.id = decision.source_claim_id
     join source_artifacts sa on sa.id = sc.source_artifact_id
+    left join source_chunks chunk
+      on chunk.id = sc.source_chunk_id
+     and chunk.source_artifact_id = sa.id
     where decision.status = 'adopt'
-      and coalesce(sa.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+      and (
+        coalesce(sa.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+        or coalesce(sc.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+        or coalesce(chunk.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+        or coalesce(decision.metadata->>'evidenceFreshness', 'unknown') <> 'current'
+      )
       and not exists (
         select 1 from source_authority_quarantines quarantine
         where quarantine.entity_type = 'source_decision' and quarantine.entity_id = decision.id
@@ -398,10 +410,15 @@ const inspectViolations = async (
       from source_decisions decision
       join source_claims sc on sc.id = decision.source_claim_id
       join source_artifacts sa on sa.id = sc.source_artifact_id
-      left join source_chunks chunk on chunk.source_artifact_id = sa.id and chunk.ordinal = 0
+      left join source_chunks chunk
+        on chunk.id = sc.source_chunk_id
+       and chunk.source_artifact_id = sa.id
       where decision.status = 'adopt' and (
         coalesce(decision.metadata->>'evidenceStatus', '') <> 'captured' or
-        nullif(decision.metadata->>'evidenceContentHash', '') is null or
+        coalesce(sc.metadata->>'evidenceStatus', '') <> 'captured' or
+        coalesce(sa.metadata->>'evidenceStatus', '') <> 'captured' or
+        coalesce(chunk.metadata->>'evidenceStatus', '') <> 'captured' or
+        nullif(btrim(sa.metadata->>'evidenceContentHash'), '') is null or
         decision.metadata->>'evidenceContentHash' is distinct from sc.metadata->>'evidenceContentHash' or
         decision.metadata->>'evidenceContentHash' is distinct from sa.metadata->>'evidenceContentHash' or
         decision.metadata->>'evidenceContentHash' is distinct from chunk.metadata->>'evidenceContentHash'
