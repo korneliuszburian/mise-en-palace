@@ -146,18 +146,28 @@ export interface SmokeCompiledExecutionOutput extends SmokeHarnessCompileOutput 
   retrievalRunId: string | undefined;
 }
 
-export const createRunningSmokeExecutionRun = (
+export const createRunningSmokeExecutionRun = async (
   harnessRunRepository: DrizzleHarnessRunRepository,
   harnessPlanId: string,
   marker: string,
   startedAt: string
-): Promise<SmokeExecutionRunRecord> => harnessRunRepository.createExecutionRun({
-  harnessPlanId,
-  adapter: "smoke",
-  status: "running",
-  startedAt,
-  metadata: { smokeId: marker }
-});
+): Promise<SmokeExecutionRunRecord> => {
+  const plannedRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId,
+    adapter: "smoke",
+    metadata: { smokeId: marker }
+  });
+  const transition = await harnessRunRepository.updateExecutionRunStatus({
+    executionRunId: plannedRun.id,
+    expectedStatus: "planned",
+    status: "running",
+    startedAt
+  });
+  if (transition.kind !== "transitioned") {
+    throw new Error("smoke ExecutionRun planned-to-running transition was not persisted");
+  }
+  return transition.executionRun;
+};
 
 const includedSmokeContextRevisionTokens = (
   candidates: readonly SmokeContextRevisionCandidate[],
@@ -531,7 +541,6 @@ export const createCompiledSmokeExecution = async (
   const executionRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: result.harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       ...(input.includeEvidenceContract === false ? {} : {

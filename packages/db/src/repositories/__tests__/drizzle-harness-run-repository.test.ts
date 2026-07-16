@@ -21,6 +21,7 @@ import {
 } from "@krn/core";
 import type { EvalCandidateProposal } from "@krn/core";
 import type {
+  CreateExecutionRunInput,
   CreateEvidenceBundleInput,
   CreateEvidenceFeedbackOnceInput,
   CreateEvalFeedbackDeltaOnceInput,
@@ -186,24 +187,34 @@ describe("DrizzleHarnessRunRepository", () => {
     };
   };
 
-  it("rejects an execution run created directly in a terminal state", async () => {
+  it("rejects every non-planned direct execution run status shortcut", async () => {
     const fake = fakeExecutionRunDatabase(executionRunRow("succeeded"));
-
-    await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
+    const directStatusInput = {
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
       status: "succeeded"
-    })).rejects.toThrow("execution run lifecycle");
+    } as unknown as CreateExecutionRunInput;
+
+    await expect(
+      new DrizzleHarnessRunRepository(fake.db).createExecutionRun(directStatusInput)
+    ).rejects.toThrow(
+      "execution run lifecycle creation is planned-only; use the guarded status transition"
+    );
   });
 
-  it("rejects a terminal execution run without start and completion timestamps", async () => {
-    const fake = fakeExecutionRunDatabase(executionRunRow("failed"));
-
-    await expect(new DrizzleHarnessRunRepository(fake.db).createExecutionRun({
+  it("rejects a direct execution run start timestamp shortcut", async () => {
+    const fake = fakeExecutionRunDatabase(executionRunRow("planned"));
+    const directStartInput = {
       harnessPlanId: "harness-plan-1",
       adapter: "codex",
-      status: "failed"
-    })).rejects.toThrow("execution run lifecycle");
+      startedAt: "2026-07-13T10:00:00.000Z"
+    } as unknown as CreateExecutionRunInput;
+
+    await expect(
+      new DrizzleHarnessRunRepository(fake.db).createExecutionRun(directStartInput)
+    ).rejects.toThrow(
+      "execution run lifecycle creation is planned-only; use the guarded status transition"
+    );
   });
 
   it("rejects a terminal run reversal and an incoherent completion update", async () => {
@@ -226,15 +237,7 @@ describe("DrizzleHarnessRunRepository", () => {
     })).rejects.toThrow("execution run lifecycle");
   });
 
-  it("rejects running without a start and completion before the start", async () => {
-    const missingStart = fakeExecutionRunDatabase(executionRunRow("running"));
-
-    await expect(new DrizzleHarnessRunRepository(missingStart.db).createExecutionRun({
-      harnessPlanId: "harness-plan-1",
-      adapter: "codex",
-      status: "running"
-    })).rejects.toThrow("execution run lifecycle");
-
+  it("rejects completion before the persisted start", async () => {
     const completionBeforeStart = fakeExecutionRunDatabase(executionRunRow("running", {
       startedAt: new Date("2026-07-13T10:00:00.000Z")
     }));
@@ -503,16 +506,21 @@ describe("DrizzleHarnessRunRepository", () => {
         const createRun = () => scaffold.harnessRunRepository.createExecutionRun({
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "lifecycle-falsifier",
-          status: "planned",
           metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
         });
 
-        await expect(scaffold.harnessRunRepository.createExecutionRun({
+        const directRunningInput = {
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "lifecycle-falsifier",
-          status: "succeeded",
+          status: "running",
+          startedAt: "2026-07-13T10:01:00.000Z",
           metadata: { smokeId: marker, falsifier: "execution-lifecycle" }
-        })).rejects.toThrow("execution run lifecycle");
+        } as unknown as CreateExecutionRunInput;
+        await expect(
+          scaffold.harnessRunRepository.createExecutionRun(directRunningInput)
+        ).rejects.toThrow(
+          "execution run lifecycle creation is planned-only; use the guarded status transition"
+        );
 
         const plannedRun = await createRun();
         const runningTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
@@ -3558,13 +3566,21 @@ describe("DrizzleHarnessRunRepository", () => {
       const retryRepository = new DrizzleHarnessRunRepository(createKrnDatabase(retryClient));
 
       try {
-        const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
+        const plannedExecutionRun = await scaffold.harnessRunRepository.createExecutionRun({
           harnessPlanId: scaffold.harnessPlan.id,
           adapter: "review-feedback-once",
-          status: "running",
-          startedAt: "2026-07-15T06:00:00.000Z",
           metadata: { smokeId: marker }
         });
+        const runningTransition = await scaffold.harnessRunRepository.updateExecutionRunStatus({
+          executionRunId: plannedExecutionRun.id,
+          expectedStatus: "planned",
+          status: "running",
+          startedAt: "2026-07-15T06:00:00.000Z"
+        });
+        if (runningTransition.kind !== "transitioned") {
+          throw new Error("review feedback run did not transition from planned to running");
+        }
+        const executionRun = runningTransition.executionRun;
         const evidenceBundle = await scaffold.harnessRunRepository.createEvidenceBundle({
           executionRunId: executionRun.id,
           changedFiles: ["packages/cli/src/run-review-assess-command.ts"],

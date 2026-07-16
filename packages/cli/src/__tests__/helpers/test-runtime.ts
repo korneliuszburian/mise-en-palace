@@ -188,7 +188,7 @@ export const runPersistedPlanWithCapturedMetadata = async (
               id: "execution-run-1",
               harnessPlanId: runInput.harnessPlanId,
               adapter: runInput.adapter,
-              status: runInput.status ?? "planned",
+              status: "planned" as const,
               lifecycleRevision: 1,
               metadata: runInput.metadata ?? {},
               createdAt: now,

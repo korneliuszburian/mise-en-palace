@@ -110,7 +110,6 @@ export const runRetrievalSubstrateSmokeCheck = async (
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: harnessPlan.id,
       adapter: "codex",
-      status: "planned",
       metadata: {
         smokeId: marker
       }

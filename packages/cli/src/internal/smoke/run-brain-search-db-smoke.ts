@@ -413,7 +413,6 @@ export const runBrainSearchDbSmokeCheck = async (
     const sessionAExecutionRun = await runtime.harnessRunRepository.createExecutionRun({
       harnessPlanId: sessionACompile.harnessPlan.id,
       adapter: "krn-db-smoke-memory-search",
-      status: "planned",
       metadata: {
         ...metadata,
         session: "A"

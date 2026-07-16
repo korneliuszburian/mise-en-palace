@@ -497,7 +497,6 @@ export const runCodexAdapterSmokeCheck = async (
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: result.harnessPlan.id,
       adapter: "codex",
-      status: "planned",
       metadata: {
         smokeId: marker,
         codexAdapterPlanRef: result.codexAdapterPlanRef,

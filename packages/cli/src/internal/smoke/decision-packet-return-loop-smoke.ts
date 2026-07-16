@@ -320,7 +320,6 @@ const selectMemoryApplicationAuthority = async (input: {
   const run = await input.harnessRunRepository.createExecutionRun({
     harnessPlanId: plan.id,
     adapter: "codex",
-    status: "planned",
     metadata: { smokeId: input.marker }
   });
   const issue = input.harnessRunRepository.issueDecisionPacketForExecutionRun;
@@ -1432,7 +1431,6 @@ const runStandaloneAntiMemoryProof = async (
   const proofRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: compiled.harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       phase: "standalone-anti-memory-proof",
@@ -1755,7 +1753,6 @@ const runSourceConsensusProof = async (
   const noFormalRejectionRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: noFormalRejectionCompile.harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -1834,7 +1831,6 @@ const runSourceConsensusProof = async (
   const proofRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: sourceConsensusCompile.harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -2091,7 +2087,6 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   const proofRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",
@@ -2622,7 +2617,6 @@ const runSelectorFeedbackProof = async (
   const selectorExecutionRun = await harnessRunRepository.createExecutionRun({
     harnessPlanId: selectorCompile.harnessPlan.id,
     adapter: "codex",
-    status: "planned",
     metadata: {
       smokeId: input.marker,
       command: "db:smoke:decision-packet-return-loop",

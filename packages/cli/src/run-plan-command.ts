@@ -853,7 +853,6 @@ const createPersistedPlanIdentity = async (
       : await compilerRuntime.harnessRunRepository.createExecutionRun({
           harnessPlanId: result.harnessPlan.id,
           adapter: "codex",
-          status: "planned",
           metadata: {
             command,
             ...projectScopedMetadataForRun(compilerRuntime),

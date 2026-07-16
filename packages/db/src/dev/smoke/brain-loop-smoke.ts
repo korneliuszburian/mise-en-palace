@@ -1001,7 +1001,6 @@ export const runBrainLoopSmokeCheck = async (
       const downgradeRun = await harnessRunRepository.createExecutionRun({
         harnessPlanId: downgradePlan.id,
         adapter: "codex",
-        status: "planned",
         metadata: { smokeId: marker }
       });
       const downgradeIssuance = await harnessRunRepository.issueDecisionPacketForExecutionRun(

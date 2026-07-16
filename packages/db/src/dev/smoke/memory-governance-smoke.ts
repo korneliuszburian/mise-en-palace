@@ -579,7 +579,6 @@ export const runMemoryGovernanceSmokeCheck = async (
       const run = await harnessRunRepository.createExecutionRun({
         harnessPlanId: plan.id,
         adapter: "codex",
-        status: "planned",
         metadata: { smokeId: marker }
       });
       const issuance = await issueDecisionPacket.call(harnessRunRepository, run.id);

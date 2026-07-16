@@ -49,8 +49,8 @@ export interface CreateContextAssemblyInput extends RepositoryMetadata {
 export interface CreateExecutionRunInput extends RepositoryMetadata {
   harnessPlanId: string;
   adapter: string;
-  status?: ExecutionRunStatus;
-  startedAt?: string;
+  status?: "planned";
+  startedAt?: never;
 }
 
 export interface UpdateExecutionRunStatusInput {

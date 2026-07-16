@@ -194,22 +194,18 @@ const requireValidTimestamp = (value: string, field: string): Date => {
 };
 
 const validateExecutionRunCreation = (input: CreateExecutionRunInput): void => {
-  const status = input.status ?? "planned";
+  const candidate = input as CreateExecutionRunInput & {
+    readonly status?: unknown;
+    readonly startedAt?: unknown;
+  };
 
-  if (isTerminalExecutionRunStatus(status)) {
-    throw new Error(`execution run lifecycle cannot create terminal status ${status}`);
-  }
-
-  if (status === "planned" && input.startedAt !== undefined) {
-    throw new Error("execution run lifecycle planned status cannot have startedAt");
-  }
-
-  if (status === "running" && input.startedAt === undefined) {
-    throw new Error("execution run lifecycle running status requires startedAt");
-  }
-
-  if (input.startedAt !== undefined) {
-    requireValidTimestamp(input.startedAt, "startedAt");
+  if (
+    (candidate.status !== undefined && candidate.status !== "planned")
+    || candidate.startedAt !== undefined
+  ) {
+    throw new Error(
+      "execution run lifecycle creation is planned-only; use the guarded status transition"
+    );
   }
 }
 
@@ -2411,10 +2407,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           .values({
             harnessPlanId: authorityInput.harnessPlanId,
             adapter: authorityInput.adapter,
-            status: authorityInput.status ?? "planned",
-            ...(authorityInput.startedAt === undefined
-              ? {}
-              : { startedAt: fromIsoTimestamp(authorityInput.startedAt) }),
+            status: "planned",
             metadata: authorityInput.metadata ?? {}
           })
           .returning(),
