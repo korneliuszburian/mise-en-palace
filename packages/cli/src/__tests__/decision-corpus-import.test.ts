@@ -50,6 +50,80 @@ const importDecision = (
   return decision;
 };
 
+const failOnPersistenceWriteRuntime = (
+  includeImportRepository = false
+) => {
+  let writeCount = 0;
+  const failWrite = async (): Promise<never> => {
+    writeCount += 1;
+    throw new Error("repository write should not run");
+  };
+  const sourceRepository: DatabaseRuntime["sourceRepository"] = {
+    createSourceArtifact: failWrite,
+    createSourceChunk: failWrite,
+    createSourceClaim: failWrite,
+    getSourceClaimById: async () => undefined,
+    listClaimsForProject: async () => [],
+    createSourceClaimEdge: failWrite,
+    listSourceClaimEdgesForClaim: async () => [],
+    listSourceDecisionEdgesForClaim: async () => [],
+    createSourceDecision: failWrite,
+    createSourceDecisionEdge: failWrite,
+    getSourceDecisionEdgeById: async () => undefined,
+    createSourceRejection: failWrite
+  };
+  const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
+    createSearchDocument: failWrite,
+    searchLexical: async () => []
+  };
+
+  if (!includeImportRepository) {
+    return {
+      runtime: { sourceRepository, retrievalRepository },
+      writeCount: () => writeCount
+    };
+  }
+
+  const sourceDecisionImportRepository: NonNullable<
+    DatabaseRuntime["sourceDecisionImportRepository"]
+  > = {
+    getCapturedSourceEvidence: async ({ evidenceRef }) => ({
+      status: "missing" as const,
+      evidenceRef
+    }),
+    getSourceDecisionImportRow: async () => ({ status: "missing" }),
+    listSourceDecisionImportReconciliation: async ({ limit }) => ({
+      limit,
+      afterImportId: null,
+      nextAfterImportId: null,
+      imports: {
+        totalCount: 0,
+        returnedCount: 0,
+        truncated: false,
+        items: []
+      }
+    })
+  };
+  const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
+    _lockKey,
+    work
+  ) => work({
+    sourceRepository,
+    retrievalRepository,
+    sourceDecisionImportRepository
+  });
+
+  return {
+    runtime: {
+      sourceRepository,
+      retrievalRepository,
+      sourceDecisionImportRepository,
+      withTransaction
+    },
+    writeCount: () => writeCount
+  };
+};
+
 describe("runDecisionCorpusImport", () => {
   it("imports compact source-to-decision rows into a passing decision corpus", async () => {
     const result = await runDecisionCorpusImport({
@@ -279,373 +353,11 @@ describe("runDecisionCorpusImport", () => {
     ).toThrow("case decision-corpus-import-task rejectedDecisionIds must reference rejected decisions");
   });
 
-  it("persists compact import rows through source and retrieval repositories", async () => {
-    const claims = new Map<string, {
-      id: string;
-      status: "proposed" | "accepted" | "rejected" | "deprecated";
-    }>();
-    const artifacts: string[] = [];
-    const chunks: string[] = [];
-    const decisions: string[] = [];
-    const decisionEdges: string[] = [];
-    const searchDocuments: Array<{ id: string; validityStatus?: string }> = [];
-    const rejections: string[] = [];
-    let idCounter = 0;
-    const nextId = (prefix: string) => `${prefix}-${++idCounter}`;
-    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
-      createSourceArtifact: async () => {
-        const id = nextId("source-artifact");
-
-        artifacts.push(id);
-
-        return {
-          id,
-          projectId: "project-1",
-          kind: "doc" as const,
-          sourceAuthority: "project-decision" as const,
-          uri: id,
-          title: id,
-          contentHash: id,
-          capturedAt: now,
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
-      },
-      listClaimsForProject: async () => [],
-      createSourceClaimEdge: async () => {
-        throw new Error("createSourceClaimEdge should not be called");
-      },
-      listSourceClaimEdgesForClaim: async () => [],
-      listSourceDecisionEdgesForClaim: async () => [],
-      getSourceDecisionEdgeById: async () => undefined,
-      createSourceChunk: async () => {
-        const id = nextId("source-chunk");
-
-        chunks.push(id);
-
-        return {
-          id,
-          sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
-          ordinal: 0,
-          content: id,
-          contentHash: id,
-          metadata: {},
-          createdAt: now
-        };
-      },
-      createSourceClaim: async () => {
-        const id = nextId("source-claim");
-        const sourceChunkId = chunks.at(-1) ?? "source-chunk-missing";
-        const claim = {
-          id,
-          sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
-          sourceChunkId,
-          claim: id,
-          mechanism: id,
-          krnImplication: id,
-          doesNotProve: id,
-          sourceAuthority: "project-decision" as const,
-          supportType: "implementation-boundary" as const,
-          consumer: "decision corpus import",
-          status: "proposed" as const,
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
-
-        claims.set(id, { id, status: "proposed" });
-
-        return claim;
-      },
-      getSourceClaimById: async (id: string) => {
-        const claim = claims.get(id);
-
-        return claim === undefined
-          ? undefined
-          : {
-              id,
-              sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
-              claim: id,
-              mechanism: id,
-              krnImplication: id,
-              doesNotProve: id,
-              sourceAuthority: "project-decision" as const,
-              supportType: "implementation-boundary" as const,
-              consumer: "decision corpus import",
-              status: claim.status,
-              metadata: {},
-              createdAt: now,
-              updatedAt: now
-            };
-      },
-      getSourceClaimForProject: async (_projectId: string, id: string) => {
-        const claim = claims.get(id);
-
-        return claim === undefined
-          ? undefined
-          : {
-              id,
-              sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
-              claim: id,
-              mechanism: id,
-              krnImplication: id,
-              doesNotProve: id,
-              sourceAuthority: "project-decision" as const,
-              supportType: "implementation-boundary" as const,
-              consumer: "decision corpus import",
-              status: claim.status,
-              metadata: {},
-              createdAt: now,
-              updatedAt: now
-            };
-      },
-      createSourceDecision: async (input) => {
-        const id = nextId("source-decision");
-
-        decisions.push(id);
-
-        if (input.sourceClaimId !== undefined) {
-          claims.set(input.sourceClaimId, {
-            id: input.sourceClaimId,
-            status: input.status === "reject"
-              ? "rejected"
-              : input.status === "adopt"
-                ? "accepted"
-                : "proposed"
-          });
-        }
-
-        return {
-          id,
-          projectId: "project-1",
-          ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
-          status: input.status,
-          decision: id,
-          rationale: id,
-          falsifier: id,
-          consumer: "decision corpus import",
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
-      },
-      deprecateSourceClaim: async ({ sourceClaimId }) => {
-        const claim = claims.get(sourceClaimId);
-
-        if (claim === undefined) {
-          throw new Error(`missing source claim ${sourceClaimId}`);
-        }
-
-        claims.set(sourceClaimId, {
-          ...claim,
-          status: "deprecated"
-        });
-
-        return {
-          id: sourceClaimId,
-          sourceArtifactId: artifacts.at(-1) ?? "source-artifact-missing",
-          claim: sourceClaimId,
-          mechanism: sourceClaimId,
-          krnImplication: sourceClaimId,
-          doesNotProve: sourceClaimId,
-          sourceAuthority: "project-decision" as const,
-          supportType: "implementation-boundary" as const,
-          consumer: "decision corpus import",
-          status: "deprecated" as const,
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
-      },
-      createSourceDecisionEdge: async (input) => {
-        const id = nextId("source-decision-edge");
-
-        decisionEdges.push(id);
-
-        return {
-          id,
-          sourceClaimId: claims.keys().next().value ?? "source-claim-missing",
-          sourceDecisionId: input.sourceDecisionId,
-          targetType: "architecture_decision" as const,
-          targetId: id,
-          supportType: "implementation-boundary" as const,
-          confidence: "high" as const,
-          notes: id,
-          metadata: {},
-          createdAt: now
-        };
-      },
-      createSourceRejection: async () => {
-        const id = nextId("source-rejection");
-
-        rejections.push(id);
-
-        return {
-          id,
-          projectId: "project-1",
-          title: id,
-          attemptedClaim: id,
-          rejectedBecause: "unsupported" as const,
-          reason: "unsupported",
-          doesNotProve: id,
-          consumer: "decision corpus import",
-          metadata: {},
-          rejectedAt: now
-        };
-      }
-    };
-    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
-      createSearchDocument: async (input: { validityStatus?: string }) => {
-        const id = nextId("search-document");
-        const searchDocument = input.validityStatus === undefined
-          ? { id }
-          : { id, validityStatus: input.validityStatus };
-
-        searchDocuments.push(searchDocument);
-
-        return {
-          ...searchDocument,
-          subjectType: "source_claim" as const,
-          subjectId: id,
-          sourceAuthority: "project-decision" as const,
-          validityStatus: input.validityStatus === undefined
-            ? "active" as const
-            : input.validityStatus as "active" | "expired" | "invalidated",
-          language: "en",
-          title: id,
-          body: id,
-          searchText: id,
-          metadataFilters: {},
-          validFrom: now,
-          metadata: {},
-          createdAt: now,
-          updatedAt: now
-        };
-      },
-      searchLexical: async () => []
-    };
-    const sourceDecisionImportRepository: NonNullable<DatabaseRuntime["sourceDecisionImportRepository"]> = {
-      getCapturedSourceEvidence: async ({ evidenceRef }) => ({
-        status: "missing" as const,
-        evidenceRef
-      }),
-      getSourceDecisionImportRow: async () => ({ status: "missing" }),
-      listSourceDecisionImportReconciliation: async ({ limit }) => ({
-        limit,
-        afterImportId: null,
-        nextAfterImportId: null,
-        imports: {
-          totalCount: 0,
-          returnedCount: 0,
-          truncated: false,
-          items: []
-        }
-      })
-    };
-    const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
-      _lockKey,
-      work
-    ) => work({
-      sourceRepository,
-      retrievalRepository,
-      sourceDecisionImportRepository
-    });
-    const rows = await persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository,
-        sourceDecisionImportRepository,
-        withTransaction
-      },
-      projectId: "project-1",
-      fixture: {
-        ...fixture(),
-        baseFixturePath
-      },
-      smokeId: "unit-smoke",
-      now,
-      resolveEvidence: async ({ evidenceRef, now: capturedAt }) => ({
-        status: "captured" as const,
-        evidenceRef,
-        content: `captured test evidence for ${evidenceRef}`,
-        capturedAt,
-        freshness: "current" as const,
-        provenance: {
-          kind: "local_file" as const,
-          uri: `test-fixture://${evidenceRef}`,
-          path: evidenceRef
-        }
-      })
-    });
-
-    expect(rows).toHaveLength(11);
-    expect(artifacts).toHaveLength(11);
-    expect(chunks).toHaveLength(11);
-    expect(decisions).toHaveLength(11);
-    expect(decisionEdges).toHaveLength(6);
-    expect(searchDocuments.filter(({ validityStatus }) => validityStatus === "active"))
-      .toHaveLength(6);
-    expect(searchDocuments.filter(({ validityStatus }) => validityStatus === "expired"))
-      .toHaveLength(2);
-    expect(rejections).toHaveLength(3);
-    expect(rows.map((row) => [row.decisionId, row.sourceClaimStatus])).toEqual([
-      ["decision-corpus-import-path", "accepted"],
-      ["db-backed-decision-corpus-import", "accepted"],
-      ["live-codex-packet-obedience-pilot", "accepted"],
-      ["third-repo-portability-before-breadth", "accepted"],
-      ["anti-vanity-naming-source-backed", "accepted"],
-      ["memory-first-research-intake-loop", "accepted"],
-      ["manual-fixture-editing-only", "deprecated"],
-      ["recorded-obedience-proves-live-codex", "deprecated"],
-      ["import-without-link-validation", "rejected"],
-      ["product-readiness-from-live-pilot", "rejected"],
-      ["research-link-as-authority", "rejected"]
-    ]);
-    expect(rows.find((row) => row.decisionId === "decision-corpus-import-path")?.sourceDecisionEdgeId)
-      .toMatch(/^source-decision-edge-/u);
-    expect(rows.find((row) => row.decisionId === "manual-fixture-editing-only")?.sourceDecisionEdgeId)
-      .toBeUndefined();
-    expect(rows.find((row) => row.decisionId === "recorded-obedience-proves-live-codex")?.sourceDecisionEdgeId)
-      .toBeUndefined();
-    expect(rows.find((row) => row.decisionId === "manual-fixture-editing-only")?.sourceDecisionStatus)
-      .toBe("defer");
-    expect(rows.find((row) => row.decisionId === "recorded-obedience-proves-live-codex")?.sourceDecisionStatus)
-      .toBe("defer");
-    expect(rows.find((row) => row.decisionId === "import-without-link-validation")?.sourceRejectionId)
-      .toMatch(/^source-rejection-/u);
-  });
-
   it("rejects missing import links before repository writes", async () => {
-    let repositoryWriteCount = 0;
-    const failWrite = async () => {
-      repositoryWriteCount += 1;
-      throw new Error("repository write should not run");
-    };
-    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
-      createSourceArtifact: failWrite,
-      createSourceChunk: failWrite,
-      createSourceClaim: failWrite,
-      getSourceClaimById: async () => undefined,
-      listClaimsForProject: async () => [],
-      createSourceClaimEdge: failWrite,
-      listSourceClaimEdgesForClaim: async () => [],
-      listSourceDecisionEdgesForClaim: async () => [],
-      createSourceDecision: failWrite,
-      createSourceDecisionEdge: failWrite,
-      getSourceDecisionEdgeById: async () => undefined,
-      createSourceRejection: failWrite
-    };
-    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
-      createSearchDocument: failWrite,
-      searchLexical: async () => []
-    };
+    const { runtime, writeCount } = failOnPersistenceWriteRuntime();
 
     await expect(persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository
-      },
+      runtime,
       projectId: "project-1",
       fixture: {
         ...fixture(),
@@ -658,39 +370,14 @@ describe("runDecisionCorpusImport", () => {
       smokeId: "unit-smoke",
       now
     })).rejects.toThrow("case decision-corpus-import-task expectedDecisionId must reference a current decision");
-    expect(repositoryWriteCount).toBe(0);
+    expect(writeCount()).toBe(0);
   });
 
   it("rejects an unresolvable evidence reference before repository writes", async () => {
-    let repositoryWriteCount = 0;
-    const failWrite = async (): Promise<never> => {
-      repositoryWriteCount += 1;
-      throw new Error("repository write should not run");
-    };
-    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
-      createSourceArtifact: failWrite,
-      createSourceChunk: failWrite,
-      createSourceClaim: failWrite,
-      getSourceClaimById: async () => undefined,
-      listClaimsForProject: async () => [],
-      createSourceClaimEdge: failWrite,
-      listSourceClaimEdgesForClaim: async () => [],
-      listSourceDecisionEdgesForClaim: async () => [],
-      createSourceDecision: failWrite,
-      createSourceDecisionEdge: failWrite,
-      getSourceDecisionEdgeById: async () => undefined,
-      createSourceRejection: failWrite
-    };
-    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
-      createSearchDocument: failWrite,
-      searchLexical: async () => []
-    };
+    const { runtime, writeCount } = failOnPersistenceWriteRuntime();
 
     await expect(persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository
-      },
+      runtime,
       projectId: "project-1",
       fixture: {
         ...fixture(),
@@ -702,59 +389,11 @@ describe("runDecisionCorpusImport", () => {
       smokeId: "unit-smoke",
       now
     })).rejects.toThrow("unresolvable evidenceRef");
-    expect(repositoryWriteCount).toBe(0);
+    expect(writeCount()).toBe(0);
   });
 
   it("rejects syntactically valid but uncaptured evidence before repository writes", async () => {
-    let repositoryWriteCount = 0;
-    const failWrite = async (): Promise<never> => {
-      repositoryWriteCount += 1;
-      throw new Error("repository write should not run");
-    };
-    const sourceRepository: DatabaseRuntime["sourceRepository"] = {
-      createSourceArtifact: failWrite,
-      createSourceChunk: failWrite,
-      createSourceClaim: failWrite,
-      getSourceClaimById: async () => undefined,
-      listClaimsForProject: async () => [],
-      createSourceClaimEdge: failWrite,
-      listSourceClaimEdgesForClaim: async () => [],
-      listSourceDecisionEdgesForClaim: async () => [],
-      createSourceDecision: failWrite,
-      createSourceDecisionEdge: failWrite,
-      getSourceDecisionEdgeById: async () => undefined,
-      createSourceRejection: failWrite
-    };
-    const retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
-      createSearchDocument: failWrite,
-      searchLexical: async () => []
-    };
-    const sourceDecisionImportRepository: NonNullable<DatabaseRuntime["sourceDecisionImportRepository"]> = {
-      getCapturedSourceEvidence: async ({ evidenceRef }) => ({
-        status: "missing" as const,
-        evidenceRef
-      }),
-      getSourceDecisionImportRow: async () => ({ status: "missing" }),
-      listSourceDecisionImportReconciliation: async ({ limit }) => ({
-        limit,
-        afterImportId: null,
-        nextAfterImportId: null,
-        imports: {
-          totalCount: 0,
-          returnedCount: 0,
-          truncated: false,
-          items: []
-        }
-      })
-    };
-    const withTransaction: NonNullable<DatabaseRuntime["withTransaction"]> = async (
-      _lockKey,
-      work
-    ) => work({
-      sourceRepository,
-      retrievalRepository,
-      sourceDecisionImportRepository
-    });
+    const { runtime, writeCount } = failOnPersistenceWriteRuntime(true);
     const firstDecision = fixture().decisions[0];
 
     if (firstDecision === undefined) {
@@ -762,12 +401,7 @@ describe("runDecisionCorpusImport", () => {
     }
 
     await expect(persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository,
-        sourceDecisionImportRepository,
-        withTransaction
-      },
+      runtime,
       projectId: "project-1",
       fixture: {
         ...fixture(),
@@ -784,12 +418,7 @@ describe("runDecisionCorpusImport", () => {
     })).rejects.toThrow("cannot create governing authority");
 
     await expect(persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository,
-        sourceDecisionImportRepository,
-        withTransaction
-      },
+      runtime,
       projectId: "project-1",
       fixture: {
         ...fixture(),
@@ -806,12 +435,7 @@ describe("runDecisionCorpusImport", () => {
     })).rejects.toThrow("externally_unverified");
 
     await expect(persistDecisionCorpusImport({
-      runtime: {
-        sourceRepository,
-        retrievalRepository,
-        sourceDecisionImportRepository,
-        withTransaction
-      },
+      runtime,
       projectId: "project-1",
       fixture: {
         ...fixture(),
@@ -838,6 +462,6 @@ describe("runDecisionCorpusImport", () => {
         }
       })
     })).rejects.toThrow("cannot create governing authority");
-    expect(repositoryWriteCount).toBe(0);
+    expect(writeCount()).toBe(0);
   });
 });
