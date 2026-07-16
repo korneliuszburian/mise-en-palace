@@ -467,7 +467,8 @@ const main = async (): Promise<void> => {
     createId: (prefix) => `${prefix}:paired-live-readback:${artifact.runId}`,
     runId: artifact.runId
   });
-  const persisted = readBackCandidate(JSON.parse(readback.stdout), prepared.candidate.id);
+  const readbackValue: unknown = JSON.parse(readback.stdout);
+  const persisted = readBackCandidate(readbackValue, prepared.candidate.id);
   if (persisted === undefined) {
     throw new Error(`Paired repair EvalCandidate ${prepared.candidate.id} was not visible in readback`);
   }
