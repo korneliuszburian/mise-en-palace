@@ -358,6 +358,20 @@
       "when": 1784210497386,
       "tag": "0050_retained_source_claim_edge_project",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1784211507182,
+      "tag": "0051_serialize_source_claim_edge_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1784211897979,
+      "tag": "0052_order_source_claim_edge_integrity_triggers",
+      "breakpoints": true
     }
   ]
 }

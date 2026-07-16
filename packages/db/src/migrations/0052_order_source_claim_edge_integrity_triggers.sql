@@ -1,0 +1,7 @@
+ALTER TRIGGER source_artifacts_claim_edge_integrity_serialization
+ON source_artifacts
+RENAME TO source_artifacts_z_claim_edge_integrity_serialization;
+--> statement-breakpoint
+ALTER TRIGGER source_claims_claim_edge_integrity_serialization
+ON source_claims
+RENAME TO source_claims_z_claim_edge_integrity_serialization;

@@ -1356,18 +1356,43 @@ export class DrizzleSourceRepository implements SourceRepository {
         return mapSourceClaimEdge(existingEdge);
       }
 
-      const row = requireReturnedRow(
-        await tx
-          .insert(sourceClaimEdges)
-          .values({
-            fromSourceClaimId: input.fromSourceClaimId,
-            toSourceClaimId: input.toSourceClaimId,
-            kind: input.kind,
-            metadata: input.metadata
-          })
-          .returning(),
-        "createSourceClaimEdge"
-      );
+      const [row] = await tx
+        .insert(sourceClaimEdges)
+        .values({
+          fromSourceClaimId: input.fromSourceClaimId,
+          toSourceClaimId: input.toSourceClaimId,
+          kind: input.kind,
+          metadata: input.metadata
+        })
+        .onConflictDoNothing({
+          target: [
+            sourceClaimEdges.fromSourceClaimId,
+            sourceClaimEdges.toSourceClaimId,
+            sourceClaimEdges.kind
+          ]
+        })
+        .returning();
+
+      if (row === undefined) {
+        const [concurrentEdge] = await tx
+          .select()
+          .from(sourceClaimEdges)
+          .where(and(
+            eq(sourceClaimEdges.fromSourceClaimId, input.fromSourceClaimId),
+            eq(sourceClaimEdges.toSourceClaimId, input.toSourceClaimId),
+            eq(sourceClaimEdges.kind, input.kind)
+          ))
+          .limit(1);
+
+        if (concurrentEdge === undefined) {
+          throw new Error("SourceClaimEdge concurrent semantic identity was not found");
+        }
+        if (canonicalJson(concurrentEdge.metadata) !== canonicalJson(input.metadata)) {
+          throw new Error("SourceClaimEdge semantic identity has conflicting metadata");
+        }
+
+        return mapSourceClaimEdge(concurrentEdge);
+      }
 
       await tx.insert(outboxEvents).values({
         topic: "source.claim_edge.created",

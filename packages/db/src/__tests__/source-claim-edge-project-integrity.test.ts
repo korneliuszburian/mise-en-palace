@@ -407,4 +407,261 @@ describe("source claim edge project integrity", () => {
       }
     }
   );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "serializes endpoint ownership changes against concurrent edge insertion",
+    async () => {
+      const fixture = await createFixture(databaseUrl!);
+      const edgeApplicationName = `krn-claim-edge-owner-race-${crypto.randomUUID()}`;
+      const edgeUrl = new URL(databaseUrl!);
+      edgeUrl.searchParams.set("application_name", edgeApplicationName);
+      const ownershipClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const edgeClient = postgres(edgeUrl.toString(), { max: 1, onnotice: () => undefined });
+      let releaseOwnership: (() => void) | undefined;
+      let restoreOwnership: { readonly artifactId: string; readonly projectId: string } | undefined;
+
+      try {
+        const seeded = await fixture.database.transaction(async (transaction) => {
+          const sourceRepository = new DrizzleSourceRepository(transaction);
+          const { projectAId, projectBId } = await createProjectFixture(transaction, fixture);
+          const fromClaim = await createAcceptedSourceClaim(
+            sourceRepository,
+            fixture,
+            projectAId,
+            "concurrent-from"
+          );
+          const toClaim = await createAcceptedSourceClaim(
+            sourceRepository,
+            fixture,
+            projectAId,
+            "concurrent-to"
+          );
+
+          return { fromClaim, projectAId, projectBId, toClaim };
+        });
+        restoreOwnership = {
+          artifactId: seeded.toClaim.sourceArtifactId,
+          projectId: seeded.projectAId
+        };
+        let ownershipUpdated: (() => void) | undefined;
+        const ownershipUpdatedPromise = new Promise<void>((resolve) => {
+          ownershipUpdated = resolve;
+        });
+        const releaseOwnershipPromise = new Promise<void>((resolve) => {
+          releaseOwnership = resolve;
+        });
+        const ownershipUpdate = ownershipClient.begin(async (transaction) => {
+          await transaction`
+            update source_artifacts
+            set project_id = ${seeded.projectBId}
+            where id = ${seeded.toClaim.sourceArtifactId}
+          `;
+          ownershipUpdated?.();
+          await releaseOwnershipPromise;
+        });
+
+        await ownershipUpdatedPromise;
+        const edgeInsert = (async () => edgeClient`
+            insert into source_claim_edges (
+              from_source_claim_id, to_source_claim_id, kind, metadata
+            ) values (
+              ${seeded.fromClaim.id}, ${seeded.toClaim.id}, 'supports',
+              ${edgeClient.json(edgeMetadata(fixture.marker, "concurrent-edge"))}
+            )
+          `)();
+        let edgeWaitedForOwnership = false;
+
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          const [activity] = await fixture.client<{ waiting: boolean }[]>`
+            select wait_event_type = 'Lock' as waiting
+            from pg_stat_activity
+            where application_name = ${edgeApplicationName}
+              and query ilike '%insert into %source_claim_edges%'
+          `;
+
+          if (activity?.waiting === true) {
+            edgeWaitedForOwnership = true;
+            break;
+          }
+
+          await new Promise<void>((resolve) => setTimeout(resolve, 10));
+        }
+
+        expect(edgeWaitedForOwnership).toBe(true);
+        releaseOwnership?.();
+        const [ownershipOutcome, edgeOutcome] = await Promise.allSettled([
+          ownershipUpdate,
+          edgeInsert
+        ]);
+
+        expect(ownershipOutcome.status).toBe("fulfilled");
+        expect(edgeOutcome).toMatchObject({
+          status: "rejected",
+          reason: {
+            code: "23514",
+            constraint_name: "source_claim_edges_same_project"
+          }
+        });
+
+        const crossProjectEdges = await fixture.client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_claim_edges edge
+          join source_claims from_claim on from_claim.id = edge.from_source_claim_id
+          join source_artifacts from_artifact on from_artifact.id = from_claim.source_artifact_id
+          join source_claims to_claim on to_claim.id = edge.to_source_claim_id
+          join source_artifacts to_artifact on to_artifact.id = to_claim.source_artifact_id
+          where edge.metadata->>'smokeId' = ${fixture.marker}
+            and from_artifact.project_id is distinct from to_artifact.project_id
+        `;
+        expect(crossProjectEdges).toEqual([{ count: 0 }]);
+      } finally {
+        releaseOwnership?.();
+        await Promise.allSettled([ownershipClient.end(), edgeClient.end()]);
+        await fixture.database.transaction(async (transaction) => {
+          await transaction.delete(outboxEvents).where(
+            sql`${outboxEvents.payload}->>'smokeId' = ${fixture.marker}`
+          );
+          await transaction.delete(sourceClaimEdges).where(
+            sql`${sourceClaimEdges.metadata}->>'smokeId' = ${fixture.marker}`
+          );
+          if (restoreOwnership !== undefined) {
+            await transaction
+              .update(sourceArtifacts)
+              .set({ projectId: restoreOwnership.projectId })
+              .where(eq(sourceArtifacts.id, restoreOwnership.artifactId));
+          }
+          await transaction.delete(workspaces).where(eq(workspaces.slug, fixture.marker));
+        });
+        await cleanupFixture(fixture);
+      }
+    },
+    10_000
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "converges concurrent exact retries on one edge and one outbox event",
+    async () => {
+      const fixture = await createFixture(databaseUrl!);
+      const firstApplicationName = `krn-claim-edge-retry-a-${crypto.randomUUID()}`;
+      const secondApplicationName = `krn-claim-edge-retry-b-${crypto.randomUUID()}`;
+      const firstUrl = new URL(databaseUrl!);
+      const secondUrl = new URL(databaseUrl!);
+      firstUrl.searchParams.set("application_name", firstApplicationName);
+      secondUrl.searchParams.set("application_name", secondApplicationName);
+      const lockClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const firstClient = postgres(firstUrl.toString(), { max: 1, onnotice: () => undefined });
+      const secondClient = postgres(secondUrl.toString(), { max: 1, onnotice: () => undefined });
+      let releaseLock: (() => void) | undefined;
+
+      try {
+        const seeded = await fixture.database.transaction(async (transaction) => {
+          const sourceRepository = new DrizzleSourceRepository(transaction);
+          const { projectAId } = await createProjectFixture(transaction, fixture);
+          const fromClaim = await createAcceptedSourceClaim(
+            sourceRepository,
+            fixture,
+            projectAId,
+            "retry-from"
+          );
+          const toClaim = await createAcceptedSourceClaim(
+            sourceRepository,
+            fixture,
+            projectAId,
+            "retry-to"
+          );
+
+          return { fromClaim, toClaim };
+        });
+        let lockAcquired: (() => void) | undefined;
+        const lockAcquiredPromise = new Promise<void>((resolve) => {
+          lockAcquired = resolve;
+        });
+        const releaseLockPromise = new Promise<void>((resolve) => {
+          releaseLock = resolve;
+        });
+        const heldLock = lockClient.begin(async (transaction) => {
+          await transaction`
+            select pg_advisory_xact_lock(
+              hashtextextended('krn:source-claim-edge-integrity', 0)
+            )
+          `;
+          lockAcquired?.();
+          await releaseLockPromise;
+        });
+
+        await lockAcquiredPromise;
+        const input = {
+          fromSourceClaimId: seeded.fromClaim.id,
+          toSourceClaimId: seeded.toClaim.id,
+          kind: "supports" as const,
+          metadata: edgeMetadata(fixture.marker, "concurrent-retry")
+        };
+        const firstCreate = new DrizzleSourceRepository(createKrnDatabase(firstClient))
+          .createSourceClaimEdge(input);
+        const secondCreate = new DrizzleSourceRepository(createKrnDatabase(secondClient))
+          .createSourceClaimEdge(input);
+        let bothRetriesWaitedForIntegrityLock = false;
+
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          const [activity] = await fixture.client<{ count: number }[]>`
+            select count(*)::int as count
+            from pg_stat_activity
+            where application_name in (${firstApplicationName}, ${secondApplicationName})
+              and wait_event_type = 'Lock'
+              and query ilike '%insert into %source_claim_edges%'
+          `;
+
+          if (activity?.count === 2) {
+            bothRetriesWaitedForIntegrityLock = true;
+            break;
+          }
+
+          await new Promise<void>((resolve) => setTimeout(resolve, 10));
+        }
+
+        expect(bothRetriesWaitedForIntegrityLock).toBe(true);
+        releaseLock?.();
+        const [firstEdge, secondEdge] = await Promise.all([firstCreate, secondCreate]);
+        await heldLock;
+
+        expect(secondEdge.id).toBe(firstEdge.id);
+        const edges = await fixture.database
+          .select({ id: sourceClaimEdges.id })
+          .from(sourceClaimEdges)
+          .where(and(
+            eq(sourceClaimEdges.fromSourceClaimId, input.fromSourceClaimId),
+            eq(sourceClaimEdges.toSourceClaimId, input.toSourceClaimId),
+            eq(sourceClaimEdges.kind, input.kind)
+          ));
+        expect(edges).toEqual([{ id: firstEdge.id }]);
+
+        const createdEvents = await fixture.database
+          .select({ id: outboxEvents.id })
+          .from(outboxEvents)
+          .where(and(
+            eq(outboxEvents.topic, "source.claim_edge.created"),
+            sql`${outboxEvents.payload}->>'sourceClaimEdgeId' = ${firstEdge.id}`
+          ));
+        expect(createdEvents).toHaveLength(1);
+      } finally {
+        releaseLock?.();
+        await Promise.allSettled([
+          lockClient.end(),
+          firstClient.end(),
+          secondClient.end()
+        ]);
+        await fixture.database.transaction(async (transaction) => {
+          await transaction.delete(outboxEvents).where(
+            sql`${outboxEvents.payload}->>'smokeId' = ${fixture.marker}`
+          );
+          await transaction.delete(sourceClaimEdges).where(
+            sql`${sourceClaimEdges.metadata}->>'smokeId' = ${fixture.marker}`
+          );
+          await transaction.delete(workspaces).where(eq(workspaces.slug, fixture.marker));
+        });
+        await cleanupFixture(fixture);
+      }
+    },
+    10_000
+  );
 });
