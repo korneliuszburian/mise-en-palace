@@ -41,8 +41,8 @@ const knowledgeFeedbackDelta = (
   knowledgeId: string,
   outcome: "noise" | "stale" | "hurt" | "rejected"
 ): FeedbackDelta => ({
-  id: "feedback-delta-1" as FeedbackDelta["id"],
-  reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
+  id: `feedback-${knowledgeId}` as FeedbackDelta["id"],
+  reviewAssessmentId: `review-${knowledgeId}` as FeedbackDelta["reviewAssessmentId"],
   status: "accepted",
   memoryCandidates: [],
   sourceDecisions: [],
@@ -348,13 +348,73 @@ describe("runCli", () => {
         proof: {
           proves: [
             "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
+            "plan knowledge selection scan limit=100 returned=4 truncated=false",
             "plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"
           ],
           doesNotProve: [
             "DB-backed knowledge selection proves source truth",
             "Codex used the selected memory",
+            "bounded plan knowledge selection proves no eligible knowledge exists beyond the first 100 ranked active rows",
             "store-backed usefulness feedback proves broad ranking quality"
           ]
+        }
+      }
+    });
+  });
+
+  it("backfills plan knowledge after feedback excludes the first twenty ranked records", async () => {
+    const memoryRecord = (index: number): MemoryRecord => ({
+      id: `memory-backfill-${index}`,
+      projectId: "project-1",
+      key: `knowledge:backfill-${index}`,
+      kind: "procedure",
+      status: "active",
+      summary: `Bounded backfill knowledge ${index}`,
+      body: "Use bounded backfill knowledge for this diagnostic plan.",
+      owner: "codex",
+      confidence: 90,
+      applicationGuidance: "Use for the bounded backfill diagnostic.",
+      invalidationRule: "Invalidate if bounded backfill is no longer required.",
+      sourceLineage: [{ sourceId: `source-backfill-${index}` }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {
+        knowledgeId: `backfill-${index}`,
+        falsifier: "Post-retrieval feedback filtering prevents bounded backfill.",
+        doesNotProve: "This fixture does not prove broad ranking quality."
+      },
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now
+    });
+    const memoryRecords = Array.from({ length: 21 }, (_, index) => memoryRecord(index + 1));
+    const observedLimits: number[] = [];
+    const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "bounded backfill",
+      {
+        memoryRecords,
+        feedbackDeltas: memoryRecords.slice(0, 20).map((_record, index) =>
+          knowledgeFeedbackDelta(`knowledge:backfill-${index + 1}`, "stale")
+        ),
+        onListActiveMemory: (limit) => observedLimits.push(limit)
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(observedLimits[0]).toBe(101);
+    expect(executionRunMetadata).toMatchObject({
+      knowledgeSelection: {
+        status: "selected",
+        selectedKnowledgeIds: ["backfill-21"],
+        proof: {
+          proves: expect.arrayContaining([
+            "plan knowledge selection scan limit=100 returned=21 truncated=false"
+          ]),
+          doesNotProve: expect.arrayContaining([
+            "bounded plan knowledge selection proves no eligible knowledge exists beyond the first 100 ranked active rows"
+          ])
         }
       }
     });

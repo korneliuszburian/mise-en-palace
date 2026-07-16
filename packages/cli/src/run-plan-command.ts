@@ -566,15 +566,21 @@ const withKnowledgeSelectionReason = (
   reason
 });
 
+const planKnowledgeSelectionLimit = 5;
+const planKnowledgeScanLimit = 100;
+
 const readKnowledgeSelection = async (
   query: string,
   compilerRuntime: CompilerRuntimeResolution
 ): Promise<KnowledgePlanSelection> => {
-  const records = await compilerRuntime.compilerDependencies.memoryRepository.listActiveMemory(
-    compilerRuntime.projectId,
-    20,
-    { terms: tokenizeActivationText(query) }
-  );
+  const recordsWithSentinel = await compilerRuntime.compilerDependencies.memoryRepository
+    .listActiveMemory(
+      compilerRuntime.projectId,
+      planKnowledgeScanLimit + 1,
+      { terms: tokenizeActivationText(query) }
+    );
+  const scanTruncated = recordsWithSentinel.length > planKnowledgeScanLimit;
+  const records = recordsWithSentinel.slice(0, planKnowledgeScanLimit);
   const knowledgeReadModels = records.map(memoryRecordToKnowledgeReadModel);
   const feedbackDeltas = await listStoreKnowledgeUsefulnessFeedback({
     projectId: compilerRuntime.projectId,
@@ -592,7 +598,7 @@ const readKnowledgeSelection = async (
     {
       text: query
     }
-  ).slice(0, 5);
+  ).slice(0, planKnowledgeSelectionLimit);
   const selection = knowledgeSelectionFromReadbackJson(
     query,
     JSON.stringify({
@@ -609,6 +615,7 @@ const readKnowledgeSelection = async (
       proof: {
         proves: [
           "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
+          `plan knowledge selection scan limit=${planKnowledgeScanLimit} returned=${records.length} truncated=${scanTruncated}`,
           ...(usefulnessSelection.appliedUsefulnessFeedback
             ? ["plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"]
             : [])
@@ -616,6 +623,7 @@ const readKnowledgeSelection = async (
         doesNotProve: [
           "DB-backed knowledge selection proves source truth",
           "Codex used the selected memory",
+          `bounded plan knowledge selection proves no eligible knowledge exists beyond the first ${planKnowledgeScanLimit} ranked active rows`,
           ...(usefulnessSelection.appliedUsefulnessFeedback
             ? ["store-backed usefulness feedback proves broad ranking quality"]
             : ["store-backed usefulness feedback has been applied"])

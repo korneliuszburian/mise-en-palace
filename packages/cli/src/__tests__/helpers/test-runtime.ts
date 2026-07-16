@@ -44,6 +44,8 @@ export type CapturedPlanRun = {
 
 interface PersistedPlanOptions {
   feedbackDeltas?: readonly FeedbackDelta[];
+  memoryRecords?: readonly MemoryRecord[];
+  onListActiveMemory?: (limit: number) => void;
 }
 
 export const unusedMemoryRepository = {
@@ -179,6 +181,16 @@ export const runPersistedPlanWithCapturedMetadata = async (
       createId: (prefix) => `${prefix}-1`,
       createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
         const dependencies = createNoStoreCompilerDependencies(input);
+        const suppliedMemoryRecords = options.memoryRecords;
+        const memoryRepository = suppliedMemoryRecords === undefined
+          ? brainRecallMemoryRepository
+          : {
+              ...brainRecallMemoryRepository,
+              async listActiveMemory(_projectId: string, limit: number): Promise<MemoryRecord[]> {
+                options.onListActiveMemory?.(limit);
+                return suppliedMemoryRecords.slice(0, limit);
+              }
+            };
         const harnessRunRepository = {
           ...dependencies.harnessRunRepository,
           async createExecutionRun(runInput: CreateExecutionRunInput) {
@@ -245,11 +257,11 @@ export const runPersistedPlanWithCapturedMetadata = async (
           compilerDependencies: {
             ...dependencies,
             harnessRunRepository,
-            memoryRepository: brainRecallMemoryRepository
+            memoryRepository
           },
           harnessRunRepository,
           sourceRepository,
-          memoryRepository: brainRecallMemoryRepository,
+          memoryRepository,
           async close() {
             return undefined;
           }
