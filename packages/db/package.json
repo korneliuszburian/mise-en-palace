@@ -25,7 +25,7 @@
     "prepublishOnly": "node ../../scripts/check-release-boundary.mjs",
     "db:check": "drizzle-kit check --config drizzle.config.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
-    "test": "vitest run",
+    "test": "vitest run --no-file-parallelism",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
