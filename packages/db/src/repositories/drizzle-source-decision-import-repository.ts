@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { and, asc, desc, eq, gt, isNotNull, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull, ne, or, sql } from "drizzle-orm";
 import type {
   SourceDecisionImportLookup,
   SourceDecisionImportLookupInput,
@@ -404,6 +404,15 @@ interface ReconciliationDiagnosticRow {
   sourceRejectionIds: string[];
 }
 
+interface ReconciliationImportSummary {
+  importId: string;
+  rowCount: number;
+  completeRowCount: number;
+  missingIdentityCount: number;
+  identifiedManifestJson: string;
+  missingIdentityManifestJson: string;
+}
+
 const reconciliationCardinalityViolations = (
   row: ReconciliationDiagnosticRow
 ): SourceDecisionImportReconciliationViolation[] => {
@@ -768,57 +777,90 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       .limit(limit);
   }
 
-  private async findEquivalentImportIds(
+  private async findEquivalentImportIdsForPage(
     projectId: string,
-    importId: string,
-    identifiedManifestJson: string,
+    summaries: readonly ReconciliationImportSummary[],
     limit: number
-  ): Promise<SourceDecisionImportReconciliationItems<string>> {
-    const equivalentImportRows = await this.db
-      .select({
-        importId: sourceArtifacts.importId,
-        totalCount: sql<number>`count(*) over()::int`
-      })
-      .from(sourceArtifacts)
-      .where(and(
-        eq(sourceArtifacts.projectId, projectId),
-        isNotNull(sourceArtifacts.importId),
-        ne(sourceArtifacts.importId, importId)
-      ))
-      .groupBy(sourceArtifacts.importId)
-      .having(sql`
-        count(*) filter (where ${sourceArtifacts.importRowId} is null) = 0
-        and coalesce(
-          jsonb_object_agg(${sourceArtifacts.importRowId}, ${sourceArtifacts.contentHash})
-            filter (where ${sourceArtifacts.importRowId} is not null),
-          '{}'::jsonb
-        ) = ${identifiedManifestJson}::jsonb
-      `)
-      .orderBy(asc(sourceArtifacts.importId))
-      .limit(limit);
-    const equivalentImportIds = equivalentImportRows.flatMap(
-      (row) => row.importId === null ? [] : [row.importId]
-    );
+  ): Promise<ReadonlyMap<string, SourceDecisionImportReconciliationItems<string>>> {
+    const eligibleSummaries = summaries.filter((summary) => summary.missingIdentityCount === 0);
 
-    return boundedReconciliationItems(
-      equivalentImportRows[0]?.totalCount ?? 0,
-      equivalentImportIds
+    if (eligibleSummaries.length === 0) {
+      return new Map();
+    }
+
+    const selectedImportValues = sql.join(
+      eligibleSummaries.map((summary) => sql`(
+        ${summary.importId}::text,
+        ${summary.identifiedManifestJson}::jsonb
+      )`),
+      sql`, `
     );
+    const rows = await this.db.execute<{
+      selectedImportId: string;
+      totalCount: number;
+      items: string[];
+    }>(sql`
+      with selected_imports("importId", "identifiedManifest") as (
+        values ${selectedImportValues}
+      ),
+      project_import_manifests as materialized (
+        select
+          ${sourceArtifacts.importId} as "importId",
+          count(*) filter (where ${sourceArtifacts.importRowId} is null)::int
+            as "missingIdentityCount",
+          coalesce(
+            jsonb_object_agg(${sourceArtifacts.importRowId}, ${sourceArtifacts.contentHash})
+              filter (where ${sourceArtifacts.importRowId} is not null),
+            '{}'::jsonb
+          ) as "identifiedManifest"
+        from ${sourceArtifacts}
+        where ${sourceArtifacts.projectId} = ${projectId}
+          and ${sourceArtifacts.importId} is not null
+        group by ${sourceArtifacts.importId}
+      ),
+      equivalent_pairs as (
+        select
+          selected."importId" as "selectedImportId",
+          candidate."importId" as "equivalentImportId",
+          count(*) over (partition by selected."importId")::int as "totalCount",
+          row_number() over (
+            partition by selected."importId"
+            order by candidate."importId"
+          )::int as ordinal
+        from selected_imports selected
+        inner join project_import_manifests candidate
+          on candidate."missingIdentityCount" = 0
+          and candidate."identifiedManifest" = selected."identifiedManifest"
+          and candidate."importId" <> selected."importId"
+      )
+      select
+        selected."importId" as "selectedImportId",
+        coalesce(max(pairs."totalCount"), 0)::int as "totalCount",
+        coalesce(
+          array_agg(pairs."equivalentImportId" order by pairs."equivalentImportId")
+            filter (where pairs.ordinal <= ${limit}),
+          array[]::text[]
+        ) as items
+      from selected_imports selected
+      left join equivalent_pairs pairs
+        on pairs."selectedImportId" = selected."importId"
+      group by selected."importId"
+    `);
+
+    return new Map(rows.map((row) => [
+      row.selectedImportId,
+      boundedReconciliationItems(row.totalCount, row.items)
+    ]));
   }
 
-  private async summarizeImport(
+  private async summarizeImports(
     projectId: string,
-    importId: string
-  ): Promise<{
-    rowCount: number;
-    completeRowCount: number;
-    missingIdentityCount: number;
-    identifiedManifestJson: string;
-    missingIdentityManifestJson: string;
-  }> {
+    importIds: readonly string[]
+  ): Promise<readonly ReconciliationImportSummary[]> {
     const lifecycleComplete = reconciliationLifecycleCompleteSql(projectId);
     const rows = await this.db
       .select({
+        importId: sourceArtifacts.importId,
         rowCount: sql<number>`count(*)::int`,
         completeRowCount: sql<number>`count(*) filter (where ${lifecycleComplete})::int`,
         missingIdentityCount: sql<number>`count(*) filter (
@@ -838,39 +880,35 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       .from(sourceArtifacts)
       .where(and(
         eq(sourceArtifacts.projectId, projectId),
-        eq(sourceArtifacts.importId, importId)
-      ));
-    const summary = rows[0];
+        inArray(sourceArtifacts.importId, importIds)
+      ))
+      .groupBy(sourceArtifacts.importId);
+    const summariesByImportId = new Map(rows.flatMap((row) => row.importId === null
+      ? []
+      : [[row.importId, { ...row, importId: row.importId }] as const]
+    ));
 
-    if (summary === undefined) {
-      throw new Error(`source decision import reconciliation lost import ${importId}`);
-    }
+    return importIds.map((importId) => {
+      const summary = summariesByImportId.get(importId);
 
-    return summary;
+      if (summary === undefined) {
+        throw new Error(`source decision import reconciliation lost import ${importId}`);
+      }
+
+      return summary;
+    });
   }
 
-  private async reconcileImport(
-    projectId: string,
-    importId: string,
-    limit: number
-  ): Promise<SourceDecisionImportReconciliation> {
-    const summary = await this.summarizeImport(projectId, importId);
-    const [diagnostics, equivalentImportIds] = await Promise.all([
-      this.listReconciliationDiagnostics(projectId, importId, limit),
-      summary.missingIdentityCount === 0
-        ? this.findEquivalentImportIds(
-            projectId,
-            importId,
-            summary.identifiedManifestJson,
-            limit
-          )
-        : Promise.resolve(boundedReconciliationItems(0, []))
-    ]);
+  private reconcileImport(
+    summary: ReconciliationImportSummary,
+    diagnostics: readonly ReconciliationDiagnosticRow[],
+    equivalentImportIds: SourceDecisionImportReconciliationItems<string>
+  ): SourceDecisionImportReconciliation {
     const rows = diagnostics.map(reconciliationRowFromDiagnostic);
     const partialRowCount = summary.rowCount - summary.completeRowCount;
 
     return {
-      importId,
+      importId: summary.importId,
       lifecycle: partialRowCount === 0 ? "complete" : "partial",
       corpusDigest: reconciliationCorpusDigest(
         summary.identifiedManifestJson,
@@ -884,7 +922,6 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     };
   }
 
-  // fallow-ignore-next-line unused-class-member -- public read-snapshot repository boundary consumed through the interface by CLI and DB smoke
   async listSourceDecisionImportReconciliation(input: {
     projectId: string;
     limit: number;
@@ -907,9 +944,28 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
       .orderBy(asc(sourceArtifacts.importId))
       .limit(input.limit);
     const selectedImportIds = requiredReconciliationImportIds(importIdRows);
-    const imports = await Promise.all(selectedImportIds.map(
-      (importId) => this.reconcileImport(input.projectId, importId, input.limit)
-    ));
+    const summaries = await this.summarizeImports(input.projectId, selectedImportIds);
+    const [diagnostics, equivalentImportIdsByImport] = await Promise.all([
+      Promise.all(selectedImportIds.map((importId) =>
+        this.listReconciliationDiagnostics(input.projectId, importId, input.limit)
+      )),
+      this.findEquivalentImportIdsForPage(input.projectId, summaries, input.limit)
+    ]);
+    const imports = summaries.map((summary, index) => {
+      const importDiagnostics = diagnostics[index];
+
+      if (importDiagnostics === undefined) {
+        throw new Error(
+          `source decision import reconciliation lost diagnostics for ${summary.importId}`
+        );
+      }
+
+      return this.reconcileImport(
+        summary,
+        importDiagnostics,
+        equivalentImportIdsByImport.get(summary.importId) ?? boundedReconciliationItems(0, [])
+      );
+    });
     const boundedImports = boundedReconciliationItems(
       importIdRows[0]?.totalCount ?? 0,
       imports
