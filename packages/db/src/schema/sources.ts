@@ -1,11 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   integer,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core";
@@ -145,6 +147,11 @@ export const sourceClaims = pgTable(
     updatedAt: updatedAtColumn()
   },
   (table) => [
+    foreignKey({
+      name: "source_claims_chunk_artifact_fk",
+      columns: [table.sourceChunkId, table.sourceArtifactId],
+      foreignColumns: [sourceChunks.id, sourceChunks.sourceArtifactId]
+    }),
     index("source_claims_source_artifact_id_idx").on(table.sourceArtifactId),
     index("source_claims_source_chunk_id_idx").on(table.sourceChunkId),
     index("source_claims_execution_run_id_idx").on(table.executionRunId),
@@ -200,7 +207,8 @@ export const sourceDecisions = pgTable(
     index("source_decisions_consumer_idx").on(table.consumer),
     uniqueIndex("source_decisions_terminal_claim_unique")
       .on(table.sourceClaimId)
-      .where(sql`${table.status} in ('adopt', 'reject')`)
+      .where(sql`${table.status} in ('adopt', 'reject')`),
+    unique("source_decisions_id_claim_unique").on(table.id, table.sourceClaimId)
   ]
 );
 
@@ -211,9 +219,9 @@ export const sourceDecisionEdges = pgTable(
     sourceClaimId: uuid("source_claim_id")
       .notNull()
       .references(() => sourceClaims.id, { onDelete: "cascade" }),
-    sourceDecisionId: uuid("source_decision_id").references(() => sourceDecisions.id, {
-      onDelete: "set null"
-    }),
+    sourceDecisionId: uuid("source_decision_id")
+      .notNull()
+      .references(() => sourceDecisions.id),
     targetType: sourceDecisionTargetType("target_type").notNull(),
     targetId: text("target_id").notNull(),
     supportType: sourceSupportType("support_type").notNull(),
@@ -223,6 +231,18 @@ export const sourceDecisionEdges = pgTable(
     createdAt: createdAtColumn()
   },
   (table) => [
+    foreignKey({
+      name: "source_decision_edges_decision_claim_fk",
+      columns: [table.sourceDecisionId, table.sourceClaimId],
+      foreignColumns: [sourceDecisions.id, sourceDecisions.sourceClaimId]
+    }),
+    uniqueIndex("source_decision_edges_identity_unique").on(
+      table.sourceClaimId,
+      table.sourceDecisionId,
+      table.targetType,
+      table.targetId,
+      table.supportType
+    ),
     index("source_decision_edges_source_claim_id_idx").on(table.sourceClaimId),
     index("source_decision_edges_source_decision_id_idx").on(table.sourceDecisionId),
     index("source_decision_edges_target_idx").on(table.targetType, table.targetId),

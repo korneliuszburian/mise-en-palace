@@ -29,7 +29,6 @@ import {
 import { runSourceClaimTransitionSmokeCheck } from "./source-claim-transition-smoke.js";
 import {
   outboxEvents,
-  sourceDecisionEdges,
   sourceRejections
 } from "../../schema/index.js";
 import { DrizzleProjectRepository } from "../../repositories/drizzle-project-repository.js";
@@ -148,7 +147,11 @@ const sourceWriteRejectedFor = async (
     await operation();
     return false;
   } catch (error) {
-    return error instanceof Error && error.message.includes(expectedMessage);
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    const causeMessage = error.cause instanceof Error ? error.cause.message : "";
+    return `${error.message} ${causeMessage}`.includes(expectedMessage);
   }
 };
 
@@ -386,19 +389,29 @@ const createSourceProjectIsolationSmokeProof = async (input: {
     source.sourceDecisionEdge.id === foreignSourceDecisionEdge.id
   );
   const legacyDecisionEdgeRejected = await sourceWriteRejectedFor(
-    () => input.db.insert(sourceDecisionEdges).values({
-      sourceClaimId: input.sourceClaim.id,
-      targetType: "harness_run",
-      targetId: `legacy-source-decision-edge:${input.marker}`,
-      supportType: "implementation-boundary",
-      confidence: "low",
-      notes: "Legacy edge intentionally lacks exact SourceDecision identity.",
-      metadata: {
-        smokeId: input.marker,
-        legacyProjectIsolationProbe: true
-      }
-    }),
-    "source_decision_id"
+    () => input.db.execute(sql`
+      insert into source_decision_edges (
+        source_claim_id,
+        target_type,
+        target_id,
+        support_type,
+        confidence,
+        notes,
+        metadata
+      ) values (
+        ${input.sourceClaim.id},
+        'harness_run',
+        ${`legacy-source-decision-edge:${input.marker}`},
+        'implementation-boundary',
+        'low',
+        'Legacy edge intentionally lacks exact SourceDecision identity.',
+        ${JSON.stringify({
+          smokeId: input.marker,
+          legacyProjectIsolationProbe: true
+        })}::jsonb
+      )
+    `),
+    "SourceDecisionEdge requires same-project adopted reviewed SourceDecision"
   );
   const legacyDecisionEdgeExcluded = legacyDecisionEdgeRejected;
   const projectIsolationRejectedWrites = [
