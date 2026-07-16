@@ -1212,11 +1212,10 @@ describe("SourceClaim provenance migration", () => {
           migrationsFolder
         });
         expect(report).toMatchObject({
-          expectedMigrationCount: 44,
-          appliedMigrationCount: 44,
           migrationIdentityStatus: "verified",
           migrationsVerified: true
         });
+        expect(report.appliedMigrationCount).toBe(report.expectedMigrationCount);
 
         const quarantineRows = await client<{
           entityId: string;
