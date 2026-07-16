@@ -42,7 +42,12 @@ const sourceFiles = {
     "export type CreateUserResult = { ok: true } | { ok: false; error: string };",
     "export function createUserFromJson(): CreateUserResult { return { ok: false, error: \"x\" }; }"
   ].join("\n"),
-  "tests/userService.test.ts": "invalid_json missing_email invalid_role"
+  "tests/userService.test.ts": [
+    "createUserFromJson(JSON.stringify({ email: 'ok@example.com' }), {});",
+    "createUserFromJson('{', {});",
+    "createUserFromJson(JSON.stringify({ role: 'admin' }), {});",
+    "createUserFromJson(JSON.stringify({ email: 'x@example.com', role: 'owner' }), {});"
+  ].join("\n")
 };
 
 describe("paired live Codex repair eval", () => {
@@ -208,6 +213,40 @@ describe("paired live Codex repair eval", () => {
       expect.objectContaining({ name: "finite_result_state", passed: false }),
       expect.objectContaining({ name: "focused_tests", passed: false })
     ]));
+  });
+
+  it("recognizes focused invalid-input vectors without private result-label spellings", () => {
+    const focusedTests = (tests: string): boolean => {
+      const result = scoreTargetRepair({
+        sourceFiles: { ...sourceFiles, "tests/userService.test.ts": tests },
+        changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+        commands: { test: command(), typecheck: command(), diffCheck: command() },
+        runtimeAvailable: true,
+        observations: {
+          invalidJson: observation(),
+          missingEmail: observation(),
+          invalidRole: observation()
+        }
+      });
+      return result.checks.find((check) => check.name === "focused_tests")?.passed === true;
+    };
+    const baselineStyle = [
+      "const reject = (raw: string) => createUserFromJson(raw, {});",
+      "reject('{');",
+      "reject(JSON.stringify({ role: 'admin' }));",
+      "reject(JSON.stringify({ email: 'x@example.com', role: 'owner' }));"
+    ].join("\n");
+    const krnStyle = [
+      "createUserFromJson('{', {});",
+      "createUserFromJson(JSON.stringify({}), {});",
+      "createUserFromJson(JSON.stringify({ email: 'x@example.com', role: 'superuser' }), {});"
+    ].join("\n");
+
+    expect(focusedTests(baselineStyle)).toBe(true);
+    expect(focusedTests(krnStyle)).toBe(true);
+    expect(focusedTests(krnStyle.replace("createUserFromJson('{', {});", ""))).toBe(false);
+    expect(focusedTests(krnStyle.replace("createUserFromJson(JSON.stringify({}), {});", ""))).toBe(false);
+    expect(focusedTests(krnStyle.replace(", role: 'superuser'", ""))).toBe(false);
   });
 
   it("does not count validity gates as paired advantage", () => {
