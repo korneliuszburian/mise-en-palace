@@ -328,8 +328,15 @@ describe("historical warning repository selection", () => {
       });
       const deprecated = await scaffold.sourceRepository.deprecateSourceClaim({
         sourceClaimId: claimToDeprecate.id,
-        revisitWhen: future
+        revisitWhen: future,
+        metadata: { smokeId: scaffold.marker }
       });
+      const deprecationEvents = await scaffold.client<{ smokeId: string | null }[]>`
+        select payload->>'smokeId' as "smokeId"
+        from outbox_events
+        where topic = 'source.claim.deprecated'
+          and payload->>'sourceClaimId' = ${claimToDeprecate.id}
+      `;
       const foreignExpired = await createClaim({
         sourceArtifactId: foreignArtifact.id,
         label: "foreign-expired",
@@ -402,6 +409,7 @@ describe("historical warning repository selection", () => {
         .sort();
 
       expect(currentRows.map((claim) => claim.id).sort()).toEqual(expectedCurrentIds);
+      expect(deprecationEvents).toEqual([{ smokeId: scaffold.marker }]);
       expect(limitedCurrent.map((claim) => claim.id)).toEqual([current.id]);
       expect(limitedWarnings.map((claim) => claim.id)).toEqual([relevantExpired.id]);
       expect(warningIds.sort()).toEqual(expectedWarningIds);

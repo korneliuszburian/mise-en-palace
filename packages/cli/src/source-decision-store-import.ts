@@ -862,6 +862,7 @@ const deprecateImportedSourceClaimIfInactive = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
   readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
   readonly sourceClaimId: string;
+  readonly metadata: Record<string, unknown>;
 }): Promise<void> => {
   if (input.authorityLifecycleStatus !== "stale") {
     return;
@@ -873,7 +874,8 @@ const deprecateImportedSourceClaimIfInactive = async (input: {
 
   await input.sourceRepository.deprecateSourceClaim({
     sourceClaimId: input.sourceClaimId,
-    revisitWhen: "Refresh imported decision evidence before future activation."
+    revisitWhen: "Refresh imported decision evidence before future activation.",
+    metadata: input.metadata
   });
 };
 
@@ -956,7 +958,8 @@ const persistSourceDecisionImportRow = async (input: {
   await deprecateImportedSourceClaimIfInactive({
     sourceRepository: input.sourceRepository,
     authorityLifecycleStatus,
-    sourceClaimId: sourceClaim.id
+    sourceClaimId: sourceClaim.id,
+    metadata: input.prepared.metadata
   });
   const sourceClaimReadback = await projectScopedImportedSourceClaimReadback({
     sourceRepository: input.sourceRepository,

@@ -39,6 +39,7 @@ export interface CreateSourceClaimInput {
 export interface DeprecateSourceClaimInput {
   sourceClaimId: SourceClaim["id"];
   revisitWhen: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CreateSourceDecisionInput {

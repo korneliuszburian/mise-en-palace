@@ -1044,7 +1044,8 @@ export class DrizzleSourceRepository implements SourceRepository {
         topic: "source.claim.deprecated",
         payload: {
           sourceClaimId: row.id,
-          revisitWhen: row.revisitWhen
+          revisitWhen: row.revisitWhen,
+          ...smokePayload(input.metadata)
         }
       });
 
