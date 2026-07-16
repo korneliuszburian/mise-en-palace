@@ -716,8 +716,22 @@ export const runMemoryGovernanceSmokeCheck = async (
       await faultClient.end();
     }
     const postFaultRevisionRows = await db.select().from(memoryRecords).where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'atomic-memory-revision' AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
+    const postFaultRevisionVersions = await db.select().from(memoryRecordVersions).where(
+      eq(memoryRecordVersions.createdFromCandidateId, revisionCandidate.id)
+    );
+    const postFaultRevisionOutboxRows = await db.select().from(outboxEvents).where(sql`
+      (${outboxEvents.topic} = 'memory.candidate.promoted' AND ${outboxEvents.payload}->>'memoryCandidateId' = ${revisionCandidate.id})
+      OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${revisionSourceRecord.id})
+    `);
     const postFaultCandidate = await memoryRepository.getMemoryCandidateById(revisionCandidate.id);
-    if (postFaultRevisionRows.length !== 0 || postFaultCandidate?.status !== "candidate") {
+    const postFaultSource = await memoryRepository.getMemoryRecordById(revisionSourceRecord.id);
+    if (
+      postFaultRevisionRows.length !== 0 ||
+      postFaultRevisionVersions.length !== 0 ||
+      postFaultRevisionOutboxRows.length !== 0 ||
+      postFaultCandidate?.status !== "candidate" ||
+      postFaultSource?.status !== "active"
+    ) {
       throw new Error("Memory revision fault injection left partial promotion state");
     }
 
@@ -749,16 +763,53 @@ export const runMemoryGovernanceSmokeCheck = async (
         (${outboxEvents.topic} = 'memory.candidate.promoted' AND ${outboxEvents.payload}->>'memoryCandidateId' = ${revisionCandidate.id})
         OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${revisionSourceRecord.id})
       `);
-      const revisionCandidateReadback = await memoryRepository.getMemoryCandidateById(revisionCandidate.id);
+      const [revisionCandidateReadback, revisionSourceReadback] = await Promise.all([
+        memoryRepository.getMemoryCandidateById(revisionCandidate.id),
+        memoryRepository.getMemoryRecordById(revisionSourceRecord.id)
+      ]);
+      const winningRevision = revisionResults.find(
+        (result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof memoryRepository.applyReviewedMemoryRevision>>> =>
+          result.status === "fulfilled"
+      );
+      const losingRevisions = revisionResults.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected"
+      );
+      const losingRevisionMessage = losingRevisions[0]?.reason instanceof Error
+        ? losingRevisions[0].reason.message
+        : undefined;
+      const expectedLosingRevisionMessages = new Set([
+        `Memory candidate ${revisionCandidate.id} cannot be promoted from accepted`,
+        `applyReviewedMemoryRevision.acceptCandidate could not transition candidate ${revisionCandidate.id}; expected proposed or candidate status`
+      ]);
+      const replacementRow = revisionRows[0];
+      const replacementVersionRow = revisionVersionRows[0];
+      const promotionEvent = revisionOutboxRows.find(
+        (row) => row.topic === "memory.candidate.promoted"
+      );
+      const supersessionEvent = revisionOutboxRows.find(
+        (row) => row.topic === "memory.record.superseded"
+      );
       assertSmokeReadbackChecks([
         { label: "atomic memory revision fault leaves no replacement", passed: postFaultRevisionRows.length === 0 },
+        { label: "atomic memory revision fault leaves no replacement version", passed: postFaultRevisionVersions.length === 0 },
+        { label: "atomic memory revision fault leaves no outbox event", passed: postFaultRevisionOutboxRows.length === 0 },
+        { label: "atomic memory revision fault leaves source active", passed: postFaultSource?.status === "active" },
         { label: "atomic memory revision has one concurrent winner", passed: fulfilledCount(revisionResults) === 1 },
+        { label: "atomic memory revision has one expected loser conflict", passed: losingRevisions.length === 1 && losingRevisionMessage !== undefined && expectedLosingRevisionMessages.has(losingRevisionMessage) },
         { label: "atomic memory revision creates one replacement", passed: revisionRows.length === 1 },
         { label: "atomic memory revision accepts candidate once", passed: revisionCandidateReadback?.status === "accepted" },
         { label: "atomic memory revision creates one replacement version", passed: revisionVersionRows.length === 1 },
+        { label: "atomic memory revision winner returns exact replacement", passed: winningRevision?.value.memoryRecord.id === replacementRow?.id },
+        { label: "atomic memory revision winner returns exact superseded source", passed: winningRevision?.value.supersededMemoryRecord.id === revisionSourceRecord.id },
+        { label: "atomic memory revision supersedes exact source", passed: revisionSourceReadback?.status === "superseded" && revisionSourceReadback.metadata["replacementMemoryRecordId"] === replacementRow?.id },
+        { label: "atomic memory revision binds replacement current version", passed: replacementRow?.currentVersionId === replacementVersionRow?.id },
+        { label: "atomic memory revision binds version to replacement", passed: replacementVersionRow?.memoryRecordId === replacementRow?.id },
+        { label: "atomic memory revision binds version to candidate", passed: replacementVersionRow?.createdFromCandidateId === revisionCandidate.id },
         { label: "atomic memory revision preserves reviewed candidate authority", passed: isDeepStrictEqual(revisionCandidateReadback?.metadata["memoryRevision"], canonicalRevisionMetadata) },
         { label: "atomic memory revision preserves replacement authority", passed: isDeepStrictEqual(revisionRows[0]?.metadata["memoryRevision"], canonicalRevisionMetadata) },
         { label: "atomic memory revision preserves version authority", passed: isDeepStrictEqual(revisionVersionRows[0]?.metadata["memoryRevision"], canonicalRevisionMetadata) },
+        { label: "atomic memory revision binds exact promotion event", passed: promotionEvent?.payload["memoryCandidateId"] === revisionCandidate.id && promotionEvent.payload["memoryRecordId"] === replacementRow?.id && promotionEvent.payload["memoryRecordVersionId"] === replacementVersionRow?.id && promotionEvent.payload["projectId"] === project.id },
+        { label: "atomic memory revision binds exact supersession event", passed: supersessionEvent?.payload["memoryRecordId"] === revisionSourceRecord.id && supersessionEvent.payload["supersededByMemoryRecordId"] === replacementRow?.id && supersessionEvent.payload["projectId"] === project.id },
         { label: "atomic memory revision emits promotion and supersession outbox", passed: revisionOutboxRows.filter((row) => row.topic === "memory.candidate.promoted").length === 1 && revisionOutboxRows.filter((row) => row.topic === "memory.record.superseded").length === 1 }
       ], "Atomic memory revision falsifier failed");
     } finally {
