@@ -727,20 +727,30 @@ export const runActivationSmokeCheck = async (
         temporalCase: "expired-memory-projection"
       }
     });
-    const crossProjectSearchDocument = await retrievalRepository.createSearchDocument({
-      projectId: project.id,
-      subjectType: "source_claim",
-      subjectId: foreignClaim.id,
-      sourceClaimId: foreignClaim.id,
-      title: "Activation smoke cross-project search document",
-      body: "This active index row points at a SourceClaim in another project.",
-      searchText: sourceQuery.text,
-      sourceAuthority: "project-decision",
-      validFrom: past,
-      metadata: {
-        smokeId: marker
-      }
-    });
+    // Simulate a legacy or direct-SQL row so the read boundary remains independently fail-closed.
+    // Repository writes reject this tuple; database-level prevention belongs to the next slice.
+    const [crossProjectSearchDocument] = await db
+      .insert(searchDocuments)
+      .values({
+        projectId: project.id,
+        subjectType: "source_claim",
+        subjectId: foreignClaim.id,
+        sourceClaimId: foreignClaim.id,
+        title: "Activation smoke cross-project search document",
+        body: "This active index row points at a SourceClaim in another project.",
+        searchText: sourceQuery.text,
+        searchVector: sql`to_tsvector('english', ${sourceQuery.text})`,
+        sourceAuthority: "project-decision",
+        validFrom: new Date(past),
+        metadata: {
+          smokeId: marker
+        }
+      })
+      .returning({ id: searchDocuments.id });
+
+    if (crossProjectSearchDocument === undefined) {
+      throw new Error("Activation smoke could not create its direct-SQL cross-project fixture");
+    }
     const historicallyEligibleSearchResults = await retrievalRepository.searchLexical({
       projectId: project.id,
       query: sourceQuery.text,
