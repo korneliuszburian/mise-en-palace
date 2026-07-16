@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 
 import {
   createCommandOutputArtifact,
@@ -610,6 +611,38 @@ export const runMemoryGovernanceSmokeCheck = async (
       isUserPreference: false,
       metadata: { smokeId: marker, lifecycleProbe: "atomic-memory-revision-source" }
     });
+    const substitutedRevisionSourceRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `memory-governance-revision-substitution:${marker}`,
+      kind: "constraint",
+      status: "active",
+      summary: "Unrelated atomic revision source",
+      body: "A same-project revision candidate must not supersede this unrelated record.",
+      owner: "kernel",
+      confidence: 90,
+      applicationGuidance: "Use only for the revision source-identity substitution probe.",
+      invalidationRule: "Remove after the atomic revision smoke.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      metadata: {
+        smokeId: marker,
+        lifecycleProbe: "atomic-memory-revision-substitution-source"
+      }
+    });
+    const canonicalRevisionMetadata = {
+      action: "refresh_memory",
+      sourceMemoryRecordId: revisionSourceRecord.id,
+      reason: "Atomic reviewed revision smoke",
+      evidenceRefs: [sourceClaim.id],
+      doesNotProve: "This smoke does not prove semantic superiority."
+    };
+    const callerRevisionOverride = {
+      action: "merge_duplicate",
+      sourceMemoryRecordId: substitutedRevisionSourceRecord.id,
+      reason: "Caller-controlled revision metadata must not replace reviewed authority",
+      evidenceRefs: ["caller-controlled-evidence"],
+      doesNotProve: "Caller-controlled revision metadata"
+    };
     const revisionCandidate = await memoryRepository.createMemoryCandidate({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -627,9 +660,39 @@ export const runMemoryGovernanceSmokeCheck = async (
       isUserPreference: false,
       metadata: {
         smokeId: marker,
-        lifecycleProbe: "atomic-memory-revision"
+        lifecycleProbe: "atomic-memory-revision",
+        memoryRevision: canonicalRevisionMetadata
       }
     });
+    await assertRejected(
+      memoryRepository.applyReviewedMemoryRevision({
+        candidateId: revisionCandidate.id,
+        sourceMemoryRecordId: substitutedRevisionSourceRecord.id,
+        reviewer: "memory-governance-revision-substitution",
+        reason: "Same-project source substitution must fail",
+        recordKey: `memory-governance-revision:${marker}`,
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "atomic-memory-revision",
+          memoryRevision: callerRevisionOverride
+        }
+      }),
+      `was proposed for source ${revisionSourceRecord.id}, not ${substitutedRevisionSourceRecord.id}`,
+      "Memory revision accepted a substituted same-project source"
+    );
+    const [postSubstitutionCandidate, postSubstitutionSource, postSubstitutionTarget] =
+      await Promise.all([
+        memoryRepository.getMemoryCandidateById(revisionCandidate.id),
+        memoryRepository.getMemoryRecordById(revisionSourceRecord.id),
+        memoryRepository.getMemoryRecordById(substitutedRevisionSourceRecord.id)
+      ]);
+    if (
+      postSubstitutionCandidate?.status !== "candidate" ||
+      postSubstitutionSource?.status !== "active" ||
+      postSubstitutionTarget?.status !== "active"
+    ) {
+      throw new Error("Memory revision source substitution changed canonical state");
+    }
     const faultClient = postgres(input.databaseUrl, { max: 1, onnotice: () => undefined });
     try {
       const faultRepository = new DrizzleMemoryRepository(createKrnDatabase(faultClient), {
@@ -670,9 +733,18 @@ export const runMemoryGovernanceSmokeCheck = async (
         reviewer: `memory-governance-revision-race-${index}`,
         reason: "Concurrent reviewed revision race",
         recordKey: `memory-governance-revision:${marker}`,
-        metadata: { smokeId: marker, lifecycleProbe: "atomic-memory-revision" }
+        metadata: {
+          smokeId: marker,
+          lifecycleProbe: "atomic-memory-revision",
+          memoryRevision: callerRevisionOverride
+        }
       })));
       const revisionRows = await db.select().from(memoryRecords).where(sql`${memoryRecords.metadata}->>'lifecycleProbe' = 'atomic-memory-revision' AND ${memoryRecords.metadata}->>'smokeId' = ${marker}`);
+      const revisionVersionRows = revisionRows[0] === undefined
+        ? []
+        : await db.select().from(memoryRecordVersions).where(
+            eq(memoryRecordVersions.memoryRecordId, revisionRows[0].id)
+          );
       const revisionOutboxRows = await db.select().from(outboxEvents).where(sql`
         (${outboxEvents.topic} = 'memory.candidate.promoted' AND ${outboxEvents.payload}->>'memoryCandidateId' = ${revisionCandidate.id})
         OR (${outboxEvents.topic} = 'memory.record.superseded' AND ${outboxEvents.payload}->>'memoryRecordId' = ${revisionSourceRecord.id})
@@ -683,6 +755,10 @@ export const runMemoryGovernanceSmokeCheck = async (
         { label: "atomic memory revision has one concurrent winner", passed: fulfilledCount(revisionResults) === 1 },
         { label: "atomic memory revision creates one replacement", passed: revisionRows.length === 1 },
         { label: "atomic memory revision accepts candidate once", passed: revisionCandidateReadback?.status === "accepted" },
+        { label: "atomic memory revision creates one replacement version", passed: revisionVersionRows.length === 1 },
+        { label: "atomic memory revision preserves reviewed candidate authority", passed: isDeepStrictEqual(revisionCandidateReadback?.metadata["memoryRevision"], canonicalRevisionMetadata) },
+        { label: "atomic memory revision preserves replacement authority", passed: isDeepStrictEqual(revisionRows[0]?.metadata["memoryRevision"], canonicalRevisionMetadata) },
+        { label: "atomic memory revision preserves version authority", passed: isDeepStrictEqual(revisionVersionRows[0]?.metadata["memoryRevision"], canonicalRevisionMetadata) },
         { label: "atomic memory revision emits promotion and supersession outbox", passed: revisionOutboxRows.filter((row) => row.topic === "memory.candidate.promoted").length === 1 && revisionOutboxRows.filter((row) => row.topic === "memory.record.superseded").length === 1 }
       ], "Atomic memory revision falsifier failed");
     } finally {

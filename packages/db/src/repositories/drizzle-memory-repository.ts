@@ -203,6 +203,41 @@ export const memoryPromotionMetadata = (
   sourceClaimIds: candidate.sourceClaimIds
 });
 
+const reviewedMemoryRevisionMetadata = (
+  candidate: MemoryCandidate,
+  input: ApplyReviewedMemoryRevisionInput
+): Record<string, unknown> => {
+  const revision = candidate.metadata.memoryRevision;
+
+  if (typeof revision !== "object" || revision === null || Array.isArray(revision)) {
+    throw new Error(
+      `Memory candidate ${candidate.id} has no persisted revision source identity`
+    );
+  }
+
+  const revisionMetadata = Object.fromEntries(Object.entries(revision));
+  const proposedSourceMemoryRecordId = revisionMetadata.sourceMemoryRecordId;
+
+  if (
+    typeof proposedSourceMemoryRecordId !== "string" ||
+    proposedSourceMemoryRecordId.trim().length === 0
+  ) {
+    throw new Error(
+      `Memory candidate ${candidate.id} has no persisted revision source identity`
+    );
+  }
+  if (proposedSourceMemoryRecordId !== input.sourceMemoryRecordId) {
+    throw new Error(
+      `Memory candidate ${candidate.id} was proposed for source ${proposedSourceMemoryRecordId}, not ${input.sourceMemoryRecordId}`
+    );
+  }
+
+  return {
+    ...memoryPromotionMetadata(candidate, input),
+    memoryRevision: revisionMetadata
+  };
+};
+
 export const antiMemoryPromotionMetadata = (
   candidate: AntiMemoryCandidate,
   input: PromoteAntiMemoryCandidateInput
@@ -1024,13 +1059,14 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
       const candidate = mapMemoryCandidate(candidateRow);
       ensurePromotableCandidate(candidate);
+      const promotionMetadata = reviewedMemoryRevisionMetadata(candidate, input);
       const now = new Date();
       requireCandidateTransitionRow(
         await tx.update(memoryCandidates).set({
           status: "accepted",
           reviewer,
           reviewedAt: now,
-          metadata: memoryPromotionMetadata(candidate, input),
+          metadata: promotionMetadata,
           updatedAt: now
         }).where(and(
           eq(memoryCandidates.id, candidateRow.id),
@@ -1056,7 +1092,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           isUserPreference: candidateRow.isUserPreference,
           validFrom: candidateRow.validFrom,
           ...(candidateRow.validUntil === null ? {} : { validUntil: candidateRow.validUntil }),
-          metadata: memoryPromotionMetadata(candidate, input)
+          metadata: promotionMetadata
         }).returning(),
         "applyReviewedMemoryRevision.insertReplacement"
       );
@@ -1074,7 +1110,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           sourceLineage: candidateRow.sourceLineage,
           validFrom: candidateRow.validFrom,
           ...(candidateRow.validUntil === null ? {} : { validUntil: candidateRow.validUntil }),
-          metadata: memoryPromotionMetadata(candidate, input)
+          metadata: promotionMetadata
         }).returning(),
         "applyReviewedMemoryRevision.insertReplacementVersion"
       );
