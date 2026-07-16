@@ -26,7 +26,7 @@
       "{prompt}"
     ],
     "model": "gpt-5.6",
-    "cliVersion": "pinned-by-lockfile-and-recorded-version",
+    "cliVersion": "codex-cli 0.144.5",
     "profile": {
       "name": "paired-live",
       "config": "model = \"gpt-5.6\"\n",
@@ -43,7 +43,7 @@
   },
   "containment": {
     "command": "bwrap",
-    "version": "pinned-by-recorded-version",
+    "version": "bubblewrap 0.11.2",
     "network": "disabled",
     "workspaceWriteRoot": "{targetRoot}",
     "homeRoot": "{sandboxRoot}"
