@@ -98,6 +98,12 @@ const formatConsensusRelationEvidence = (
           `direction=${relation.direction}`,
           `kind=${relation.kind}`,
           `related=${relation.relatedSourceClaimId}`,
+          `temporalStatus=${relation.temporalValidity.status}`,
+          `temporalReason=${
+            relation.temporalValidity.status === "current"
+              ? "none"
+              : relation.temporalValidity.reason
+          }`,
           `evidenceRefs=${commaList(relation.metadataEvidenceRefs)}`,
           `metadataSourceDecisionRef=${relation.metadataSourceDecisionRef ?? "none"}`,
           `gaps=${commaList(relation.evidenceGaps)}`
@@ -125,9 +131,9 @@ const formatConsensusReadback = (
           ` status:${entry.status}`,
           ` authority:${entry.sourceAuthority}`,
           ` decisionEdges:${commaList(entry.decisionSupportEdgeIds)}`,
-          ` supports:${commaList(entry.supportingSourceClaimIds)}`,
-          ` conflicts:${commaList(entry.dissentingSourceClaimIds)}`,
-          ` supersededBy:${commaList(entry.supersededBySourceClaimIds)}`,
+          ` currentSupports:${commaList(entry.supportingSourceClaimIds)}`,
+          ` currentConflicts:${commaList(entry.dissentingSourceClaimIds)}`,
+          ` currentSupersededBy:${commaList(entry.supersededBySourceClaimIds)}`,
           ` relationEvidence:${formatConsensusRelationEvidence(entry.relationEvidence)}`,
           ` rejections:${commaList(entry.rejectionIds)}`,
           ` caveats:${commaList(entry.caveats)}`

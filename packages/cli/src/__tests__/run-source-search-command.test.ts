@@ -1252,6 +1252,60 @@ describe("runSourceSearchCommand", () => {
       createdAt: "2026-06-24T08:00:00.000Z",
       updatedAt: "2026-06-24T08:00:00.000Z"
     });
+    const temporalDissentEdge = (
+      metadata: Record<string, unknown>
+    ): SourceClaimEdge => sourceClaimEdge({
+      id: "579deff0-4df5-45c1-8b5b-b5d281d00189" as SourceClaimEdge["id"],
+      fromSourceClaimId: acceptedOnlyClaimId,
+      toSourceClaimId: currentClaimId,
+      kind: "contradicts",
+      metadata: {
+        evidenceRef: "KRN_ROADMAP.md#historical-temporal-consensus",
+        ...metadata
+      }
+    });
+    const temporalConsensusRuntime: SourceSearchRuntimeInput = {
+      claims: [
+        staleClaim,
+        currentClaim,
+        acceptedOnlyClaim,
+        rejectedClaim
+      ],
+      documents: [],
+      edges: [
+        sourceClaimEdge({
+          id: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46" as SourceClaimEdge["id"],
+          fromSourceClaimId: currentClaimId,
+          toSourceClaimId: staleClaimId,
+          kind: "supersedes",
+          metadata: {
+            evidenceRef: "KRN_ROADMAP.md#phase-5-temporal-consensus",
+            sourceDecisionRef: "source-decision:temporal-claim-graph"
+          }
+        }),
+        sourceClaimEdge({
+          id: "93c0eb08-fc5a-4a7d-aa79-a930d42f8062" as SourceClaimEdge["id"],
+          fromSourceClaimId: rejectedClaimId,
+          toSourceClaimId: currentClaimId,
+          kind: "contradicts",
+          metadata: {}
+        }),
+        temporalDissentEdge({ validUntil: now })
+      ],
+      decisionEdges: [
+        sourceDecisionEdge({
+          id: "9f87a7f4-0bf1-4796-8a46-3bda94cbb221" as SourceDecisionEdge["id"],
+          sourceClaimId: currentClaimId,
+          confidence: "high"
+        })
+      ],
+      rejections: [
+        sourceRejection({
+          id: "51a3f795-fd7d-4cc4-ac0f-407603cd5ae2" as SourceRejection["id"],
+          sourceClaimId: rejectedClaimId
+        })
+      ]
+    };
     const result = await runSourceSearchCommand({
       cwd: "/repo",
       env: {
@@ -1266,47 +1320,7 @@ describe("runSourceSearchCommand", () => {
         maxInclusions: 4,
         json: true
       },
-      createDatabaseRuntime: runtime({
-        claims: [
-          staleClaim,
-          currentClaim,
-          acceptedOnlyClaim,
-          rejectedClaim
-        ],
-        documents: [],
-        edges: [
-          sourceClaimEdge({
-            id: "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46" as SourceClaimEdge["id"],
-            fromSourceClaimId: currentClaimId,
-            toSourceClaimId: staleClaimId,
-            kind: "supersedes",
-            metadata: {
-              evidenceRef: "KRN_ROADMAP.md#phase-5-temporal-consensus",
-              sourceDecisionRef: "source-decision:temporal-claim-graph"
-            }
-          }),
-          sourceClaimEdge({
-            id: "93c0eb08-fc5a-4a7d-aa79-a930d42f8062" as SourceClaimEdge["id"],
-            fromSourceClaimId: rejectedClaimId,
-            toSourceClaimId: currentClaimId,
-            kind: "contradicts",
-            metadata: {}
-          })
-        ],
-        decisionEdges: [
-          sourceDecisionEdge({
-            id: "9f87a7f4-0bf1-4796-8a46-3bda94cbb221" as SourceDecisionEdge["id"],
-            sourceClaimId: currentClaimId,
-            confidence: "high"
-          })
-        ],
-        rejections: [
-          sourceRejection({
-            id: "51a3f795-fd7d-4cc4-ac0f-407603cd5ae2" as SourceRejection["id"],
-            sourceClaimId: rejectedClaimId
-          })
-        ]
-      })
+      createDatabaseRuntime: runtime(temporalConsensusRuntime)
     });
     const output = parseJsonObject(result.stdout);
     const answerPackage = objectValue(output.answerPackage, "answerPackage");
@@ -1356,6 +1370,16 @@ describe("runSourceSearchCommand", () => {
           kind: "contradicts",
           relatedSourceClaimId: rejectedClaimId,
           evidenceGaps: ["missing_relation_support_ref"]
+        }),
+        expect.objectContaining({
+          sourceClaimEdgeId: "579deff0-4df5-45c1-8b5b-b5d281d00189",
+          direction: "incoming",
+          kind: "contradicts",
+          relatedSourceClaimId: acceptedOnlyClaimId,
+          temporalValidity: {
+            status: "historical",
+            reason: "valid_until_elapsed"
+          }
         })
       ])
     });
@@ -1386,6 +1410,64 @@ describe("runSourceSearchCommand", () => {
       state: "rejected",
       rejectionIds: ["51a3f795-fd7d-4cc4-ac0f-407603cd5ae2"]
     });
+
+    const temporalRenderCases = [
+      ["equal-boundary", { validUntil: now }, "historical", "valid_until_elapsed"],
+      [
+        "expired",
+        { validUntil: "2026-06-29T11:59:59.999Z" },
+        "historical",
+        "valid_until_elapsed"
+      ],
+      ["invalidated", { invalidatedAt: now }, "historical", "invalidated"],
+      [
+        "before-valid",
+        { validFrom: "2026-06-30T12:00:00.000Z" },
+        "historical",
+        "before_valid_from"
+      ],
+      ["malformed", { validUntil: "not-a-timestamp" }, "invalid", "invalid_valid_until"]
+    ] as const;
+
+    for (const [description, metadata, status, reason] of temporalRenderCases) {
+      const textResult = await runSourceSearchCommand({
+        cwd: "/repo",
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-${description}`,
+        command: {
+          kind: "sourceSearch",
+          query: "temporal consensus readback current template stale accepted-only rejected",
+          limit: 10,
+          maxInclusions: 4,
+          json: false
+        },
+        createDatabaseRuntime: runtime({
+          ...temporalConsensusRuntime,
+          edges: [
+            ...(temporalConsensusRuntime.edges ?? []).slice(0, 2),
+            temporalDissentEdge(metadata)
+          ]
+        })
+      });
+
+      expect(textResult.stdout).toContain(
+        `currentConflicts:${rejectedClaimId}`
+      );
+      expect(textResult.stdout).not.toContain(
+        `currentConflicts:${acceptedOnlyClaimId}`
+      );
+      expect(textResult.stdout).toContain(
+        "ec9cd321-4537-4b3c-9e8c-8c5eb3436a46/direction=outgoing/kind=supersedes/" +
+        `related=${staleClaimId}/temporalStatus=current/temporalReason=none`
+      );
+      expect(textResult.stdout).toContain(
+        "579deff0-4df5-45c1-8b5b-b5d281d00189/direction=incoming/kind=contradicts/" +
+        `related=${acceptedOnlyClaimId}/temporalStatus=${status}/temporalReason=${reason}`
+      );
+    }
   });
 
   it("lets duplicate SourceClaimEdge influence change source-search selection", async () => {
