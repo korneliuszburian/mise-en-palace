@@ -11,6 +11,7 @@ import {
   projectDecisionPacketTask,
   readMetadataObjectList,
   readMetadataString,
+  readMetadataStringList,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata,
@@ -261,12 +262,35 @@ export const activationTraceResource = (
         decisions: aggregate.activationTrace.decisions.map(activationDecisionResource)
       };
 
+const evalCandidateEvidenceFields = (
+  sourceEvidence: readonly string[] | undefined,
+  metadata: Record<string, unknown>
+): Pick<
+  DecisionPacketReadModelCandidate,
+  "sourceEvidence" | "observedOutcome" | "usefulnessOutcome" | "artifactHash"
+> => {
+  if (sourceEvidence === undefined) return {};
+  const observedOutcome = readMetadataString(metadata, "outcome");
+  const usefulnessOutcome = readMetadataString(metadata, "usefulnessOutcome");
+  const artifactHash = readMetadataString(metadata, "artifactHash") ??
+    readMetadataStringList(metadata, "evidenceRefs")
+      .find((reference) => reference.startsWith("artifact:sha256:"))?.slice("artifact:sha256:".length);
+
+  return {
+    sourceEvidence: [...sourceEvidence],
+    ...(observedOutcome === undefined ? {} : { observedOutcome }),
+    ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
+    ...(artifactHash === undefined ? {} : { artifactHash })
+  };
+};
+
 const candidateResource = (input: {
   kind: FeedbackCandidateProposalKind;
   id: string;
   status: string | undefined;
   summary: string;
   metadata: Record<string, unknown>;
+  sourceEvidence?: readonly string[];
 }): DecisionPacketReadModelCandidate => {
   const reviewability = candidateReviewability(input.metadata);
   const reviewabilityReasons = candidateReviewabilityReasons(input.metadata);
@@ -277,6 +301,7 @@ const candidateResource = (input: {
     status: input.status ?? "unknown",
     summary: input.summary,
     reviewability,
+    ...evalCandidateEvidenceFields(input.sourceEvidence, input.metadata),
     reviewabilityReasons:
       reviewabilityReasons.length > 0
         ? reviewabilityReasons
@@ -350,7 +375,8 @@ export const decisionPacketReadModelCandidates = (
     id: candidate.id,
     status: candidate.status,
     summary: candidate.title,
-    metadata: candidate.metadata
+    metadata: candidate.metadata,
+    sourceEvidence: candidate.sourceEvidence
   })),
   ...metadataCandidateResources(
     feedback.metadata,
