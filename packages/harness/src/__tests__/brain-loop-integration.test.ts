@@ -305,7 +305,7 @@ const sourceRepository = {
   async listClaimsForProject(): Promise<SourceClaim[]> {
     return [];
   },
-  async listSourceClaimEdgesForClaim(): Promise<[]> {
+  async listSourceClaimEdgesForProject(): Promise<[]> {
     return [];
   }
 };

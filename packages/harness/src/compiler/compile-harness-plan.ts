@@ -78,10 +78,10 @@ export interface HarnessCompilerRepositories {
   >;
   memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject"> &
     Partial<Pick<MemoryRepository, "getMemoryRecordById">>;
-  sourceRepository: Pick<
+  sourceRepository: Required<Pick<
     SourceRepository,
-    "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  > & Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
+    "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
+  >> & Partial<Pick<SourceRepository, "getSourceClaimForProject">>;
   retrievalRepository: Pick<
     RetrievalRepository,
     | "startRetrievalRun"

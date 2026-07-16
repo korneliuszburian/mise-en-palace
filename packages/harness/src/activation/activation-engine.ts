@@ -87,10 +87,10 @@ export interface ActivationCandidateRepositories {
     MemoryRepository,
     "getMemoryRecordById" | "listAntiMemoryCandidates" | "listHistoricalMemoryWarnings"
   >>;
-  sourceRepository: Pick<
+  sourceRepository: Required<Pick<
     SourceRepository,
-    "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-  > & Partial<Pick<
+    "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
+  >> & Partial<Pick<
     SourceRepository,
     | "getSourceClaimForProject"
     | "getSourceDecisionForProject"
@@ -553,11 +553,14 @@ const searchLexicalWithMarkerFallback = async (
 };
 
 const sourceClaimEdgesForClaims = async (
-  sourceRepository: Pick<SourceRepository, "listSourceClaimEdgesForClaim">,
+  sourceRepository: Required<Pick<SourceRepository, "listSourceClaimEdgesForProject">>,
+  projectId: NonNullable<TaskContract["projectId"]>,
   sourceClaims: readonly { id: string }[]
 ) => {
   const edges = await Promise.all(
-    sourceClaims.map((claim) => sourceRepository.listSourceClaimEdgesForClaim(claim.id))
+    sourceClaims.map((claim) =>
+      sourceRepository.listSourceClaimEdgesForProject(projectId, claim.id)
+    )
   );
   const uniqueEdgesById = new Map(edges.flat().map((edge) => [edge.id, edge]));
 
@@ -779,6 +782,7 @@ export const retrieveActivationCandidates = async (
   );
   const sourceClaimEdges = await sourceClaimEdgesForClaims(
     input.repositories.sourceRepository,
+    input.taskContract.projectId,
     seedSourceClaims
   );
   const seedSourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(

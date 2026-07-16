@@ -78,6 +78,39 @@ const returnChannelCheckpointCommand =
 const returnLoopApplicationPath =
   "src/application.ts";
 
+const activationSourceRepositoryFor = (
+  sourceRepository: SourceRepository
+): HarnessCompilerDependencies["sourceRepository"] => {
+  const listSourceClaimEdgesForProject = sourceRepository.listSourceClaimEdgesForProject;
+
+  if (listSourceClaimEdgesForProject === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires project-scoped SourceClaimEdge reads"
+    );
+  }
+
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+
+  return {
+    listClaimsForProject(projectId, limit, options) {
+      return sourceRepository.listClaimsForProject(projectId, limit, options);
+    },
+    listSourceClaimEdgesForProject(projectId, sourceClaimId) {
+      return listSourceClaimEdgesForProject.call(sourceRepository, projectId, sourceClaimId);
+    },
+    listSourceDecisionEdgesForClaim(sourceClaimId) {
+      return sourceRepository.listSourceDecisionEdgesForClaim(sourceClaimId);
+    },
+    ...(getSourceClaimForProject === undefined
+      ? {}
+      : {
+          getSourceClaimForProject(projectId: string, sourceClaimId: string) {
+            return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+          }
+        })
+  };
+};
+
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
@@ -1417,7 +1450,7 @@ const runStandaloneAntiMemoryProof = async (
   }, {
     harnessRunRepository,
     memoryRepository,
-    sourceRepository,
+    sourceRepository: activationSourceRepositoryFor(sourceRepository),
     retrievalRepository,
     now: () => "2026-07-15T12:00:00.000Z",
     createId: createIdFactory(input.marker, "standalone-anti-memory")
@@ -1745,7 +1778,7 @@ const runSourceConsensusProof = async (
   }, {
     harnessRunRepository,
     memoryRepository,
-    sourceRepository,
+    sourceRepository: activationSourceRepositoryFor(sourceRepository),
     retrievalRepository,
     now: () => "2026-07-07T12:00:00.000Z",
     createId: createIdFactory(input.marker, "source-consensus-no-formal-rejection")
@@ -1823,7 +1856,7 @@ const runSourceConsensusProof = async (
   }, {
     harnessRunRepository,
     memoryRepository,
-    sourceRepository,
+    sourceRepository: activationSourceRepositoryFor(sourceRepository),
     retrievalRepository,
     now: () => "2026-07-07T12:00:00.000Z",
     createId: createIdFactory(input.marker, "source-consensus")
@@ -2609,7 +2642,7 @@ const runSelectorFeedbackProof = async (
   }, {
     harnessRunRepository,
     memoryRepository,
-    sourceRepository,
+    sourceRepository: activationSourceRepositoryFor(sourceRepository),
     retrievalRepository,
     now: () => "2026-07-07T12:00:00.000Z",
     createId: createIdFactory(input.marker, "selector")

@@ -92,7 +92,7 @@ const retrieve = (
       async listClaimsForProject() {
         return [];
       },
-      async listSourceClaimEdgesForClaim() {
+      async listSourceClaimEdgesForProject() {
         return [];
       }
     },

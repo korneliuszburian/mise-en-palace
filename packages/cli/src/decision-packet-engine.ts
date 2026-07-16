@@ -441,7 +441,10 @@ const makeRepositories = (
       async listClaimsForProject(): Promise<SourceClaim[]> {
         return sourceClaims;
       },
-      async listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]> {
+      async listSourceClaimEdgesForProject(
+        _projectId: string,
+        sourceClaimId: SourceClaim["id"]
+      ): Promise<SourceClaimEdge[]> {
         return sourceEdges.filter((edge) =>
           edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
         );

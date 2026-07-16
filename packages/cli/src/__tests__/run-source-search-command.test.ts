@@ -252,7 +252,7 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
           async listClaimsForProject(_projectId, limit) {
             return fixtures.claims.slice(0, limit);
           },
-          async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+          async listSourceClaimEdgesForProject(_projectId, sourceClaimIdForReadback) {
             return fixtures.edges.filter((edge) =>
               edge.fromSourceClaimId === sourceClaimIdForReadback ||
               edge.toSourceClaimId === sourceClaimIdForReadback
@@ -304,6 +304,12 @@ const runtime = (input?: SourceSearchRuntimeInput): CreateSourceSearchDatabaseRu
           throw new Error("createSourceClaimEdge should not be called");
         },
         async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+          return fixtures.edges.filter((edge) =>
+            edge.fromSourceClaimId === sourceClaimIdForReadback ||
+            edge.toSourceClaimId === sourceClaimIdForReadback
+          );
+        },
+        async listSourceClaimEdgesForProject(_projectId, sourceClaimIdForReadback) {
           return fixtures.edges.filter((edge) =>
             edge.fromSourceClaimId === sourceClaimIdForReadback ||
             edge.toSourceClaimId === sourceClaimIdForReadback

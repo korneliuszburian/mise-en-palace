@@ -240,6 +240,9 @@ export const runPersistedPlanWithCapturedMetadata = async (
           async createSourceClaimEdge(_input: CreateSourceClaimEdgeInput): Promise<never> {
             throw new Error("createSourceClaimEdge should not be called");
           },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
           async createSourceDecisionEdge(_input: CreateSourceDecisionEdgeInput): Promise<never> {
             throw new Error("createSourceDecisionEdge should not be called");
           },

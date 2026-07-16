@@ -276,10 +276,10 @@ class FakeMemoryRepository implements MemoryRepository {
   }
 }
 
-class FakeSourceRepository implements Pick<
+class FakeSourceRepository implements Required<Pick<
   SourceRepository,
-  "listClaimsForProject" | "listSourceClaimEdgesForClaim" | "listSourceDecisionEdgesForClaim"
-> {
+  "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
+>> {
   private readonly decisionEdges: readonly SourceDecisionEdge[];
 
   constructor(
@@ -298,7 +298,10 @@ class FakeSourceRepository implements Pick<
     return [...this.claims];
   }
 
-  async listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]> {
+  async listSourceClaimEdgesForProject(
+    _projectId: string,
+    sourceClaimId: SourceClaim["id"]
+  ): Promise<SourceClaimEdge[]> {
     return this.edges.filter((edge) =>
       edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
     );

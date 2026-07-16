@@ -125,7 +125,7 @@ describe("memory retrieval boundary", () => {
           async listClaimsForProject() {
             return [];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           },
           async listSourceDecisionEdgesForClaim() {
@@ -189,7 +189,7 @@ describe("memory retrieval boundary", () => {
           async listClaimsForProject() {
             return [];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           },
           async listSourceDecisionEdgesForClaim() {

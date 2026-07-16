@@ -529,7 +529,7 @@ const createRuntime = (
         async listClaimsForProject(_projectId, limit) {
           return claims.slice(0, limit);
         },
-        async listSourceClaimEdgesForClaim(sourceClaimId) {
+        async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
           return relationEdges.filter((edge) =>
             edge.fromSourceClaimId === sourceClaimId ||
             edge.toSourceClaimId === sourceClaimId
@@ -579,6 +579,12 @@ const createRuntime = (
         throw new Error("createSourceClaimEdge should not be called");
       },
       async listSourceClaimEdgesForClaim(sourceClaimId) {
+        return relationEdges.filter((edge) =>
+          edge.fromSourceClaimId === sourceClaimId ||
+          edge.toSourceClaimId === sourceClaimId
+        );
+      },
+      async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
         return relationEdges.filter((edge) =>
           edge.fromSourceClaimId === sourceClaimId ||
           edge.toSourceClaimId === sourceClaimId

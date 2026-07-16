@@ -138,7 +138,7 @@ const retrieveDecisionLinkedSourceCandidates = async (
         async listClaimsForProject() {
           return [...claims];
         },
-        async listSourceClaimEdgesForClaim(sourceClaimId) {
+        async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
           return edges.filter((edge) =>
             edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
           );
@@ -1016,7 +1016,7 @@ describe("activation engine", () => {
           async listClaimsForProject() {
             return [seedSourceClaim, connectedSourceClaim];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [edge];
           },
           async listSourceDecisionEdgesForClaim() {
@@ -1055,6 +1055,69 @@ describe("activation engine", () => {
     expect(result.diagnostics).toMatchObject({
       sourceClaimCount: 2,
       mergedCandidateCount: 2
+    });
+  });
+
+  it("reads claim edges through the task project without a global fallback", async () => {
+    const seedClaim = sourceClaim({ id: "claim-project-scoped-edge-seed" });
+    const foreignEdge: SourceClaimEdge = {
+      id: "edge-from-foreign-project",
+      fromSourceClaimId: seedClaim.id,
+      toSourceClaimId: "claim-from-foreign-project",
+      kind: "narrows",
+      metadata: {},
+      createdAt: now
+    };
+    const scopedReads: Array<{ projectId: string; sourceClaimId: string }> = [];
+    let globalReadCount = 0;
+    const sourceRepository = {
+      async listClaimsForProject() {
+        return [seedClaim];
+      },
+      async listSourceClaimEdgesForClaim() {
+        globalReadCount += 1;
+        return [foreignEdge];
+      },
+      async listSourceClaimEdgesForProject(projectId: string, sourceClaimId: string) {
+        scopedReads.push({ projectId, sourceClaimId });
+        return [];
+      },
+      async listSourceDecisionEdgesForClaim() {
+        return [];
+      }
+    };
+
+    const result = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: { memory: 0, source: 10, search: 0, antiMemory: 0 },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository,
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(globalReadCount).toBe(0);
+    expect(scopedReads).toEqual([{
+      projectId: task.projectId,
+      sourceClaimId: seedClaim.id
+    }]);
+    expect(result.candidates.map((candidate) => candidate.subjectId)).toEqual([seedClaim.id]);
+    expect(result.candidates[0]?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
+    expect(result.diagnostics).toMatchObject({
+      sourceClaimCount: 1,
+      mergedCandidateCount: 1
     });
   });
 
@@ -1163,7 +1226,7 @@ describe("activation engine", () => {
           async listClaimsForProject() {
             return [];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           }
         },
@@ -1223,7 +1286,7 @@ describe("activation engine", () => {
           async listClaimsForProject() {
             return [];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           }
         },
@@ -1409,7 +1472,7 @@ describe("activation engine", () => {
                 ? staleSourceClaim
                 : undefined;
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -1583,7 +1646,7 @@ describe("activation engine", () => {
                   ? currentDecision
                   : undefined;
             },
-            async listSourceClaimEdgesForClaim() {
+            async listSourceClaimEdgesForProject() {
               return [];
             },
             async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -1887,7 +1950,7 @@ describe("activation engine", () => {
           async listClaimsForProject() {
             return [linkedClaim, unlinkedClaim];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -1969,7 +2032,7 @@ describe("activation engine", () => {
           async listClaimsForProject() {
             return [currentClaim, staleClaim];
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return [];
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -2303,7 +2366,7 @@ describe("activation engine", () => {
               ? unrelatedSupersededClaim
               : undefined;
           },
-          async listSourceClaimEdgesForClaim(sourceClaimId) {
+          async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
             edgeReadClaimIds.push(sourceClaimId);
 
             if (sourceClaimId === currentClaim.id) {
@@ -2415,7 +2478,7 @@ describe("activation engine", () => {
               ? unrelatedCurrentEndpoint
               : undefined;
           },
-          async listSourceClaimEdgesForClaim(sourceClaimId) {
+          async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
             return sourceClaimId === historicalSeed.id ? [historicalSupersedesEdge] : [];
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -2498,7 +2561,7 @@ describe("activation engine", () => {
 
             return projectId === "foreign-project" ? foreignEndpoint : undefined;
           },
-          async listSourceClaimEdgesForClaim() {
+          async listSourceClaimEdgesForProject() {
             return edges;
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {
@@ -2568,7 +2631,7 @@ describe("activation engine", () => {
 
             return endpointClaimsById.get(sourceClaimId);
           },
-          async listSourceClaimEdgesForClaim(sourceClaimId) {
+          async listSourceClaimEdgesForProject(_projectId, sourceClaimId) {
             return edges.filter((edge) => edge.fromSourceClaimId === sourceClaimId);
           },
           async listSourceDecisionEdgesForClaim(sourceClaimId) {

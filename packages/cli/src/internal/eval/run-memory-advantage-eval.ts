@@ -1142,7 +1142,7 @@ const createMemoryAdvantageRuntime = (
       },
       sourceRepository: {
         listClaimsForProject: async () => claims,
-        listSourceClaimEdgesForClaim: async () => [],
+        listSourceClaimEdgesForProject: async () => [],
         listSourceDecisionEdgesForClaim: async (sourceClaimId) =>
           sourceDecisionEdgesForEvalClaim(claims, sourceClaimId)
       },
@@ -1168,6 +1168,7 @@ const createMemoryAdvantageRuntime = (
       listClaimsForProject: async () => claims,
       createSourceClaimEdge: async () => throwingRepositoryMethod("createSourceClaimEdge"),
       listSourceClaimEdgesForClaim: async () => [],
+      listSourceClaimEdgesForProject: async () => [],
       createSourceDecisionEdge: async () => throwingRepositoryMethod("createSourceDecisionEdge"),
       getSourceDecisionEdgeById: async () => undefined,
       createSourceRejection: async () => throwingRepositoryMethod("createSourceRejection"),
