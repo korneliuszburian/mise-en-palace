@@ -2247,6 +2247,277 @@ describe("activation engine", () => {
     ]));
   });
 
+  it("recalls a lexically unrelated source claim superseded by a current seed", async () => {
+    const currentClaim = sourceClaim({
+      id: "claim-current-storage-boundary",
+      claim: "Current KRN storage guidance keeps runtime memory in PostgreSQL.",
+      supportType: "implementation-boundary",
+      falsifier: "Current storage guidance is absent from activation."
+    });
+    const unrelatedSupersededClaim = sourceClaim({
+      id: "claim-old-cerulean-widget",
+      claim: "Cerulean widgets should rotate clockwise before sunrise.",
+      mechanism: "A historical widget convention controlled an unrelated presentation path.",
+      krnImplication: "This historical path must not guide current KRN storage work.",
+      supportType: "implementation-boundary",
+      falsifier: "The explicitly superseded widget path disappears from negative context."
+    });
+    const supersedesEdge: SourceClaimEdge = {
+      id: "edge-storage-supersedes-widget",
+      fromSourceClaimId: currentClaim.id,
+      toSourceClaimId: unrelatedSupersededClaim.id,
+      kind: "supersedes",
+      metadata: {
+        consumer: "activation-engine-test",
+        doesNotProve: "This edge does not prove source truth outside the fixture."
+      },
+      createdAt: now
+    };
+    const edgeReadClaimIds: string[] = [];
+    const endpointReadClaimIds: string[] = [];
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 0,
+        source: 10,
+        search: 0,
+        antiMemory: 0
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [currentClaim];
+          },
+          async getSourceClaimForProject(projectId, sourceClaimId) {
+            endpointReadClaimIds.push(sourceClaimId);
+
+            return projectId === "project-1" && sourceClaimId === unrelatedSupersededClaim.id
+              ? unrelatedSupersededClaim
+              : undefined;
+          },
+          async listSourceClaimEdgesForClaim(sourceClaimId) {
+            edgeReadClaimIds.push(sourceClaimId);
+
+            if (sourceClaimId === currentClaim.id) {
+              return [
+                supersedesEdge,
+                {
+                  ...supersedesEdge,
+                  id: "edge-storage-duplicates-widget"
+                }
+              ];
+            }
+
+            return sourceClaimId === unrelatedSupersededClaim.id
+              ? [{
+                  ...supersedesEdge,
+                  id: "edge-widget-supersedes-storage",
+                  fromSourceClaimId: unrelatedSupersededClaim.id,
+                  toSourceClaimId: currentClaim.id
+                }]
+              : [];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return [sourceDecisionEdge({
+              id: `decision-edge-${sourceClaimId}`,
+              sourceClaimId
+            })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+    const filtered = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumSourceAuthority: "medium",
+      now
+    });
+    const context = assembleContext({
+      id: "context-unrelated-superseded-endpoint",
+      harnessPlanId: "plan-unrelated-superseded-endpoint",
+      candidates: filtered.candidates,
+      createdAt: now
+    });
+
+    expect(edgeReadClaimIds).toEqual([currentClaim.id]);
+    expect(endpointReadClaimIds).toEqual([unrelatedSupersededClaim.id]);
+    expect(context.inclusions.map((inclusion) => inclusion.subjectId)).toContain(
+      currentClaim.id
+    );
+    expect(context.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: unrelatedSupersededClaim.id,
+        reason: "superseded"
+      })
+    ]));
+  });
+
+  it("expands only current governed edge kinds through the project-scoped getter", async () => {
+    const currentClaim = sourceClaim({
+      id: "claim-project-seed",
+      supportType: "implementation-boundary"
+    });
+    const foreignEndpoint = sourceClaim({
+      id: "claim-foreign-endpoint",
+      supportType: "implementation-boundary"
+    });
+    const edges: SourceClaimEdge[] = [
+      {
+        id: "edge-supports-ignored",
+        fromSourceClaimId: currentClaim.id,
+        toSourceClaimId: "claim-supports-endpoint",
+        kind: "supports",
+        metadata: {},
+        createdAt: now
+      },
+      {
+        id: "edge-stale-invalidates-ignored",
+        fromSourceClaimId: currentClaim.id,
+        toSourceClaimId: "claim-stale-endpoint",
+        kind: "invalidates",
+        metadata: {
+          validUntil: "2026-06-20T12:00:00.000Z"
+        },
+        createdAt: now
+      },
+      {
+        id: "edge-current-invalidates-foreign",
+        fromSourceClaimId: currentClaim.id,
+        toSourceClaimId: foreignEndpoint.id,
+        kind: "invalidates",
+        metadata: {},
+        createdAt: now
+      }
+    ];
+    const endpointReads: Array<{ projectId: string; sourceClaimId: string }> = [];
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: { memory: 0, source: 10, search: 0, antiMemory: 0 },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [currentClaim];
+          },
+          async getSourceClaimForProject(projectId, sourceClaimId) {
+            endpointReads.push({ projectId, sourceClaimId });
+
+            return projectId === "foreign-project" ? foreignEndpoint : undefined;
+          },
+          async listSourceClaimEdgesForClaim() {
+            return edges;
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return [sourceDecisionEdge({ sourceClaimId })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(endpointReads).toEqual([{
+      projectId: "project-1",
+      sourceClaimId: foreignEndpoint.id
+    }]);
+    expect(retrieved.candidates.map((candidate) => candidate.subjectId)).not.toContain(
+      foreignEndpoint.id
+    );
+  });
+
+  it("caps governed endpoint expansion per seed and globally", async () => {
+    const seedClaims = Array.from({ length: 6 }, (_, seedIndex) => sourceClaim({
+      id: `claim-bounded-seed-${seedIndex + 1}`,
+      supportType: "implementation-boundary"
+    }));
+    const endpointClaims = seedClaims.flatMap((seedClaim, seedIndex) =>
+      Array.from({ length: 6 }, (_, endpointIndex) => sourceClaim({
+        id: `claim-bounded-endpoint-${seedIndex + 1}-${endpointIndex + 1}`,
+        supportType: "implementation-boundary"
+      }))
+    );
+    const endpointClaimsById = new Map(endpointClaims.map((claim) => [claim.id, claim]));
+    const edges = seedClaims.flatMap((seedClaim, seedIndex) =>
+      Array.from({ length: 6 }, (_, endpointIndex): SourceClaimEdge => ({
+        id: `edge-bounded-${seedIndex + 1}-${endpointIndex + 1}`,
+        fromSourceClaimId: seedClaim.id,
+        toSourceClaimId: `claim-bounded-endpoint-${seedIndex + 1}-${endpointIndex + 1}`,
+        kind: endpointIndex % 2 === 0 ? "supersedes" : "invalidates",
+        metadata: {},
+        createdAt: now
+      }))
+    );
+    const endpointReadClaimIds: string[] = [];
+
+    await retrieveActivationCandidates({
+      taskContract: task,
+      limits: { memory: 0, source: 10, search: 0, antiMemory: 0 },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return seedClaims;
+          },
+          async getSourceClaimForProject(_projectId, sourceClaimId) {
+            endpointReadClaimIds.push(sourceClaimId);
+
+            return endpointClaimsById.get(sourceClaimId);
+          },
+          async listSourceClaimEdgesForClaim(sourceClaimId) {
+            return edges.filter((edge) => edge.fromSourceClaimId === sourceClaimId);
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return [sourceDecisionEdge({ sourceClaimId })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(endpointReadClaimIds).toHaveLength(20);
+    expect(endpointReadClaimIds).toEqual(seedClaims.slice(0, 5).flatMap((_seedClaim, seedIndex) =>
+      Array.from(
+        { length: 4 },
+        (_, endpointIndex) => `claim-bounded-endpoint-${seedIndex + 1}-${endpointIndex + 1}`
+      )
+    ));
+  });
+
   it("does not rank down authority from accepted claims without decision support", async () => {
     const currentClaim = sourceClaim({
       id: "claim-current-decision-linked",

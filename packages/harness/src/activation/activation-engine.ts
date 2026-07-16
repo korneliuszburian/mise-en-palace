@@ -4,6 +4,7 @@ import type {
   ActivationAbstentionReason,
   ContextAssembly,
   SourceClaim,
+  SourceClaimEdge,
   SourceAuthorityLabel,
   SourceConsensusTimelineEntry,
   SourceDecisionEdge,
@@ -13,6 +14,7 @@ import type {
 import {
   assessSourceClaimAuthority,
   assessSourceClaimReviewSignals,
+  assessSourceMetadataTemporalValidity,
   activationExclusionReasons,
   buildSourceConsensusTimelineReadback
 } from "@krn/core";
@@ -562,6 +564,68 @@ const sourceClaimEdgesForClaims = async (
   return [...uniqueEdgesById.values()];
 };
 
+const governedEndpointExpansionKinds = new Set<SourceClaimEdge["kind"]>([
+  "invalidates",
+  "supersedes"
+]);
+const governedEndpointLimitPerSeed = 4;
+const governedEndpointGlobalLimit = 20;
+
+const governedEndpointIds = (
+  sourceClaims: readonly SourceClaim[],
+  edges: readonly SourceClaimEdge[],
+  now: string
+): SourceClaim["id"][] => {
+  const initialSourceClaimIds = new Set(sourceClaims.map((claim) => claim.id));
+  const endpointIds = new Set<SourceClaim["id"]>();
+
+  for (const sourceClaim of sourceClaims) {
+    const seedEndpointIds = [...new Set(
+      edges
+        .filter((edge) =>
+          edge.fromSourceClaimId === sourceClaim.id &&
+          governedEndpointExpansionKinds.has(edge.kind) &&
+          assessSourceMetadataTemporalValidity(edge.metadata, now).status === "current"
+        )
+        .sort((left, right) => left.id.localeCompare(right.id))
+        .map((edge) => edge.toSourceClaimId)
+        .filter((endpointId) => !initialSourceClaimIds.has(endpointId))
+    )].slice(0, governedEndpointLimitPerSeed);
+
+    for (const endpointId of seedEndpointIds) {
+      endpointIds.add(endpointId);
+
+      if (endpointIds.size >= governedEndpointGlobalLimit) {
+        return [...endpointIds];
+      }
+    }
+  }
+
+  return [...endpointIds];
+};
+
+const expandGovernedSourceClaimEndpoints = async (input: {
+  projectId: NonNullable<TaskContract["projectId"]>;
+  sourceClaims: readonly SourceClaim[];
+  edges: readonly SourceClaimEdge[];
+  now: string;
+  sourceRepository: ActivationCandidateRepositories["sourceRepository"];
+}): Promise<SourceClaim[]> => {
+  const getSourceClaimForProject = input.sourceRepository.getSourceClaimForProject;
+
+  if (getSourceClaimForProject === undefined) {
+    return [];
+  }
+
+  const endpointClaims = await Promise.all(
+    governedEndpointIds(input.sourceClaims, input.edges, input.now).map((sourceClaimId) =>
+      getSourceClaimForProject(input.projectId, sourceClaimId)
+    )
+  );
+
+  return endpointClaims.filter((claim): claim is SourceClaim => claim !== undefined);
+};
+
 const sourceDecisionEdgesForClaims = async (
   sourceRepository: Pick<SourceRepository, "listSourceDecisionEdgesForClaim">,
   sourceClaims: readonly { id: string }[]
@@ -694,7 +758,7 @@ export const retrieveActivationCandidates = async (
       )
       .map((resolution) => resolution.subject)
   );
-  const sourceClaims = appendUniqueById(
+  const seedSourceClaims = appendUniqueById(
     initialSourceClaims,
     searchDocumentResolutions
       .filter((resolution): resolution is Extract<SearchDocumentAuthorityResolution, { kind: "source" }> =>
@@ -704,7 +768,17 @@ export const retrieveActivationCandidates = async (
   );
   const sourceClaimEdges = await sourceClaimEdgesForClaims(
     input.repositories.sourceRepository,
-    sourceClaims
+    seedSourceClaims
+  );
+  const sourceClaims = appendUniqueById(
+    seedSourceClaims,
+    await expandGovernedSourceClaimEndpoints({
+      projectId: input.taskContract.projectId,
+      sourceClaims: seedSourceClaims,
+      edges: sourceClaimEdges,
+      now: activationNow,
+      sourceRepository: input.repositories.sourceRepository
+    })
   );
   const sourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(
     input.repositories.sourceRepository,
