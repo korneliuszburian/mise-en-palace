@@ -1754,7 +1754,8 @@ const insertEvidenceFeedbackDelta = async (
   tx: KrnDatabase,
   input: CreateEvidenceFeedbackOnceInput,
   reviewAssessmentId: string,
-  captureIdentity: string
+  captureIdentity: string,
+  firstPersistedAt: string
 ) => requireReturnedRow(
   await tx
     .insert(feedbackDeltas)
@@ -1765,8 +1766,17 @@ const insertEvidenceFeedbackDelta = async (
         ? { decisionPacketAuthorityAdmission: decisionPacketAuthorityAdmissionCurrent }
         : {}),
       status: input.feedback.status ?? "candidate",
-      memoryCandidates: input.feedback.memoryCandidates,
-      sourceDecisions: input.feedback.sourceDecisions,
+      memoryCandidates: input.feedback.memoryCandidates.map((candidate) => ({
+        ...candidate,
+        validFrom: firstPersistedAt,
+        createdAt: firstPersistedAt,
+        updatedAt: firstPersistedAt
+      })),
+      sourceDecisions: input.feedback.sourceDecisions.map((candidate) => ({
+        ...candidate,
+        createdAt: firstPersistedAt,
+        updatedAt: firstPersistedAt
+      })),
       evalCandidates: input.feedback.evalCandidates,
       metadata: {
         ...(input.feedback.metadata ?? {}),
@@ -1844,7 +1854,8 @@ const insertEvidenceFeedbackChain = async (
     tx,
     input,
     reviewAssessmentRow.id,
-    captureIdentity
+    captureIdentity,
+    evidenceBundleRow.createdAt.toISOString()
   );
 
   await tx.insert(outboxEvents).values({

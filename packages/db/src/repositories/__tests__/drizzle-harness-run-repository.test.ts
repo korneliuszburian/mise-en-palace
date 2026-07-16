@@ -19,7 +19,7 @@ import {
   knowledgeUsefulnessOutcomesFromMetadata,
   sourceUsefulnessOutcomesFromMetadata
 } from "@krn/core";
-import type { EvalCandidateProposal } from "@krn/core";
+import type { EvalCandidateProposal, MemoryCandidate, SourceDecision } from "@krn/core";
 import type {
   CreateExecutionRunInput,
   CreateEvidenceBundleInput,
@@ -1808,13 +1808,54 @@ describe("DrizzleHarnessRunRepository", () => {
           [blockerBackendPid]
         );
 
-        const captureAInput = captureInput(captureAIdentity, [{
+        const backdatedCandidateTimestamp = "2020-01-01T00:00:00.000Z";
+        const backdatedMemoryCandidate: MemoryCandidate = {
+          id: crypto.randomUUID(),
+          projectId: scaffold.project.id,
+          executionRunId: executionRun.id,
+          proposedBy: "evidence capture timestamp falsifier",
+          kind: "procedure",
+          status: "proposed",
+          summary: "Persist candidate timestamps at capture time.",
+          body: "The first persisted capture owns candidate temporal identity.",
+          owner: "krn-cli",
+          confidence: 50,
+          applicationGuidance: "Review before promotion.",
+          sourceClaimIds: [],
+          sourceLineage: [],
+          isUserPreference: false,
+          validFrom: backdatedCandidateTimestamp,
+          metadata: { smokeId: marker, persistence: "feedback-delta-proposal-only" },
+          createdAt: backdatedCandidateTimestamp,
+          updatedAt: backdatedCandidateTimestamp
+        };
+        const backdatedSourceDecision: SourceDecision = {
+          id: crypto.randomUUID(),
+          projectId: scaffold.project.id,
+          status: "defer",
+          decision: "Review captured source evidence.",
+          rationale: "The first persisted capture owns candidate temporal identity.",
+          falsifier: "A persisted candidate retains the earlier caller timestamp.",
+          consumer: "evidence capture timestamp falsifier",
+          metadata: { smokeId: marker, promotion: "proposal-only" },
+          createdAt: backdatedCandidateTimestamp,
+          updatedAt: backdatedCandidateTimestamp
+        };
+        const captureABaseInput = captureInput(captureAIdentity, [{
             knowledgeId: selectedKnowledgeId,
             outcome: "hurt",
             reason: "Capture A made the selected knowledge reviewable.",
             evidenceRefs: [packetZero.packetEvidenceRef],
             doesNotProve: "This feedback does not prove causal knowledge quality."
           }]);
+        const captureAInput = {
+          ...captureABaseInput,
+          feedback: {
+            ...captureABaseInput.feedback,
+            memoryCandidates: [backdatedMemoryCandidate],
+            sourceDecisions: [backdatedSourceDecision]
+          }
+        } satisfies CreateEvidenceFeedbackOnceInput;
         const captureA = await scaffold.harnessRunRepository.createEvidenceFeedbackOnce(
           captureAInput
         );
@@ -1836,6 +1877,24 @@ describe("DrizzleHarnessRunRepository", () => {
           knowledgeId: selectedKnowledgeId,
           outcome: "hurt"
         })]);
+        expect(captureA.feedbackDelta.memoryCandidates).toEqual([
+          expect.objectContaining({
+            id: backdatedMemoryCandidate.id,
+            validFrom: captureA.evidenceBundle.createdAt,
+            createdAt: captureA.evidenceBundle.createdAt,
+            updatedAt: captureA.evidenceBundle.createdAt
+          })
+        ]);
+        expect(captureA.feedbackDelta.sourceDecisions).toEqual([
+          expect.objectContaining({
+            id: backdatedSourceDecision.id,
+            createdAt: captureA.evidenceBundle.createdAt,
+            updatedAt: captureA.evidenceBundle.createdAt
+          })
+        ]);
+        expect(Date.parse(captureA.evidenceBundle.createdAt)).toBeGreaterThan(
+          Date.parse(backdatedCandidateTimestamp)
+        );
         expect(packetOne.packetChecksum).not.toBe(packetZero.packetChecksum);
 
         await blockerClient.unsafe("commit");
@@ -1900,6 +1959,12 @@ describe("DrizzleHarnessRunRepository", () => {
           reviewAssessment: { id: captureA.reviewAssessment.id },
           feedbackDelta: { id: captureA.feedbackDelta.id }
         });
+        expect(captureARetry.feedbackDelta.memoryCandidates).toEqual(
+          captureA.feedbackDelta.memoryCandidates
+        );
+        expect(captureARetry.feedbackDelta.sourceDecisions).toEqual(
+          captureA.feedbackDelta.sourceDecisions
+        );
         expect(captureAStructuralAdmission).toEqual({
           captureChannel: "evidence_feedback_v1",
           feedbackAdmission: "current_v1"
