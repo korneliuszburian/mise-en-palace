@@ -1843,7 +1843,7 @@ const fetchDecisionPacketViaMcp = async (
   runId: string
 ): Promise<{ readonly packet?: unknown; readonly failure?: string }> => {
   const serverPath = fileURLToPath(new URL("../mcp/decision-packet-mcp-server.ts", import.meta.url));
-  const result = await runProcess("pnpm", ["exec", "tsx", serverPath], {
+  const result = await runProcess("pnpm", ["--filter", "@krn/cli", "exec", "tsx", serverPath], {
     cwd: checkerRoot,
     env: {
       PATH: process.env.PATH,
@@ -1871,11 +1871,21 @@ export const runTrackedTrialCommand = async (
   const manifest = await loadTrackedTrialManifest(trustedManifestPath);
   const checkerRoot = trustedRepositoryRoot();
   const sourceRoot = await resolveTrustedRelativeRepositoryPath(manifest.sourcePath, "trial source path");
+  if (attemptDirectory === undefined) {
+    const packetResult = await fetchDecisionPacketViaMcp(checkerRoot, manifest.runId);
+    return runTrackedPairedTrial({
+      manifest,
+      sourceRoot,
+      checkerRoot,
+      ...(packetResult.packet === undefined ? {} : { packet: packetResult.packet }),
+      ...(packetResult.failure === undefined ? {} : { packetFetchFailure: packetResult.failure })
+    });
+  }
   return runTrackedPairedTrial({
     manifest,
     sourceRoot,
     checkerRoot,
     fetchPacket: () => fetchDecisionPacketViaMcp(checkerRoot, manifest.runId),
-    ...(attemptDirectory === undefined ? {} : { attemptDirectory }),
+    attemptDirectory,
   });
 };
