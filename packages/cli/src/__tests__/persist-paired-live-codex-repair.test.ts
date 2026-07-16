@@ -97,7 +97,7 @@ const targetState = (clean: boolean) => ({
   statusOutput: clean ? "" : " M src/index.ts",
   trackedFiles: clean ? [] : ["src/index.ts"],
   untrackedFiles: [],
-  patchHash: clean ? undefined : "e".repeat(64),
+  ...(clean ? {} : { patchHash: "e".repeat(64) }),
   commands: {
     status: command({ command: "git", args: ["status"] }),
     tracked: command({ command: "git", args: ["diff", "--name-only"] }),
@@ -236,15 +236,16 @@ describe("paired live Codex repair persistence", () => {
   });
 
   it("persists a blocked attempt only as an unknown observation", () => {
-    const blocked = artifact({
+    const { score: _score, ...completedArtifact } = artifact();
+    const blocked: TrackedTrialArtifact = {
+      ...completedArtifact,
       status: "blocked",
-      score: undefined,
       execution: {
         conditions: {
           requested: artifact().execution.conditions.requested
         }
       }
-    });
+    };
     const prepared = prepare(blocked);
 
     expect(prepared.commandRows).toEqual([]);
