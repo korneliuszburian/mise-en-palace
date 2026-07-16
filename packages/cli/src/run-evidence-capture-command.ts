@@ -1384,25 +1384,27 @@ const explicitUsefulnessApplications = (input: {
 
   return [
     ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
-    if (
-      outcome.sourceClaimId === undefined ||
-      outcome.applicationId === undefined ||
-      outcome.appliedAt !== undefined
-    ) {
-      return [];
-    }
-    return [{
-      applicationId: outcome.applicationId,
-      subjectKind: "source_claim" as const,
-      subjectId: outcome.sourceClaimId,
-      projectId: input.projectId,
-      executionRunId: input.runId,
-      taskContractId: input.aggregate.taskContract.id,
-      packetChecksum: input.binding.packetChecksum,
-      packetGeneratedAt: input.binding.packetGeneratedAt,
-      sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
-      ...(targetState === undefined ? {} : { targetState })
-    }];
+      if (
+        (outcome.sourceClaimId === undefined && outcome.sourceDecisionId === undefined) ||
+        outcome.applicationId === undefined ||
+        outcome.appliedAt !== undefined
+      ) {
+        return [];
+      }
+      return [{
+        applicationId: outcome.applicationId,
+        subjectKind: outcome.sourceDecisionId === undefined
+          ? "source_claim" as const
+          : "source_decision" as const,
+        subjectId: outcome.sourceDecisionId ?? outcome.sourceClaimId,
+        projectId: input.projectId,
+        executionRunId: input.runId,
+        taskContractId: input.aggregate.taskContract.id,
+        packetChecksum: input.binding.packetChecksum,
+        packetGeneratedAt: input.binding.packetGeneratedAt,
+        sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
+        ...(targetState === undefined ? {} : { targetState })
+      }];
     }),
     ...(input.knowledgeOutcomes ?? []).flatMap((outcome) =>
     outcome.applicationId === undefined || outcome.appliedAt !== undefined

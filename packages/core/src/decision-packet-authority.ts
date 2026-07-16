@@ -668,12 +668,16 @@ export const authorizeDecisionPacketBinding = (
 const selectedSubjectIds = (
   packet: DecisionPacket
 ): ReadonlyMap<DecisionPacketUsefulnessSubjectKind, ReadonlySet<string>> => {
+  const staleSourceDecisionIds = new Set(packet.staleDecisionIds);
+
   return new Map([
     ["source_claim", new Set([
       ...packet.sourceClaimIds,
       ...packet.brief.includedSourceClaimIds
     ])],
-    ["source_decision", new Set<string>()],
+    ["source_decision", new Set(packet.sourceDecisionIds.filter(
+      (sourceDecisionId) => !staleSourceDecisionIds.has(sourceDecisionId)
+    ))],
     ["knowledge", new Set([
       ...packet.memoryRefs,
       ...packet.taskStandardDecisions.map((decision) => decision.memoryRecordId),

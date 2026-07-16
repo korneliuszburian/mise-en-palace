@@ -1402,7 +1402,8 @@ const verificationFollowsApplication = (input: {
 
 const returnChannelUsefulnessSubjectKinds = new Set<string>([
   "knowledge",
-  "source_claim"
+  "source_claim",
+  "source_decision"
 ]);
 
 const applicationForBoundOutcome = async (

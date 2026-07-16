@@ -26,7 +26,7 @@ describe("UsefulnessApplicationEvidence", () => {
     expect(parseUsefulnessApplicationEvidenceIdentity(identity)).toEqual(identity);
   });
 
-  it("accepts canonical memory subjects and rejects malformed or storage-only input", () => {
+  it("accepts canonical return-channel subjects and rejects malformed or storage-only input", () => {
     const { applicationId: _applicationId, appliedAt: _appliedAt, ...selectedOnly } = evidence;
 
     expect(parseUsefulnessApplicationEvidence(selectedOnly)).toBeUndefined();
@@ -54,7 +54,11 @@ describe("UsefulnessApplicationEvidence", () => {
     expect(parseUsefulnessApplicationEvidence({
       ...evidence,
       subjectKind: "source_decision"
-    })).toBeUndefined();
+    })).toEqual({ ...evidence, subjectKind: "source_decision" });
+    expect(parseUsefulnessApplicationEvidenceIdentity({
+      ...identity,
+      subjectKind: "source_decision"
+    })).toEqual({ ...identity, subjectKind: "source_decision" });
   });
 
   it("rejects every mismatched immutable identity field", () => {

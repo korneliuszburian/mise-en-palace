@@ -2628,7 +2628,7 @@ describe("runCli", () => {
     expectPacketAuthorizationRejection(authorization, "not selected by the current packet");
   });
 
-  it("does not treat an architecture decision target as a SourceDecision id", () => {
+  it("authorizes a selected SourceDecision id without treating its target as one", async () => {
     const aggregate = createEvidencePersistenceAggregate();
     const aggregateWithDecisionTarget: HarnessRunAggregate = {
       ...aggregate,
@@ -2653,6 +2653,7 @@ describe("runCli", () => {
           metadata: {
             sourceDecisionSupportBoost: {
               sourceDecisionEdgeIds: ["source-decision-edge-1"],
+              sourceDecisionIds: ["source-decision-canonical-1"],
               targets: [{
                 sourceDecisionEdgeId: "source-decision-edge-1",
                 targetType: "architecture_decision",
@@ -2661,6 +2662,33 @@ describe("runCli", () => {
               confidence: ["high"],
               supportTypes: ["decision"],
               doesNotProve: "Decision support does not turn its target into a SourceDecision id."
+            }
+          },
+          createdAt: now
+        }, {
+          id: "retrieval-candidate-stale-source-decision",
+          retrievalRunId: "retrieval-run-1",
+          kind: "source",
+          status: "excluded",
+          subjectType: "source_claim",
+          subjectId: "source-claim-stale-decision",
+          sourceAuthority: "project-decision",
+          lexicalScore: 9,
+          vectorScore: 0,
+          graphScore: 9,
+          temporalScore: 0,
+          contextRoiScore: 9,
+          totalScore: 27,
+          score: 27,
+          reason: "Stale source decision is not selected by the current packet.",
+          metadata: {
+            sourceDecisionSupportBoost: {
+              sourceDecisionEdgeIds: ["source-decision-edge-stale"],
+              sourceDecisionIds: ["source-decision-stale-1"],
+              targets: [],
+              confidence: ["high"],
+              supportTypes: ["decision"],
+              doesNotProve: "Historical support cannot authorize current usefulness."
             }
           },
           createdAt: now
@@ -2676,6 +2704,155 @@ describe("runCli", () => {
     expect(packet.sourceDecisionTargets).toEqual([expect.objectContaining({
       targetId: "architecture-target-1"
     })]);
+    expect(packet.sourceDecisionIds).toEqual(["source-decision-canonical-1"]);
+
+    const selectedAuthorization = authorizeDecisionPacketUsefulness({
+      aggregate: aggregateWithDecisionTarget,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      sha256Hex,
+      callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
+      subjects: [{
+        kind: "source_decision",
+        id: "source-decision-canonical-1",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    expect(selectedAuthorization.authorized).toBe(true);
+
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregateWithDecisionTarget,
+      capture
+    );
+    const selectedCapture = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        aggregateWithDecisionTarget.executionRun.id,
+        "--decision-packet-checksum",
+        binding.packetChecksum,
+        "--decision-packet-generated-at",
+        binding.packetGeneratedAt,
+        "--source-usefulness",
+        `decision:source-decision-canonical-1=selected|Canonical decision was selected by the current packet|${binding.packetEvidenceRef}|Selection does not prove decision truth`,
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: path.resolve(process.cwd(), "../.."),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          sourceRepository: unusedSourceRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(selectedCapture.exitCode).toBe(0);
+    expect(selectedCapture.stderr).toBe("");
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId: "source-decision-canonical-1",
+        outcome: "selected",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    const staleAuthorization = authorizeDecisionPacketUsefulness({
+      aggregate: aggregateWithDecisionTarget,
+      runId: aggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      sha256Hex,
+      callerPacketChecksum: binding.packetChecksum,
+      callerPacketGeneratedAt: binding.packetGeneratedAt,
+      subjects: [{
+        kind: "source_decision",
+        id: "source-decision-stale-1",
+        evidenceRefs: [binding.packetEvidenceRef]
+      }]
+    });
+
+    expect(packet.sourceDecisionIds).not.toContain("source-decision-stale-1");
+    expectPacketAuthorizationRejection(staleAuthorization, "not selected by the current packet");
+
+    const staleSelectedAggregate: HarnessRunAggregate = {
+      ...aggregateWithDecisionTarget,
+      feedbackDeltas: [{
+        id: "feedback-delta-stale-selected-decision",
+        reviewAssessmentId: "review-assessment-stale-selected-decision",
+        status: "candidate",
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: [],
+        metadata: {
+          decisionPacketAuthorityAdmission: "current_v1",
+          decisionPacketBindingState: "bound_current",
+          decisionPacketChecksum: "prior-packet-checksum",
+          decisionPacketEvidenceRef: "packet:prior-packet-checksum",
+          decisionPacketGeneratedAt: now,
+          decisionPacketSourceRunLifecycleRevision: 1,
+          sourceUsefulnessOutcomes: [{
+            sourceDecisionId: "source-decision-canonical-1",
+            outcome: "stale",
+            reason: "The previously selected canonical decision is now stale.",
+            evidenceRefs: ["feedback:stale-selected-source-decision"],
+            doesNotProve: "Stale feedback does not mutate SourceDecision truth."
+          }]
+        },
+        createdAt: now,
+        updatedAt: now
+      }]
+    };
+    const staleSelectedPacket = buildDecisionPacketFromReadModel(
+      buildDecisionPacketReadModel(staleSelectedAggregate)
+    );
+    const staleSelectedBinding = currentDecisionPacketBindingForAggregate(
+      staleSelectedAggregate,
+      now
+    );
+    const staleSelectedAuthorization = authorizeDecisionPacketUsefulness({
+      aggregate: staleSelectedAggregate,
+      runId: staleSelectedAggregate.executionRun.id,
+      runtimeProjectId: "project-1",
+      sha256Hex,
+      callerPacketChecksum: staleSelectedBinding.packetChecksum,
+      callerPacketGeneratedAt: staleSelectedBinding.packetGeneratedAt,
+      subjects: [{
+        kind: "source_decision",
+        id: "source-decision-canonical-1",
+        evidenceRefs: [staleSelectedBinding.packetEvidenceRef]
+      }]
+    });
+
+    expect(staleSelectedPacket.sourceDecisionIds).toContain("source-decision-canonical-1");
+    expect(staleSelectedPacket.staleDecisionIds).toContain("source-decision-canonical-1");
+    expectPacketAuthorizationRejection(
+      staleSelectedAuthorization,
+      "not selected by the current packet"
+    );
 
     const authorization = authorizeDecisionPacketUsefulness({
       aggregate: aggregateWithDecisionTarget,
@@ -2694,7 +2871,7 @@ describe("runCli", () => {
     expectPacketAuthorizationRejection(authorization, "not selected by the current packet");
   });
 
-  it("rejects usefulness when runtime and task projects differ", () => {
+  it("rejects SourceDecision usefulness when runtime and task projects differ", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const binding = currentDecisionPacketBindingForAggregate(aggregate, now);
 
@@ -2706,8 +2883,8 @@ describe("runCli", () => {
       callerPacketChecksum: binding.packetChecksum,
       callerPacketGeneratedAt: binding.packetGeneratedAt,
       subjects: [{
-        kind: "source_claim",
-        id: "source-claim-1",
+        kind: "source_decision",
+        id: "source-decision-cross-project",
         evidenceRefs: [binding.packetEvidenceRef]
       }]
     });

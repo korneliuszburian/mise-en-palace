@@ -813,8 +813,8 @@ describe("DecisionPacket MCP wrapper", () => {
         "run-agent-source-dissent",
         "run-agent-unsafe"
       ],
-      messageUtf8Bytes: { minimum: 10_462, maximum: 12_756 },
-      structuredContentUtf8Bytes: { minimum: 4_991, maximum: 6_097 },
+      messageUtf8Bytes: { minimum: 10_368, maximum: 12_662 },
+      structuredContentUtf8Bytes: { minimum: 4_944, maximum: 6_050 },
       collectionCount: { minimum: 53, maximum: 56 },
       collectionP95: { minimum: 1, maximum: 2 },
       maximumCollectionLength: 4
@@ -1089,7 +1089,7 @@ describe("DecisionPacket MCP wrapper", () => {
             },
             feedback: {
               sourceDecisionUsefulnessExample: expect.stringContaining(
-                "source-decision usefulness authorization is not enabled"
+                "decision:<id>=selected"
               )
             }
           },

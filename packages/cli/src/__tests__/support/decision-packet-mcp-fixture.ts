@@ -181,7 +181,7 @@ export const decisionPacketMcpFixture = bindDecisionPacketFixtureIdentity({
       sourceUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness claim:<id>=helped",
       sourceDecisionUsefulnessExample:
-        "Unavailable: canonical selected SourceDecision ids are exposed for provenance, but source-decision usefulness authorization is not enabled; use claim-scoped feedback.",
+        "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --source-usefulness decision:<id>=selected",
       knowledgeUsefulnessExample:
         "krn evidence capture --run-id run-agent-1 --decision-packet-checksum current --memory-usefulness knowledge=helped",
       doesNotProve: "Feedback does not promote truth without review gates."

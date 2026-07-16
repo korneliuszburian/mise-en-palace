@@ -1478,7 +1478,7 @@ describe("DecisionPacket builder", () => {
       `--decision-packet-generated-at ${first.packetIdentity.generatedAt}`
     );
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
-      "source-decision usefulness authorization is not enabled"
+      "decision:<id>=selected"
     );
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);

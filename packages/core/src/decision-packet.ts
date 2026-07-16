@@ -1322,7 +1322,7 @@ export const buildDecisionPacketReturnChannels = (input: {
       sourceUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --source-usefulness "claim:<id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       sourceDecisionUsefulnessExample:
-        "Unavailable: canonical selected SourceDecision ids are exposed for provenance, but source-decision usefulness authorization is not enabled; use claim-scoped feedback.",
+        `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --source-usefulness "decision:<id>=selected|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       knowledgeUsefulnessExample:
         `krn evidence capture --run-id ${input.runId} ${packetBindingOptions} --knowledge-usefulness "<knowledge-id>=helped|<reason>|${input.packetIdentity.evidenceRef},<evidence-ref>|<does-not-prove>" --persist`,
       doesNotProve:

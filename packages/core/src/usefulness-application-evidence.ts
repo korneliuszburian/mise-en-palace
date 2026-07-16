@@ -10,13 +10,13 @@ import type { IsoTimestamp } from "./time.js";
 
 export const usefulnessApplicationSubjectKinds = [
   "knowledge",
-  "source_claim"
+  "source_claim",
+  "source_decision"
 ] as const;
 
 export const persistedUsefulnessApplicationSubjectKinds = [
   ...usefulnessApplicationSubjectKinds,
-  "memory_record",
-  "source_decision"
+  "memory_record"
 ] as const;
 
 export type UsefulnessApplicationSubjectKind =

@@ -909,7 +909,7 @@ describe("decision packet CLI", () => {
             ),
           sourceUsefulnessExample: expect.stringContaining("packet:"),
           sourceDecisionUsefulnessExample: expect.stringContaining(
-            "source-decision usefulness authorization is not enabled"
+            "decision:<id>=selected"
           )
         }
       },
@@ -954,7 +954,10 @@ describe("decision packet CLI", () => {
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);
     expect(json.returnChannels.feedback.sourceUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
-      "source-decision usefulness authorization is not enabled"
+      "decision:<id>=selected"
+    );
+    expect(json.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
+      json.packetIdentity.evidenceRef
     );
     expect(json.returnChannels.feedback.knowledgeUsefulnessExample).toContain(json.packetIdentity.evidenceRef);
     expect(closed).toBe(true);
