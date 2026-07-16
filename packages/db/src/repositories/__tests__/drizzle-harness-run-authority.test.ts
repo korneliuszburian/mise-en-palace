@@ -430,7 +430,7 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
   );
 
   postgresIt(
-    "rejects an old packet after a concurrent governing capture changes packet authority",
+    "rejects an old packet after concurrent captured feedback becomes governing",
     async () => {
       const marker = `krn_capture_authority_race_${crypto.randomUUID().replaceAll("-", "")}`;
       const scaffold = await createSmokeHarnessScaffold({
@@ -691,13 +691,13 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         const captureA = await scaffold.harnessRunRepository.createEvidenceFeedbackOnce(
           captureAInput
         );
-        const packetOneAggregate = await scaffold.harnessRunRepository
+        const candidatePacketAggregate = await scaffold.harnessRunRepository
           .getHarnessRunByExecutionRunId(executionRun.id);
-        if (packetOneAggregate === undefined) {
+        if (candidatePacketAggregate === undefined) {
           throw new Error("capture authority race aggregate disappeared after capture A");
         }
-        const packetOne = currentDecisionPacketBindingForHarnessRun({
-          aggregate: packetOneAggregate,
+        const candidatePacket = currentDecisionPacketBindingForHarnessRun({
+          aggregate: candidatePacketAggregate,
           packetGeneratedAt,
           sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
         });
@@ -727,6 +727,23 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         expect(Date.parse(captureA.evidenceBundle.createdAt)).toBeGreaterThan(
           Date.parse(backdatedCandidateTimestamp)
         );
+        expect(candidatePacket.packetChecksum).toBe(packetZero.packetChecksum);
+
+        await scaffold.client`
+          update feedback_deltas
+          set status = 'accepted', updated_at = now()
+          where id = ${captureA.feedbackDelta.id}
+        `;
+        const packetOneAggregate = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        if (packetOneAggregate === undefined) {
+          throw new Error("capture authority race aggregate disappeared after review");
+        }
+        const packetOne = currentDecisionPacketBindingForHarnessRun({
+          aggregate: packetOneAggregate,
+          packetGeneratedAt,
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
         expect(packetOne.packetChecksum).not.toBe(packetZero.packetChecksum);
 
         await blockerClient.unsafe("commit");
