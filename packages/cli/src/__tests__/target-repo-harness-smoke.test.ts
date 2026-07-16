@@ -34,6 +34,9 @@ describe("targetRepoHarnessSmoke", () => {
       decisionPacketMcpToolListed: true,
       decisionPacketMcpReadbackMatched: true,
       decisionPacketMemoryIncluded: true,
+      decisionPacketGoverningDecisionId: "architecture-decision:target-repo-harness:1",
+      decisionPacketSourceDecisionId: "source-decision-1",
+      decisionPacketAbstentionStatus: "weak_context",
       decisionPacketReturnChannelBound: true,
       consumerTargetCommand: "pnpm --dir tests/fixtures/target-repos/typescript-basic test",
       consumerTargetCommandStatus: "passed",
@@ -81,6 +84,11 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("DecisionPacket MCP tool listed: matched");
     expect(output).toContain("DecisionPacket MCP readback: matched");
     expect(output).toContain("DecisionPacket memory included: yes");
+    expect(output).toContain(
+      "DecisionPacket governing decision: architecture-decision:target-repo-harness:1"
+    );
+    expect(output).toContain("DecisionPacket canonical source decision: source-decision-1");
+    expect(output).toContain("DecisionPacket abstention status: weak_context");
     expect(output).toContain("DecisionPacket return channel bound: yes");
     expect(output).toContain("Consumer target command: pnpm --dir tests/fixtures/target-repos/typescript-basic test");
     expect(output).toContain("Consumer target command status: passed");

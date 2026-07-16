@@ -98,6 +98,9 @@ export interface TargetRepoHarnessSmokeReport {
   decisionPacketMcpToolListed: boolean;
   decisionPacketMcpReadbackMatched: boolean;
   decisionPacketMemoryIncluded: boolean;
+  decisionPacketGoverningDecisionId: string;
+  decisionPacketSourceDecisionId: string;
+  decisionPacketAbstentionStatus: "ready" | "weak_context";
   decisionPacketReturnChannelBound: boolean;
   consumerTargetCommand: string;
   consumerTargetCommandStatus: "passed";
@@ -158,6 +161,10 @@ interface DecisionPacketConsumerProof {
   generatedAt: string;
   evidenceRef: string;
   sourceUsefulnessExample: string;
+  governingDecisionIds: readonly string[];
+  sourceDecisionIds: readonly string[];
+  abstentionStatus: string;
+  abstentionReasons: readonly string[];
   memoryIncluded: boolean;
   returnChannelBound: boolean;
 }
@@ -753,6 +760,31 @@ const readMcpDecisionPacketProof = async (input: {
     "memoryRefs",
     "Target repo harness smoke expected memoryRefs string array in DecisionPacket MCP output"
   );
+  const governingDecisionIds = readRequiredStringArray(
+    packet,
+    "governingDecisionIds",
+    "Target repo harness smoke expected governingDecisionIds string array in DecisionPacket MCP output"
+  );
+  const sourceDecisionIds = readRequiredStringArray(
+    packet,
+    "sourceDecisionIds",
+    "Target repo harness smoke expected sourceDecisionIds string array in DecisionPacket MCP output"
+  );
+  const abstentionScore = readRequiredRecord(
+    packet,
+    "abstentionScore",
+    "Target repo harness smoke expected abstentionScore object in DecisionPacket MCP output"
+  );
+  const abstentionStatus = readRequiredString(
+    abstentionScore,
+    "status",
+    "Target repo harness smoke expected abstention status in DecisionPacket MCP output"
+  );
+  const abstentionReasons = readRequiredStringArray(
+    abstentionScore,
+    "reasons",
+    "Target repo harness smoke expected abstention reasons in DecisionPacket MCP output"
+  );
   const persistedCommand = readRequiredString(
     evidence,
     "persistedCommand",
@@ -771,6 +803,10 @@ const readMcpDecisionPacketProof = async (input: {
     generatedAt,
     evidenceRef,
     sourceUsefulnessExample,
+    governingDecisionIds,
+    sourceDecisionIds,
+    abstentionStatus,
+    abstentionReasons,
     memoryIncluded: memoryRefs.includes(input.memoryRecordId),
     returnChannelBound:
       evidenceRef === `packet:${checksum}` &&
@@ -1006,6 +1042,9 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `DecisionPacket MCP tool listed: ${matchedWhen(report.decisionPacketMcpToolListed)}`,
   `DecisionPacket MCP readback: ${matchedWhen(report.decisionPacketMcpReadbackMatched)}`,
   `DecisionPacket memory included: ${yesNo(report.decisionPacketMemoryIncluded)}`,
+  `DecisionPacket governing decision: ${report.decisionPacketGoverningDecisionId}`,
+  `DecisionPacket canonical source decision: ${report.decisionPacketSourceDecisionId}`,
+  `DecisionPacket abstention status: ${report.decisionPacketAbstentionStatus}`,
   `DecisionPacket return channel bound: ${yesNo(report.decisionPacketReturnChannelBound)}`,
   `Consumer target command: ${report.consumerTargetCommand}`,
   `Consumer target command status: ${report.consumerTargetCommandStatus}`,
@@ -1104,16 +1143,41 @@ const assertObservationOnlyMemorySelection = async (input: {
   return readBackMemoryRecord;
 };
 
+const containsOnly = (values: readonly string[], expected: string): boolean =>
+  values.length === 1 && values[0] === expected;
+
+const permitsExecution = (proof: DecisionPacketConsumerProof): boolean =>
+  ["ready", "weak_context"].includes(proof.abstentionStatus) &&
+  !proof.abstentionReasons.includes("missing_governing_decision");
+
 const assertDecisionPacketConsumerProof = (
-  proof: DecisionPacketConsumerProof
+  proof: DecisionPacketConsumerProof,
+  expected: {
+    readonly governingDecisionId: string;
+    readonly sourceDecisionId: string;
+  }
 ): void => {
-  if (
-    !proof.initialized ||
-    !proof.toolListed ||
-    !proof.memoryIncluded ||
-    !proof.returnChannelBound
-  ) {
-    throw new Error("Target repo harness smoke DecisionPacket MCP proof was not packet-bound");
+  const checks = [
+    proof.initialized,
+    proof.toolListed,
+    proof.memoryIncluded,
+    containsOnly(proof.governingDecisionIds, expected.governingDecisionId),
+    containsOnly(proof.sourceDecisionIds, expected.sourceDecisionId),
+    permitsExecution(proof),
+    proof.returnChannelBound
+  ];
+
+  if (checks.includes(false)) {
+    throw new Error(
+      "Target repo harness smoke DecisionPacket MCP proof was not packet-bound: " +
+      JSON.stringify({
+        governingDecisionIds: proof.governingDecisionIds,
+        sourceDecisionIds: proof.sourceDecisionIds,
+        abstentionStatus: proof.abstentionStatus,
+        abstentionReasons: proof.abstentionReasons,
+        expected
+      })
+    );
   }
 };
 
@@ -1286,7 +1350,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
       supportType: "implementation-boundary",
       consumer: "V03 target memory usefulness smoke",
       falsifier: "The smoke cannot activate the memory or record helped feedback for the run.",
-      revisitWhen: "Target memory usefulness semantics change.",
       status: "proposed",
       metadata: capturedSourceMetadata
     });
@@ -1301,6 +1364,20 @@ export const runTargetRepoHarnessSmokeCheck = async (
       falsifier: "The memory appears in plan/brief context without an accepted SourceClaim decision.",
       metadata: {
         smokeId: marker
+      }
+    });
+    const governingDecisionId = `architecture-decision:target-repo-harness:${marker}`;
+    await sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: sourceClaim.id,
+      sourceDecisionId: sourceDecision.id,
+      targetType: "architecture_decision",
+      targetId: governingDecisionId,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: "Accepted source support governs the subject-bound target-repository trial.",
+      metadata: {
+        smokeId: marker,
+        sourceDecisionId: sourceDecision.id
       }
     });
     const memoryRecord = await memoryRepository.createMemoryRecord({
@@ -1410,6 +1487,26 @@ export const runTargetRepoHarnessSmokeCheck = async (
 
     retrievalRunIds.push(retrievalRunId);
 
+    const governingSourceInclusion = result.contextAssembly.inclusions.find(
+      (item) => item.subjectType === "source_claim" && item.subjectId === sourceClaim.id
+    );
+
+    if (governingSourceInclusion === undefined) {
+      throw new Error(
+        "Target repo harness smoke did not activate the governing SourceClaim: " +
+        JSON.stringify({
+          sourceClaimId: sourceClaim.id,
+          exclusion: result.contextAssembly.exclusions.find(
+            (item) => item.subjectType === "source_claim" && item.subjectId === sourceClaim.id
+          ),
+          includedSubjects: result.contextAssembly.inclusions.map((item) => ({
+            subjectType: item.subjectType,
+            subjectId: item.subjectId
+          }))
+        })
+      );
+    }
+
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: result.harnessPlan.id,
       adapter: "codex",
@@ -1445,19 +1542,6 @@ export const runTargetRepoHarnessSmokeCheck = async (
       memoryRecordId: memoryRecord.id,
       renderedBrief
     });
-    await sourceRepository.createSourceDecisionEdge({
-      sourceClaimId: sourceClaim.id,
-      sourceDecisionId: sourceDecision.id,
-      targetType: "harness_run",
-      targetId: executionRun.id,
-      supportType: "implementation-boundary",
-      confidence: "high",
-      notes: "Accepted source support backs the memory-assisted plan/brief smoke.",
-      metadata: {
-        smokeId: marker,
-        sourceDecisionId: sourceDecision.id
-      }
-    });
     const readBackMemoryRecord = await assertObservationOnlyMemorySelection({
       client,
       marker,
@@ -1489,7 +1573,10 @@ export const runTargetRepoHarnessSmokeCheck = async (
       repoRoot: input.repoRoot
     });
 
-    assertDecisionPacketConsumerProof(decisionPacketProof);
+    assertDecisionPacketConsumerProof(decisionPacketProof, {
+      governingDecisionId,
+      sourceDecisionId: sourceDecision.id
+    });
 
     const evidenceProof = await capturePacketBoundTargetEvidence({
       createId: createSmokeId,
@@ -1535,6 +1622,10 @@ export const runTargetRepoHarnessSmokeCheck = async (
       decisionPacketMcpReadbackMatched:
         decisionPacketProof.memoryIncluded && decisionPacketProof.returnChannelBound,
       decisionPacketMemoryIncluded: decisionPacketProof.memoryIncluded,
+      decisionPacketGoverningDecisionId: governingDecisionId,
+      decisionPacketSourceDecisionId: sourceDecision.id,
+      decisionPacketAbstentionStatus:
+        decisionPacketProof.abstentionStatus === "ready" ? "ready" : "weak_context",
       decisionPacketReturnChannelBound: decisionPacketProof.returnChannelBound,
       consumerTargetCommand: evidenceProof.targetCommand,
       consumerTargetCommandStatus: "passed",
