@@ -377,10 +377,15 @@ describe("source authority integrity readiness", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "reports each controlled authority violation exactly once without writing",
     async () => {
-      const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
       const marker = `source-authority-integrity-${crypto.randomUUID()}`;
       let residueCount: number | undefined;
       try {
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
         await client.unsafe("set session_replication_role = replica");
         const workspace = await client<{ id: string }[]>`
           insert into workspaces (slug, display_name, metadata)
@@ -506,7 +511,9 @@ describe("source authority integrity readiness", () => {
           from source_claims
           where id = ${chunkMismatchClaim[0]!.id}
         `;
-        const report = await inspectSourceAuthorityIntegrity({ databaseUrl: databaseUrl! });
+        const report = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposableDatabase.databaseUrl
+        });
         const fixtureRowsAfter = await fixtureResidueCount(client, marker);
         const mismatchAfter = await client<{ sourceArtifactId: string; sourceChunkId: string }[]>`
           select source_artifact_id::text as "sourceArtifactId", source_chunk_id::text as "sourceChunkId"
@@ -552,11 +559,16 @@ describe("source authority integrity readiness", () => {
         try {
           residueCount = await cleanupFixture(client, marker);
         } finally {
-          await client.end();
+          try {
+            await client.end();
+          } finally {
+            await disposableDatabase.cleanup();
+          }
         }
       }
       expect(residueCount).toBe(0);
-    }
+    },
+    60_000
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
