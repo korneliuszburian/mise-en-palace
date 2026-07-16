@@ -421,6 +421,12 @@ const sourceConsensusTimelineEntryForClaim = (input: {
   readonly rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>;
   readonly now: IsoTimestamp;
 }): SourceConsensusTimelineEntry => {
+  const currentIncomingEdges = input.incomingEdges.filter((edge) =>
+    sourceClaimEdgeIsCurrent(edge, input.now)
+  );
+  const currentOutgoingEdges = input.outgoingEdges.filter((edge) =>
+    sourceClaimEdgeIsCurrent(edge, input.now)
+  );
   const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
   const supersededBySourceClaimIds = sourceClaimEndpointIdsByKindAndRankDownAuthority(
     input.incomingEdges,
@@ -478,18 +484,18 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     sourceRanges: claimMetadata.sourceRanges,
     relationEvidence,
     supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
-      input.incomingEdges,
+      currentIncomingEdges,
       supportEdgeKinds,
       "from"
     ),
     dissentingSourceClaimIds: sourceClaimEndpointIdsByKind(
-      input.incomingEdges,
+      currentIncomingEdges,
       dissentEdgeKinds,
       "from"
     ),
     supersededBySourceClaimIds,
     supersedesSourceClaimIds: sourceClaimEndpointIdsByKind(
-      input.outgoingEdges,
+      currentOutgoingEdges,
       supersedingEdgeKinds,
       "to"
     ),

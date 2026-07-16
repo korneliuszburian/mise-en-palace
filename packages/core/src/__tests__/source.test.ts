@@ -364,6 +364,61 @@ describe("source review signals", () => {
   );
 
   test.each(nonCurrentTemporalCases)(
+    "keeps %s dissent relations out of current semantic endpoint summaries",
+    (_description, metadata, temporalValidity) => {
+      const dissentingClaim = sourceClaim({
+        id: "source-claim-current-dissent-endpoint"
+      });
+      const targetClaim = sourceClaim({
+        id: "source-claim-current-dissent-target"
+      });
+      const timeline = buildSourceConsensusTimelineReadback({
+        sourceClaims: [dissentingClaim, targetClaim],
+        sourceClaimEdges: [sourceClaimEdge({
+          id: "source-claim-edge-non-current-dissent",
+          fromSourceClaimId: dissentingClaim.id,
+          toSourceClaimId: targetClaim.id,
+          kind: "contradicts",
+          metadata: {
+            consumer: "source temporal dissent boundary",
+            doesNotProve: "This relation does not prove source truth.",
+            evidenceRef: "source-artifact:temporal-dissent-boundary",
+            ...metadata
+          }
+        })],
+        sourceDecisionEdges: [
+          sourceDecisionEdge({
+            id: "source-decision-edge-current-dissent-endpoint",
+            sourceClaimId: dissentingClaim.id
+          }),
+          sourceDecisionEdge({
+            id: "source-decision-edge-current-dissent-target",
+            sourceClaimId: targetClaim.id
+          })
+        ],
+        now
+      });
+      const targetEntry = timeline.entries.find((entry) =>
+        entry.sourceClaimId === targetClaim.id
+      );
+
+      expect(timeline.currentSourceClaimIds).toEqual([
+        dissentingClaim.id,
+        targetClaim.id
+      ]);
+      expect(targetEntry).toMatchObject({
+        state: "current_authority",
+        authorityState: "accepted",
+        dissentingSourceClaimIds: [],
+        caveats: []
+      });
+      expect(targetEntry?.relationEvidence.find((evidence) =>
+        evidence.sourceClaimEdgeId === "source-claim-edge-non-current-dissent"
+      )?.temporalValidity).toEqual(temporalValidity);
+    }
+  );
+
+  test.each(nonCurrentTemporalCases)(
     "does not let %s SourceClaims caveat current source consensus",
     (_description, metadata) => {
       const historicalClaim = sourceClaim({

@@ -1854,6 +1854,92 @@ describe("activation engine", () => {
     });
   });
 
+  it.each([
+    ["future validFrom", { validFrom: "2026-06-22T12:00:00.000Z" }],
+    ["expired validUntil", { validUntil: "2026-06-21T11:59:59.999Z" }],
+    ["equal-boundary validUntil", { validUntil: now }],
+    ["equal-boundary invalidatedAt", { invalidatedAt: now }],
+    ["malformed validUntil", { validUntil: "not-a-timestamp" }]
+  ] as const)(
+    "does not let a %s dissent edge caveat current activation authority",
+    async (_description, metadata) => {
+      const dissentingClaim = sourceClaim({
+        id: "claim-current-dissent-endpoint",
+        claim: "Current dissent endpoint remains independently authoritative.",
+        supportType: "implementation-boundary",
+        falsifier: "The current endpoint lacks decision-grade authority."
+      });
+      const targetClaim = sourceClaim({
+        id: "claim-current-dissent-target",
+        claim: "Current target remains authoritative after historical dissent.",
+        supportType: "implementation-boundary",
+        falsifier: "Historical dissent caveats the current target."
+      });
+      const dissentEdge: SourceClaimEdge = {
+        id: "edge-non-current-dissent",
+        fromSourceClaimId: dissentingClaim.id,
+        toSourceClaimId: targetClaim.id,
+        kind: "contradicts",
+        metadata: {
+          consumer: "activation temporal dissent proof",
+          doesNotProve: "Historical dissent does not prove current conflict.",
+          evidenceRef: "test:non-current-dissent",
+          ...metadata
+        },
+        createdAt: now
+      };
+      const retrieved = await retrieveDecisionLinkedSourceCandidates(
+        [dissentingClaim, targetClaim],
+        [dissentEdge]
+      );
+      const target = retrieved.candidates.find((candidate) =>
+        candidate.subjectId === targetClaim.id
+      );
+
+      expect(target).toMatchObject({
+        sourceClaimAuthorityStatus: "accepted",
+        sourceClaimAuthorityReasons: ["current_decision_linked_authority"]
+      });
+      expect(target?.exclusion).toBeUndefined();
+    }
+  );
+
+  it("still caveats current activation authority for one current dissent edge", async () => {
+    const dissentingClaim = sourceClaim({
+      id: "claim-live-dissent-endpoint",
+      supportType: "implementation-boundary",
+      falsifier: "The live dissent endpoint lacks decision-grade authority."
+    });
+    const targetClaim = sourceClaim({
+      id: "claim-live-dissent-target",
+      supportType: "implementation-boundary",
+      falsifier: "Current dissent fails to caveat the target."
+    });
+    const retrieved = await retrieveDecisionLinkedSourceCandidates(
+      [dissentingClaim, targetClaim],
+      [{
+        id: "edge-current-dissent",
+        fromSourceClaimId: dissentingClaim.id,
+        toSourceClaimId: targetClaim.id,
+        kind: "contradicts",
+        metadata: {
+          consumer: "activation current dissent control",
+          doesNotProve: "Current dissent does not prove either endpoint true.",
+          evidenceRef: "test:current-dissent"
+        },
+        createdAt: now
+      }]
+    );
+    const target = retrieved.candidates.find((candidate) =>
+      candidate.subjectId === targetClaim.id
+    );
+
+    expect(target).toMatchObject({
+      sourceClaimAuthorityStatus: "caveated",
+      sourceClaimAuthorityReasons: ["accepted_with_dissenting_source_claims"]
+    });
+  });
+
   it("blocks accepted source claims with invalid temporal metadata", async () => {
     const validClaim = sourceClaim({
       id: "claim-valid-time",
