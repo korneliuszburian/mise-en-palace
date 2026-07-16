@@ -35,6 +35,8 @@ import {
   projects,
   retrievalRuns,
   searchDocuments,
+  sourceArtifacts,
+  sourceClaims,
 } from "../../schema/index.js";
 import {
   smokeFixtureClocks
@@ -63,6 +65,12 @@ export interface ActivationSmokeReport {
   retrievalRunId: string;
   readBackRetrievalRunId: string;
   sourceClaimCount: number;
+  lowerAuthorityArtifactId: string;
+  lowerAuthorityClaimId: string;
+  lowerAuthorityPeerClaimId: string;
+  lowerAuthorityCandidateScore: number;
+  lowerAuthorityPeerCandidateScore: number;
+  lowerAuthorityPacketExclusionMatched: boolean;
   memoryRecordCount: number;
   relevantMemoryRetrieved: boolean;
   relevantMemoryCandidateCount: number;
@@ -243,6 +251,32 @@ export const runActivationSmokeCheck = async (
       metadata: {
         smokeId: marker
       }
+    });
+    const authorityTwinInput = {
+      sourceArtifactId: sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      executionRunId: executionRun.id,
+      claim: "Activation authority ranking must preserve the stored SourceClaim tier.",
+      mechanism: "Two otherwise identical claims isolate the activation trust contribution.",
+      krnImplication: "A lower allowed tier must remain lower through retrieval, scoring, context, and packet readback.",
+      doesNotProve: "This does not prove the SourceArtifact tier is correct.",
+      supportType: "implementation-boundary" as const,
+      consumer: "SourceClaim authority ceiling activation proof",
+      falsifier: "The lower claim receives the peer authority or peer trust score.",
+      revisitWhen: "2027-01-01T00:00:00.000Z",
+      status: "proposed" as const,
+      metadata: {
+        smokeId: marker,
+        authorityCeilingProof: true
+      }
+    };
+    const lowerAuthorityPeerClaim = await sourceRepository.createSourceClaim({
+      ...authorityTwinInput,
+      sourceAuthority: "project-decision"
+    });
+    const lowerAuthorityClaim = await sourceRepository.createSourceClaim({
+      ...authorityTwinInput,
+      sourceAuthority: "hypothesis"
     });
     const crawlerClaim = await sourceRepository.createSourceClaim({
       sourceArtifactId: sourceArtifact.id,
@@ -539,6 +573,12 @@ export const runActivationSmokeCheck = async (
         retrievalRepository
       }
     });
+    const lowerAuthorityRetrievedCandidate = retrieved.candidates.find(
+      (candidate) => candidate.subjectId === lowerAuthorityClaim.id
+    );
+    const lowerAuthorityPeerRetrievedCandidate = retrieved.candidates.find(
+      (candidate) => candidate.subjectId === lowerAuthorityPeerClaim.id
+    );
     const canonicalRelevantMemory = requireSmokeReadbackValue(
       rankCandidates([toMemoryCandidate(relevantMemory)], retrieved.memoryQuery)[0],
       "canonical relevant memory",
@@ -738,7 +778,11 @@ export const runActivationSmokeCheck = async (
         .from(contextItems)
         .where(eq(contextItems.contextAssemblyId, contextAssembly.id)),
       db
-        .select({ subjectId: contextExclusions.subjectId, metadata: contextExclusions.metadata })
+        .select({
+          subjectId: contextExclusions.subjectId,
+          sourceAuthority: contextExclusions.sourceAuthority,
+          metadata: contextExclusions.metadata
+        })
         .from(contextExclusions)
         .where(eq(contextExclusions.contextAssemblyId, contextAssembly.id))
     ]);
@@ -746,10 +790,26 @@ export const runActivationSmokeCheck = async (
       .select({ count: sql<number>`count(*)::int` })
       .from(searchDocuments)
       .where(sql`${searchDocuments.metadata}->>'smokeId' = ${marker}`);
+    const authorityCeilingRows = await db
+      .select({
+        artifactId: sourceArtifacts.id,
+        artifactAuthority: sourceArtifacts.sourceAuthority,
+        claimId: sourceClaims.id,
+        claimAuthority: sourceClaims.sourceAuthority
+      })
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(eq(sourceClaims.id, lowerAuthorityClaim.id));
 
     const readBackContextAssembly = readBackContextAssemblyRows[0];
     const readBackRetrievalRun = readBackRetrievalRunRows[0];
-    const sourceClaimCount = [activationClaim, crawlerClaim, expiredSourceClaim].length + 1;
+    const sourceClaimCount = [
+      activationClaim,
+      lowerAuthorityPeerClaim,
+      lowerAuthorityClaim,
+      crawlerClaim,
+      expiredSourceClaim
+    ].length + 1;
     const memoryRecordCount = 2 + relevanceDistractorCount + 1;
     const relevantMemoryCandidateCount = candidates.filter(
       (candidate) => candidate.subjectId === relevantMemory.id
@@ -780,6 +840,54 @@ export const runActivationSmokeCheck = async (
     );
     const relevantMemoryCanonicalScore = canonicalRelevantMemory.totalScore;
     const relevantMemoryPersistedScore = persistedRelevantMemory?.totalScore ?? Number.NaN;
+    const lowerAuthorityPersistedCandidate = candidates.find(
+      (candidate) => candidate.subjectId === lowerAuthorityClaim.id
+    );
+    const lowerAuthorityPeerPersistedCandidate = candidates.find(
+      (candidate) => candidate.subjectId === lowerAuthorityPeerClaim.id
+    );
+    const lowerAuthorityCandidateScore =
+      lowerAuthorityPersistedCandidate?.totalScore ?? Number.NaN;
+    const lowerAuthorityPeerCandidateScore =
+      lowerAuthorityPeerPersistedCandidate?.totalScore ?? Number.NaN;
+    const lowerAuthorityPacketExclusion = issuedPacketReadback.packet.contextExclusions.find(
+      (exclusion) => exclusion.subjectId === lowerAuthorityClaim.id
+    );
+    const lowerAuthorityContextExclusion = persistedContextExclusions.find(
+      (exclusion) => exclusion.subjectId === lowerAuthorityClaim.id
+    );
+    const lowerAuthorityPacketExclusionMatched =
+      lowerAuthorityPacketExclusion?.subjectType === "source_claim" &&
+      lowerAuthorityPacketExclusion.sourceAuthority === "hypothesis";
+    const lowerAuthoritySelectedAsPacketAuthority =
+      issuedPacketReadback.packet.sourceClaimIds.includes(lowerAuthorityClaim.id) ||
+      issuedPacketReadback.packet.caveatedSourceClaimIds.includes(lowerAuthorityClaim.id) ||
+      issuedPacketReadback.packet.brief.includedSourceClaimIds.includes(lowerAuthorityClaim.id);
+    const lowerAuthorityReadback = authorityCeilingRows[0];
+    const retrievedNonAuthorityScoresMatch =
+      lowerAuthorityRetrievedCandidate?.lexicalScore ===
+        lowerAuthorityPeerRetrievedCandidate?.lexicalScore &&
+      lowerAuthorityRetrievedCandidate?.vectorScore ===
+        lowerAuthorityPeerRetrievedCandidate?.vectorScore &&
+      lowerAuthorityRetrievedCandidate?.graphScore ===
+        lowerAuthorityPeerRetrievedCandidate?.graphScore &&
+      lowerAuthorityRetrievedCandidate?.temporalScore ===
+        lowerAuthorityPeerRetrievedCandidate?.temporalScore &&
+      lowerAuthorityRetrievedCandidate?.contextRoiScore ===
+        lowerAuthorityPeerRetrievedCandidate?.contextRoiScore &&
+      lowerAuthorityRetrievedCandidate?.feedbackScore ===
+        lowerAuthorityPeerRetrievedCandidate?.feedbackScore;
+    const persistedNonAuthorityScoresMatch =
+      lowerAuthorityPersistedCandidate?.lexicalScore ===
+        lowerAuthorityPeerPersistedCandidate?.lexicalScore &&
+      lowerAuthorityPersistedCandidate?.vectorScore ===
+        lowerAuthorityPeerPersistedCandidate?.vectorScore &&
+      lowerAuthorityPersistedCandidate?.graphScore ===
+        lowerAuthorityPeerPersistedCandidate?.graphScore &&
+      lowerAuthorityPersistedCandidate?.temporalScore ===
+        lowerAuthorityPeerPersistedCandidate?.temporalScore &&
+      lowerAuthorityPersistedCandidate?.contextRoiScore ===
+        lowerAuthorityPeerPersistedCandidate?.contextRoiScore;
     const staleProjectionCandidateRefCount = candidates.filter((candidate) =>
       candidate.searchDocumentId === expiredMemorySearchDocument.id ||
       hasSerializedReference(candidate.metadata, expiredMemorySearchDocument.id)
@@ -854,7 +962,50 @@ export const runActivationSmokeCheck = async (
         { label: "context assembly exists", passed: readBackContextAssembly !== undefined },
         { label: "context assembly retrieval run", passed: readBackContextAssembly?.retrievalRunId === retrievalRun.id },
         { label: "retrieval run exists", passed: readBackRetrievalRun !== undefined },
-        { label: "source claims", passed: sourceClaimCount === 4 },
+        { label: "source claims", passed: sourceClaimCount === 6 },
+        {
+          label: "lower authority stored below artifact",
+          passed:
+            authorityCeilingRows.length === 1 &&
+            lowerAuthorityReadback?.artifactId === sourceArtifact.id &&
+            lowerAuthorityReadback.artifactAuthority === "project-decision" &&
+            lowerAuthorityReadback.claimId === lowerAuthorityClaim.id &&
+            lowerAuthorityReadback.claimAuthority === "hypothesis"
+        },
+        {
+          label: "lower authority survives activation retrieval",
+          passed:
+            lowerAuthorityRetrievedCandidate?.subjectId === lowerAuthorityClaim.id &&
+            lowerAuthorityRetrievedCandidate.sourceAuthority === "hypothesis" &&
+            lowerAuthorityRetrievedCandidate.sourceAuthorityRank === "low" &&
+            lowerAuthorityRetrievedCandidate.metadata.sourceArtifactId === sourceArtifact.id
+        },
+        {
+          label: "authority-only activation score delta",
+          passed:
+            lowerAuthorityRetrievedCandidate?.subjectId === lowerAuthorityClaim.id &&
+            lowerAuthorityPeerRetrievedCandidate?.subjectId === lowerAuthorityPeerClaim.id &&
+            lowerAuthorityPeerRetrievedCandidate.sourceAuthority === "project-decision" &&
+            lowerAuthorityPeerRetrievedCandidate.sourceAuthorityRank === "high" &&
+            retrievedNonAuthorityScoresMatch &&
+            persistedNonAuthorityScoresMatch &&
+            lowerAuthorityCandidateScore === lowerAuthorityRetrievedCandidate.totalScore &&
+            lowerAuthorityPeerCandidateScore === lowerAuthorityPeerRetrievedCandidate.totalScore &&
+            lowerAuthorityPeerCandidateScore - lowerAuthorityCandidateScore === 20
+        },
+        {
+          label: "lower authority persists in context exclusion",
+          passed:
+            lowerAuthorityPersistedCandidate?.sourceAuthority === "hypothesis" &&
+            lowerAuthorityPersistedCandidate.metadata.authorityRank === "low" &&
+            lowerAuthorityContextExclusion?.sourceAuthority === "hypothesis"
+        },
+        {
+          label: "lower authority persists in DecisionPacket exclusion",
+          passed:
+            lowerAuthorityPacketExclusionMatched &&
+            !lowerAuthoritySelectedAsPacketAuthority
+        },
         { label: "memory records", passed: memoryRecordCount === 2 + relevanceDistractorCount + 1 },
         { label: "no-term memory fallback remains bounded", passed: noTermFallbackRecords.length === 1 },
         { label: "relevant memory before bounded limit", passed: relevantMemoryRetrieved },
@@ -903,10 +1054,10 @@ export const runActivationSmokeCheck = async (
         { label: "persisted stale source retrieved as warning", passed: staleSourceWarningRetrieved },
         { label: "persisted stale memory retrieved as warning", passed: staleMemoryWarningRetrieved },
         { label: "search candidates", passed: searchCandidateCount >= 1 },
-        { label: "retrieval candidates", passed: retrievalCandidateCount === 34 },
-        { label: "activation decisions", passed: activationDecisionCount === 34 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 36 },
+        { label: "activation decisions", passed: activationDecisionCount === 36 },
         { label: "included decisions", passed: includedDecisionCount === 2 },
-        { label: "excluded decisions", passed: excludedDecisionCount === 29 },
+        { label: "excluded decisions", passed: excludedDecisionCount === 31 },
         { label: "conflict decisions", passed: conflictDecisionCount === 1 },
         { label: "stale warning decisions", passed: staleDecisionCount === 2 },
         { label: "stale memory warning persisted", passed: staleMemoryWarningPersisted },
@@ -916,7 +1067,7 @@ export const runActivationSmokeCheck = async (
         { label: "stale memory absent from selected packet authority", passed: !staleMemorySelectedAsAuthority },
         { label: "stale source absent from selected packet authority", passed: !staleSourceSelectedAsAuthority },
         { label: "context items", passed: contextItemCount === 2 },
-        { label: "context exclusions", passed: contextExclusionCount === 32 },
+        { label: "context exclusions", passed: contextExclusionCount === 34 },
         { label: "observation prefix", passed: prefixItemCount === 1 },
         { label: "raw recall trigger readback", passed: rawRecallTriggerCount >= 0 }
       ],
@@ -946,6 +1097,12 @@ export const runActivationSmokeCheck = async (
       retrievalRunId: retrievalRun.id,
       readBackRetrievalRunId,
       sourceClaimCount,
+      lowerAuthorityArtifactId: sourceArtifact.id,
+      lowerAuthorityClaimId: lowerAuthorityClaim.id,
+      lowerAuthorityPeerClaimId: lowerAuthorityPeerClaim.id,
+      lowerAuthorityCandidateScore,
+      lowerAuthorityPeerCandidateScore,
+      lowerAuthorityPacketExclusionMatched,
       memoryRecordCount,
       relevantMemoryRetrieved,
       relevantMemoryCandidateCount,

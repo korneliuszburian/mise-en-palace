@@ -533,6 +533,14 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
         report.readBackContextAssemblyId === report.contextAssemblyId ? "matched" : "mismatch"
       }`,
       `Source claims: ${report.sourceClaimCount}`,
+      `Lower-authority artifact: ${report.lowerAuthorityArtifactId}`,
+      `Lower-authority claim: ${report.lowerAuthorityClaimId}`,
+      `Authority peer claim: ${report.lowerAuthorityPeerClaimId}`,
+      `Lower-authority activation score: ${report.lowerAuthorityCandidateScore}`,
+      `Authority peer activation score: ${report.lowerAuthorityPeerCandidateScore}`,
+      `DecisionPacket lower-authority exclusion: ${
+        report.lowerAuthorityPacketExclusionMatched ? "matched" : "mismatch"
+      }`,
       `Memory records: ${report.memoryRecordCount}`,
       `Relevant memory before bounded limit: ${report.relevantMemoryRetrieved ? "yes" : "no"}`,
       `Relevant memory candidates: ${report.relevantMemoryCandidateCount}`,
