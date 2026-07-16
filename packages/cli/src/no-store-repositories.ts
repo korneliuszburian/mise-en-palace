@@ -53,7 +53,12 @@ const optionalField = <Key extends string, Value>(
 
 export const createNoStoreCompilerDependencies = (
   runtime: NoStoreRuntime
-): HarnessCompilerDependencies => {
+): HarnessCompilerDependencies & {
+  sourceRepository: HarnessCompilerDependencies["sourceRepository"] & Pick<
+    SourceRepository,
+    "listSourceClaimEdgesForClaim"
+  >;
+} => {
   const harnessRunRepository = {
     async createOperatorIntent(input: CreateOperatorIntentInput): Promise<OperatorIntent> {
       return {

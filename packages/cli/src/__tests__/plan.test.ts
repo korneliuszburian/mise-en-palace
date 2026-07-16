@@ -1356,7 +1356,7 @@ describe("runCli", () => {
                 async listClaimsForProject() {
                   return [];
                 },
-                async listSourceClaimEdgesForClaim() {
+                async listSourceClaimEdgesForProject() {
                   return [];
                 },
                 async listSourceDecisionEdgesForClaim() {
