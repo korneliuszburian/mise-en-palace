@@ -381,7 +381,7 @@ describe("DrizzleRetrievalRepository", () => {
           workspaceId: scaffold.project.workspaceId,
           slug: `search-provenance-foreign-${marker}`,
           displayName: `search-provenance-foreign-${marker}`,
-          metadata: { smokeId: marker }
+          metadata: { smokeId: scaffold.marker }
         })
         .returning({ id: projects.id });
       if (foreignProject === undefined) {
@@ -390,7 +390,7 @@ describe("DrizzleRetrievalRepository", () => {
 
       const createSourceChain = async (projectId: string, label: string) => {
         const metadata = {
-          smokeId: marker,
+          smokeId: scaffold.marker,
           provenanceChain: label,
           evidenceRef: `search-provenance://${marker}/${label}`,
           evidenceStatus: "captured",
@@ -459,7 +459,7 @@ describe("DrizzleRetrievalRepository", () => {
         body: "Claim A is intentionally combined with artifact, chunk, and decision B.",
         searchText,
         sourceAuthority: "project-decision",
-        metadata: { smokeId: marker, mismatch: label }
+        metadata: { smokeId: scaffold.marker, mismatch: label }
       });
       const inserted = await Promise.all([
         createMismatch("same-project-wrong-chain", sameProjectChain),
