@@ -21,6 +21,11 @@ import {
 
 export type KnowledgeOutputFormat = "text" | "json" | "html";
 
+export interface BrainRecallStoreUsefulnessSelection {
+  readModels: KnowledgeReadModel[];
+  appliedUsefulnessFeedback: boolean;
+}
+
 export interface BrainRecallCommandRuntime {
   cwd?: string;
   readModelFiles: readonly string[];
@@ -32,15 +37,13 @@ export interface BrainRecallCommandRuntime {
   readModelProvider?: () => Promise<KnowledgeReadModel[]>;
   /**
    * Optional store-backed usefulness source (9xc1). When provided, the command
-   * awaits it and merges the result into the usefulness feedback, so the
-   * readback can show usefulness without a static corpus JSON ledger. The CLI
-   * layer wires this to a feedback_delta store read (mapped via
-   * knowledgeUsefulnessFromKnowledgeOutcomes). Seed-only corpus
-   * usefulnessFeedbackFiles may still be supplied and are merged alongside.
+   * awaits its lifecycle-aware selection, so rejected feedback remains
+   * non-governing and candidate feedback is review-only. Seed-only corpus
+   * usefulnessFeedbackFiles may still be merged onto the selected read models.
    */
   usefulnessProvider?: (
     readModels: readonly KnowledgeReadModel[]
-  ) => Promise<KnowledgeUsefulnessFeedback[]>;
+  ) => Promise<BrainRecallStoreUsefulnessSelection>;
 }
 
 export interface BrainRecallCommandResult {
@@ -253,16 +256,16 @@ export const runBrainRecallCommand = async (
 ): Promise<BrainRecallCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const loaded = await loadKnowledgeReadModels(runtime, cwd);
-  const storeUsefulness = runtime.usefulnessProvider === undefined
-    ? []
+  const storeSelection = runtime.usefulnessProvider === undefined
+    ? { readModels: loaded.readModels, appliedUsefulnessFeedback: false }
     : await runtime.usefulnessProvider(loaded.readModels);
   const source: "explicit_files" | "memory_store" =
     runtime.readModelProvider === undefined ? "explicit_files" : "memory_store";
   const usefulnessSource: "explicit_files" | "store_backed" =
     runtime.usefulnessProvider === undefined ? "explicit_files" : "store_backed";
   const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
-    loaded.readModels,
-    [...loaded.feedback, ...storeUsefulness]
+    storeSelection.readModels,
+    loaded.feedback
   );
   const matchingReadModels = searchKnowledgeReadModels(readModelsWithFeedback, runtime.filter);
   const readModels = runtime.limit === undefined

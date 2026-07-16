@@ -50,18 +50,24 @@ const storeKnowledgeMemory = (): MemoryRecord => ({
 });
 
 const knowledgeFeedbackDelta = (
-  knowledgeId = "knowledge:store-backed-usefulness"
+  knowledgeId = "knowledge:store-backed-usefulness",
+  overrides: {
+    id?: string;
+    status?: FeedbackDelta["status"];
+    outcome?: "helped" | "stale" | "hurt";
+    createdAt?: string;
+  } = {}
 ): FeedbackDelta => ({
-  id: "feedback-delta-1" as FeedbackDelta["id"],
+  id: (overrides.id ?? "feedback-delta-1") as FeedbackDelta["id"],
   reviewAssessmentId: "review-assessment-1" as FeedbackDelta["reviewAssessmentId"],
-  status: "accepted",
+  status: overrides.status ?? "accepted",
   memoryCandidates: [],
   sourceDecisions: [],
   evalCandidates: [],
   metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
       knowledgeId,
-      outcome: "helped",
+      outcome: overrides.outcome ?? "helped",
       reason: "The knowledge changed the implementation decision.",
       evidenceRefs: [
         `packet:${usefulnessPacketChecksum}`,
@@ -74,12 +80,13 @@ const knowledgeFeedbackDelta = (
     generatedAt: now,
     sourceRunLifecycleRevision: 1
   }),
-  createdAt: now,
-  updatedAt: now
+  createdAt: overrides.createdAt ?? now,
+  updatedAt: overrides.createdAt ?? now
 });
 
 const createBrainRecallDatabaseRuntime = (
-  feedbackKnowledgeId = "knowledge:store-backed-usefulness"
+  feedbackKnowledgeId = "knowledge:store-backed-usefulness",
+  feedbackDeltas?: readonly FeedbackDelta[]
 ) => async (_input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => ({
   workspaceId: "workspace-1",
   projectId: "project-1",
@@ -111,7 +118,9 @@ const createBrainRecallDatabaseRuntime = (
         id: feedbackKnowledgeId
       }]);
 
-      return [knowledgeFeedbackDelta(feedbackKnowledgeId)];
+      return feedbackDeltas === undefined
+        ? [knowledgeFeedbackDelta(feedbackKnowledgeId)]
+        : [...feedbackDeltas];
     }
   },
   sourceRepository: {
@@ -390,6 +399,59 @@ describe("runCli", () => {
         id: "knowledge:ts-boundary-unknown-first-result-state",
         usefulnessFeedback: expect.objectContaining({
           outcome: "helped"
+        })
+      })
+    ]);
+  });
+
+  it("keeps rejected recall feedback non-governing and candidate feedback review-only", async () => {
+    const knowledgeId = "knowledge:store-backed-usefulness";
+    const result = await runCli([
+      "memory",
+      "recall",
+      "--json"
+    ], {
+      cwd: path.resolve(process.cwd(), "../.."),
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: createBrainRecallDatabaseRuntime(knowledgeId, [
+        knowledgeFeedbackDelta(knowledgeId, {
+          id: "feedback-rejected-newer",
+          status: "rejected",
+          outcome: "hurt",
+          createdAt: "2026-06-21T12:02:00.000Z"
+        }),
+        knowledgeFeedbackDelta(knowledgeId, {
+          id: "feedback-candidate-older",
+          status: "candidate",
+          outcome: "stale",
+          createdAt: "2026-06-21T12:01:00.000Z"
+        })
+      ])
+    });
+    const resource = JSON.parse(result.stdout) as {
+      readModels: Array<{
+        id: string;
+        nextAction: string;
+        usefulnessFeedback?: {
+          outcome: string;
+          feedbackLifecycleStatus?: string;
+        };
+      }>;
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(resource.readModels).toEqual([
+      expect.objectContaining({
+        id: knowledgeId,
+        nextAction: "review",
+        usefulnessFeedback: expect.objectContaining({
+          outcome: "stale",
+          feedbackLifecycleStatus: "candidate"
         })
       })
     ]);

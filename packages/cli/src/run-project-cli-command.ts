@@ -1,13 +1,4 @@
 import type {
-  FeedbackDelta
-} from "@krn/core";
-import {
-  knowledgeUsefulnessOutcomesFromMetadata
-} from "@krn/core";
-import {
-  knowledgeUsefulnessFromKnowledgeOutcomes
-} from "@krn/harness";
-import type {
   KnowledgeReadModel
 } from "@krn/harness";
 import type {
@@ -38,6 +29,7 @@ import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
+  applyStoreKnowledgeUsefulnessFeedback,
   listStoreKnowledgeUsefulnessFeedback
 } from "./store-knowledge-usefulness-selection.js";
 import {
@@ -98,16 +90,6 @@ const trimmedEnvValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
-const feedbackDeltasToKnowledgeUsefulness = (
-  feedbackDeltas: readonly FeedbackDelta[]
-) =>
-  feedbackDeltas.flatMap((feedback) =>
-    knowledgeUsefulnessFromKnowledgeOutcomes(
-      knowledgeUsefulnessOutcomesFromMetadata(feedback.metadata),
-      feedback.createdAt
-    )
-  );
-
 const createKnowledgeStoreProviders = async (
   command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
@@ -156,7 +138,7 @@ const createKnowledgeStoreProviders = async (
         harnessRunRepository: runtime.harnessRunRepository
       });
 
-      return feedbackDeltasToKnowledgeUsefulness(feedbackDeltas);
+      return applyStoreKnowledgeUsefulnessFeedback([...readModels], feedbackDeltas);
     });
 
   if (!command.storeOnly) {
