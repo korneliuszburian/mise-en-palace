@@ -577,8 +577,9 @@ const manifestConditionReasons = (manifest: PairedTrialManifest): readonly strin
   ].filter((reason): reason is string => reason !== undefined);
 };
 
-const trialConditions = (manifest: PairedTrialManifest): TrialConditions => ({
-  requested: {
+export const trackedTrialRequestedConditions = (
+  manifest: PairedTrialManifest
+): TrialConditions["requested"] => ({
     codex: {
       command: manifest.codex.command,
       model: manifest.codex.model,
@@ -592,7 +593,10 @@ const trialConditions = (manifest: PairedTrialManifest): TrialConditions => ({
     containment: manifest.containment,
     armOrder: ["baseline", "krn"],
     checker: manifest.checker
-  }
+});
+
+const trialConditions = (manifest: PairedTrialManifest): TrialConditions => ({
+  requested: trackedTrialRequestedConditions(manifest)
 });
 
 const normalizedEnvironmentPath = (value: string | undefined, expected: string, marker: string): string =>

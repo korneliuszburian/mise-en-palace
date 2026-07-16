@@ -18,6 +18,7 @@ import {
 import {
   parseTrackedTrialManifest,
   readTrackedTrialArtifact,
+  trackedTrialRequestedConditions,
   validateTrialPacket
 } from "./tracked-paired-live-codex-repair.js";
 import type {
@@ -78,6 +79,27 @@ const commandSucceededWithVersion = (result: CommandResult | undefined, version:
   result.exitCode === 0 &&
   `${result.stdout}\n${result.stderr}`.includes(version);
 
+const mismatch = (matches: boolean, reason: string): string | undefined =>
+  matches ? undefined : reason;
+
+const optionalEqual = (observed: string | undefined, expected: string | undefined): boolean =>
+  observed === undefined || observed === expected;
+
+const optionalVersionMatches = (
+  observation: { readonly version: CommandResult } | undefined,
+  expected: string
+): boolean => observation === undefined || commandSucceededWithVersion(observation.version, expected);
+
+const passedObservedConditionsComplete = (artifact: TrackedTrialArtifact): boolean => {
+  if (artifact.status !== "passed") return true;
+  const observed = artifact.execution.conditions.observed;
+  return artifact.execution.environmentProfileHash !== undefined &&
+    observed?.environmentProfileHash === artifact.execution.environmentProfileHash &&
+    observed.profileHash !== undefined &&
+    observed.codex !== undefined &&
+    observed.containment !== undefined;
+};
+
 const assertArtifactMatchesManifest = (
   manifest: PairedTrialManifest,
   manifestHash: string,
@@ -85,64 +107,37 @@ const assertArtifactMatchesManifest = (
 ): void => {
   const requested = artifact.execution.conditions.requested;
   const observed = artifact.execution.conditions.observed;
-  const expectedCodex = {
-    command: manifest.codex.command,
-    model: manifest.codex.model,
-    cliVersion: manifest.codex.cliVersion,
-    profileName: manifest.codex.profile.name,
-    profileHash: manifest.codex.profile.hash,
-    permissions: manifest.codex.permissions,
-    networkPolicy: manifest.codex.networkPolicy,
-    timeoutMs: manifest.codex.budget.timeoutMs
-  };
+  const expected = trackedTrialRequestedConditions(manifest);
 
-  if (artifact.manifestHash !== manifestHash) {
-    throw new Error("Tracked artifact manifest hash does not match the supplied manifest");
-  }
-  if (artifact.runId !== manifest.runId) {
-    throw new Error("Tracked artifact runId does not match the supplied manifest");
-  }
-  if (!sameJson(requested.codex, expectedCodex)) {
-    throw new Error("Tracked artifact Codex conditions do not match the supplied manifest");
-  }
-  if (!sameJson(requested.containment, manifest.containment)) {
-    throw new Error("Tracked artifact containment conditions do not match the supplied manifest");
-  }
-  if (!sameJson(requested.checker, manifest.checker)) {
-    throw new Error("Tracked artifact checker does not match the supplied manifest");
-  }
-  if (
-    observed?.environmentProfileHash !== undefined &&
-    observed.environmentProfileHash !== artifact.execution.environmentProfileHash
-  ) {
-    throw new Error("Tracked artifact environment identity is inconsistent");
-  }
-  if (observed?.profileHash !== undefined && observed.profileHash !== manifest.codex.profile.hash) {
-    throw new Error("Tracked artifact observed profile does not match the supplied manifest");
-  }
-  if (
-    observed?.codex !== undefined &&
-    !commandSucceededWithVersion(observed.codex.version, manifest.codex.cliVersion)
-  ) {
-    throw new Error("Tracked artifact observed Codex version does not match the supplied manifest");
-  }
-  if (
-    observed?.containment !== undefined &&
-    !commandSucceededWithVersion(observed.containment.version, manifest.containment.version)
-  ) {
-    throw new Error("Tracked artifact observed containment version does not match the supplied manifest");
-  }
-  if (artifact.status === "passed") {
-    if (
-      artifact.execution.environmentProfileHash === undefined ||
-      observed?.environmentProfileHash !== artifact.execution.environmentProfileHash
-    ) {
-      throw new Error("Tracked artifact environment identity is missing or inconsistent");
-    }
-    if (observed?.profileHash === undefined || observed.codex === undefined || observed.containment === undefined) {
-      throw new Error("Passed tracked artifact is missing observed execution conditions");
-    }
-  }
+  const reason = [
+    mismatch(artifact.manifestHash === manifestHash, "Tracked artifact manifest hash does not match the supplied manifest"),
+    mismatch(artifact.runId === manifest.runId, "Tracked artifact runId does not match the supplied manifest"),
+    mismatch(sameJson(requested.codex, expected.codex), "Tracked artifact Codex conditions do not match the supplied manifest"),
+    mismatch(sameJson(requested.containment, expected.containment), "Tracked artifact containment conditions do not match the supplied manifest"),
+    mismatch(sameJson(requested.checker, expected.checker), "Tracked artifact checker does not match the supplied manifest"),
+    mismatch(
+      optionalEqual(observed?.environmentProfileHash, artifact.execution.environmentProfileHash),
+      "Tracked artifact environment identity is inconsistent"
+    ),
+    mismatch(
+      optionalEqual(observed?.profileHash, manifest.codex.profile.hash),
+      "Tracked artifact observed profile does not match the supplied manifest"
+    ),
+    mismatch(
+      optionalVersionMatches(observed?.codex, manifest.codex.cliVersion),
+      "Tracked artifact observed Codex version does not match the supplied manifest"
+    ),
+    mismatch(
+      optionalVersionMatches(observed?.containment, manifest.containment.version),
+      "Tracked artifact observed containment version does not match the supplied manifest"
+    ),
+    mismatch(
+      passedObservedConditionsComplete(artifact),
+      "Passed tracked artifact is missing observed execution conditions"
+    )
+  ].find((item) => item !== undefined);
+
+  if (reason !== undefined) throw new Error(reason);
 };
 
 const targetChangedFiles = (
@@ -190,6 +185,44 @@ const pairedDirtyState = (
   if (states.includes("unknown")) return "unknown";
   return states.includes("dirty") ? "dirty" : "clean";
 };
+
+const targetOwnership = (
+  score: TrackedTrialArtifact["score"],
+  targets: TrackedTrialArtifact["execution"]["targets"]
+): "owned_by_current_krn_run" | "partial" | "unknown" => {
+  if (targets === undefined || score === undefined) return "unknown";
+  if (
+    score.baseline.changeManifest?.status !== "known" ||
+    score.krn.changeManifest?.status !== "known"
+  ) return "unknown";
+  return score.baseline.changeManifest.forbiddenFiles.length === 0 &&
+    score.krn.changeManifest.forbiddenFiles.length === 0
+    ? "owned_by_current_krn_run"
+    : "partial";
+};
+
+const targetDirtyField = (
+  targets: TrackedTrialArtifact["execution"]["targets"],
+  phase: "before" | "after"
+): "clean" | "dirty" | "unknown" => targets === undefined
+  ? "unknown"
+  : pairedDirtyState(targets, phase);
+
+const patchIdentityFields = (
+  targets: TrackedTrialArtifact["execution"]["targets"]
+): Pick<TargetEvidenceInput, "patchIdentity"> => {
+  const baseline = targets?.baseline.after?.patchHash;
+  const krn = targets?.krn.after?.patchHash;
+  return baseline === undefined || krn === undefined
+    ? {}
+    : { patchIdentity: `sha256:${sha256(`${baseline}:${krn}`)}` };
+};
+
+const targetChangedFilesFor = (
+  score: TrackedTrialArtifact["score"]
+): NonNullable<TargetEvidenceInput["changedFiles"]> => score === undefined
+  ? []
+  : [...targetChangedFiles("baseline", score.baseline), ...targetChangedFiles("krn", score.krn)];
 
 const artifactEvidenceRefs = (
   artifact: TrackedTrialArtifact
@@ -293,41 +326,21 @@ const targetEvidenceFor = (
 ): TargetEvidenceInput => {
   const targets = artifact.execution.targets;
   const score = artifact.score;
-  const forbiddenFiles = score === undefined
-    ? []
-    : [...score.baseline.changeManifest?.forbiddenFiles ?? [], ...score.krn.changeManifest?.forbiddenFiles ?? []];
-  const manifestsKnown = score?.baseline.changeManifest?.status === "known" &&
-    score.krn.changeManifest?.status === "known";
-  const ownedChanges = targets === undefined || score === undefined || !manifestsKnown
-    ? "unknown"
-    : forbiddenFiles.length === 0
-      ? "owned_by_current_krn_run"
-      : "partial";
-  const patchHashes = [targets?.baseline.after?.patchHash, targets?.krn.after?.patchHash]
-    .filter((hash): hash is string => hash !== undefined);
 
   return {
     targetRepo: `${manifest.sourcePath}#paired:${artifact.runId}`,
     mode: artifact.status === "passed" ? "headless_repair" : "observation_only",
-    dirtyBefore: targets === undefined
-      ? "unknown"
-      : pairedDirtyState(targets, "before"),
-    dirtyAfter: targets === undefined
-      ? "unknown"
-      : pairedDirtyState(targets, "after"),
-    ownedChanges,
+    dirtyBefore: targetDirtyField(targets, "before"),
+    dirtyAfter: targetDirtyField(targets, "after"),
+    ownedChanges: targetOwnership(score, targets),
     targetStatusFreshness: "fresh_current_task",
     treeIdentity: `sha256:${artifact.sourceTreeHash}`,
-    ...(patchHashes.length === 2
-      ? { patchIdentity: `sha256:${sha256(patchHashes.join(":"))}` }
-      : {}),
+    ...patchIdentityFields(targets),
     targetPatchLifecycle: "none",
     handoffArtifact: `artifact:sha256:${artifact.artifactHash}`,
     allowedWrites: ["src/**", "tests/**", "docs/**"],
     forbiddenWrites: ["parent KRN packages", "other target repos", "network", "secrets", "commits", "pushes"],
-    changedFiles: score === undefined
-      ? []
-      : [...targetChangedFiles("baseline", score.baseline), ...targetChangedFiles("krn", score.krn)],
+    changedFiles: targetChangedFilesFor(score),
     commands,
     doesNotProve: [
       "This paired observation does not prove that the DecisionPacket improved the target implementation.",

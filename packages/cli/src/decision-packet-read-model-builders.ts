@@ -262,6 +262,28 @@ export const activationTraceResource = (
         decisions: aggregate.activationTrace.decisions.map(activationDecisionResource)
       };
 
+const evalCandidateEvidenceFields = (
+  sourceEvidence: readonly string[] | undefined,
+  metadata: Record<string, unknown>
+): Pick<
+  DecisionPacketReadModelCandidate,
+  "sourceEvidence" | "observedOutcome" | "usefulnessOutcome" | "artifactHash"
+> => {
+  if (sourceEvidence === undefined) return {};
+  const observedOutcome = readMetadataString(metadata, "outcome");
+  const usefulnessOutcome = readMetadataString(metadata, "usefulnessOutcome");
+  const artifactHash = readMetadataString(metadata, "artifactHash") ??
+    readMetadataStringList(metadata, "evidenceRefs")
+      .find((reference) => reference.startsWith("artifact:sha256:"))?.slice("artifact:sha256:".length);
+
+  return {
+    sourceEvidence: [...sourceEvidence],
+    ...(observedOutcome === undefined ? {} : { observedOutcome }),
+    ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
+    ...(artifactHash === undefined ? {} : { artifactHash })
+  };
+};
+
 const candidateResource = (input: {
   kind: FeedbackCandidateProposalKind;
   id: string;
@@ -272,17 +294,6 @@ const candidateResource = (input: {
 }): DecisionPacketReadModelCandidate => {
   const reviewability = candidateReviewability(input.metadata);
   const reviewabilityReasons = candidateReviewabilityReasons(input.metadata);
-  const observedOutcome = input.sourceEvidence === undefined
-    ? undefined
-    : readMetadataString(input.metadata, "outcome");
-  const usefulnessOutcome = input.sourceEvidence === undefined
-    ? undefined
-    : readMetadataString(input.metadata, "usefulnessOutcome");
-  const artifactHash = input.sourceEvidence === undefined
-    ? undefined
-    : readMetadataString(input.metadata, "artifactHash") ??
-      readMetadataStringList(input.metadata, "evidenceRefs")
-        .find((reference) => reference.startsWith("artifact:sha256:"))?.slice("artifact:sha256:".length);
 
   return {
     kind: input.kind,
@@ -290,12 +301,7 @@ const candidateResource = (input: {
     status: input.status ?? "unknown",
     summary: input.summary,
     reviewability,
-    ...(input.sourceEvidence === undefined
-      ? {}
-      : { sourceEvidence: [...input.sourceEvidence] }),
-    ...(observedOutcome === undefined ? {} : { observedOutcome }),
-    ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
-    ...(artifactHash === undefined ? {} : { artifactHash }),
+    ...evalCandidateEvidenceFields(input.sourceEvidence, input.metadata),
     reviewabilityReasons:
       reviewabilityReasons.length > 0
         ? reviewabilityReasons
