@@ -574,12 +574,17 @@ const governedEndpointGlobalLimit = 20;
 const governedEndpointIds = (
   sourceClaims: readonly SourceClaim[],
   edges: readonly SourceClaimEdge[],
-  now: string
+  now: string,
+  rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>
 ): SourceClaim["id"][] => {
   const initialSourceClaimIds = new Set(sourceClaims.map((claim) => claim.id));
   const endpointIds = new Set<SourceClaim["id"]>();
 
   for (const sourceClaim of sourceClaims) {
+    if (!rankDownAuthoritySourceClaimIds.has(sourceClaim.id)) {
+      continue;
+    }
+
     const seedEndpointIds = [...new Set(
       edges
         .filter((edge) =>
@@ -609,6 +614,7 @@ const expandGovernedSourceClaimEndpoints = async (input: {
   sourceClaims: readonly SourceClaim[];
   edges: readonly SourceClaimEdge[];
   now: string;
+  rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>;
   sourceRepository: ActivationCandidateRepositories["sourceRepository"];
 }): Promise<SourceClaim[]> => {
   const getSourceClaimForProject = input.sourceRepository.getSourceClaimForProject;
@@ -618,7 +624,12 @@ const expandGovernedSourceClaimEndpoints = async (input: {
   }
 
   const endpointClaims = await Promise.all(
-    governedEndpointIds(input.sourceClaims, input.edges, input.now).map((sourceClaimId) =>
+    governedEndpointIds(
+      input.sourceClaims,
+      input.edges,
+      input.now,
+      input.rankDownAuthoritySourceClaimIds
+    ).map((sourceClaimId) =>
       input.sourceRepository.getSourceClaimForProject?.(input.projectId, sourceClaimId)
     )
   );
@@ -770,24 +781,47 @@ export const retrieveActivationCandidates = async (
     input.repositories.sourceRepository,
     seedSourceClaims
   );
+  const seedSourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(
+    input.repositories.sourceRepository,
+    seedSourceClaims
+  );
+  const seedSourceRejections = await sourceRejectionsForClaims(
+    input.repositories.sourceRepository,
+    seedSourceClaims
+  );
+  const seedSourceConsensus = buildSourceConsensusTimelineReadback({
+    sourceClaims: seedSourceClaims,
+    sourceClaimEdges,
+    sourceDecisionEdges: [...seedSourceDecisionEdgesByClaimId.values()].flat(),
+    sourceRejections: seedSourceRejections,
+    now: activationNow
+  });
+  const rankDownAuthoritySeedIds = new Set(seedSourceConsensus.currentSourceClaimIds);
+  const expandedSourceClaims = await expandGovernedSourceClaimEndpoints({
+    projectId: input.taskContract.projectId,
+    sourceClaims: seedSourceClaims,
+    edges: sourceClaimEdges,
+    now: activationNow,
+    rankDownAuthoritySourceClaimIds: rankDownAuthoritySeedIds,
+    sourceRepository: input.repositories.sourceRepository
+  });
   const sourceClaims = appendUniqueById(
     seedSourceClaims,
-    await expandGovernedSourceClaimEndpoints({
-      projectId: input.taskContract.projectId,
-      sourceClaims: seedSourceClaims,
-      edges: sourceClaimEdges,
-      now: activationNow,
-      sourceRepository: input.repositories.sourceRepository
-    })
+    expandedSourceClaims
   );
-  const sourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(
+  const expandedSourceDecisionEdgesByClaimId = await sourceDecisionEdgesForClaims(
     input.repositories.sourceRepository,
-    sourceClaims
+    expandedSourceClaims
   );
-  const sourceRejections = await sourceRejectionsForClaims(
+  const sourceDecisionEdgesByClaimId = new Map([
+    ...seedSourceDecisionEdgesByClaimId,
+    ...expandedSourceDecisionEdgesByClaimId
+  ]);
+  const expandedSourceRejections = await sourceRejectionsForClaims(
     input.repositories.sourceRepository,
-    sourceClaims
+    expandedSourceClaims
   );
+  const sourceRejections = [...seedSourceRejections, ...expandedSourceRejections];
   const sourceConsensus = buildSourceConsensusTimelineReadback({
     sourceClaims,
     sourceClaimEdges,

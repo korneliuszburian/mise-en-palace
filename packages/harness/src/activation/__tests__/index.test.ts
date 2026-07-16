@@ -2366,10 +2366,83 @@ describe("activation engine", () => {
     ]));
   });
 
+  it("does not expand authority through a historical source seed", async () => {
+    const historicalSeed = sourceClaim({
+      id: "claim-historical-graph-seed",
+      claim: "Historical KRN storage guidance remains warning-only.",
+      supportType: "implementation-boundary",
+      metadata: {
+        validUntil: "2026-06-20T12:00:00.000Z"
+      }
+    });
+    const unrelatedCurrentEndpoint = sourceClaim({
+      id: "claim-unrelated-current-endpoint",
+      claim: "Cerulean widgets rotate clockwise before sunrise.",
+      mechanism: "A brass escapement turns four teeth at dawn.",
+      krnImplication: "Retain the widget route for an unrelated archive.",
+      supportType: "implementation-boundary",
+      falsifier: "The cerulean route vanishes."
+    });
+    const historicalSupersedesEdge: SourceClaimEdge = {
+      id: "edge-historical-seed-supersedes-current-endpoint",
+      fromSourceClaimId: historicalSeed.id,
+      toSourceClaimId: unrelatedCurrentEndpoint.id,
+      kind: "supersedes",
+      metadata: {},
+      createdAt: now
+    };
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: { memory: 0, source: 10, search: 0, antiMemory: 0 },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [];
+          },
+          async listHistoricalClaimWarningsForProject() {
+            return [historicalSeed];
+          },
+          async getSourceClaimForProject(projectId, sourceClaimId) {
+            return projectId === task.projectId && sourceClaimId === unrelatedCurrentEndpoint.id
+              ? unrelatedCurrentEndpoint
+              : undefined;
+          },
+          async listSourceClaimEdgesForClaim(sourceClaimId) {
+            return sourceClaimId === historicalSeed.id ? [historicalSupersedesEdge] : [];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            return [sourceDecisionEdge({
+              id: `decision-edge-${sourceClaimId}`,
+              sourceClaimId
+            })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(retrieved.candidates.map((candidate) => candidate.subjectId)).not.toContain(
+      unrelatedCurrentEndpoint.id
+    );
+  });
+
   it("expands only current governed edge kinds through the project-scoped getter", async () => {
     const currentClaim = sourceClaim({
       id: "claim-project-seed",
-      supportType: "implementation-boundary"
+      supportType: "implementation-boundary",
+      falsifier: "The project-scoped current seed cannot drive bounded negative-edge recall."
     });
     const foreignEndpoint = sourceClaim({
       id: "claim-foreign-endpoint",
@@ -2452,7 +2525,8 @@ describe("activation engine", () => {
   it("caps governed endpoint expansion per seed and globally", async () => {
     const seedClaims = Array.from({ length: 6 }, (_, seedIndex) => sourceClaim({
       id: `claim-bounded-seed-${seedIndex + 1}`,
-      supportType: "implementation-boundary"
+      supportType: "implementation-boundary",
+      falsifier: `The bounded seed ${seedIndex + 1} cannot drive negative-edge recall.`
     }));
     const endpointClaims = seedClaims.flatMap((seedClaim, seedIndex) =>
       Array.from({ length: 6 }, (_, endpointIndex) => sourceClaim({
