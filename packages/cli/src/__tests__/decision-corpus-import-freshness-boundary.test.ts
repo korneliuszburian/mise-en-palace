@@ -3,6 +3,10 @@ import { fileURLToPath } from "node:url";
 
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
+import {
+  compileHarnessPlan,
+  decisionPacketForCompiledPlan
+} from "@krn/harness";
 
 import {
   createDatabaseRuntime,
@@ -19,6 +23,7 @@ import { evaluateSourceCoverage } from "../source-coverage.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const now = "2026-07-12T00:00:00.000Z";
+const authorityReadNow = "2099-01-01T00:00:00.000Z";
 const fixturePath = fileURLToPath(
   new URL(
     "../../../../tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
@@ -119,6 +124,37 @@ const requiredPersistedRow = (
   }
 
   return row;
+};
+
+const persistedRowFor = (
+  rows: readonly PersistedDecisionCorpusRow[],
+  decisionId: string
+): PersistedDecisionCorpusRow => {
+  const row = rows.find((candidate) => candidate.decisionId === decisionId);
+
+  if (row === undefined) {
+    throw new Error(`missing persisted import row ${decisionId}`);
+  }
+
+  return row;
+};
+
+const retainedSourceChunkContent = async (
+  client: ReturnType<typeof postgres>,
+  sourceChunkId: string
+): Promise<string> => {
+  const rows = await client<{ content: string }[]>`
+    select content
+    from source_chunks
+    where id = ${sourceChunkId}
+  `;
+  const content = rows[0]?.content;
+
+  if (content === undefined) {
+    throw new Error(`missing retained SourceChunk ${sourceChunkId}`);
+  }
+
+  return content;
 };
 
 interface ImportLifecycleProjection {
@@ -228,6 +264,59 @@ describe("decision corpus import evidence freshness boundary", () => {
         const lifecycleProjections = await Promise.all(rows.map((row) =>
           importLifecycleProjection(client, row)
         ));
+        const currentRow = persistedRowFor(rows, "live-codex-packet-obedience-pilot");
+        const unknownRow = persistedRowFor(rows, "decision-corpus-import-path");
+        const unknownChunkContent = await retainedSourceChunkContent(
+          client,
+          unknownRow.sourceChunkId
+        );
+        const searchLexical = runtime.retrievalRepository?.searchLexical;
+        const listKnowledgeSources =
+          runtime.sourceRepository.listSourceDecisionKnowledgeSources;
+
+        if (searchLexical === undefined || listKnowledgeSources === undefined) {
+          throw new Error("decision corpus freshness proof is missing governing read repositories");
+        }
+
+        const [currentSearchResults, unknownSearchResults, knowledgeSources] =
+          await Promise.all([
+            searchLexical({
+              projectId: runtime.projectId,
+              query: "Live Codex packet obedience pilot",
+              now: authorityReadNow,
+              limit: 20
+            }),
+            searchLexical({
+              projectId: runtime.projectId,
+              query: "Decision corpus import path",
+              now: authorityReadNow,
+              limit: 20
+            }),
+            listKnowledgeSources(runtime.projectId, 20)
+          ]);
+        const compiled = await compileHarnessPlan({
+          workspaceId: runtime.workspaceId,
+          projectId: runtime.projectId,
+          operatorIntent: {
+            rawIntent: "Apply the Live Codex packet obedience pilot",
+            source: "cli",
+            metadata: { marker }
+          },
+          taskContract: {
+            title: "Apply the Live Codex packet obedience pilot",
+            objective: "Use only current imported evidence as governing context.",
+            constraints: ["exclude stale or unknown imported evidence"],
+            nonGoals: ["do not promote retained unknown evidence"],
+            acceptance: ["the current imported source claim is selected"],
+            metadata: { marker }
+          },
+          tokenBudget: 420,
+          metadata: { marker }
+        }, {
+          ...runtime.compilerDependencies,
+          now: () => authorityReadNow
+        });
+        const decisionPacket = decisionPacketForCompiledPlan(compiled);
         const coverage = evaluateSourceCoverage({
           scope: {
             declaredRows: importFixtures.flatMap(
@@ -285,6 +374,23 @@ describe("decision corpus import evidence freshness boundary", () => {
           mismatchedEvidenceRefCount: 0,
           externallyUnverifiedEvidenceRefCount: 0
         });
+        expect(unknownChunkContent).toContain(
+          `captured unknown evidence for ${unknownRow.evidenceRef}`
+        );
+        expect(currentSearchResults.map((result) => result.id)).toContain(
+          currentRow.searchDocumentId
+        );
+        expect(unknownSearchResults.map((result) => result.id)).not.toContain(
+          unknownRow.searchDocumentId
+        );
+        expect(knowledgeSources.map((source) => source.sourceClaim.id)).toContain(
+          currentRow.sourceClaimId
+        );
+        expect(knowledgeSources.map((source) => source.sourceClaim.id)).not.toContain(
+          unknownRow.sourceClaimId
+        );
+        expect(decisionPacket.sourceClaimIds).toContain(currentRow.sourceClaimId);
+        expect(decisionPacket.sourceClaimIds).not.toContain(unknownRow.sourceClaimId);
       } finally {
         try {
           try {
