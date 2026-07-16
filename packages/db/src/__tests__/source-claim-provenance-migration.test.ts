@@ -825,14 +825,11 @@ describe("SourceClaim provenance migration", () => {
 
           const constraintRows = await client<{
             validated: boolean;
-            deleteAction: string;
             localColumns: string[];
             referencedColumns: string[];
-            deleteSetColumns: string[];
           }[]>`
             select
               constraint_row.convalidated as validated,
-              constraint_row.confdeltype::text as "deleteAction",
               array(
                 select attribute.attname::text
                 from unnest(constraint_row.conkey) with ordinality as key(attnum, position)
@@ -848,15 +845,7 @@ describe("SourceClaim provenance migration", () => {
                   on attribute.attrelid = constraint_row.confrelid
                  and attribute.attnum = key.attnum
                 order by key.position
-              ) as "referencedColumns",
-              array(
-                select attribute.attname::text
-                from unnest(constraint_row.confdelsetcols) with ordinality as key(attnum, position)
-                join pg_attribute attribute
-                  on attribute.attrelid = constraint_row.conrelid
-                 and attribute.attnum = key.attnum
-                order by key.position
-              ) as "deleteSetColumns"
+              ) as "referencedColumns"
             from pg_constraint constraint_row
             where constraint_row.conname = 'source_claims_chunk_artifact_fk'
               and constraint_row.conrelid = 'source_claims'::regclass
@@ -864,11 +853,81 @@ describe("SourceClaim provenance migration", () => {
           `;
           expect(constraintRows).toEqual([{
             validated: true,
-            deleteAction: "n",
             localColumns: ["source_chunk_id", "source_artifact_id"],
-            referencedColumns: ["id", "source_artifact_id"],
-            deleteSetColumns: ["source_chunk_id"]
+            referencedColumns: ["id", "source_artifact_id"]
           }]);
+
+          const [deleteProof] = await client<{
+            claimId: string;
+            sourceArtifactId: string;
+            sourceChunkId: string;
+          }[]>`
+            with artifact as (
+              select source_artifact_id as id
+              from source_claims
+              where id = ${fixture.coherentPeerClaimId}
+            ), chunk as (
+              insert into source_chunks (
+                source_artifact_id, ordinal, content, content_hash
+              )
+              select
+                artifact.id,
+                coalesce((
+                  select max(existing.ordinal) + 1
+                  from source_chunks existing
+                  where existing.source_artifact_id = artifact.id
+                ), 0),
+                'source chunk delete behavior proof',
+                ${`sha256:${marker}:delete-proof-chunk`}
+              from artifact
+              returning id, source_artifact_id
+            ), claim as (
+              insert into source_claims (
+                source_artifact_id, source_chunk_id, claim, mechanism, krn_implication,
+                does_not_prove, trust_tier, support_type, consumer, status
+              )
+              select
+                chunk.source_artifact_id,
+                chunk.id,
+                'Deleting a cited chunk clears only the optional chunk binding.',
+                'The simple chunk foreign key owns delete behavior.',
+                'The composite provenance foreign key may remain NO ACTION.',
+                'This fixture does not prove source truth.',
+                'hypothesis',
+                'background',
+                'source claim migration delete behavior proof',
+                'proposed'
+              from chunk
+              returning id, source_artifact_id, source_chunk_id
+            )
+            select
+              id as "claimId",
+              source_artifact_id as "sourceArtifactId",
+              source_chunk_id as "sourceChunkId"
+            from claim
+          `;
+          if (deleteProof === undefined) {
+            throw new Error("source chunk delete behavior fixture was not created");
+          }
+          await client`
+            delete from source_chunks
+            where id = ${deleteProof.sourceChunkId}
+          `;
+          const [deleteProofAfter] = await client<{
+            sourceArtifactId: string;
+            sourceChunkId: string | null;
+          }[]>`
+            select
+              source_artifact_id as "sourceArtifactId",
+              source_chunk_id as "sourceChunkId"
+            from source_claims
+            where id = ${deleteProof.claimId}
+          `;
+          expect(deleteProofAfter).toEqual({
+            sourceArtifactId: deleteProof.sourceArtifactId,
+            sourceChunkId: null
+          });
+          await client`delete from source_claims where id = ${deleteProof.claimId}`;
         } finally {
           await client.end();
         }
