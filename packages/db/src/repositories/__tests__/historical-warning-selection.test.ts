@@ -3,6 +3,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { assessSourceClaimTemporalValidity } from "@krn/core";
+import {
+  applyActivationFilters,
+  assembleContext,
+  retrieveActivationCandidates
+} from "@krn/harness";
 
 import {
   cleanupActivationSmokeRows,
@@ -58,13 +63,14 @@ describe("historical warning repository selection", () => {
         projectId: string;
         key: string;
         summary: string;
+        status?: "active" | "deprecated";
         validFrom?: string;
         validUntil?: string;
       }) => scaffold.memoryRepository.createMemoryRecord({
         projectId: input.projectId,
         key: `${input.key}:${marker}`,
         kind: "constraint",
-        status: "active",
+        status: input.status ?? "active",
         summary: input.summary,
         body: "Historical repository selection fixture.",
         owner: "kernel",
@@ -94,6 +100,12 @@ describe("historical warning repository selection", () => {
         projectId: scaffold.project.id,
         key: "current",
         summary: "historical warning exact memory current"
+      });
+      const deprecated = await createMemory({
+        projectId: scaffold.project.id,
+        key: "deprecated",
+        summary: "historical warning memory deprecated",
+        status: "deprecated"
       });
       const futureStarted = await createMemory({
         projectId: scaffold.project.id,
@@ -125,13 +137,53 @@ describe("historical warning repository selection", () => {
         { now }
       );
       const warningIds = allWarnings.map((record) => record.id);
+      const retrieved = await retrieveActivationCandidates({
+        taskContract: scaffold.taskContract,
+        now,
+        limits: {
+          memory: 10,
+          source: 10,
+          search: 10,
+          antiMemory: 10
+        },
+        repositories: {
+          memoryRepository: scaffold.memoryRepository,
+          sourceRepository: scaffold.sourceRepository,
+          retrievalRepository: scaffold.retrievalRepository
+        }
+      });
+      const filtered = applyActivationFilters({
+        candidates: retrieved.candidates,
+        antiMemoryRecords: retrieved.antiMemoryRecords,
+        minimumSourceAuthority: "low",
+        now
+      });
+      const context = assembleContext({
+        id: "context-deprecated-memory-warning",
+        harnessPlanId: scaffold.harnessPlan.id,
+        candidates: filtered.candidates,
+        createdAt: now
+      });
 
       expect(currentRows.map((record) => record.id)).toEqual([current.id]);
       expect(limitedWarnings.map((record) => record.id)).toEqual([relevantExpired.id]);
       expect(warningIds).toContain(relevantExpired.id);
+      expect(warningIds).toContain(deprecated.id);
       expect(warningIds).not.toContain(current.id);
       expect(warningIds).not.toContain(futureStarted.id);
       expect(warningIds).not.toContain(foreignExpired.id);
+      expect(retrieved.candidates.map((candidate) => candidate.subjectId))
+        .toContain(deprecated.id);
+      expect(context.inclusions.map((inclusion) => inclusion.subjectId)).toContain(current.id);
+      expect(context.inclusions.map((inclusion) => inclusion.subjectId))
+        .not.toContain(deprecated.id);
+      expect(context.exclusions).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          subjectType: "memory_record",
+          subjectId: deprecated.id,
+          reason: "stale"
+        })
+      ]));
     } finally {
       await scaffold.cleanup();
       await scaffold.client.end();

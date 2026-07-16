@@ -35,6 +35,13 @@ const statusExclusion = (
     });
   }
 
+  if (candidate.status === "deprecated") {
+    return markExcluded(candidate, {
+      reason: "stale",
+      explanation: "Candidate is marked deprecated and remains a non-governing warning."
+    });
+  }
+
   if (candidate.status === "stale") {
     return markExcluded(candidate, {
       reason: "stale",
