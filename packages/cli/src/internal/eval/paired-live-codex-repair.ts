@@ -385,8 +385,17 @@ export const scoreTargetRepair = (
     "missing_email",
     "invalid_role"
   ]);
+  const repairContractChecks = new Set<HeldOutCheck["name"]>([
+    ...behaviorChecks,
+    "unknown_first",
+    "finite_result_state",
+    "focused_tests"
+  ]);
   const invalid = checks.some((check) =>
     requiredForValidity.has(check.name) && !check.passed
+  );
+  const satisfiesRepairContract = checks.every((check) =>
+    !repairContractChecks.has(check.name) || check.passed
   );
   const score = checks.filter((check) =>
     behaviorChecks.has(check.name) && check.passed
@@ -395,7 +404,7 @@ export const scoreTargetRepair = (
   return {
     status: invalid
       ? "invalid"
-      : score === behaviorChecks.size ? "pass" : "fail",
+      : satisfiesRepairContract ? "pass" : "fail",
     score,
     checks,
     changedFiles: [...input.changedFiles],
@@ -415,6 +424,33 @@ export const scorePairedRepairs = (input: {
       baseline: input.baseline,
       krn: input.krn,
       reason: "At least one arm failed the checker validity boundary."
+    };
+  }
+
+  if (input.baseline.status === "fail" && input.krn.status === "pass") {
+    return {
+      outcome: "win",
+      baseline: input.baseline,
+      krn: input.krn,
+      reason: "KRN satisfied the repair contract while the equal-contract baseline did not."
+    };
+  }
+
+  if (input.baseline.status === "pass" && input.krn.status === "fail") {
+    return {
+      outcome: "loss",
+      baseline: input.baseline,
+      krn: input.krn,
+      reason: "KRN failed the repair contract while the equal-contract baseline satisfied it."
+    };
+  }
+
+  if (input.baseline.status === "fail" && input.krn.status === "fail") {
+    return {
+      outcome: "invalid",
+      baseline: input.baseline,
+      krn: input.krn,
+      reason: "Neither arm satisfied the repair contract."
     };
   }
 

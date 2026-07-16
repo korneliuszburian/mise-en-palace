@@ -123,6 +123,36 @@ describe("paired live Codex repair eval", () => {
     expect(result.score).toBe(0);
   });
 
+  it("does not report a contract pass from runtime behavior alone", () => {
+    const result = scoreTargetRepair({
+      sourceFiles: {
+        "src/config.ts": "export const parseJsonConfig = JSON.parse;",
+        "src/userService.ts": "export const createUserFromJson = () => false;",
+        "tests/userService.test.ts": "happy path only"
+      },
+      changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+      commands: {
+        test: command(),
+        typecheck: command(),
+        diffCheck: command()
+      },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(result.score).toBe(3);
+    expect(result.status).toBe("fail");
+    expect(result.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "unknown_first", passed: false }),
+      expect.objectContaining({ name: "finite_result_state", passed: false }),
+      expect.objectContaining({ name: "focused_tests", passed: false })
+    ]));
+  });
+
   it("does not count validity gates as paired advantage", () => {
     const result = scoreTargetRepair({
       sourceFiles,
@@ -246,6 +276,20 @@ describe("paired live Codex repair eval", () => {
       baseline: pass,
       krn: { ...pass, status: "invalid" }
     }).outcome).toBe("invalid");
+    expect(scorePairedRepairs({
+      baseline: { ...pass, status: "fail" },
+      krn: pass
+    })).toMatchObject({
+      outcome: "win",
+      reason: "KRN satisfied the repair contract while the equal-contract baseline did not."
+    });
+    expect(scorePairedRepairs({
+      baseline: { ...pass, status: "fail", score: 0 },
+      krn: { ...pass, status: "fail", score: 1 }
+    })).toMatchObject({
+      outcome: "invalid",
+      reason: "Neither arm satisfied the repair contract."
+    });
   });
 
   it("maps only a measured win to helped and preserves neutral, hurt, and unknown", () => {
