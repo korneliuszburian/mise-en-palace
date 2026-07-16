@@ -67,6 +67,32 @@ const knowledgeFeedbackDelta = (
   updatedAt: now
 });
 
+const planBackfillMemory = (index: number): MemoryRecord => ({
+  id: `memory-backfill-${index}`,
+  projectId: "project-1",
+  key: `knowledge:backfill-${index}`,
+  kind: "procedure",
+  status: "active",
+  summary: `Bounded backfill knowledge ${index}`,
+  body: "Use bounded backfill knowledge for this diagnostic plan.",
+  owner: "codex",
+  confidence: 90,
+  applicationGuidance: "Use for the bounded backfill diagnostic.",
+  invalidationRule: "Invalidate if bounded backfill is no longer required.",
+  sourceLineage: [{ sourceId: `source-backfill-${index}` }],
+  isUserPreference: false,
+  positiveFeedbackCount: 0,
+  negativeFeedbackCount: 0,
+  metadata: {
+    knowledgeId: `backfill-${index}`,
+    falsifier: "Post-retrieval feedback filtering prevents bounded backfill.",
+    doesNotProve: "This fixture does not prove broad ranking quality."
+  },
+  validFrom: now,
+  createdAt: now,
+  updatedAt: now
+});
+
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
     const result = await runCli(["plan", "--task", "improve KRN doctor brain store readiness"], {
@@ -363,32 +389,10 @@ describe("runCli", () => {
   });
 
   it("backfills plan knowledge after feedback excludes the first twenty ranked records", async () => {
-    const memoryRecord = (index: number): MemoryRecord => ({
-      id: `memory-backfill-${index}`,
-      projectId: "project-1",
-      key: `knowledge:backfill-${index}`,
-      kind: "procedure",
-      status: "active",
-      summary: `Bounded backfill knowledge ${index}`,
-      body: "Use bounded backfill knowledge for this diagnostic plan.",
-      owner: "codex",
-      confidence: 90,
-      applicationGuidance: "Use for the bounded backfill diagnostic.",
-      invalidationRule: "Invalidate if bounded backfill is no longer required.",
-      sourceLineage: [{ sourceId: `source-backfill-${index}` }],
-      isUserPreference: false,
-      positiveFeedbackCount: 0,
-      negativeFeedbackCount: 0,
-      metadata: {
-        knowledgeId: `backfill-${index}`,
-        falsifier: "Post-retrieval feedback filtering prevents bounded backfill.",
-        doesNotProve: "This fixture does not prove broad ranking quality."
-      },
-      validFrom: now,
-      createdAt: now,
-      updatedAt: now
-    });
-    const memoryRecords = Array.from({ length: 21 }, (_, index) => memoryRecord(index + 1));
+    const memoryRecords = Array.from(
+      { length: 21 },
+      (_, index) => planBackfillMemory(index + 1)
+    );
     const observedLimits: number[] = [];
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "bounded backfill",
@@ -411,6 +415,37 @@ describe("runCli", () => {
         proof: {
           proves: expect.arrayContaining([
             "plan knowledge selection scan limit=100 returned=21 truncated=false"
+          ]),
+          doesNotProve: expect.arrayContaining([
+            "bounded plan knowledge selection proves no eligible knowledge exists beyond the first 100 ranked active rows"
+          ])
+        }
+      }
+    });
+  });
+
+  it("reports exhausted plan knowledge scan when the first hundred records are blocked", async () => {
+    const memoryRecords = Array.from(
+      { length: 101 },
+      (_, index) => planBackfillMemory(index + 1)
+    );
+    const { executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
+      "bounded backfill",
+      {
+        memoryRecords,
+        feedbackDeltas: memoryRecords.slice(0, 100).map((_record, index) =>
+          knowledgeFeedbackDelta(`knowledge:backfill-${index + 1}`, "stale")
+        )
+      }
+    );
+
+    expect(executionRunMetadata).toMatchObject({
+      knowledgeSelection: {
+        status: "rejected_or_deferred",
+        selectedKnowledgeIds: [],
+        proof: {
+          proves: expect.arrayContaining([
+            "plan knowledge selection scan limit=100 returned=100 truncated=true"
           ]),
           doesNotProve: expect.arrayContaining([
             "bounded plan knowledge selection proves no eligible knowledge exists beyond the first 100 ranked active rows"

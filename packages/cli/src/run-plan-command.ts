@@ -641,15 +641,19 @@ const firstSelectedKnowledge = async (
   queries: readonly string[],
   compilerRuntime: CompilerRuntimeResolution
 ): Promise<KnowledgePlanSelection | undefined> => {
+  let lastSelection: KnowledgePlanSelection | undefined;
+
   for (const query of queries) {
     const selection = await readKnowledgeSelection(query, compilerRuntime);
 
     if (selection.status === "selected") {
       return selection;
     }
+
+    lastSelection = selection;
   }
 
-  return undefined;
+  return lastSelection;
 };
 
 const buildKnowledgeSelection = async (

@@ -148,7 +148,7 @@ describe("store knowledge usefulness lifecycle selection", () => {
   });
 
   it("requests only project-scoped feedback for the selected knowledge subjects", async () => {
-    const readModels = [knowledge()];
+    const readModels = [knowledge(), knowledge()];
     const expected = feedback({ id: "feedback-project", status: "accepted", outcome: "helped" });
 
     const result = await listStoreKnowledgeUsefulnessFeedback({
