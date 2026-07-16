@@ -22,6 +22,7 @@ export * from "../retrieval-substrate-readiness.js";
 export * from "./smoke/retrieval-substrate-smoke.js";
 export * from "../source-graph-readiness.js";
 export * from "../source-authority-integrity-readiness.js";
+export * from "../source-authority-quarantine-readback.js";
 export * from "./smoke/source-graph-smoke.js";
 export * from "./smoke/source-claim-transition-smoke.js";
 export * from "./smoke/smoke-fixture-clocks.js";

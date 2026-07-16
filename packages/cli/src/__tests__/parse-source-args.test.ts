@@ -352,6 +352,35 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses bounded source quarantine lifecycle options", () => {
+    expect(parseSourceArgs([
+      "quarantine",
+      "list",
+      "--project",
+      "10000000-0000-4000-8000-000000000001",
+      "--limit",
+      "12",
+      "--after",
+      "20000000-0000-4000-8000-000000000002",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "sourceQuarantineList",
+        projectId: "10000000-0000-4000-8000-000000000001",
+        limit: 12,
+        afterId: "20000000-0000-4000-8000-000000000002",
+        json: true
+      }
+    });
+
+    expect(parseSourceArgs(["quarantine", "list", "--limit", "101"])).toEqual({
+      error: "--limit must not exceed 100"
+    });
+    expect(parseSourceArgs(["quarantine", "list", "--after", " "])).toEqual({
+      error: "--after requires a non-empty quarantine ID"
+    });
+  });
+
   it("rejects source commands missing required fields", () => {
     const invalidCases = [
       {

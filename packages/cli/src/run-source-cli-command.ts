@@ -38,6 +38,9 @@ import {
 import {
   runSourceSearchCommand
 } from "./run-source-search-command.js";
+import {
+  runSourceQuarantineListCommand
+} from "./run-source-quarantine-list-command.js";
 
 type SourceCliCommand = Exclude<
   Extract<CliCommand, { kind: `source${string}` }>,
@@ -115,6 +118,7 @@ const selectSourceCliCommand = (
     case "sourceDecisionGaps":
     case "sourceDecisionReconcile":
     case "sourceDecisionImport":
+    case "sourceQuarantineList":
     case "sourceClaimReject":
       return command;
     default:
@@ -132,6 +136,7 @@ const sourceFallbackMessages = {
   sourceDecisionGaps: "Unknown source decision gaps error",
   sourceDecisionReconcile: "Unknown source decision reconcile error",
   sourceDecisionImport: "Unknown source decision import error",
+  sourceQuarantineList: "Unknown source quarantine list error",
   sourceClaimReject: "Unknown source claim reject error"
 } satisfies Record<SourceCliCommand["kind"], string>;
 
@@ -214,6 +219,11 @@ const runSelectedSourceCommand = async (
       return runSourceClaimRejectCommand({
         ...standardSourceInput(context),
         cwd: context.cwd,
+        command
+      });
+    case "sourceQuarantineList":
+      return runSourceQuarantineListCommand({
+        env: context.env,
         command
       });
     default:

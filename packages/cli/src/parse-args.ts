@@ -489,6 +489,9 @@ export type CliCommand =
       kind: "sourceDecisionReconcileHelp";
     }
   | {
+      kind: "sourceQuarantineListHelp";
+    }
+  | {
       kind: "sourceDecisionImportHelp";
     }
   | {
@@ -532,6 +535,13 @@ export type CliCommand =
       projectId?: string;
       limit?: number;
       afterImportId?: string;
+      json?: boolean;
+    }
+  | {
+      kind: "sourceQuarantineList";
+      projectId?: string;
+      limit?: number;
+      afterId?: string;
       json?: boolean;
     }
   | {

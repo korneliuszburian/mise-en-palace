@@ -4,6 +4,9 @@ import type {
 import {
   sourceDecisionImportReconciliationLimitMaximum
 } from "@krn/core/repositories/internal";
+import {
+  sourceAuthorityQuarantineReadbackLimitMaximum
+} from "@krn/db/dev";
 import type {
   CliCommand,
   ParseArgsResult
@@ -93,6 +96,19 @@ export const formatSourceDecisionReconcileUsage = (): string =>
     "--json",
     "",
     "Note: bounded read-only Postgres reconciliation for complete, partial, and semantically equivalent source decision imports. It does not repair data, choose canonical authority, mutate Memory Core, or prove source truth."
+  ].join("\n") + "\n";
+
+export const formatSourceQuarantineListUsage = (): string =>
+  [
+    "Usage: krn source quarantine list [--project <project-id>] [--limit <n>] [--after <quarantine-id>] [--json]",
+    "",
+    "Optional:",
+    "--project <project-id>",
+    `--limit <1-${sourceAuthorityQuarantineReadbackLimitMaximum}>`,
+    "--after <quarantine-id>",
+    "--json",
+    "",
+    "Note: bounded read-only Postgres readback of source authority quarantine lifecycle. It exposes current authority and resolution without restoring, deleting, or promoting source truth."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionImportUsage = (): string =>
@@ -264,6 +280,7 @@ type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink
 type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
 type SourceDecisionImportCommand = Extract<CliCommand, { kind: "sourceDecisionImport" }>;
 type SourceDecisionReconcileCommand = Extract<CliCommand, { kind: "sourceDecisionReconcile" }>;
+type SourceQuarantineListCommand = Extract<CliCommand, { kind: "sourceQuarantineList" }>;
 
 type SourceTokenParseResult = CliTokenParseResult;
 type SourceFileOptionCommand = SourceArtifactPreviewCommand | SourceDecisionImportCommand;
@@ -1863,6 +1880,67 @@ const parseSourceDecisionReconcileArgs = (rest: readonly string[]): ParseArgsRes
   };
 };
 
+const parseSourceQuarantineAfterOption = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceQuarantineListCommand
+): SourceOptionParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined || !optionMatches(arg, "--after")) {
+    return { matched: false };
+  }
+
+  const parsed = optionValue(rest, index, "--after");
+  const afterId = parsed.value?.trim();
+
+  if (parsed.error !== undefined || afterId === undefined || afterId.length === 0) {
+    return { error: parsed.error ?? "--after requires a non-empty quarantine ID" };
+  }
+
+  sourceCommand.afterId = afterId;
+  return { matched: true, nextIndex: parsed.nextIndex };
+};
+
+const parseSourceQuarantineListArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return { command: { kind: "sourceQuarantineListHelp" } };
+  }
+
+  const sourceCommand: SourceQuarantineListCommand = { kind: "sourceQuarantineList" };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const after = parseSourceQuarantineAfterOption(rest, index, sourceCommand);
+    if ("error" in after) {
+      return { error: after.error };
+    }
+    if (after.matched) {
+      index = after.nextIndex;
+      continue;
+    }
+
+    const parsed = parseSourceDecisionReadbackToken(
+      rest,
+      index,
+      sourceCommand,
+      formatSourceQuarantineListUsage()
+    );
+    if (parsed.kind === "help") {
+      return { command: { kind: "sourceQuarantineListHelp" } };
+    }
+    if (parsed.kind === "error") {
+      return { error: parsed.error };
+    }
+    index = parsed.nextIndex;
+  }
+
+  if (sourceCommand.limit !== undefined && sourceCommand.limit > sourceAuthorityQuarantineReadbackLimitMaximum) {
+    return { error: `--limit must not exceed ${sourceAuthorityQuarantineReadbackLimitMaximum}` };
+  }
+
+  return { command: sourceCommand };
+};
+
 const parseSourceDecisionImportArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -1920,6 +1998,7 @@ const sourceArgsParsers: ReadonlyMap<string, SourceArgsParser> = new Map([
   ["decision adopt", parseSourceDecisionAdoptArgs],
   ["decision gaps", parseSourceDecisionGapsArgs],
   ["decision reconcile", parseSourceDecisionReconcileArgs],
+  ["quarantine list", parseSourceQuarantineListArgs],
   ["decision import", parseSourceDecisionImportArgs]
 ]);
 
