@@ -1484,6 +1484,116 @@ describe("activation engine", () => {
     ]));
   });
 
+  it("accepts incoherent SearchDocument ancillary provenance", async () => {
+    const currentSourceClaim = sourceClaim({
+      id: "claim-provenance-a",
+      sourceArtifactId: "artifact-provenance-a"
+    });
+    const sourceDecisionSupport = sourceDecisionEdge({
+      id: "edge-provenance-a",
+      sourceClaimId: currentSourceClaim.id
+    });
+    const incoherentDocuments = [
+      searchDocument({
+        id: "search-cross-project-provenance",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        sourceArtifactId: "artifact-project-b",
+        sourceChunkId: "chunk-project-b",
+        sourceDecisionId: "decision-project-b"
+      }),
+      searchDocument({
+        id: "search-same-project-wrong-chain",
+        subjectId: currentSourceClaim.id,
+        sourceClaimId: currentSourceClaim.id,
+        sourceArtifactId: "artifact-same-project-chain-b",
+        sourceChunkId: "chunk-same-project-chain-b",
+        sourceDecisionId: "decision-same-project-chain-b"
+      })
+    ];
+    const observations = await Promise.all(incoherentDocuments.map(async (document) => {
+      const result = await retrieveActivationCandidates({
+        taskContract: task,
+        limits: {
+          memory: 0,
+          source: 0,
+          search: 1,
+          antiMemory: 0
+        },
+        repositories: {
+          memoryRepository: {
+            async listActiveMemory() {
+              return [];
+            },
+            async listAntiMemoryForProject() {
+              return [];
+            }
+          },
+          sourceRepository: {
+            async listClaimsForProject() {
+              return [];
+            },
+            async getSourceClaimForProject(projectId, id) {
+              return projectId === task.projectId && id === currentSourceClaim.id
+                ? currentSourceClaim
+                : undefined;
+            },
+            async listSourceClaimEdgesForClaim() {
+              return [];
+            },
+            async listSourceDecisionEdgesForClaim(sourceClaimId) {
+              return sourceClaimId === currentSourceClaim.id ? [sourceDecisionSupport] : [];
+            }
+          },
+          retrievalRepository: {
+            async searchLexical() {
+              return [document];
+            }
+          }
+        }
+      });
+      const candidate = result.candidates[0];
+      const propagated = candidate?.metadata.searchDocument as Record<string, unknown> | undefined;
+
+      return {
+        searchDocumentId: document.id,
+        suppliedSourceArtifactId: document.sourceArtifactId,
+        suppliedSourceChunkId: document.sourceChunkId,
+        suppliedSourceDecisionId: document.sourceDecisionId,
+        acceptedSubjectId: candidate?.subjectId,
+        exclusion: candidate?.exclusion,
+        searchDocumentAuthority: candidate?.metadata.searchDocumentAuthority,
+        propagatedSourceArtifactId: propagated?.sourceArtifactId,
+        propagatedSourceChunkId: propagated?.sourceChunkId
+      };
+    }));
+
+    expect(observations).toEqual([
+      {
+        searchDocumentId: "search-cross-project-provenance",
+        suppliedSourceArtifactId: "artifact-project-b",
+        suppliedSourceChunkId: "chunk-project-b",
+        suppliedSourceDecisionId: "decision-project-b",
+        acceptedSubjectId: currentSourceClaim.id,
+        exclusion: undefined,
+        searchDocumentAuthority: "canonical_projection",
+        propagatedSourceArtifactId: "artifact-project-b",
+        propagatedSourceChunkId: "chunk-project-b"
+      },
+      {
+        searchDocumentId: "search-same-project-wrong-chain",
+        suppliedSourceArtifactId: "artifact-same-project-chain-b",
+        suppliedSourceChunkId: "chunk-same-project-chain-b",
+        suppliedSourceDecisionId: "decision-same-project-chain-b",
+        acceptedSubjectId: currentSourceClaim.id,
+        exclusion: undefined,
+        searchDocumentAuthority: "canonical_projection",
+        propagatedSourceArtifactId: "artifact-same-project-chain-b",
+        propagatedSourceChunkId: "chunk-same-project-chain-b"
+      }
+    ]);
+  });
+
   it("ranks Memory Core write-authority memory above adjacent source-graph memory", () => {
     const query = buildMemoryQuery({
       ...task,
