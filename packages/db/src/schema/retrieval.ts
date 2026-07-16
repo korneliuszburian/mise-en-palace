@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   pgEnum,
@@ -213,6 +215,18 @@ export const searchDocuments = pgTable(
     updatedAt: updatedAtColumn()
   },
   (table) => [
+    check(
+      "search_documents_validity_window",
+      sql`(${table.validUntil} IS NULL OR ${table.validUntil} > ${table.validFrom})
+        AND (${table.invalidatedAt} IS NULL OR ${table.invalidatedAt} >= ${table.validFrom})`
+    ),
+    check(
+      "search_documents_validity_status_timestamps",
+      sql`(
+        (${table.validityStatus} = 'invalidated' AND ${table.invalidatedAt} IS NOT NULL)
+        OR (${table.validityStatus} IN ('active', 'expired') AND ${table.invalidatedAt} IS NULL)
+      )`
+    ),
     index("search_documents_project_id_idx").on(table.projectId),
     index("search_documents_subject_idx").on(table.subjectType, table.subjectId),
     index("search_documents_evidence_bundle_id_idx").on(table.evidenceBundleId),

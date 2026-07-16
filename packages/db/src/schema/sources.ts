@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  check,
   foreignKey,
   index,
   integer,
@@ -83,6 +84,20 @@ export const sourceArtifacts = pgTable(
     updatedAt: updatedAtColumn()
   },
   (table) => [
+    check(
+      "source_artifacts_import_tuple_complete",
+      sql`(
+        (${table.importId} IS NULL AND ${table.importRowId} IS NULL)
+        OR (
+          NULLIF(BTRIM(${table.importId}), '') IS NOT NULL
+          AND NULLIF(BTRIM(${table.importRowId}), '') IS NOT NULL
+        )
+      )`
+    ),
+    check(
+      "source_artifacts_import_content_hash_sha256",
+      sql`${table.importId} IS NULL OR ${table.contentHash} ~ '^[0-9a-f]{64}$'`
+    ),
     uniqueIndex("source_artifacts_uri_hash_unique").on(table.uri, table.contentHash),
     uniqueIndex("source_artifacts_project_import_row_unique").on(
       table.projectId,

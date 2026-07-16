@@ -268,7 +268,10 @@ describe("DrizzleRetrievalRepository", () => {
       );
       await scaffold.db
         .update(searchDocuments)
-        .set({ invalidatedAt: new Date(selectionNow) })
+        .set({
+          validityStatus: "invalidated",
+          invalidatedAt: new Date(selectionNow)
+        })
         .where(eq(searchDocuments.id, invalidated.id));
       const [foreignProject] = await scaffold.db
         .insert(projects)

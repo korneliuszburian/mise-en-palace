@@ -69,6 +69,11 @@ const createGoverningEvidenceFixture = async (
   const lifecycle = input.lifecycle ?? "governing";
   const evidenceRef = `source-authority://${input.marker}/evidence`;
   const evidenceContentHash = `sha256:${input.marker}:evidence`;
+  const importIdentity = input.decisionCorpusStatus === undefined ? null : input.marker;
+  const importedContentHash = crypto.createHash("sha256").update(input.marker).digest("hex");
+  const artifactContentHash = importIdentity === null
+    ? `sha256:${input.marker}:artifact`
+    : importedContentHash;
   const metadata = {
     smokeId: input.marker,
     evidenceRef,
@@ -86,13 +91,13 @@ const createGoverningEvidenceFixture = async (
       )
       values (
         ${input.projectId},
-        ${input.decisionCorpusStatus === undefined ? null : input.marker},
-        ${input.decisionCorpusStatus === undefined ? null : input.marker},
+        ${importIdentity},
+        ${importIdentity},
         'doc',
         'project-decision',
         ${evidenceRef},
         ${input.marker},
-        ${`sha256:${input.marker}:artifact`},
+        ${artifactContentHash},
         ${client.json(metadata)}
       )
       returning id, project_id, uri
@@ -468,9 +473,10 @@ describe("source authority integrity readiness", () => {
           returning id
         `;
 
+        const incompleteContentHash = crypto.createHash("sha256").update(marker).digest("hex");
         const incompleteArtifact = await client<{ id: string }[]>`
           insert into source_artifacts (project_id, import_id, import_row_id, kind, trust_tier, uri, title, content_hash, metadata)
-          values (${projectOne}, ${marker}, 'incomplete', 'doc', 'project-decision', ${`source-authority://${marker}/incomplete`}, 'incomplete', ${`sha256:${marker}:incomplete`}, ${client.json({ smokeId: marker, decisionCorpusStatus: "current" })})
+          values (${projectOne}, ${marker}, 'incomplete', 'doc', 'project-decision', ${`source-authority://${marker}/incomplete`}, 'incomplete', ${incompleteContentHash}, ${client.json({ smokeId: marker, decisionCorpusStatus: "current" })})
           returning id
         `;
 

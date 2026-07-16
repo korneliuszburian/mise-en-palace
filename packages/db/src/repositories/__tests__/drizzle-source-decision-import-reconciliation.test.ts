@@ -47,6 +47,10 @@ describe("source decision import reconciliation", () => {
         metadata: { smokeId: marker }
       });
       projectId = project.id;
+      const contentHash = crypto
+        .createHash("sha256")
+        .update("shared-reconciliation-manifest")
+        .digest("hex");
 
       for (let index = 0; index < pageSize; index += 1) {
         const importId = `${marker}-${index.toString().padStart(2, "0")}`;
@@ -59,7 +63,7 @@ describe("source decision import reconciliation", () => {
           sourceAuthority: "project-decision",
           uri: `source-decision-import://${importId}/shared-row`,
           title: `Reconciliation import ${index}`,
-          contentHash: "sha256:shared-reconciliation-manifest",
+          contentHash,
           metadata: { smokeId: marker }
         });
       }

@@ -1528,6 +1528,122 @@ describe("SourceClaim provenance migration", () => {
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "preserves and reports legacy import and temporal violations under the write-enforcing migration",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      const pre0046Migrations = await createMigrationsFolderThrough(
+        45,
+        "0045_align_source_schema_constraints"
+      );
+      const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0046Migrations.migrationsFolder
+        });
+        const [workspace] = await client<{ id: string }[]>`
+          insert into workspaces (slug, display_name)
+          values ('legacy-import-consistency', 'Legacy import consistency')
+          returning id
+        `;
+        const [project] = await client<{ id: string }[]>`
+          insert into projects (workspace_id, slug, display_name)
+          values (${workspace!.id}, 'legacy-import-consistency', 'Legacy import consistency')
+          returning id
+        `;
+        const [partialArtifact] = await client<{ id: string }[]>`
+          insert into source_artifacts (
+            project_id, import_id, kind, trust_tier, uri, title, content_hash
+          ) values (
+            ${project!.id}, 'legacy-import', 'doc', 'project-decision',
+            'legacy-consistency://partial', 'legacy partial', ${"a".repeat(64)}
+          ) returning id
+        `;
+        const [malformedArtifact] = await client<{ id: string }[]>`
+          insert into source_artifacts (
+            project_id, import_id, import_row_id, kind, trust_tier, uri, title, content_hash
+          ) values (
+            ${project!.id}, 'legacy-import', 'legacy-row', 'doc', 'project-decision',
+            'legacy-consistency://digest', 'legacy digest', 'not-a-digest'
+          ) returning id
+        `;
+        const [temporalDocument] = await client<{ id: string }[]>`
+          insert into search_documents (
+            project_id, subject_type, subject_id, trust_tier, validity_status,
+            title, body, search_text, invalidated_at
+          ) values (
+            ${project!.id}, 'owner_file', ${crypto.randomUUID()}, 'project-decision', 'active',
+            'legacy temporal', 'legacy temporal', 'legacy temporal', now()
+          ) returning id
+        `;
+        await client`
+          insert into source_authority_quarantines (entity_type, entity_id, reason, metadata)
+          values
+            ('source_artifact', ${partialArtifact!.id}, 'incomplete_import_lifecycle', '{}'::jsonb),
+            ('source_artifact', ${malformedArtifact!.id}, 'incomplete_import_lifecycle', '{}'::jsonb)
+        `;
+
+        const migration = await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder
+        });
+        expect(migration).toMatchObject({
+          migrationIdentityStatus: "verified",
+          migrationsVerified: true
+        });
+        expect(migration.expectedMigrationCount).toBeGreaterThan(46);
+        expect(migration.appliedMigrationCount).toBe(migration.expectedMigrationCount);
+
+        const report = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          schemaIdentity: "post-0046-source-import-consistency"
+        });
+        const consistencyViolations = report.violations.filter(({ kind }) =>
+          [
+            "source_import_tuple_incomplete",
+            "source_import_content_hash_malformed",
+            "search_document_temporal_incoherence"
+          ].includes(kind)
+        );
+        expect(consistencyViolations).toEqual([
+          expect.objectContaining({
+            kind: "search_document_temporal_incoherence",
+            subjectId: temporalDocument!.id
+          }),
+          expect.objectContaining({
+            kind: "source_import_content_hash_malformed",
+            subjectId: malformedArtifact!.id
+          }),
+          expect.objectContaining({
+            kind: "source_import_tuple_incomplete",
+            subjectId: partialArtifact!.id
+          })
+        ]);
+        expect(report).toMatchObject({ readOnly: true, integrityReady: false });
+
+        const constraints = await client<{ name: string; validated: boolean }[]>`
+          select conname as name, convalidated as validated
+          from pg_constraint
+          where conname in (
+            'source_artifacts_import_tuple_complete',
+            'source_artifacts_import_content_hash_sha256',
+            'search_documents_validity_window',
+            'search_documents_validity_status_timestamps'
+          )
+          order by conname
+        `;
+        expect(constraints).toHaveLength(4);
+        expect(constraints.every(({ validated }) => validated === false)).toBe(true);
+      } finally {
+        await client.end();
+        await Promise.all([pre0046Migrations.cleanup(), disposable.cleanup()]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "fails closed for authority labels not classified by the SQL projection",
     async () => {
       const disposable = await createDisposableDatabase(databaseUrl!);

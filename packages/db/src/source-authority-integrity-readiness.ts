@@ -11,6 +11,9 @@ export type SourceAuthorityIntegrityViolationKind =
   | "governing_edge_without_current_reviewed_decision"
   | "incoherent_search_document_provenance"
   | "active_search_without_canonical_authority"
+  | "source_import_tuple_incomplete"
+  | "source_import_content_hash_malformed"
+  | "search_document_temporal_incoherence"
   | "incomplete_import_lifecycle"
   | "captured_evidence_missing_or_mismatched"
   | "governing_evidence_not_current";
@@ -307,6 +310,40 @@ const inspectViolations = async (
           where quarantine.entity_type = 'search_document' and quarantine.entity_id = sd.id
         )
     ),
+    invalid_import_tuples as (
+      select
+        'source_import_tuple_incomplete'::text as kind,
+        sa.id::text as subject_id,
+        'SourceArtifact import identity must contain both non-empty import ID fields or neither'::text as detail
+      from source_artifacts sa
+      where
+        ((sa.import_id is null) <> (sa.import_row_id is null))
+        or (
+          sa.import_id is not null
+          and (nullif(btrim(sa.import_id), '') is null or nullif(btrim(sa.import_row_id), '') is null)
+        )
+    ),
+    invalid_import_hashes as (
+      select
+        'source_import_content_hash_malformed'::text as kind,
+        sa.id::text as subject_id,
+        'imported SourceArtifact content hash is not canonical lowercase SHA-256'::text as detail
+      from source_artifacts sa
+      where sa.import_id is not null
+        and sa.content_hash !~ '^[0-9a-f]{64}$'
+    ),
+    invalid_search_temporal_rows as (
+      select
+        'search_document_temporal_incoherence'::text as kind,
+        sd.id::text as subject_id,
+        'SearchDocument validity status and timestamps are contradictory'::text as detail
+      from search_documents sd
+      where
+        (sd.valid_until is not null and sd.valid_until <= sd.valid_from)
+        or (sd.invalidated_at is not null and sd.invalidated_at < sd.valid_from)
+        or (sd.validity_status = 'invalidated' and sd.invalidated_at is null)
+        or (sd.validity_status in ('active', 'expired') and sd.invalidated_at is not null)
+    ),
     incomplete_imports as (
       select distinct
         'incomplete_import_lifecycle'::text as kind,
@@ -387,6 +424,9 @@ const inspectViolations = async (
       union all select * from status_mismatches
       union all select * from invalid_edges
       union all select * from invalid_search
+      union all select * from invalid_import_tuples
+      union all select * from invalid_import_hashes
+      union all select * from invalid_search_temporal_rows
       union all select * from incomplete_imports
       union all select * from invalid_evidence
     ) violations
