@@ -1,6 +1,7 @@
 import {
   isReviewableFeedbackOutcome,
   type FeedbackCandidateProposalKind,
+  type FeedbackDeltaStatus,
   type SourceUsefulnessOutcome
 } from "./feedback-delta.js";
 import { sourceClaimAuthorityStateFor } from "./source-authority.js";
@@ -491,6 +492,7 @@ export interface DecisionPacketEvidenceBundleInput {
 }
 
 export interface DecisionPacketFeedbackDeltaInput {
+  status: FeedbackDeltaStatus;
   candidates: readonly {
     kind: FeedbackCandidateProposalKind;
     id: string;
@@ -508,6 +510,17 @@ export interface DecisionPacketFeedbackDeltaInput {
     reason: string;
   }[];
 }
+
+const governingFeedbackDeltaStatuses = new Set<FeedbackDeltaStatus>([
+  "accepted",
+  "applied"
+]);
+
+const governingFeedbackDeltasFor = (
+  readModel: DecisionPacketReadModelInput
+): readonly DecisionPacketFeedbackDeltaInput[] => readModel.feedbackDeltas.filter(
+  (feedback) => governingFeedbackDeltaStatuses.has(feedback.status)
+);
 
 export interface DecisionPacketIdentity {
   packetId: string;
@@ -740,7 +753,7 @@ const sourceClaimIdsWithDecisionSupportFor = (
 
 const sourceClaimIdsWithReviewableFeedback = (
   readModel: DecisionPacketReadModelInput
-): string[] => unique(readModel.feedbackDeltas.flatMap((feedback) =>
+): string[] => unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
     outcome.sourceClaimId !== undefined && isReviewableFeedbackOutcome(outcome.outcome)
       ? [outcome.sourceClaimId]
@@ -778,7 +791,7 @@ const sourceDecisionIdsWithUsefulness = (
     sourceClaimIdsFor(readModel)
   ));
 
-  return unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  return unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
   feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
     outcome.sourceDecisionId !== undefined &&
     selectedSourceDecisionIds.has(outcome.sourceDecisionId) &&
@@ -801,7 +814,7 @@ const knowledgeIdsWithUsefulness = (
 ): string[] => {
   const selectedMemoryIds = new Set(memoryRefsFor(readModel));
 
-  return unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  return unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
   feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
     selectedMemoryIds.has(outcome.knowledgeId) && outcomes.includes(outcome.outcome)
       ? [outcome.knowledgeId]
@@ -814,7 +827,7 @@ const memoryRefsWithReviewableKnowledgeFeedback = (
   readModel: DecisionPacketReadModelInput
 ): string[] => {
   const memoryRefs = new Set(memoryRefsFor(readModel));
-  const knowledgeIds = unique(readModel.feedbackDeltas.flatMap((feedback) =>
+  const knowledgeIds = unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
     feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
       isReviewableFeedbackOutcome(outcome.outcome) ? [outcome.knowledgeId] : []
     )

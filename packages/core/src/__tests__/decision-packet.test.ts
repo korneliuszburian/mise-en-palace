@@ -169,6 +169,7 @@ const readModel = {
     }]
   }],
   feedbackDeltas: [{
+    status: "accepted",
     candidates: [{
       kind: "source_decision_candidate",
       id: "source-decision-rejected",
@@ -750,6 +751,7 @@ describe("DecisionPacket builder", () => {
       },
       evidenceBundles: [],
       feedbackDeltas: [{
+        status: "accepted",
         candidates: [],
         sourceUsefulnessOutcomes: [{
           sourceDecisionId: "source-decision-feedback-only-id",
@@ -984,6 +986,7 @@ describe("DecisionPacket builder", () => {
       },
       evidenceBundles: [],
       feedbackDeltas: [{
+        status: "accepted",
         candidates: [],
         sourceUsefulnessOutcomes: [
           {
@@ -1143,6 +1146,7 @@ describe("DecisionPacket builder", () => {
       },
       evidenceBundles: [],
       feedbackDeltas: [{
+        status: "accepted",
         candidates: [],
         sourceUsefulnessOutcomes: [{
           sourceDecisionId: "decision-governing",
@@ -1400,6 +1404,7 @@ describe("DecisionPacket builder", () => {
       },
       evidenceBundles: [],
       feedbackDeltas: [{
+        status: "accepted",
         candidates: [],
         sourceUsefulnessOutcomes: [{
           sourceClaimId: "claim-hurt",

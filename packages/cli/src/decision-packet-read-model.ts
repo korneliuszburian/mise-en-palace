@@ -9,6 +9,7 @@ import type {
   EvidenceCommandReadback,
   ExecutionRunStatus,
   FeedbackCandidateProposalKind,
+  FeedbackDeltaStatus,
   FeedbackRecommendationReadback,
   ProjectStandardDecisionReadback,
   SourceAuthorityLabel,
@@ -223,7 +224,7 @@ export interface DecisionPacketReadModel {
   }[];
   feedbackDeltas: {
     id: string;
-    status: string;
+    status: FeedbackDeltaStatus;
     memoryRecordMutation: "none";
     candidateCounts: {
       memory: number;

@@ -497,6 +497,7 @@ const activationTraceForAuthority = (
 const feedbackDeltaForAuthority = (
   feedback: HarnessRunAggregate["feedbackDeltas"][number]
 ): DecisionPacketReadModelInput["feedbackDeltas"][number] => ({
+  status: feedback.status,
   candidates: [],
   sourceUsefulnessOutcomes: sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
     ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),

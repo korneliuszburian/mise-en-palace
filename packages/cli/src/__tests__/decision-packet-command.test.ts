@@ -761,6 +761,38 @@ describe("decision packet CLI", () => {
     ));
   });
 
+  it("keeps rejected feedback visible without granting it packet caveat authority", () => {
+    const rejectedFeedbackAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => ({
+        ...feedback,
+        status: "rejected"
+      }))
+    };
+    const authorityProjection = buildDecisionPacketAuthorityProjection(
+      rejectedFeedbackAggregate
+    );
+    const packetWithRejectedHistory = buildDecisionPacketFromReadModel(authorityProjection);
+    const packetWithoutFeedback = buildDecisionPacketFromReadModel({
+      ...authorityProjection,
+      feedbackDeltas: []
+    });
+
+    expect(authorityProjection.feedbackDeltas).toEqual([
+      expect.objectContaining({ status: "rejected" })
+    ]);
+    expect(packetWithRejectedHistory.caveatedSourceClaimIds)
+      .toEqual(packetWithoutFeedback.caveatedSourceClaimIds);
+    expect(packetWithRejectedHistory.caveatedMemoryRefs)
+      .toEqual(packetWithoutFeedback.caveatedMemoryRefs);
+    expect(packetWithRejectedHistory.staleKnowledgeIds)
+      .toEqual(packetWithoutFeedback.staleKnowledgeIds);
+    expect(packetWithRejectedHistory.evidenceGaps)
+      .toEqual(packetWithoutFeedback.evidenceGaps);
+    expect(packetWithRejectedHistory.abstentionScore)
+      .toEqual(packetWithoutFeedback.abstentionScore);
+  });
+
   it("returns a read-only DecisionPacket and evidence return channels for headless agents", async () => {
     let closed = false;
     const result = await runCli(["decision", "packet", "--run-id", "run-agent-1", "--json"], {
