@@ -33,10 +33,25 @@ import {
   type CommandResult,
   type PairedRepairScore
 } from "./paired-live-codex-repair.js";
+import {
+  recordPairedDecisionApplications
+} from "./paired-decision-application.js";
+import type {
+  PairedDecisionApplicationRecorderInput,
+  PairedDecisionApplicationRecord
+} from "./paired-decision-application.js";
 
 type JsonRecord = Record<string, unknown>;
 
 export type TrackedTrialStatus = "passed" | "invalid" | "blocked" | "unverified";
+
+export type PairedDecisionApplicationRule = {
+  readonly sourceDecisionId: string;
+  readonly check: HeldOutCheckName;
+  readonly changedFiles: readonly string[];
+};
+
+type HeldOutCheckName = NonNullable<PairedRepairScore["krn"]["checks"]>[number]["name"];
 
 export type PairedTrialManifest = {
   readonly kind: "krn.pairedLiveCodexRepairManifest.v1";
@@ -46,6 +61,7 @@ export type PairedTrialManifest = {
   readonly taskId: string;
   readonly task: string;
   readonly requiredDecisionIds: readonly string[];
+  readonly decisionApplications: readonly PairedDecisionApplicationRule[];
   readonly runId: string;
   readonly codex: {
     readonly command: string;
@@ -88,6 +104,10 @@ export type TrialPacketValidation = {
 type PairedTrialChecker = (
   input: Parameters<typeof runPairedRepairChecker>[0]
 ) => Promise<PairedRepairScore>;
+
+type PairedDecisionApplicationRecorder = (
+  input: Omit<PairedDecisionApplicationRecorderInput, "databaseUrl">
+) => Promise<readonly PairedDecisionApplicationRecord[]>;
 
 type TrialToolObservation = {
   readonly command: string;
@@ -288,13 +308,66 @@ const isManifestContainment = (value: unknown): boolean =>
 const isManifestChecker = (value: unknown): boolean =>
   isRecord(value) &&
   value["heldOut"] === true &&
-  value["outcome"] === "win|tie|loss|invalid";
+    value["outcome"] === "win|tie|loss|invalid";
+
+const heldOutCheckNames = new Set<string>([
+  "preflight",
+  "invalid_json",
+  "missing_email",
+  "invalid_role",
+  "unknown_first",
+  "finite_result_state",
+  "focused_tests",
+  "forbidden_files",
+  "target_test",
+  "target_typecheck",
+  "target_diff_check",
+  "held_out_runtime"
+]);
+
+const isDecisionApplicationRule = (value: unknown): value is PairedDecisionApplicationRule =>
+  isRecord(value) &&
+  readString(value["sourceDecisionId"]) !== undefined &&
+  typeof value["check"] === "string" &&
+  heldOutCheckNames.has(value["check"]) &&
+  Array.isArray(value["changedFiles"]) &&
+  value["changedFiles"].length > 0 &&
+  value["changedFiles"].every((path) =>
+    readString(path) !== undefined &&
+    !isAbsolute(path as string) &&
+    path !== ".." &&
+    !(path as string).startsWith(`..${sep}`)
+  ) &&
+  new Set(value["changedFiles"]).size === value["changedFiles"].length;
+
+const hasUnambiguousDecisionApplicationProofs = (
+  rules: readonly PairedDecisionApplicationRule[]
+): boolean => {
+  const checks = rules.map((rule) => rule.check);
+  const changedFiles = rules.flatMap((rule) => rule.changedFiles);
+  return new Set(checks).size === checks.length &&
+    new Set(changedFiles).size === changedFiles.length;
+};
+
+const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
+  const requiredDecisionIds = value["requiredDecisionIds"];
+  const rules = value["decisionApplications"];
+  if (!Array.isArray(requiredDecisionIds) || !Array.isArray(rules) || !rules.every(isDecisionApplicationRule)) {
+    return false;
+  }
+  const ruleIds = rules.map((rule) => rule.sourceDecisionId);
+  return new Set(ruleIds).size === ruleIds.length &&
+    hasUnambiguousDecisionApplicationProofs(rules) &&
+    requiredDecisionIds.length === ruleIds.length &&
+    requiredDecisionIds.every((id) => typeof id === "string" && ruleIds.includes(id));
+};
 
 const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => {
   if (!isRecord(value) || value["kind"] !== "krn.pairedLiveCodexRepairManifest.v1") return false;
   return hasRequiredStrings(value, ["scenario", "sourcePath", "projectId", "taskId", "task", "runId"]) &&
     Array.isArray(value["requiredDecisionIds"]) &&
     value["requiredDecisionIds"].every((id) => readString(id) !== undefined) &&
+    hasCompleteDecisionApplicationRules(value) &&
     isManifestCodex(value["codex"]) &&
     isManifestContainment(value["containment"]) &&
     isManifestChecker(value["checker"]);
@@ -1557,6 +1630,7 @@ const executeComparableTrial = async (input: {
   readonly journal: TrialJournal;
   readonly containmentExecutable: string;
   readonly codexExecutable: string;
+  readonly recordDecisionApplications: PairedDecisionApplicationRecorder | undefined;
 }, checker: PairedTrialChecker): Promise<TrialArtifactInput> => {
   const runArm = async (
     target: MaterializedTrialTarget,
@@ -1622,6 +1696,30 @@ const executeComparableTrial = async (input: {
     krn: { targetRoot: input.trial.krn.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.krn.commit }
   });
   await input.journal.phase("checker_scored", { outcome: score.outcome, reason: score.reason });
+  if (input.recordDecisionApplications !== undefined && score.outcome !== "invalid") {
+    try {
+      await input.recordDecisionApplications({
+        runId: input.trial.context.manifest.runId,
+        packet: input.packet,
+        score,
+        rules: input.trial.context.manifest.decisionApplications,
+        krnTarget: {
+          targetRoot: input.trial.krn.root,
+          checkerRoot: input.checkerRoot,
+          initialCommit: input.trial.krn.commit
+        }
+      });
+    } catch {
+      return {
+        status: "unverified",
+        invalidReasons: ["decision application persistence could not be verified"],
+        baselineTreeHash: input.trial.baseline.treeHash,
+        krnTreeHash: input.trial.krn.treeHash,
+        execution,
+        score
+      };
+    }
+  }
   return {
     status: score.outcome === "invalid" ? "invalid" : "passed",
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
@@ -1643,6 +1741,7 @@ const runClaimedTrackedTrial = async (input: {
   readonly journal: TrialJournal;
   readonly containmentExecutable: string;
   readonly codexExecutable: string;
+  readonly recordDecisionApplications: PairedDecisionApplicationRecorder | undefined;
 }, checker: PairedTrialChecker): Promise<TrackedTrialArtifact> => {
   const context = { ...input.context, conditions: input.conditions };
   const preparation = await prepareComparableTrial({
@@ -1662,7 +1761,8 @@ const runClaimedTrackedTrial = async (input: {
     sandboxRoot: input.sandboxRoot,
     journal: input.journal,
     containmentExecutable: input.containmentExecutable,
-    codexExecutable: input.codexExecutable
+    codexExecutable: input.codexExecutable,
+    recordDecisionApplications: input.recordDecisionApplications
   }, checker);
   return finalizeTrackedTrial({ context: preparation.trial.context, journal: input.journal, artifact });
 };
@@ -1675,6 +1775,7 @@ type TrackedPairedTrialInput = {
   readonly packetFetchFailure?: string;
   readonly fetchPacket?: () => Promise<{ readonly packet?: unknown; readonly failure?: string }>;
   readonly attemptDirectory?: string;
+  readonly recordDecisionApplications?: PairedDecisionApplicationRecorder;
 };
 
 const resolveTrialPacket = async (
@@ -1770,7 +1871,8 @@ export const runTrackedPairedTrial = async (
       packet: packetResult.packet,
       trialRoot,
       sandboxRoot,
-      ...preparation
+      ...preparation,
+      recordDecisionApplications: input.recordDecisionApplications
     }, checker);
   } catch {
     return finalizeTrackedTrial({
@@ -1887,5 +1989,9 @@ export const runTrackedTrialCommand = async (
     checkerRoot,
     fetchPacket: () => fetchDecisionPacketViaMcp(checkerRoot, manifest.runId),
     attemptDirectory,
+    recordDecisionApplications: (input) => recordPairedDecisionApplications({
+      ...input,
+      databaseUrl: process.env.KRN_DATABASE_URL ?? "postgres://krn:krn@localhost:54329/krn"
+    })
   });
 };

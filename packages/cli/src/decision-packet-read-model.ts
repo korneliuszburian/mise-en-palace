@@ -261,6 +261,8 @@ export interface DecisionPacketReadModelCandidate {
 export interface DecisionPacketReadModelSourceUsefulnessOutcome {
   sourceClaimId?: string;
   sourceDecisionId?: string;
+  applicationId?: string;
+  appliedAt?: string;
   outcome: SourceUsefulnessOutcome;
   reason: string;
   evidenceRefs: string[];

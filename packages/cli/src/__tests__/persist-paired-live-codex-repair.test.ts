@@ -6,8 +6,12 @@ import {
   preparePairedTrialPersistence
 } from "../internal/eval/persist-paired-live-codex-repair.js";
 import {
-  decisionPacketReadModelCandidates
+  decisionPacketReadModelCandidates,
+  decisionPacketReadModelSourceUsefulnessOutcomes
 } from "../decision-packet-read-model-builders.js";
+import {
+  pairedDecisionApplicationId
+} from "../internal/eval/paired-decision-application.js";
 import type {
   CommandResult,
   PairedRepairScore
@@ -30,6 +34,11 @@ const manifest: PairedTrialManifest = {
   taskId: "task-1",
   task: "Repair the controlled target.",
   requiredDecisionIds: ["decision-1"],
+  decisionApplications: [{
+    sourceDecisionId: "decision-1",
+    check: "finite_result_state",
+    changedFiles: ["src/index.ts"]
+  }],
   runId: "run-1",
   codex: {
     command: "codex",
@@ -313,6 +322,48 @@ describe("paired live Codex repair persistence", () => {
     expect(prepared.alreadyPersistedFeedbackDeltaId).toBe("feedback-existing");
   });
 
+  it("requires exact application readback and never accepts helped for a tied mapped check", () => {
+    const mappedCheck = { name: "finite_result_state" as const, passed: true, details: "observed" };
+    const mappedScore: PairedRepairScore = {
+      ...score,
+      baseline: { ...score.baseline, checks: [mappedCheck] },
+      krn: { ...score.krn, checks: [mappedCheck] }
+    };
+    const applicationId = pairedDecisionApplicationId(manifest.runId, "decision-1");
+    const applicationOutcome = {
+      sourceDecisionId: "decision-1",
+      applicationId,
+      appliedAt: "2026-07-16T11:00:00.000Z",
+      outcome: "used"
+    };
+    const readback = packetReadback({
+      readModel: {
+        feedbackDeltas: [{ sourceUsefulnessOutcomes: [applicationOutcome] }]
+      }
+    });
+
+    expect(prepare(artifact({ score: mappedScore }), readback).decisionApplications).toEqual([
+      applicationOutcome
+    ]);
+    expect(() => prepare(artifact({ score: mappedScore }), packetReadback())).toThrow(
+      "no exact application readback"
+    );
+    expect(() => prepare(artifact({ score: mappedScore }), packetReadback({
+      readModel: {
+        feedbackDeltas: [{
+          sourceUsefulnessOutcomes: [{ ...applicationOutcome, outcome: "selected" }]
+        }]
+      }
+    }))).toThrow("no exact application readback");
+    expect(() => prepare(artifact({ score: mappedScore }), packetReadback({
+      readModel: {
+        feedbackDeltas: [{
+          sourceUsefulnessOutcomes: [{ ...applicationOutcome, outcome: "helped" }]
+        }]
+      }
+    }))).toThrow("cannot be helped without a differential check");
+  });
+
   it("keeps the observed outcome and full artifact refs in DecisionPacket readback", () => {
     const prepared = prepare();
     const [candidate] = decisionPacketReadModelCandidates({
@@ -334,5 +385,40 @@ describe("paired live Codex repair persistence", () => {
       artifactHash: "f".repeat(64),
       sourceEvidence: prepared.evidenceRefs
     });
+
+    expect(decisionPacketReadModelSourceUsefulnessOutcomes({
+      id: "feedback-application",
+      reviewAssessmentId: "review-application",
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        decisionPacketAuthorityAdmission: "current_v1",
+        decisionPacketBindingState: "bound_current",
+        decisionPacketChecksum: checksum,
+        decisionPacketEvidenceRef: `packet:${checksum}`,
+        decisionPacketGeneratedAt: "2026-07-16T10:00:00.000Z",
+        decisionPacketSourceRunLifecycleRevision: 1,
+        sourceUsefulnessOutcomes: [{
+          sourceDecisionId: "decision-1",
+          applicationId: "application-1",
+          appliedAt: "2026-07-16T11:00:00.000Z",
+          outcome: "used",
+          reason: "observed",
+          evidenceRefs: ["packet:abc"],
+          doesNotProve: "benefit"
+        }]
+      },
+      createdAt: "2026-07-16T12:00:00.000Z",
+      updatedAt: "2026-07-16T12:00:00.000Z"
+    } as unknown as FeedbackDelta)).toEqual([
+      expect.objectContaining({
+        sourceDecisionId: "decision-1",
+        applicationId: "application-1",
+        appliedAt: "2026-07-16T11:00:00.000Z",
+        outcome: "used"
+      })
+    ]);
   });
 });

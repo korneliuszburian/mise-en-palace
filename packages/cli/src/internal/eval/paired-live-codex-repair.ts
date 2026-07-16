@@ -759,7 +759,7 @@ export const runHeldOutRuntimeWorker = async (
   }
 };
 
-const runHeldOutTargetRepairChecker = async (
+export const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
   const preflight = await targetPreflight(input);

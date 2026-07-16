@@ -110,6 +110,14 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
 
 export interface EvidenceCaptureResult {
   stdout: string;
+  persistence?: {
+    feedbackDeltaId: string;
+    sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+    usefulnessApplications?: readonly Pick<
+      UsefulnessApplicationEvidence,
+      "applicationId" | "appliedAt"
+    >[];
+  };
 }
 
 interface ChangedFile {
@@ -2116,6 +2124,26 @@ const targetEvidenceForCapture = async (
     ? applicationTargetEvidence(runtime, runtime.targetEvidence)
     : normalizeTargetEvidence(runtime.targetEvidence);
 
+const evidenceCapturePersistence = (
+  persistedIdentity: Awaited<ReturnType<typeof persistEvidenceCapture>> | undefined
+): EvidenceCaptureResult["persistence"] | undefined => {
+  if (persistedIdentity === undefined) return undefined;
+  return {
+    feedbackDeltaId: persistedIdentity.feedbackDeltaId,
+    ...(persistedIdentity.sourceUsefulnessOutcomes === undefined
+      ? {}
+      : { sourceUsefulnessOutcomes: persistedIdentity.sourceUsefulnessOutcomes }),
+    ...(persistedIdentity.usefulnessApplications === undefined
+      ? {}
+      : { usefulnessApplications: persistedIdentity.usefulnessApplications })
+  };
+};
+
+const feedbackCandidateFor = (changedFiles: readonly ChangedFile[]): string =>
+  changedFiles.length === 0
+    ? "No changed files; no feedback candidate proposed."
+    : "Review changed files and command evidence before promoting memory/source/eval candidates.";
+
 export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
 ): Promise<EvidenceCaptureResult> => {
@@ -2165,16 +2193,14 @@ export const runEvidenceCaptureCommand = async (
       environmentFingerprint
     )
     : undefined;
-  const feedbackCandidate =
-    changedFiles.length === 0
-      ? "No changed files; no feedback candidate proposed."
-      : "Review changed files and command evidence before promoting memory/source/eval candidates.";
+  const feedbackCandidate = feedbackCandidateFor(changedFiles);
   const renderedSourceUsefulnessOutcomes = persistedIdentity === undefined
     ? runtime.sourceUsefulnessOutcomes
     : persistedIdentity.sourceUsefulnessOutcomes;
   const renderedKnowledgeUsefulnessOutcomes = persistedIdentity === undefined
     ? runtime.knowledgeUsefulnessOutcomes
     : persistedIdentity.knowledgeUsefulnessOutcomes;
+  const persistence = evidenceCapturePersistence(persistedIdentity);
 
   return {
     stdout: renderEvidenceCaptureOutput({
@@ -2200,6 +2226,7 @@ export const runEvidenceCaptureCommand = async (
       evalCandidateProposals:
         persistedIdentity?.evalCandidateProposals ?? runtime.evalCandidateProposals ?? [],
       environmentFingerprint
-    })
+    }),
+    ...(persistence === undefined ? {} : { persistence })
   };
 };

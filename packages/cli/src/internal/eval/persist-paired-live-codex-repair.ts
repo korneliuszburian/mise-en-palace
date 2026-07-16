@@ -7,6 +7,10 @@ import type { EvalCandidateProposal, TargetEvidenceInput } from "@krn/core";
 import {
   pairedRepairEvalCandidate
 } from "./paired-live-codex-repair.js";
+import {
+  observedPairedDecisionApplications,
+  pairedDecisionApplicationId
+} from "./paired-decision-application.js";
 import type {
   CommandResult,
   HeldOutArmScore
@@ -54,6 +58,50 @@ interface CandidateReadback {
   readonly candidate: Record<string, unknown>;
   readonly feedbackDeltaId: string;
 }
+
+export interface DecisionApplicationReadback {
+  readonly sourceDecisionId: string;
+  readonly applicationId: string;
+  readonly appliedAt: string;
+  readonly outcome: "used" | "helped";
+}
+
+const decisionApplicationOutcomes = (value: unknown): unknown[] => {
+  if (!isRecord(value) || !isRecord(value["readModel"])) return [];
+  const feedbackDeltas = value["readModel"]["feedbackDeltas"];
+  return Array.isArray(feedbackDeltas)
+    ? feedbackDeltas.flatMap((feedback) =>
+        isRecord(feedback) && Array.isArray(feedback["sourceUsefulnessOutcomes"])
+          ? feedback["sourceUsefulnessOutcomes"]
+          : [])
+    : [];
+};
+
+const decodeDecisionApplication = (
+  value: unknown,
+  applicationId: string
+): DecisionApplicationReadback | undefined => {
+  if (!isRecord(value) || value["applicationId"] !== applicationId) return undefined;
+  const sourceDecisionId = value["sourceDecisionId"];
+  const appliedAt = value["appliedAt"];
+  const outcome = value["outcome"];
+  if (typeof sourceDecisionId !== "string" || (outcome !== "used" && outcome !== "helped")) {
+    return undefined;
+  }
+  if (typeof appliedAt !== "string" || !Number.isFinite(Date.parse(appliedAt))) return undefined;
+  return { sourceDecisionId, applicationId, appliedAt, outcome };
+};
+
+const readBackDecisionApplication = (
+  value: unknown,
+  applicationId: string
+): DecisionApplicationReadback | undefined => {
+  for (const outcome of decisionApplicationOutcomes(value)) {
+    const application = decodeDecisionApplication(outcome, applicationId);
+    if (application !== undefined) return application;
+  }
+  return undefined;
+};
 
 const readBackCandidate = (
   value: unknown,
@@ -355,6 +403,7 @@ export interface PreparedPairedTrialPersistence {
   readonly commandRows: ReturnType<typeof scoreCommandRows>;
   readonly targetEvidence: TargetEvidenceInput;
   readonly evidenceRefs: readonly string[];
+  readonly decisionApplications: readonly DecisionApplicationReadback[];
   readonly alreadyPersistedFeedbackDeltaId?: string;
 }
 
@@ -378,6 +427,35 @@ export const preparePairedTrialPersistence = (input: {
   }
 
   const evidenceRefs = artifactEvidenceRefs(input.artifact);
+  const observedApplications = input.artifact.score === undefined
+    ? []
+    : observedPairedDecisionApplications({
+        score: input.artifact.score,
+        rules: input.manifest.decisionApplications
+      });
+  const observedByDecision = new Map(
+    observedApplications.map((application) => [application.sourceDecisionId, application])
+  );
+  const decisionApplications = input.manifest.decisionApplications.flatMap((rule) => {
+    const application = readBackDecisionApplication(
+      input.packetReadback,
+      pairedDecisionApplicationId(input.manifest.runId, rule.sourceDecisionId)
+    );
+    const observed = observedByDecision.get(rule.sourceDecisionId);
+    if (observed === undefined) {
+      if (application !== undefined) {
+        throw new Error(`Unobserved paired decision ${rule.sourceDecisionId} has application evidence`);
+      }
+      return [];
+    }
+    if (application === undefined || application.sourceDecisionId !== rule.sourceDecisionId) {
+      throw new Error(`Observed paired decision ${rule.sourceDecisionId} has no exact application readback`);
+    }
+    if (application.outcome === "helped" && !observed.differential) {
+      throw new Error(`Paired decision ${rule.sourceDecisionId} cannot be helped without a differential check`);
+    }
+    return [application];
+  });
   const candidate = observationCandidate({
     artifact: input.artifact,
     manifest: input.manifest,
@@ -397,6 +475,7 @@ export const preparePairedTrialPersistence = (input: {
   return {
     candidate,
     commandRows,
+    decisionApplications,
     evidenceRefs,
     ...(priorCandidate === undefined
       ? {}
@@ -500,6 +579,7 @@ const main = async (): Promise<void> => {
     artifactHash: artifact.artifactHash,
     manifestHash: artifact.manifestHash,
     environmentProfileHash: artifact.execution.environmentProfileHash,
+    decisionApplications: prepared.decisionApplications,
     persistedInDecisionPacket: true,
     idempotentReplay: evidence === undefined,
     evidenceIdentity,

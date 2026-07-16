@@ -409,6 +409,8 @@ export const decisionPacketReadModelSourceUsefulnessOutcomes = (
     return [{
       ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),
       ...(outcome.sourceDecisionId === undefined ? {} : { sourceDecisionId: outcome.sourceDecisionId }),
+      ...(outcome.applicationId === undefined ? {} : { applicationId: outcome.applicationId }),
+      ...(outcome.appliedAt === undefined ? {} : { appliedAt: outcome.appliedAt }),
       outcome: outcome.outcome,
       reason: outcome.reason,
       evidenceRefs: outcome.evidenceRefs,
