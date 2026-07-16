@@ -254,18 +254,32 @@ const checkFiniteResult = (files: TargetSourceFiles): HeldOutCheck => {
   };
 };
 
-const checkFocusedTests = (files: TargetSourceFiles): HeldOutCheck => {
+const stringifiedObjectBodies = (sourceText: string): readonly string[] =>
+  [...sourceText.matchAll(/JSON\.stringify\s*\(\s*\{([\s\S]*?)\}\s*\)/g)]
+    .map((match) => match[1] ?? "");
+
+const checkFocusedTests = (
+  files: TargetSourceFiles,
+  changedFiles: readonly string[]
+): HeldOutCheck => {
   const tests = source(files, "tests/userService.test.ts");
-  const hasInvalidJson = tests.includes("invalid_json");
-  const hasMissingEmail = tests.includes("missing_email") || tests.includes("invalid_shape");
-  const hasInvalidRole = tests.includes("invalid_role");
-  const isPassed = hasInvalidJson && hasMissingEmail && hasInvalidRole;
+  const objectBodies = stringifiedObjectBodies(tests);
+  const hasBoundaryCall = /\bcreateUserFromJson\s*\(/.test(tests);
+  const hasMalformedJson = /(["'`])\{\1/.test(tests);
+  const hasMissingEmail = objectBodies.some((body) => !/\bemail\s*:/.test(body));
+  const hasUnsupportedRole = objectBodies.some((body) => {
+    const role = body.match(/\brole\s*:\s*(["'`])([^"'`]+)\1/);
+    return role !== null && role[2] !== "admin" && role[2] !== "member";
+  });
+  const changedFocusedTest = changedFiles.includes("tests/userService.test.ts");
+  const isPassed = changedFocusedTest && hasBoundaryCall &&
+    hasMalformedJson && hasMissingEmail && hasUnsupportedRole;
 
   return {
     name: "focused_tests",
     passed: isPassed,
     details: isPassed
-      ? "Focused tests name malformed JSON, missing email, and invalid role."
+      ? "Focused tests exercise malformed JSON, missing email, and unsupported role inputs."
       : "Focused invalid-input test coverage is incomplete."
   };
 };
@@ -347,7 +361,7 @@ export const scoreTargetRepair = (
     },
     checkUnknownFirst(input.sourceFiles),
     checkFiniteResult(input.sourceFiles),
-    checkFocusedTests(input.sourceFiles),
+    checkFocusedTests(input.sourceFiles, input.changedFiles),
     checkAllowedFiles(input.changedFiles),
     {
       name: "target_test",
