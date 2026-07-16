@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -634,6 +634,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const runtimeWorkerMarker = "KRN_HELD_OUT_RUNTIME:";
 
+export type HeldOutRuntimePermissionFlag = "--permission" | "--experimental-permission";
+
+export const selectHeldOutRuntimePermissionFlag = (
+  flags: ReadonlySet<string> = process.allowedNodeEnvironmentFlags
+): HeldOutRuntimePermissionFlag | undefined => {
+  if (flags.has("--permission")) return "--permission";
+  if (flags.has("--experimental-permission")) return "--experimental-permission";
+  return undefined;
+};
+
 const runtimeWorkerSource = `
 const marker = "KRN_HELD_OUT_RUNTIME:";
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -701,16 +711,38 @@ export const runHeldOutRuntimeWorker = async (
   readonly runtimeAvailable: boolean;
   readonly observations: RuntimeObservations;
 }> => {
+  const permissionFlag = selectHeldOutRuntimePermissionFlag();
+  if (permissionFlag === undefined) {
+    const now = new Date().toISOString();
+    return {
+      command: {
+        command: process.execPath,
+        args: [],
+        exitCode: null,
+        stdout: "",
+        stderr: "held-out runtime unavailable: Node filesystem permissions are unsupported",
+        startedAt: now,
+        completedAt: now,
+        durationMs: 0
+      },
+      runtimeAvailable: false,
+      observations: unknownRuntimeObservations()
+    };
+  }
   const workerPath = join(sandboxRoot, "held-out-runtime-worker.mjs");
   await writeFile(workerPath, runtimeWorkerSource, { encoding: "utf8", flag: "wx", mode: 0o600 });
-  const targetModuleUrl = `${pathToFileURL(join(compileRoot, "src/userService.js")).href}?checker=${Date.now()}`;
+  const [canonicalCompileRoot, canonicalWorkerPath] = await Promise.all([
+    realpath(compileRoot),
+    realpath(workerPath)
+  ]);
+  const targetModuleUrl = `${pathToFileURL(join(canonicalCompileRoot, "src/userService.js")).href}?checker=${Date.now()}`;
   const command = await runCommand(
     process.execPath,
     [
-      "--experimental-permission",
-      `--allow-fs-read=${compileRoot}`,
-      `--allow-fs-read=${workerPath}`,
-      workerPath,
+      permissionFlag,
+      `--allow-fs-read=${canonicalCompileRoot}`,
+      `--allow-fs-read=${canonicalWorkerPath}`,
+      canonicalWorkerPath,
       targetModuleUrl
     ],
     checkerRoot,

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -11,6 +11,7 @@ import {
   scoreTargetRepair,
   runCommand,
   runHeldOutRuntimeWorker,
+  selectHeldOutRuntimePermissionFlag,
   type CommandResult,
   type HeldOutObservation
 } from "../internal/eval/paired-live-codex-repair.js";
@@ -45,6 +46,17 @@ const sourceFiles = {
 };
 
 describe("paired live Codex repair eval", () => {
+  it("selects the stable Node permission flag before the legacy alias and fails closed without either", () => {
+    expect(selectHeldOutRuntimePermissionFlag(new Set([
+      "--experimental-permission",
+      "--permission"
+    ]))).toBe("--permission");
+    expect(selectHeldOutRuntimePermissionFlag(new Set([
+      "--experimental-permission"
+    ]))).toBe("--experimental-permission");
+    expect(selectHeldOutRuntimePermissionFlag(new Set())).toBeUndefined();
+  });
+
   it("forces a timed-out command to settle when it ignores SIGTERM", async () => {
     const result = await runCommand(process.execPath, [
       "-e",
@@ -271,6 +283,39 @@ describe("paired live Codex repair eval", () => {
 
       expect(result.runtimeAvailable).toBe(false);
       expect(await readFile(sentinel, "utf8")).toBe("must-not-be-read");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("executes the held-out worker with the permission flag supported by the current Node runtime", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-live-permission-test-"));
+    const realCompileRoot = join(root, "compiled");
+    const realSandboxRoot = join(root, "sandbox");
+    const compileRoot = join(root, "compiled-link");
+    const sandboxRoot = join(root, "sandbox-link");
+    await mkdir(join(realCompileRoot, "src"), { recursive: true });
+    await mkdir(realSandboxRoot, { recursive: true });
+    await symlink(realCompileRoot, compileRoot, "dir");
+    await symlink(realSandboxRoot, sandboxRoot, "dir");
+    await writeFile(join(realCompileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(realCompileRoot, "src/userService.js"), [
+      "const users = [];",
+      "export const listSavedUsers = () => users;",
+      "export const createUserFromJson = () => ({ kind: 'invalid_input' });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot);
+
+      expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
+      expect(result.command.exitCode).toBe(0);
+      expect(result.command.args[0]).toBe(selectHeldOutRuntimePermissionFlag());
+      expect(result.observations).toEqual({
+        invalidJson: observation({ resultState: "kind:invalid_input" }),
+        missingEmail: observation({ resultState: "kind:invalid_input" }),
+        invalidRole: observation({ resultState: "kind:invalid_input" })
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
