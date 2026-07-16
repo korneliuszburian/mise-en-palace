@@ -1873,12 +1873,18 @@ describe("SourceClaim provenance migration", () => {
             select claim_a.id, claim_b.id, 'supports', ${client.json({ marker })}
             from claim_a, claim_b returning id
           ), canonical_duplicate_edge as (
-            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
-            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })}
+            insert into source_claim_edges (
+              from_source_claim_id, to_source_claim_id, kind, metadata, created_at
+            )
+            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })},
+              '2026-01-01T00:00:00.000Z'::timestamptz
             from claim_a, claim_a_peer returning id
           ), duplicate_edge as (
-            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
-            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })}
+            insert into source_claim_edges (
+              from_source_claim_id, to_source_claim_id, kind, metadata, created_at
+            )
+            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })},
+              '2026-01-02T00:00:00.000Z'::timestamptz
             from claim_a, claim_a_peer returning id
           )
           select
