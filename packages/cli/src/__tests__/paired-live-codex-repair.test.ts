@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -74,6 +74,51 @@ describe("paired live Codex repair eval", () => {
       packetOnlyByConstruction: true,
       deltaBytes: expect.any(Number)
     });
+  });
+
+  it("keeps private repair mechanisms out of baseline participant inputs", async () => {
+    const targetRoot = await mkdtemp(join(tmpdir(), "krn-blind-paired-target-"));
+    const fixtureRoot = resolve(
+      process.cwd(),
+      "../../tests/fixtures/target-repos/weak-json-boundary-typescript"
+    );
+    const scenarioRoot = join(fixtureRoot, "scenarios/weak-json-boundary/files");
+    const trackedManifest = JSON.parse(await readFile(resolve(
+      process.cwd(),
+      "../../tests/fixtures/paired-live-codex-repair/manifest.json"
+    ), "utf8")) as { readonly task: string };
+    const prompts = buildPairedRepairPrompts({
+      task: trackedManifest.task,
+      decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } }
+    });
+
+    try {
+      const materialized = await runCommand(process.execPath, [
+        join(fixtureRoot, "scripts/materialize-scenario.mjs"),
+        "weak-json-boundary",
+        targetRoot
+      ], fixtureRoot);
+      expect(materialized.exitCode).toBe(0);
+
+      expect(prompts.baseline).toContain(`Task: ${trackedManifest.task}`);
+      expect(prompts.baseline).not.toContain("private-packet-marker");
+      expect(prompts.krn).toContain("private-packet-marker");
+
+      for (const participantPath of [
+        "AGENTS.md",
+        "README.md",
+        "docs/repair-contract.md"
+      ]) {
+        const materializedInput = await readFile(join(targetRoot, participantPath), "utf8");
+        const blindInput = await readFile(join(scenarioRoot, participantPath), "utf8");
+        const operatorInput = await readFile(join(fixtureRoot, participantPath), "utf8");
+
+        expect(materializedInput).toBe(blindInput);
+        expect(materializedInput).not.toBe(operatorInput);
+      }
+    } finally {
+      await rm(targetRoot, { recursive: true, force: true });
+    }
   });
 
   it("scores held-out behavior independently of target prose", () => {

@@ -172,9 +172,9 @@ export type HeldOutCheckerInput = {
 };
 
 const basePrompt = (task: string): string => [
-  "Repair the weak JSON input and typed result boundary in this controlled TypeScript target.",
+  "Repair the externally observable user-creation boundary in this controlled TypeScript target.",
   "Read AGENTS.md and docs/repair-contract.md first. Work only in the allowed target files and do not touch the parent repository, other repos, generated caches, secrets, or network.",
-  "Use the task and target contract to make the smallest surgical repair. The repair must cover invalid JSON, missing email, invalid role, unknown-first narrowing, finite result states, focused tests, and typecheck. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
+  "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
   "Run the target test command and TypeScript typecheck before finishing. Do not commit or push.",
   "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
   `Task: ${task}`

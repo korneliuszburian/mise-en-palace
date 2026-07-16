@@ -582,6 +582,36 @@
       "archival": null
     },
     {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/AGENTS.md",
+      "consumer": "paired live Codex repair participant target",
+      "provenance": "repository-owned blind participant contract",
+      "capturedAt": "2026-07-16",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/README.md",
+      "consumer": "paired live Codex repair participant target",
+      "provenance": "repository-owned blind participant contract",
+      "capturedAt": "2026-07-16",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/docs/repair-contract.md",
+      "consumer": "paired live Codex repair participant target",
+      "provenance": "repository-owned blind participant contract",
+      "capturedAt": "2026-07-16",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
       "path": "tests/fixtures/target-repos/weak-json-boundary-typescript/scenarios/weak-json-boundary/files/src/config.ts",
       "consumer": "target-repo harness and second-repo eval",
       "provenance": "repository-owned test/eval fixture",
