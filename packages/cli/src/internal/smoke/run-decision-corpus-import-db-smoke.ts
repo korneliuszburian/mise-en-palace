@@ -104,6 +104,9 @@ const smokeSource = "krn db smoke decision-corpus-import";
 const externalEvidenceRef = "https://mem0.ai/blog/loop-engineering-for-ai-agents-memory-first-design";
 const currentFixtureEvidenceRef = "KRN_ROADMAP.md";
 
+const externalEvidenceRefForSmoke = (smokeId: string): string =>
+  `${externalEvidenceRef}#krn-smoke=${encodeURIComponent(smokeId)}`;
+
 interface ImportReconciliationTableCounts {
   readonly artifactCount: number;
   readonly chunkCount: number;
@@ -169,13 +172,20 @@ const hashCapturedEvidence = (content: string): string =>
   createHash("sha256").update(content, "utf8").digest("hex");
 
 const smokeImportFixture = (
-  fixture: ReturnType<typeof loadDecisionCorpusImportFixture>
+  fixture: ReturnType<typeof loadDecisionCorpusImportFixture>,
+  smokeExternalEvidenceRef: string
 ): ReturnType<typeof loadDecisionCorpusImportFixture> => {
-  const decisions = fixture.decisions.map((row) =>
-    row.status === "current" && !row.evidenceRef.startsWith("http://") && !row.evidenceRef.startsWith("https://")
-      ? { ...row, evidenceRef: "KRN_ROADMAP.md" }
-      : row
-  );
+  const decisions = fixture.decisions.map((row) => {
+    if (row.evidenceRef === externalEvidenceRef) {
+      return { ...row, evidenceRef: smokeExternalEvidenceRef };
+    }
+
+    return row.status === "current" &&
+      !row.evidenceRef.startsWith("http://") &&
+      !row.evidenceRef.startsWith("https://")
+      ? { ...row, evidenceRef: currentFixtureEvidenceRef }
+      : row;
+  });
 
   return {
     ...fixture,
@@ -201,6 +211,7 @@ const seedCapturedExternalEvidence = async (input: {
   runtime: Awaited<ReturnType<typeof createDatabaseRuntime>>;
   projectId: string;
   smokeId: string;
+  evidenceRef: string;
 }): Promise<void> => {
   const createSourceChunk = input.runtime.sourceRepository.createSourceChunk;
 
@@ -218,12 +229,13 @@ const seedCapturedExternalEvidence = async (input: {
     projectId: input.projectId,
     kind: "url",
     sourceAuthority: "practitioner",
-    uri: externalEvidenceRef,
+    uri: input.evidenceRef,
     title: "Decision corpus import external evidence fixture",
     contentHash,
     metadata: {
       smokeId: input.smokeId,
       captureKind: "source_evidence_fixture",
+      sourceUri: externalEvidenceRef,
       doesNotProve: "This fixture does not prove remote source truth, freshness, completeness, or interpretation."
     }
   });
@@ -537,19 +549,24 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     runtime = await createDatabaseRuntime({
       databaseUrl: input.databaseUrl,
       workspaceSlug: "local",
-      projectSlug: "decision-corpus-import-smoke",
+      projectSlug: input.smokeId,
       requireProjectKernelForExplicitProject: false,
       now: () => input.now,
       createId
     });
     const projectId = runtime.projectId;
-    const fixture = smokeImportFixture(loadDecisionCorpusImportFixture(
-      `${input.repoRoot}/tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json`
-    ));
+    const smokeExternalEvidenceRef = externalEvidenceRefForSmoke(input.smokeId);
+    const fixture = smokeImportFixture(
+      loadDecisionCorpusImportFixture(
+        `${input.repoRoot}/tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json`
+      ),
+      smokeExternalEvidenceRef
+    );
     await seedCapturedExternalEvidence({
       runtime,
       projectId,
-      smokeId: input.smokeId
+      smokeId: input.smokeId,
+      evidenceRef: smokeExternalEvidenceRef
     });
     const resolveEvidence = smokeEvidenceResolver({
       repoRoot: input.repoRoot,
@@ -777,7 +794,9 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     }
 
     const governingRow = requiredPersistedRow(persistedRows, firstCase.expectedDecisionId);
-    const externalDecision = fixture.decisions.find((row) => row.evidenceRef === externalEvidenceRef);
+    const externalDecision = fixture.decisions.find(
+      (row) => row.evidenceRef === smokeExternalEvidenceRef
+    );
 
     if (externalDecision === undefined) {
       throw new Error("decision corpus import DB smoke fixture requires captured URL evidence");
@@ -967,6 +986,9 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     try {
       for (const smokeId of cleanupSmokeIds) {
         await cleanupSourceSmokeMarkers(client, markerTables, smokeId, smokeSource);
+      }
+      if (runtime !== undefined) {
+        await client`delete from projects where id = ${runtime.projectId}`;
       }
     } catch (error) {
       finalizationError = error;
