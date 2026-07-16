@@ -5,6 +5,7 @@ import { inspectDatabaseRequiredTables } from "./readiness-support.js";
 export type SourceAuthorityIntegrityViolationKind =
   | "project_mismatch"
   | "claim_chunk_artifact_mismatch"
+  | "invalid_source_claim_edge_identity"
   | "missing_terminal_review"
   | "conflicting_terminal_review"
   | "claim_decision_status_mismatch"
@@ -70,6 +71,7 @@ export interface SourceAuthorityIntegrityReadinessReport {
 const requiredSourceAuthorityTables = [
   "source_artifacts",
   "source_chunks",
+  "source_claim_edges",
   "source_claims",
   "source_decisions",
   "source_decision_edges",
@@ -217,6 +219,51 @@ const inspectViolations = async (
           where quarantine.entity_type = 'source_claim'
             and quarantine.entity_id = sc.id
             and quarantine.reason = 'claim_chunk_artifact_mismatch'
+        )
+    ),
+    ranked_claim_edges as (
+      select
+        edge.id,
+        edge.from_source_claim_id,
+        edge.to_source_claim_id,
+        from_artifact.project_id as from_project_id,
+        to_artifact.project_id as to_project_id,
+        row_number() over (
+          partition by edge.from_source_claim_id, edge.to_source_claim_id, edge.kind
+          order by edge.created_at, edge.id
+        ) as identity_rank
+      from source_claim_edges edge
+      join source_claims from_claim on from_claim.id = edge.from_source_claim_id
+      join source_artifacts from_artifact on from_artifact.id = from_claim.source_artifact_id
+      join source_claims to_claim on to_claim.id = edge.to_source_claim_id
+      join source_artifacts to_artifact on to_artifact.id = to_claim.source_artifact_id
+    ),
+    invalid_claim_edges as (
+      select
+        'invalid_source_claim_edge_identity'::text as kind,
+        edge.id::text as subject_id,
+        case
+          when edge.from_source_claim_id = edge.to_source_claim_id
+            then 'SourceClaimEdge relates a claim to itself'
+          when edge.from_project_id is distinct from edge.to_project_id
+            then 'SourceClaimEdge endpoints belong to different projects'
+          else 'SourceClaimEdge duplicates an existing semantic edge identity'
+        end::text as detail
+      from ranked_claim_edges edge
+      where (
+        edge.from_source_claim_id = edge.to_source_claim_id
+        or edge.from_project_id is distinct from edge.to_project_id
+        or edge.identity_rank > 1
+      )
+        and not exists (
+          select 1 from source_authority_quarantines quarantine
+          where quarantine.entity_type = 'source_claim_edge'
+            and quarantine.entity_id = edge.id
+            and quarantine.reason in (
+              'self_source_claim_edge',
+              'cross_project_source_claim_edge',
+              'duplicate_source_claim_edge_identity'
+            )
         )
     ),
     terminal_review_counts as (
@@ -436,6 +483,7 @@ const inspectViolations = async (
     from (
       select * from project_mismatches
       union all select * from claim_chunk_artifact_mismatches
+      union all select * from invalid_claim_edges
       union all select * from missing_reviews
       union all select * from conflicting_reviews
       union all select * from status_mismatches

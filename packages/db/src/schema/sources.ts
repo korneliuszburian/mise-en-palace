@@ -192,6 +192,15 @@ export const sourceClaimEdges = pgTable(
     createdAt: createdAtColumn()
   },
   (table) => [
+    check(
+      "source_claim_edges_distinct_claims",
+      sql`${table.fromSourceClaimId} <> ${table.toSourceClaimId}`
+    ),
+    uniqueIndex("source_claim_edges_semantic_identity_unique").on(
+      table.fromSourceClaimId,
+      table.toSourceClaimId,
+      table.kind
+    ),
     index("source_claim_edges_from_idx").on(table.fromSourceClaimId),
     index("source_claim_edges_to_idx").on(table.toSourceClaimId),
     index("source_claim_edges_kind_idx").on(table.kind)

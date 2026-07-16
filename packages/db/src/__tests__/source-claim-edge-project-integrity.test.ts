@@ -21,6 +21,7 @@ import {
 import {
   outboxEvents,
   projects,
+  sourceArtifacts,
   sourceClaimEdges,
   workspaces
 } from "../schema/index.js";
@@ -208,12 +209,6 @@ describe("source claim edge project integrity", () => {
               projectAId,
               "project-a-2"
             );
-            const projectAThirdClaim = await createAcceptedSourceClaim(
-              sourceRepository,
-              fixture,
-              projectAId,
-              "project-a-3"
-            );
             const projectBClaim = await createAcceptedSourceClaim(
               sourceRepository,
               fixture,
@@ -256,30 +251,6 @@ describe("source claim edge project integrity", () => {
               metadata: edgeMetadata(fixture.marker, "supports-forward-conflict")
             })).rejects.toThrow("SourceClaimEdge semantic identity has conflicting metadata");
 
-            const legacyDuplicateMetadata = edgeMetadata(fixture.marker, "legacy-duplicate");
-
-            await transaction.insert(sourceClaimEdges).values([
-              {
-                fromSourceClaimId: projectASecondClaim.id,
-                toSourceClaimId: projectAThirdClaim.id,
-                kind: "supports",
-                metadata: legacyDuplicateMetadata
-              },
-              {
-                fromSourceClaimId: projectASecondClaim.id,
-                toSourceClaimId: projectAThirdClaim.id,
-                kind: "supports",
-                metadata: legacyDuplicateMetadata
-              }
-            ]);
-
-            await expect(sourceRepository.createSourceClaimEdge({
-              fromSourceClaimId: projectASecondClaim.id,
-              toSourceClaimId: projectAThirdClaim.id,
-              kind: "supports",
-              metadata: legacyDuplicateMetadata
-            })).rejects.toThrow("SourceClaimEdge semantic identity is ambiguous");
-
             for (const kind of sourceClaimEdgeKinds) {
               for (const [fromSourceClaimId, toSourceClaimId, direction] of [
                 [projectAClaim.id, projectASecondClaim.id, "forward"],
@@ -313,9 +284,117 @@ describe("source claim edge project integrity", () => {
 
             expect(exactRetry.id).toBe(firstSupportsForward.id);
             expect(edges).toHaveLength(sourceClaimEdgeKinds.length * 2);
-            expect(fixtureEdges).toHaveLength(sourceClaimEdgeKinds.length * 2 + 2);
+            expect(fixtureEdges).toHaveLength(sourceClaimEdgeKinds.length * 2);
             expect(fixtureOutboxEvents).toHaveLength(sourceClaimEdgeKinds.length * 2);
 
+            throw expectedFixtureRollback;
+          });
+        } catch (error) {
+          if (error !== expectedFixtureRollback) {
+            throw error;
+          }
+        }
+      } finally {
+        await cleanupFixture(fixture);
+      }
+    }
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "rejects direct SQL self, cross-project, and duplicate semantic edges",
+    async () => {
+      const fixture = await createFixture(databaseUrl!);
+      const expectedFixtureRollback = new Error("source claim edge SQL fixture rollback");
+
+      try {
+        try {
+          await fixture.database.transaction(async (transaction) => {
+            const sourceRepository = new DrizzleSourceRepository(transaction);
+            const { projectAId, projectBId } = await createProjectFixture(transaction, fixture);
+            const projectAClaim = await createAcceptedSourceClaim(
+              sourceRepository,
+              fixture,
+              projectAId,
+              "sql-project-a-1"
+            );
+            const projectASecondClaim = await createAcceptedSourceClaim(
+              sourceRepository,
+              fixture,
+              projectAId,
+              "sql-project-a-2"
+            );
+            const projectBClaim = await createAcceptedSourceClaim(
+              sourceRepository,
+              fixture,
+              projectBId,
+              "sql-project-b-1"
+            );
+            const metadata = edgeMetadata(fixture.marker, "direct-sql");
+
+            await expect(transaction.transaction(async (nestedTransaction) =>
+              nestedTransaction.insert(sourceClaimEdges).values({
+                fromSourceClaimId: projectAClaim.id,
+                toSourceClaimId: projectAClaim.id,
+                kind: "supports",
+                metadata
+              })
+            )).rejects.toMatchObject({
+              cause: {
+                code: "23514",
+                constraint_name: "source_claim_edges_distinct_claims"
+              }
+            });
+            await expect(transaction.transaction(async (nestedTransaction) =>
+              nestedTransaction.insert(sourceClaimEdges).values({
+                fromSourceClaimId: projectAClaim.id,
+                toSourceClaimId: projectBClaim.id,
+                kind: "supports",
+                metadata
+              })
+            )).rejects.toMatchObject({
+              cause: {
+                code: "23514",
+                constraint_name: "source_claim_edges_same_project"
+              }
+            });
+
+            await transaction.insert(sourceClaimEdges).values({
+              fromSourceClaimId: projectAClaim.id,
+              toSourceClaimId: projectASecondClaim.id,
+              kind: "supports",
+              metadata
+            });
+            await expect(transaction.transaction(async (nestedTransaction) =>
+              nestedTransaction
+                .update(sourceArtifacts)
+                .set({ projectId: projectBId })
+                .where(eq(sourceArtifacts.id, projectASecondClaim.sourceArtifactId))
+            )).rejects.toMatchObject({
+              cause: {
+                code: "23514",
+                constraint_name: "source_claim_edges_same_project"
+              }
+            });
+            await expect(transaction.transaction(async (nestedTransaction) =>
+              nestedTransaction.insert(sourceClaimEdges).values({
+                fromSourceClaimId: projectAClaim.id,
+                toSourceClaimId: projectASecondClaim.id,
+                kind: "supports",
+                metadata
+              })
+            )).rejects.toMatchObject({
+              cause: {
+                code: "23505",
+                constraint_name: "source_claim_edges_semantic_identity_unique"
+              }
+            });
+
+            const rows = await transaction
+              .select({ id: sourceClaimEdges.id })
+              .from(sourceClaimEdges)
+              .where(sql`${sourceClaimEdges.metadata}->>'smokeId' = ${fixture.marker}`);
+
+            expect(rows).toHaveLength(1);
             throw expectedFixtureRollback;
           });
         } catch (error) {

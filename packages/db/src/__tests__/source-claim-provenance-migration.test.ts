@@ -1799,6 +1799,150 @@ describe("SourceClaim provenance migration", () => {
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "quarantines invalid legacy SourceClaimEdges before enforcing canonical identity",
+    async () => {
+      const disposable = await createDisposableDatabase(databaseUrl!);
+      const pre0049Migrations = await createMigrationsFolderThrough(
+        48,
+        "0048_quarantine_uncaptured_search_authority"
+      );
+      const client = postgres(disposable.databaseUrl, { max: 1, onnotice: () => undefined });
+      const marker = `legacy-source-claim-edge-${crypto.randomUUID()}`;
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposable.databaseUrl,
+          migrationsFolder: pre0049Migrations.migrationsFolder
+        });
+        const [fixture] = await client<{
+          canonicalDuplicateEdgeId: string;
+          crossProjectEdgeId: string;
+          duplicateEdgeId: string;
+          selfEdgeId: string;
+        }[]>`
+          with workspace as (
+            insert into workspaces (slug, display_name)
+            values (${marker}, 'Legacy SourceClaimEdge integrity')
+            returning id
+          ), project_a as (
+            insert into projects (workspace_id, slug, display_name)
+            select id, ${`${marker}-a`}, 'Legacy SourceClaimEdge project A' from workspace
+            returning id
+          ), project_b as (
+            insert into projects (workspace_id, slug, display_name)
+            select id, ${`${marker}-b`}, 'Legacy SourceClaimEdge project B' from workspace
+            returning id
+          ), artifact_a as (
+            insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash)
+            select id, 'doc', 'project-decision', ${`legacy://${marker}/a`}, 'A', ${`${marker}-a`}
+            from project_a returning id
+          ), artifact_a_peer as (
+            insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash)
+            select id, 'doc', 'project-decision', ${`legacy://${marker}/a-peer`}, 'A peer', ${`${marker}-a-peer`}
+            from project_a returning id
+          ), artifact_b as (
+            insert into source_artifacts (project_id, kind, trust_tier, uri, title, content_hash)
+            select id, 'doc', 'project-decision', ${`legacy://${marker}/b`}, 'B', ${`${marker}-b`}
+            from project_b returning id
+          ), claim_a as (
+            insert into source_claims (
+              source_artifact_id, claim, mechanism, krn_implication, does_not_prove,
+              trust_tier, support_type, consumer
+            ) select id, 'claim A', 'legacy edge fixture', 'migration quarantines invalid edges',
+              'does not prove source truth', 'project-decision', 'mechanism', '0049 migration proof'
+            from artifact_a returning id
+          ), claim_a_peer as (
+            insert into source_claims (
+              source_artifact_id, claim, mechanism, krn_implication, does_not_prove,
+              trust_tier, support_type, consumer
+            ) select id, 'claim A peer', 'legacy edge fixture', 'migration retains one canonical edge',
+              'does not prove source truth', 'project-decision', 'mechanism', '0049 migration proof'
+            from artifact_a_peer returning id
+          ), claim_b as (
+            insert into source_claims (
+              source_artifact_id, claim, mechanism, krn_implication, does_not_prove,
+              trust_tier, support_type, consumer
+            ) select id, 'claim B', 'legacy edge fixture', 'migration rejects cross-project edges',
+              'does not prove source truth', 'project-decision', 'mechanism', '0049 migration proof'
+            from artifact_b returning id
+          ), self_edge as (
+            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
+            select id, id, 'supports', ${client.json({ marker })} from claim_a returning id
+          ), cross_project_edge as (
+            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
+            select claim_a.id, claim_b.id, 'supports', ${client.json({ marker })}
+            from claim_a, claim_b returning id
+          ), canonical_duplicate_edge as (
+            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
+            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })}
+            from claim_a, claim_a_peer returning id
+          ), duplicate_edge as (
+            insert into source_claim_edges (from_source_claim_id, to_source_claim_id, kind, metadata)
+            select claim_a.id, claim_a_peer.id, 'supports', ${client.json({ marker })}
+            from claim_a, claim_a_peer returning id
+          )
+          select
+            self_edge.id::text as "selfEdgeId",
+            cross_project_edge.id::text as "crossProjectEdgeId",
+            canonical_duplicate_edge.id::text as "canonicalDuplicateEdgeId",
+            duplicate_edge.id::text as "duplicateEdgeId"
+          from self_edge, cross_project_edge, canonical_duplicate_edge, duplicate_edge
+        `;
+
+        const legacyIntegrity = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          schemaIdentity: "pre-0049-source-claim-edge-integrity"
+        });
+        const legacyClaimEdgeViolations = legacyIntegrity.violations.filter(({ kind }) =>
+          kind === "invalid_source_claim_edge_identity"
+        );
+        expect(legacyClaimEdgeViolations).toHaveLength(3);
+        expect(legacyClaimEdgeViolations).toEqual(expect.arrayContaining([
+          expect.objectContaining({ subjectId: fixture!.crossProjectEdgeId }),
+          expect.objectContaining({ subjectId: fixture!.duplicateEdgeId }),
+          expect.objectContaining({ subjectId: fixture!.selfEdgeId })
+        ]));
+        expect(legacyIntegrity).toMatchObject({ integrityReady: false, readOnly: true });
+
+        await migrateDatabase({ databaseUrl: disposable.databaseUrl, migrationsFolder });
+
+        const retained = await client<{ id: string }[]>`
+          select id::text as id from source_claim_edges where metadata->>'marker' = ${marker}
+        `;
+        const quarantines = await client<{ entityId: string; reason: string }[]>`
+          select entity_id::text as "entityId", reason
+          from source_authority_quarantines
+          where entity_type = 'source_claim_edge'
+            and entity_id in (
+              ${fixture!.selfEdgeId}, ${fixture!.crossProjectEdgeId}, ${fixture!.duplicateEdgeId}
+            )
+          order by reason
+        `;
+        const integrity = await inspectSourceAuthorityIntegrity({
+          databaseUrl: disposable.databaseUrl,
+          schemaIdentity: "post-0049-source-claim-edge-integrity"
+        });
+
+        expect(retained).toEqual([{ id: fixture!.canonicalDuplicateEdgeId }]);
+        expect(quarantines).toEqual([
+          { entityId: fixture!.crossProjectEdgeId, reason: "cross_project_source_claim_edge" },
+          { entityId: fixture!.duplicateEdgeId, reason: "duplicate_source_claim_edge_identity" },
+          { entityId: fixture!.selfEdgeId, reason: "self_source_claim_edge" }
+        ]);
+        expect(integrity).toMatchObject({
+          integrityReady: true,
+          violationCount: 0,
+          violations: []
+        });
+      } finally {
+        await client.end();
+        await Promise.all([pre0049Migrations.cleanup(), disposable.cleanup()]);
+      }
+    },
+    migrationTestTimeoutMs
+  );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "fails closed for authority labels not classified by the SQL projection",
     async () => {
       const disposable = await createDisposableDatabase(databaseUrl!);
