@@ -52,7 +52,7 @@ describe("historical warning repository selection", () => {
         workspaceId: scaffold.workspace.id,
         slug: `foreign-memory-${marker}`,
         displayName: "Foreign memory history",
-        metadata: { smokeId: marker }
+        metadata: { smokeId: scaffold.marker }
       });
       const createMemory = (input: {
         projectId: string;
@@ -75,7 +75,7 @@ describe("historical warning repository selection", () => {
         isUserPreference: false,
         validFrom: input.validFrom ?? earlierPast,
         ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
-        metadata: { smokeId: marker }
+        metadata: { smokeId: scaffold.marker }
       });
 
       const relevantExpired = await createMemory({
@@ -147,7 +147,7 @@ describe("historical warning repository selection", () => {
         workspaceId: scaffold.workspace.id,
         slug: `foreign-source-${marker}`,
         displayName: "Foreign source history",
-        metadata: { smokeId: marker }
+        metadata: { smokeId: scaffold.marker }
       });
       const createArtifact = (projectId: string, label: string) =>
         scaffold.sourceRepository.createSourceArtifact({
@@ -157,7 +157,7 @@ describe("historical warning repository selection", () => {
           uri: `operator://historical-warning/${marker}/${label}`,
           title: `${label} historical warning source`,
           contentHash: `${marker}-${label}`,
-          metadata: { smokeId: marker }
+          metadata: { smokeId: scaffold.marker }
         });
       const [artifact, foreignArtifact] = await Promise.all([
         createArtifact(scaffold.project.id, "current-project"),
@@ -181,7 +181,7 @@ describe("historical warning repository selection", () => {
         falsifier: "A stale source disappears or becomes current authority.",
         ...(input.revisitWhen === undefined ? {} : { revisitWhen: input.revisitWhen }),
         status: "proposed",
-        metadata: { smokeId: marker, label: input.label, ...input.metadata }
+        metadata: { smokeId: scaffold.marker, label: input.label, ...input.metadata }
       });
 
       const relevantExpired = await createClaim({
