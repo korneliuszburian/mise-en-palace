@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 
-import { parseRuntimeConfig } from "../src/config";
-import { redactConfigReadback } from "../src/configReadback";
+import { parseRuntimeConfig } from "../src/config.js";
+import { redactConfigReadback } from "../src/configReadback.js";
 
 const parsed = parseRuntimeConfig({
   MODE: "production",
