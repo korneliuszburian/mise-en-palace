@@ -264,6 +264,16 @@ export interface MemoryCandidateProposal {
   metadata: Record<string, unknown>;
 }
 
+export class CandidateProjectScopeError extends Error {
+  readonly code = "candidate_project_scope" as const;
+  readonly retryable = false as const;
+
+  constructor(candidateLabels: readonly string[]) {
+    super(`Candidate project scope does not match execution project: ${candidateLabels.join(", ")}`);
+    this.name = "CandidateProjectScopeError";
+  }
+}
+
 export const assertCandidateBatchProjectScope = (input: {
   readonly projectId: string;
   readonly sourceDecisionCandidates: readonly SourceDecision[];
@@ -282,7 +292,7 @@ export const assertCandidateBatchProjectScope = (input: {
       .map((candidate) => `eval candidate ${candidate.id}`)
   ];
   if (foreign.length > 0) {
-    throw new Error(`Candidate project scope does not match execution project: ${foreign.join(", ")}`);
+    throw new CandidateProjectScopeError(foreign);
   }
 };
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assertCandidateBatchProjectScope,
+  CandidateProjectScopeError,
   type MemoryCandidateProposal
 } from "../run-evidence-capture-command.js";
 import type { EvalCandidateProposal, SourceDecision } from "@krn/core";
@@ -94,5 +95,26 @@ describe("candidate batch project scope", () => {
     }
     expect(message).toContain("eval candidate eval-candidate-1");
     expect(message).not.toContain(secret);
+  });
+
+  it("marks scope rejection as non-retryable and stable", () => {
+    const run = () => {
+      try {
+        assertCandidateBatchProjectScope({
+          projectId,
+          sourceDecisionCandidates: [],
+          memoryCandidateProposals: [],
+          evalCandidateProposals: [evalCandidate("project-b")]
+        });
+      } catch (error) {
+        return error;
+      }
+      throw new Error("expected scope rejection");
+    };
+    const first = run();
+    const second = run();
+    expect(first).toBeInstanceOf(CandidateProjectScopeError);
+    expect(first).toMatchObject({ code: "candidate_project_scope", retryable: false });
+    expect((first as Error).message).toBe((second as Error).message);
   });
 });
