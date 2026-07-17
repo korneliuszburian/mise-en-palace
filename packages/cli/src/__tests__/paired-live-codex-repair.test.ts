@@ -139,7 +139,7 @@ describe("paired live Codex repair eval", () => {
       },
       changedFiles: ["src/config.ts"],
       commands: { test: command(), typecheck: command(), diffCheck: command() },
-      runtimeAvailable: false,
+      runtimeAvailable: true,
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -157,7 +157,7 @@ describe("paired live Codex repair eval", () => {
       sourceFiles: { "src/jobQueue.ts": "export interface JobEnvelope { readonly idempotencyKey: string; }" },
       changedFiles: ["src/jobQueue.ts"],
       commands: { test: command(), typecheck: command(), diffCheck: command() },
-      runtimeAvailable: false,
+      runtimeAvailable: true,
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -167,6 +167,28 @@ describe("paired live Codex repair eval", () => {
 
     expect(score.status).toBe("fail");
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("invalidates a family arm when its independent runtime observer is unavailable", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "mode !== 'development' && mode !== 'staging' && mode !== 'production';",
+        "src/configReadback.ts": "const secretKeyPattern = /secret/i; export const redactConfigReadback = (env) => Object.fromEntries(Object.keys(env).map((key) => [key, secretKeyPattern.test(key) ? '[redacted]' : env[key]]));",
+        "tests/config.test.ts": "invalid_config"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: false,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.status).toBe("invalid");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
   });
 
   it("keeps skipped preflight command identities aligned with the issued contract", async () => {

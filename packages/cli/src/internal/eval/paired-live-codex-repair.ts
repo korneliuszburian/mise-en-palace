@@ -291,7 +291,8 @@ const source = (files: TargetSourceFiles, path: string): string => files[path] ?
 const checkFamilyContract = (
   family: PairedEvalFamily,
   files: TargetSourceFiles,
-  commands: TargetRepairScoreInput["commands"]
+  commands: TargetRepairScoreInput["commands"],
+  runtimeAvailable: boolean
 ): HeldOutCheck => {
   const config = source(files, "src/config.ts");
   const readback = source(files, "src/configReadback.ts");
@@ -305,13 +306,13 @@ const checkFamilyContract = (
         /dead_lettered/.test(job) && /JobClock/.test(job)
       : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
-  const passed = passedContract && passedCommands;
+  const passed = passedContract && passedCommands && (family === "weak-json" || runtimeAvailable);
   return {
     name: "family_contract",
     passed,
     details: passed
       ? `${family} family contract and public verification commands passed.`
-      : `${family} family contract or public verification commands failed.`
+      : `${family} family contract, runtime observer, or public verification commands failed.`
   };
 };
 
@@ -465,7 +466,7 @@ export const scoreTargetRepair = (
   if (family !== "weak-json") {
     const checks: HeldOutCheck[] = [
       checkPreflight(changeManifest),
-      checkFamilyContract(family, input.sourceFiles, input.commands),
+      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable),
       checkAllowedFiles(input.changedFiles),
       {
         name: "target_test",
@@ -481,9 +482,16 @@ export const scoreTargetRepair = (
         name: "target_diff_check",
         passed: passed(input.commands.diffCheck),
         details: passed(input.commands.diffCheck) ? "Target diff check passed." : "Target diff check failed."
+      },
+      {
+        name: "held_out_runtime",
+        passed: input.runtimeAvailable,
+        details: input.runtimeAvailable
+          ? "Family-specific held-out runtime observer passed."
+          : "Family-specific held-out runtime observer was unavailable or failed."
       }
     ];
-    const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check"].includes(check.name) && !check.passed);
+    const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check", "held_out_runtime"].includes(check.name) && !check.passed);
     const contract = checks.find((check) => check.name === "family_contract");
     return {
       status: invalid ? "invalid" : contract?.passed === true ? "pass" : "fail",
@@ -491,7 +499,8 @@ export const scoreTargetRepair = (
       checks,
       changedFiles: [...input.changedFiles],
       changeManifest,
-      commands: input.commands
+      commands: input.commands,
+      ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand })
     };
   }
   const checks: HeldOutCheck[] = [
@@ -863,8 +872,21 @@ const observeInput = (createUser, listUsers, raw) => {
   }
 };
 try {
-  const moduleValue = await import(process.argv[2]);
+  const family = process.argv[2];
+  const moduleValue = await import(process.argv[3]);
   const service = isRecord(moduleValue) ? moduleValue : {};
+  if (family === "env-config") {
+    if (typeof service.redactConfigReadback !== "function") throw new Error("env readback export unavailable");
+    const env = Object.defineProperty({}, "CLIENT_SECRET", { enumerable: true, get() { throw new Error("secret value read"); } });
+    const output = service.redactConfigReadback(env);
+    if (!isRecord(output) || output.CLIENT_SECRET !== "[redacted]") throw new Error("secret was not safely redacted");
+    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: {} }) + "\\n");
+  } else if (family === "async-job") {
+    if (typeof service.enqueueJob !== "function") throw new Error("enqueue export unavailable");
+    const output = service.enqueueJob({ id: "held-out", idempotencyKey: "  tenant:1  ", retryBudget: 1, leaseTimeoutMs: 1000 }, { nowMs: () => 123 });
+    if (!isRecord(output) || output.idempotencyKey !== "tenant:1") throw new Error("idempotency key was not normalized");
+    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: {} }) + "\\n");
+  } else {
   const createUser = service.createUserFromJson;
   const listUsers = service.listSavedUsers;
   if (typeof createUser !== "function" || typeof listUsers !== "function") {
@@ -876,6 +898,7 @@ try {
     invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }))
   };
   writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
+  }
 } catch {
   writeSync(1, marker + JSON.stringify({ runtimeAvailable: false }) + "\\n");
   process.exitCode = 1;
@@ -897,7 +920,8 @@ const unknownRuntimeObservations = (): RuntimeObservations => ({
 export const runHeldOutRuntimeWorker = async (
   compileRoot: string,
   checkerRoot: string,
-  sandboxRoot: string
+  sandboxRoot: string,
+  family: PairedEvalFamily
 ): Promise<{
   readonly command: CommandResult;
   readonly runtimeAvailable: boolean;
@@ -927,7 +951,10 @@ export const runHeldOutRuntimeWorker = async (
     realpath(compileRoot),
     realpath(workerPath)
   ]);
-  const targetModuleUrl = `${pathToFileURL(join(canonicalCompileRoot, "src/userService.js")).href}?checker=${Date.now()}`;
+  const modulePath = family === "env-config"
+    ? "src/configReadback.js"
+    : family === "async-job" ? "src/jobQueue.js" : "src/userService.js";
+  const targetModuleUrl = `${pathToFileURL(join(canonicalCompileRoot, modulePath)).href}?checker=${Date.now()}`;
   const command = await runCommand(
     process.execPath,
     [
@@ -935,6 +962,7 @@ export const runHeldOutRuntimeWorker = async (
       `--allow-fs-read=${canonicalCompileRoot}`,
       `--allow-fs-read=${canonicalWorkerPath}`,
       canonicalWorkerPath,
+      family,
       targetModuleUrl
     ],
     checkerRoot,
@@ -962,10 +990,10 @@ export const runHeldOutRuntimeWorker = async (
       throw new Error("Malformed held-out runtime envelope");
     }
     const observations = parsed["observations"];
-    if (!isRecord(observations) ||
+    if (family === "weak-json" && (!isRecord(observations) ||
       !isRecord(observations["invalidJson"]) ||
       !isRecord(observations["missingEmail"]) ||
-      !isRecord(observations["invalidRole"])) {
+      !isRecord(observations["invalidRole"]))) {
       throw new Error("Malformed held-out observations");
     }
 
@@ -1264,7 +1292,7 @@ export const runHeldOutTargetRepairChecker = async (
 
   if (compile.exitCode === 0) {
     const [runtime, mutationSuite] = await Promise.all([
-      runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot),
+      runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot, family),
       runFocusedTestMutationSuite(compileRoot, input.checkerRoot, sandboxRoot)
     ]);
     runtimeAvailable = runtime.runtimeAvailable;
