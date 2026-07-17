@@ -19,6 +19,14 @@ export type HeldOutObservation = {
   readonly resultState: string;
 };
 
+export type HeldOutRuntimeObservations = {
+  readonly invalidJson: HeldOutObservation;
+  readonly missingEmail: HeldOutObservation;
+  readonly invalidRole: HeldOutObservation;
+  readonly redactionSafe?: boolean;
+  readonly enqueueAccepted?: boolean;
+};
+
 export type CommandResult = {
   readonly command: string;
   readonly args: readonly string[];
@@ -233,11 +241,7 @@ export type TargetRepairScoreInput = {
   readonly focusedTestControl?: CommandResult;
   readonly focusedTestMutations?: readonly FocusedTestMutationProof[];
   readonly runtimeAvailable: boolean;
-  readonly observations: {
-    readonly invalidJson: HeldOutObservation;
-    readonly missingEmail: HeldOutObservation;
-    readonly invalidRole: HeldOutObservation;
-  };
+  readonly observations: HeldOutRuntimeObservations;
 };
 
 export type HeldOutCheckerInput = {
@@ -296,6 +300,22 @@ const observationPassed = (observation: HeldOutObservation): boolean =>
   observation.resultState !== "null" &&
   observation.resultState !== "undefined";
 
+const runtimeObservationPassed = (
+  family: PairedEvalFamily,
+  observations: HeldOutRuntimeObservations
+): boolean => {
+  switch (family) {
+    case "env-config":
+      return observations.redactionSafe === true;
+    case "async-job":
+      return observations.enqueueAccepted === true;
+    case "weak-json":
+      return observationPassed(observations.invalidJson) &&
+        observationPassed(observations.missingEmail) &&
+        observationPassed(observations.invalidRole);
+  }
+};
+
 const source = (files: TargetSourceFiles, path: string): string => files[path] ?? "";
 
 const checkFamilyContract = (
@@ -303,7 +323,8 @@ const checkFamilyContract = (
   files: TargetSourceFiles,
   commands: TargetRepairScoreInput["commands"],
   runtimeAvailable: boolean,
-  runtimeFailureReason: HeldOutRuntimeFailureReason | undefined
+  runtimeFailureReason: HeldOutRuntimeFailureReason | undefined,
+  observations: HeldOutRuntimeObservations
 ): HeldOutCheck => {
   const config = source(files, "src/config.ts");
   const readback = source(files, "src/configReadback.ts");
@@ -318,7 +339,7 @@ const checkFamilyContract = (
         (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job))
       : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
-  const passed = passedContract && passedCommands && (family === "weak-json" || runtimeAvailable);
+  const passed = passedContract && passedCommands && runtimeAvailable && runtimeObservationPassed(family, observations);
   return {
     name: "family_contract",
     passed,
@@ -478,7 +499,7 @@ export const scoreTargetRepair = (
   if (family !== "weak-json") {
     const checks: HeldOutCheck[] = [
       checkPreflight(changeManifest),
-      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable, input.runtimeFailureReason),
+      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable, input.runtimeFailureReason, input.observations),
       checkAllowedFiles(input.changedFiles),
       {
         name: "target_test",
@@ -497,10 +518,10 @@ export const scoreTargetRepair = (
       },
       {
         name: "held_out_runtime",
-        passed: input.runtimeAvailable,
-        details: input.runtimeAvailable
+        passed: input.runtimeAvailable && runtimeObservationPassed(family, input.observations),
+        details: input.runtimeAvailable && runtimeObservationPassed(family, input.observations)
           ? "Family-specific held-out runtime observer passed."
-          : "Family-specific held-out runtime observer was unavailable or failed."
+          : "Family-specific held-out runtime observer was unavailable or failed its observable contract."
       }
     ];
     const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check", "held_out_runtime"].includes(check.name) && !check.passed);
@@ -962,16 +983,12 @@ try {
 }
 `;
 
-type RuntimeObservations = {
-  readonly invalidJson: HeldOutObservation;
-  readonly missingEmail: HeldOutObservation;
-  readonly invalidRole: HeldOutObservation;
-};
-
-const unknownRuntimeObservations = (): RuntimeObservations => ({
+const unknownRuntimeObservations = (): HeldOutRuntimeObservations => ({
   invalidJson: unknownObservation(),
   missingEmail: unknownObservation(),
-  invalidRole: unknownObservation()
+  invalidRole: unknownObservation(),
+  redactionSafe: false,
+  enqueueAccepted: false
 });
 
 export const runHeldOutRuntimeWorker = async (
@@ -983,7 +1000,7 @@ export const runHeldOutRuntimeWorker = async (
   readonly command: CommandResult;
   readonly runtimeAvailable: boolean;
   readonly failureReason?: HeldOutRuntimeFailureReason;
-  readonly observations: RuntimeObservations;
+  readonly observations: HeldOutRuntimeObservations;
 }> => {
   const permissionFlag = selectHeldOutRuntimePermissionFlag();
   if (permissionFlag === undefined) {
@@ -1067,14 +1084,28 @@ export const runHeldOutRuntimeWorker = async (
       throw new Error("Malformed held-out observations");
     }
 
+    const runtimeObservations: HeldOutRuntimeObservations = family === "env-config"
+      ? {
+          ...unknownRuntimeObservations(),
+          redactionSafe: observations["redactionSafe"] === true
+        }
+      : family === "async-job"
+        ? {
+            ...unknownRuntimeObservations(),
+            enqueueAccepted: observations["enqueueAccepted"] === true
+          }
+        : {
+            invalidJson: observations["invalidJson"] as HeldOutObservation,
+            missingEmail: observations["missingEmail"] as HeldOutObservation,
+            invalidRole: observations["invalidRole"] as HeldOutObservation,
+            redactionSafe: false,
+            enqueueAccepted: false
+          };
+
     return {
       command,
       runtimeAvailable: true,
-      observations: {
-        invalidJson: observations["invalidJson"] as HeldOutObservation,
-        missingEmail: observations["missingEmail"] as HeldOutObservation,
-        invalidRole: observations["invalidRole"] as HeldOutObservation
-      }
+      observations: runtimeObservations
     };
   } catch {
     return {

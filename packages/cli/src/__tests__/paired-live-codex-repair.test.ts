@@ -143,7 +143,8 @@ describe("paired live Codex repair eval", () => {
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
-        invalidRole: observation()
+        invalidRole: observation(),
+        redactionSafe: true
       }
     });
 
@@ -161,12 +162,57 @@ describe("paired live Codex repair eval", () => {
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
-        invalidRole: observation()
+        invalidRole: observation(),
+        enqueueAccepted: true
       }
     });
 
     expect(score.status).toBe("fail");
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("invalidates env-config when the runtime observer reports an unsafe readback", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "mode !== 'development' && mode !== 'staging' && mode !== 'production';",
+        "src/configReadback.ts": "const secretKeyPattern = /secret/i; export const redactConfigReadback = (env) => Object.fromEntries(Object.keys(env).map((key) => [key, '[redacted]']));",
+        "tests/config.test.ts": "invalid_config"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        redactionSafe: false
+      }
+    });
+
+    expect(score.status).toBe("invalid");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
+  });
+
+  it("invalidates async-job when the runtime observer rejects the enqueue contract", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": "const idempotencyKey = ''; const retryBudget = 1; const leaseTimeoutMs = 1; const state = 'dead_lettered'; interface Clock { now(): number; }"
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: false
+      }
+    });
+
+    expect(score.status).toBe("invalid");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
   });
 
   it("accepts an explicit alternate clock seam in the async family contract", () => {
@@ -184,7 +230,8 @@ describe("paired live Codex repair eval", () => {
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
-        invalidRole: observation()
+        invalidRole: observation(),
+        enqueueAccepted: true
       }
     });
 
@@ -206,7 +253,8 @@ describe("paired live Codex repair eval", () => {
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
-        invalidRole: observation()
+        invalidRole: observation(),
+        enqueueAccepted: true
       }
     });
 
@@ -1028,7 +1076,9 @@ describe("paired live Codex repair eval", () => {
       expect(result.observations).toEqual({
         invalidJson: observation({ resultState: "kind:invalid_input" }),
         missingEmail: observation({ resultState: "kind:invalid_input" }),
-        invalidRole: observation({ resultState: "kind:invalid_input" })
+        invalidRole: observation({ resultState: "kind:invalid_input" }),
+        redactionSafe: false,
+        enqueueAccepted: false
       });
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -1052,6 +1102,45 @@ describe("paired live Codex repair eval", () => {
       expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
       expect(result.command.exitCode).toBe(0);
       expect(result.failureReason).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retains env-config runtime evidence when guarded redaction succeeds", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-env-runtime-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/configReadback.js"), "export const redactConfigReadback = () => ({ CLIENT_SECRET: '[redacted]' });", "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "env-config");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.redactionSafe).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retains async-job runtime evidence when enqueue and lease readback succeed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leaseExpiresAt: 1123 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(true);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
