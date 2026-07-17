@@ -1,8 +1,7 @@
 import { stat } from "node:fs/promises";
 
 import {
-  aggregatePairedEvalArtifactDirectories,
-  aggregatePairedEvalResultFiles
+  aggregatePairedEvalMixedInputs
 } from "./paired-live-aggregation.js";
 import type { PairedEvalFamily } from "./paired-live-codex-repair.js";
 
@@ -29,12 +28,10 @@ const main = async (): Promise<void> => {
   for (const input of inputs) {
     (await stat(input.directory)).isFile() ? files.push(input) : directories.push(input);
   }
-  if (files.length > 0 && directories.length > 0) {
-    throw new Error("Use either artifact directories or generic result files in one report, not both.");
-  }
-  const report = files.length > 0
-    ? await aggregatePairedEvalResultFiles(files.map(({ family, directory: file }) => ({ family, file })))
-    : await aggregatePairedEvalArtifactDirectories(directories);
+  const report = await aggregatePairedEvalMixedInputs({
+    artifactDirectories: directories,
+    resultFiles: files.map(({ family, directory: file }) => ({ family, file }))
+  });
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 };
 

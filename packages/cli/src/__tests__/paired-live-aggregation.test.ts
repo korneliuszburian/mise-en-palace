@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregatePairedEvalArtifactDirectories,
   aggregatePairedEvalArtifacts,
+  aggregatePairedEvalMixedInputs,
   aggregatePairedEvalResultFiles
 } from "../internal/eval/paired-live-aggregation.js";
 import type { TrackedTrialArtifact } from "../internal/eval/tracked-paired-live-codex-repair.js";
@@ -170,5 +171,43 @@ describe("paired live eval aggregation", () => {
 
     expect(report.overall).toMatchObject({ wins: 1, qualityTrials: 1, invalidTrials: 1 });
     expect(report.unreadableFiles).toHaveLength(1);
+  });
+
+  it("combines tracked-directory reads and generic result files with global duplicate exclusion", async () => {
+    const directory = await mkdtemp("/tmp/krn-aggregate-mixed-");
+    const valid = join(directory, "valid.json");
+    const duplicate = join(directory, "duplicate.json");
+    await writeFile(valid, JSON.stringify({
+      kind: "krn.genericPairedCodexEval.v1",
+      runId: "mixed-run",
+      score: { outcome: "win" },
+      promptDelta: { packetOnlyByConstruction: true }
+    }));
+    await writeFile(duplicate, JSON.stringify({
+      kind: "krn.genericPairedCodexEval.v1",
+      runId: "mixed-run",
+      score: { outcome: "loss" },
+      promptDelta: { packetOnlyByConstruction: true }
+    }));
+
+    const report = await aggregatePairedEvalMixedInputs({
+      artifactDirectories: [{ family: "env-config", directory: "/definitely/missing/paired-trial" }],
+      resultFiles: [
+        { family: "async-job", file: valid },
+        { family: "weak-json", file: duplicate }
+      ]
+    });
+
+    expect(report.overall).toMatchObject({
+      wins: 1,
+      qualityTrials: 1,
+      invalidTrials: 2,
+      totalInputs: 3
+    });
+    expect(report.families.find((family) => family.family === "weak-json")?.duplicateRunIds)
+      .toEqual(["mixed-run"]);
+    expect(report.unreadableInputs).toHaveLength(1);
+    expect(report.unreadableFiles).toHaveLength(0);
+    expect(report.doesNotProve).toContain("causal KRN advantage or arbitrary-repository portability");
   });
 });

@@ -69,6 +69,16 @@ export type PairedEvalFileReadback = PairedEvalAggregate & {
   readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
 };
 
+export type PairedEvalMixedInputs = {
+  readonly artifactDirectories?: readonly PairedEvalArtifactDirectory[];
+  readonly resultFiles?: readonly PairedEvalResultFile[];
+};
+
+export type PairedEvalMixedReadback = PairedEvalAggregate & {
+  readonly unreadableInputs: readonly PairedEvalUnreadableInput[];
+  readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
+};
+
 const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
 const qualityOutcomes: readonly PairedRepairOutcome[] = ["win", "tie", "loss"];
 
@@ -291,44 +301,57 @@ const isGenericResult = (value: unknown): value is {
     (promptDelta as Record<string, unknown>).packetOnlyByConstruction === true;
 };
 
-export const aggregatePairedEvalResultFiles = async (
+const genericResultToArtifact = (parsed: {
+  readonly runId: string;
+  readonly score: { readonly outcome: PairedRepairOutcome };
+}): TrackedTrialArtifact => ({
+  kind: "krn.pairedLiveCodexRepairArtifact.v2",
+  runId: parsed.runId,
+  status: "passed",
+  artifactHash: `generic-artifact-${parsed.runId}`,
+  manifestHash: `generic-manifest-${parsed.runId}`,
+  sourceTreeHash: `generic-source-${parsed.runId}`,
+  packet: { validation: { valid: true, reasons: [] } },
+  execution: { conditions: { requested: {} as never } },
+  score: {
+    outcome: parsed.score.outcome,
+    baseline: { status: "pass", score: 0, checks: [], changedFiles: [] },
+    krn: { status: "pass", score: 0, checks: [], changedFiles: [] },
+    reason: "validated generic paired result"
+  },
+  proof: { proves: [], doesNotProve: [] }
+} as TrackedTrialArtifact);
+
+const readGenericResultInputs = async (
   inputs: readonly PairedEvalResultFile[]
-): Promise<PairedEvalFileReadback> => {
+): Promise<{ readonly readable: readonly PairedEvalArtifactInput[]; readonly unreadable: readonly PairedEvalUnreadableFile[] }> => {
   const readable: PairedEvalArtifactInput[] = [];
-  const unreadableFiles: PairedEvalUnreadableFile[] = [];
+  const unreadable: PairedEvalUnreadableFile[] = [];
   for (const input of inputs) {
     try {
       const parsed: unknown = JSON.parse(await readFile(input.file, "utf8"));
       if (!isGenericResult(parsed)) throw new Error("invalid generic result");
-      readable.push({
-        family: input.family,
-        artifact: {
-          runId: parsed.runId,
-          status: "passed",
-          score: {
-            outcome: parsed.score.outcome,
-            baseline: { status: "pass", score: 0, checks: [], changedFiles: [] },
-            krn: { status: "pass", score: 0, checks: [], changedFiles: [] },
-            reason: "validated generic paired result"
-          }
-        } as unknown as TrackedTrialArtifact
-      });
+      readable.push({ family: input.family, artifact: genericResultToArtifact(parsed) });
     } catch {
-      unreadableFiles.push({
-        ...input,
-        reason: "generic_result_failed_validation"
-      });
+      unreadable.push({ ...input, reason: "generic_result_failed_validation" });
     }
   }
-  const aggregate = aggregatePairedEvalArtifacts(readable);
-  const invalidByFamily = new Map<PairedEvalFamily, number>();
-  for (const input of unreadableFiles) {
-    invalidByFamily.set(input.family, (invalidByFamily.get(input.family) ?? 0) + 1);
+  return { readable, unreadable };
+};
+
+const addUnreadableCounts = (
+  aggregate: PairedEvalAggregate,
+  unreadableInputs: readonly PairedEvalUnreadableInput[],
+  unreadableFiles: readonly PairedEvalUnreadableFile[]
+): PairedEvalAggregate => {
+  const counts = new Map<PairedEvalFamily, number>();
+  for (const input of [...unreadableInputs, ...unreadableFiles]) {
+    counts.set(input.family, (counts.get(input.family) ?? 0) + 1);
   }
   const familiesWithInvalid = aggregate.families.map((family) => ({
     ...family,
-    totalInputs: family.totalInputs + (invalidByFamily.get(family.family) ?? 0),
-    invalidTrials: family.invalidTrials + (invalidByFamily.get(family.family) ?? 0)
+    totalInputs: family.totalInputs + (counts.get(family.family) ?? 0),
+    invalidTrials: family.invalidTrials + (counts.get(family.family) ?? 0)
   }));
   const overall = finalizeCounts(familiesWithInvalid.reduce<PairedEvalOutcomeCounts>(
     (sum, family) => ({
@@ -346,6 +369,38 @@ export const aggregatePairedEvalResultFiles = async (
     ...aggregate,
     families: familiesWithInvalid,
     overall,
-    unreadableFiles
+    invalidReasons: reasonCounts([
+      ...expandReasonCounts(aggregate.invalidReasons),
+      ...unreadableInputs.map(({ reason }) => reason),
+      ...unreadableFiles.map(({ reason }) => reason)
+    ])
+  };
+};
+
+export const aggregatePairedEvalMixedInputs = async (
+  inputs: PairedEvalMixedInputs
+): Promise<PairedEvalMixedReadback> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadableInputs: PairedEvalUnreadableInput[] = [];
+  for (const input of inputs.artifactDirectories ?? []) {
+    const artifact = await readTrackedTrialArtifact(input.directory);
+    if (artifact === undefined) unreadableInputs.push({ ...input, reason: "artifact_or_phase_journal_failed_validation" });
+    else readable.push({ family: input.family, artifact });
+  }
+  const resultReadback = await readGenericResultInputs(inputs.resultFiles ?? []);
+  readable.push(...resultReadback.readable);
+  const aggregate = addUnreadableCounts(readable.length === 0
+    ? aggregatePairedEvalArtifacts([])
+    : aggregatePairedEvalArtifacts(readable), unreadableInputs, resultReadback.unreadable);
+  return { ...aggregate, unreadableInputs, unreadableFiles: resultReadback.unreadable };
+};
+
+export const aggregatePairedEvalResultFiles = async (
+  inputs: readonly PairedEvalResultFile[]
+): Promise<PairedEvalFileReadback> => {
+  const result = await aggregatePairedEvalMixedInputs({ resultFiles: inputs });
+  return {
+    ...result,
+    unreadableFiles: result.unreadableFiles
   };
 };
