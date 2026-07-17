@@ -133,6 +133,8 @@ describe("candidate batch project scope", () => {
     expect(classifyEvidenceCaptureError(new CandidateProjectScopeError(["eval candidate 1"]))).toBe("permanent");
     expect(classifyEvidenceCaptureError(new Error("postgres connection timeout"))).toBe("transient");
     expect(classifyEvidenceCaptureError(Object.assign(new Error("connect refused"), { code: "ECONNREFUSED" }))).toBe("transient");
+    expect(classifyEvidenceCaptureError(Object.assign(new Error("write CONNECT_TIMEOUT localhost:5432"), { code: "CONNECT_TIMEOUT" }))).toBe("transient");
+    expect(classifyEvidenceCaptureError(Object.assign(new Error("write CONNECTION_CLOSED localhost:5432"), { code: "CONNECTION_CLOSED" }))).toBe("transient");
     expect(classifyEvidenceCaptureError(new Error("invalid postgres connection string"))).toBe("unknown");
     expect(classifyEvidenceCaptureError(new Error("validation failed"))).toBe("unknown");
   });

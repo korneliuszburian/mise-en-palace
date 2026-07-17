@@ -297,7 +297,9 @@ const transientInfrastructureErrorCodes = new Set([
   "ECONNREFUSED",
   "ECONNRESET",
   "EAI_AGAIN",
-  "ETIMEDOUT"
+  "ETIMEDOUT",
+  "CONNECT_TIMEOUT",
+  "CONNECTION_CLOSED"
 ]);
 
 export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErrorDisposition => {
