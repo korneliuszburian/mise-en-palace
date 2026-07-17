@@ -903,16 +903,29 @@ try {
   const moduleValue = await import(process.argv[3]);
   const service = isRecord(moduleValue) ? moduleValue : {};
   if (family === "env-config") {
-    if (typeof service.redactConfigReadback !== "function") throw new Error("env readback export unavailable");
-    const env = Object.defineProperty({}, "CLIENT_SECRET", { enumerable: true, get() { throw new Error("secret value read"); } });
-    const output = service.redactConfigReadback(env);
-    if (!isRecord(output) || output.CLIENT_SECRET !== "[redacted]") throw new Error("secret was not safely redacted");
-    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: {} }) + "\\n");
+    let redactionSafe = false;
+    try {
+      if (typeof service.redactConfigReadback === "function") {
+        const env = Object.defineProperty({}, "CLIENT_SECRET", { enumerable: true, get() { throw new Error("secret value read"); } });
+        const output = service.redactConfigReadback(env);
+        redactionSafe = isRecord(output) && output.CLIENT_SECRET === "[redacted]";
+      }
+    } catch {
+      // A target throwing while reading the guarded secret is an observed contract failure,
+      // not an unavailable held-out observer.
+    }
+    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { redactionSafe } }) + "\\n");
   } else if (family === "async-job") {
-    if (typeof service.enqueueJob !== "function") throw new Error("enqueue export unavailable");
-    const output = service.enqueueJob({ id: "held-out", idempotencyKey: "  tenant:1  ", retryBudget: 1, leaseTimeoutMs: 1000 }, { nowMs: () => 123 });
-    if (!isRecord(output) || output.idempotencyKey !== "tenant:1") throw new Error("idempotency key was not normalized");
-    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: {} }) + "\\n");
+    let enqueueAccepted = false;
+    try {
+      if (typeof service.enqueueJob === "function") {
+        const output = service.enqueueJob({ id: "held-out", idempotencyKey: "  tenant:1  ", retryBudget: 1, leaseTimeoutMs: 1000 }, { nowMs: () => 123 });
+        enqueueAccepted = isRecord(output) && output.idempotencyKey === "tenant:1";
+      }
+    } catch {
+      // A target rejection is an observed contract failure, not an unavailable observer.
+    }
+    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { enqueueAccepted } }) + "\\n");
   } else {
   const createUser = service.createUserFromJson;
   const listUsers = service.listSavedUsers;

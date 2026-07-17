@@ -990,6 +990,28 @@ describe("paired live Codex repair eval", () => {
     }
   });
 
+  it.each([
+    ["env-config", "src/configReadback.js", "export const redactConfigReadback = (env) => Object.fromEntries(Object.entries(env));"],
+    ["async-job", "src/jobQueue.js", "export const unrelated = true;"],
+  ] as const)("treats %s target rejection as observed runtime failure", async (family, modulePath, source) => {
+    const root = await mkdtemp(join(tmpdir(), "krn-family-observed-failure-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, modulePath), source, "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, family);
+      expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
+      expect(result.command.exitCode).toBe(0);
+      expect(result.failureReason).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("invalidates an arm when the target test or forbidden-file boundary fails", () => {
     const result = scoreTargetRepair({
       sourceFiles,
