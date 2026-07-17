@@ -536,6 +536,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let databaseRuntimeInput: DatabaseRuntimeInput | undefined;
     const result = await runCli(
       [
         "source",
@@ -559,7 +560,9 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => withSourceTransaction({
+        createDatabaseRuntime: async (input) => {
+          databaseRuntimeInput = input;
+          return withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -604,7 +607,8 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        }, dependencies.retrievalRepository)
+          }, dependencies.retrievalRepository);
+        }
       }
     );
 
@@ -614,6 +618,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceDecision: source-decision-1");
     expect(result.stdout).toContain("sourceClaimId: source-claim-1");
     expect(result.stdout).toContain("sourceClaimReadback: accepted");
+    expect(databaseRuntimeInput?.repoPathHint).toBe(await findRepoRoot(process.cwd()));
     expect(result.stdout).toContain("status: adopt");
     expect(result.stdout).toContain("rationale: The claim has mechanism, consumer, falsifier, and doesNotProve.");
     expect(result.stdout).toContain("falsifier: Source search cannot read back the decision support.");

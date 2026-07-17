@@ -95,6 +95,7 @@ const databaseRuntimeOption = (
 
 const standardSourceInput = (context: SourceCliCommandContext) => ({
   env: context.env,
+  cwd: context.cwd,
   now: context.now,
   createId: context.createId,
   ...databaseRuntimeOption(context)
@@ -205,7 +206,6 @@ const runSelectedSourceCommand = async (
       });
     case "sourceSearch":
       return runSourceSearchCommand({
-        cwd: context.cwd,
         ...standardSourceInput(context),
         command
       });

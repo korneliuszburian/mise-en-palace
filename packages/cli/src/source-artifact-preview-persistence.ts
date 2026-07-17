@@ -197,15 +197,22 @@ const persistPreviewArtifactAndChunks = async (input: {
   capturedAt: string;
   chunks: readonly SourceArtifactPreviewChunk[];
 }): Promise<SourceArtifactPersistenceRows> => {
+  const evidenceRef = localArtifactUri(input.resolvedPath, input.artifactHash, input.capturedAt);
   const artifactInput = parseSourceArtifactInput({
     kind: "file",
     title: `Local source artifact: ${input.file}`,
-    uri: localArtifactUri(input.resolvedPath, input.artifactHash, input.capturedAt),
+    uri: evidenceRef,
     contentHash: input.artifactHash,
     sourceAuthority: "source-code",
     metadata: {
       file: input.file,
       resolvedPath: input.resolvedPath,
+      evidenceRef,
+      evidenceStatus: "captured",
+      evidenceContentHash: input.artifactHash,
+      evidenceCapturedAt: input.capturedAt,
+      evidenceFreshness: "current",
+      evidenceProvenance: "local source artifact preview",
       source: "krn source artifact preview --persist",
       doesNotProve: "Persisted local source artifact does not prove source truth, source freshness, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
     }
@@ -231,7 +238,13 @@ const persistPreviewArtifactAndChunks = async (input: {
         file: input.file,
         sourceRange: `lines ${chunk.startLine}-${chunk.endLine}`,
         startLine: chunk.startLine,
-        endLine: chunk.endLine
+        endLine: chunk.endLine,
+        evidenceRef,
+        evidenceStatus: "captured",
+        evidenceContentHash: input.artifactHash,
+        evidenceCapturedAt: input.capturedAt,
+        evidenceFreshness: "current",
+        evidenceProvenance: "local source artifact preview"
       }
     }));
   }
@@ -358,6 +371,12 @@ const parsePreviewSourceClaimInput = (input: {
       file: input.file,
       contentHash: input.artifactHash,
       chunkIds: input.sourceChunks.map((chunk) => chunk.id),
+      evidenceRef: input.sourceArtifact.uri,
+      evidenceStatus: "captured",
+      evidenceContentHash: input.artifactHash,
+      evidenceCapturedAt: input.sourceArtifact.metadata?.evidenceCapturedAt,
+      evidenceFreshness: "current",
+      evidenceProvenance: "local source artifact preview",
       ...(input.reviewedExtractionClaimSelection === undefined
         ? {}
         : {

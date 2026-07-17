@@ -7,6 +7,7 @@ import {
   defaultProjectSlug,
   createDatabaseRuntime
 } from "./database-runtime.js";
+import { findRepoRoot } from "./cli-file-boundary.js";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
@@ -21,6 +22,7 @@ import type {
 export type SourceDecisionAdoptCommand = Extract<CliCommand, { kind: "sourceDecisionAdopt" }>;
 
 export interface SourceDecisionAdoptCommandRuntime extends BaseCommandRuntime {
+  cwd: string;
   command: SourceDecisionAdoptCommand;
   createDatabaseRuntime?: CreateSourceDecisionAdoptDatabaseRuntime;
 }
@@ -116,6 +118,7 @@ export const runSourceDecisionAdoptCommand = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
+    repoPathHint: await findRepoRoot(runtime.cwd),
     now: runtime.now,
     createId: runtime.createId
   });
