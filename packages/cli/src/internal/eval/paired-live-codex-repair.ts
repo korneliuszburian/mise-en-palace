@@ -315,7 +315,7 @@ const checkFamilyContract = (
     : family === "async-job"
       ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
         /dead_lettered/.test(job) &&
-        (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job))
+        (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job))
       : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
   const passed = passedContract && passedCommands && (family === "weak-json" || runtimeAvailable);
@@ -920,8 +920,20 @@ try {
     let enqueueAccepted = false;
     try {
       if (typeof service.enqueueJob === "function") {
-        const output = service.enqueueJob({ id: "held-out", idempotencyKey: "  tenant:1  ", retryBudget: 1, leaseTimeoutMs: 1000 }, { nowMs: () => 123 });
-        enqueueAccepted = isRecord(output) && output.idempotencyKey === "tenant:1";
+        const input = { id: "held-out", idempotencyKey: "  tenant:1  ", retryBudget: 1, leaseTimeoutMs: 1000 };
+        const clock = { now: () => 123, nowMs: () => 123 };
+        const output = service.enqueueJob(input, clock);
+        const processed = typeof service.leaseJob === "function"
+          ? service.leaseJob(output, clock)
+          : output;
+        const key = isRecord(output) && typeof output.idempotencyKey === "string"
+          ? output.idempotencyKey
+          : undefined;
+        const clockObserved = typeof service.leaseJob !== "function" || (
+          isRecord(processed) &&
+          (processed.leasedAt === 123 || processed.leaseExpiresAt === 1123)
+        );
+        enqueueAccepted = key !== undefined && key.trim().length > 0 && clockObserved;
       }
     } catch {
       // A target rejection is an observed contract failure, not an unavailable observer.

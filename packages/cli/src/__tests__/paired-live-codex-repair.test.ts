@@ -191,6 +191,29 @@ describe("paired live Codex repair eval", () => {
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
   });
 
+  it("accepts a method-based Clock seam used with lease expiry readback", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "interface Clock { now(): number; }",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'leased' | 'dead_lettered'; leaseExpiresAt: number };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+    expect(score.status).toBe("pass");
+  });
+
   it("invalidates a family arm when its independent runtime observer is unavailable", () => {
     const score = scoreTargetRepair({
       family: "env-config",
