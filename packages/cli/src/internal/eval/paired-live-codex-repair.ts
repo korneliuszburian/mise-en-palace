@@ -36,6 +36,7 @@ export type CommandResult = {
 
 export type TargetChangeManifest = {
   readonly status: "known" | "unknown";
+  readonly headMatchesInitialCommit?: boolean;
   readonly trackedFiles: readonly string[];
   readonly untrackedFiles: readonly string[];
   readonly changedFiles: readonly string[];
@@ -187,7 +188,7 @@ const basePrompt = (task: string): string => [
   "Repair the externally observable user-creation boundary in this controlled TypeScript target.",
   "Read AGENTS.md and docs/repair-contract.md first. Work only in the allowed target files and do not touch the parent repository, other repos, generated caches, secrets, or network.",
   "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
-  "Run the target test command and TypeScript typecheck before finishing. Do not commit or push.",
+  "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.",
   "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
   `Task: ${task}`
 ].join("\n");
@@ -333,16 +334,31 @@ const knownChangeManifest = (changedFiles: readonly string[]): TargetChangeManif
 
   return {
     status: "known",
+    headMatchesInitialCommit: true,
     trackedFiles: uniqueFiles,
     untrackedFiles: [],
     changedFiles: uniqueFiles,
     forbiddenFiles,
-    statusOutput: "synthetic test manifest"
+    statusOutput: ""
   };
 };
 
+const targetStatusHasStagedChanges = (statusOutput: string): boolean =>
+  statusOutput.split("\n").some((line) =>
+    line.length >= 2 && line[0] !== " " && line[0] !== "?" && line[0] !== "!"
+  );
+
+export const targetChangeManifestClaimsOwnedChanges = (
+  manifest: TargetChangeManifest | undefined
+): manifest is TargetChangeManifest & { status: "known" } =>
+  manifest?.status === "known" &&
+  manifest.headMatchesInitialCommit === true &&
+  manifest.untrackedFiles.length === 0 &&
+  manifest.forbiddenFiles.length === 0 &&
+  !targetStatusHasStagedChanges(manifest.statusOutput);
+
 const checkPreflight = (manifest: TargetChangeManifest): HeldOutCheck => {
-  const isPassed = manifest.status === "known" && manifest.forbiddenFiles.length === 0;
+  const isPassed = targetChangeManifestClaimsOwnedChanges(manifest);
 
   return {
     name: "preflight",
@@ -351,6 +367,12 @@ const checkPreflight = (manifest: TargetChangeManifest): HeldOutCheck => {
       ? "Target change manifest was captured before target execution."
       : manifest.status === "unknown"
         ? "Target change manifest could not be captured before target execution."
+        : manifest.headMatchesInitialCommit === false
+          ? "Target HEAD changed from the initial commit, so worktree-only verification cannot prove the committed patch."
+        : manifest.untrackedFiles.length > 0
+          ? `Target contains untracked files that git diff --check cannot inspect: ${manifest.untrackedFiles.join(", ")}`
+        : targetStatusHasStagedChanges(manifest.statusOutput)
+          ? "Target index contains staged changes, so git diff --check cannot prove the full patch."
         : `Forbidden target changes were detected before execution: ${manifest.forbiddenFiles.join(", ")}`
   };
 };
@@ -626,8 +648,9 @@ const targetEnvironment = (sandboxRoot: string): NodeJS.ProcessEnv => ({
 const targetCommandTimeoutMs = 120_000;
 
 const targetPreflight = async (input: HeldOutCheckerInput): Promise<TargetChangeManifest> => {
-  const [status, tracked, untracked] = await Promise.all([
-    runCommand("git", ["status", "--short", "--untracked-files=all"], input.targetRoot),
+  const [status, head, tracked, untracked] = await Promise.all([
+    runCommand("git", ["status", "--porcelain=v1", "--untracked-files=all"], input.targetRoot),
+    runCommand("git", ["rev-parse", "HEAD"], input.targetRoot),
     runCommand("git", ["diff", input.initialCommit, "--name-only"], input.targetRoot),
     runCommand("git", ["ls-files", "--others", "--exclude-standard"], input.targetRoot)
   ]);
@@ -643,10 +666,16 @@ const targetPreflight = async (input: HeldOutCheckerInput): Promise<TargetChange
     !path.startsWith("tests/") &&
     !path.startsWith("docs/")
   );
-  const statusKnown = status.exitCode === 0 && tracked.exitCode === 0 && untracked.exitCode === 0;
+  const statusKnown = status.exitCode === 0 &&
+    head.exitCode === 0 &&
+    tracked.exitCode === 0 &&
+    untracked.exitCode === 0;
 
   return {
     status: statusKnown ? "known" : "unknown",
+    ...(head.exitCode === 0
+      ? { headMatchesInitialCommit: head.stdout.trim() === input.initialCommit }
+      : {}),
     trackedFiles,
     untrackedFiles,
     changedFiles,
@@ -1060,14 +1089,14 @@ export const runHeldOutTargetRepairChecker = async (
     durationMs: 0
   });
 
-  if (preflight.status === "unknown" || preflight.forbiddenFiles.length > 0) {
+  if (!targetChangeManifestClaimsOwnedChanges(preflight)) {
     return scoreTargetRepair({
       sourceFiles,
       changedFiles: preflight.changedFiles,
       changeManifest: preflight,
       commands: {
         test: skipped("pnpm test"),
-        typecheck: skipped("pnpm exec tsc"),
+        typecheck: skipped("pnpm typecheck"),
         diffCheck: skipped("git diff --check")
       },
       runtimeAvailable: false,
@@ -1084,11 +1113,11 @@ export const runHeldOutTargetRepairChecker = async (
       env: environment,
       timeoutMs: targetCommandTimeoutMs
     }),
-    runCommand("pnpm", ["exec", "tsc", "-p", "tsconfig.json", "--noEmit"], input.targetRoot, {
+    runCommand("pnpm", ["typecheck"], input.targetRoot, {
       env: environment,
       timeoutMs: targetCommandTimeoutMs
     }),
-    runCommand("git", ["diff", input.initialCommit, "--check"], input.targetRoot, {
+    runCommand("git", ["diff", "--check"], input.targetRoot, {
       env: environment,
       timeoutMs: targetCommandTimeoutMs
     })

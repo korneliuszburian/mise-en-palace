@@ -80,6 +80,7 @@ const arm = (status: "pass" | "fail" = "pass") => ({
   changedFiles: ["src/index.ts"],
   changeManifest: {
     status: "known" as const,
+    headMatchesInitialCommit: true,
     trackedFiles: ["src/index.ts"],
     untrackedFiles: [],
     changedFiles: ["src/index.ts"],

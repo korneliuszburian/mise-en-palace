@@ -1264,18 +1264,32 @@ describe("runCli", () => {
     expect(retry.stdout).not.toContain("usefulnessAuthorization:");
   });
 
-  it("persists explicit application evidence against the run project when the runtime fallback differs", async () => {
-    const verificationCommand = "pnpm typecheck";
+  it("admits exact later command-runner proof against the run project when the runtime fallback differs", async () => {
+    const verificationCommands = ["pnpm test", "pnpm typecheck", "git diff --check"] as const;
     const applicationPath = "packages/cli/src/generated-application.ts";
     const appliedAt = "2026-06-21T12:00:30.000Z";
-    const verificationArtifact = createCommandOutputArtifact({
-      command: verificationCommand,
-      exitCode: 0,
-      startedAt: "2026-06-21T12:00:40.000Z",
-      completedAt: "2026-06-21T12:01:00.000Z",
-      stdout: new Uint8Array(),
-      stderr: new Uint8Array()
-    }, sha256Hex);
+    const verificationArtifacts = verificationCommands.map((command, index) =>
+      createCommandOutputArtifact({
+        command,
+        exitCode: 0,
+        startedAt: `2026-06-21T12:00:${String(40 + index * 2).padStart(2, "0")}.000Z`,
+        completedAt: `2026-06-21T12:00:${String(41 + index * 2).padStart(2, "0")}.000Z`,
+        stdout: new Uint8Array(),
+        stderr: new Uint8Array()
+      }, sha256Hex)
+    );
+    const mixedOrderArtifacts = verificationArtifacts.map((artifact, index) =>
+      index === 0
+        ? createCommandOutputArtifact({
+            command: artifact.command,
+            exitCode: 0,
+            startedAt: "2026-06-21T12:00:20.000Z",
+            completedAt: "2026-06-21T12:00:21.000Z",
+            stdout: new Uint8Array(),
+            stderr: new Uint8Array()
+          }, sha256Hex)
+        : artifact
+    );
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1285,7 +1299,7 @@ describe("runCli", () => {
     aggregate.harnessPlan.metadata = {
       evidenceContract: {
         taskContractId: aggregate.taskContract.id,
-        commands: [{ command: verificationCommand, required: true }],
+        commands: verificationCommands.map((command) => ({ command, required: true })),
         diffRisk: "low",
         reviewBurden: "review",
         rollbackPath: "revert",
@@ -1321,7 +1335,7 @@ describe("runCli", () => {
         path: applicationPath,
         ownership: "owned-by-current-krn-run"
       }],
-      commands: [verificationCommand]
+      commands: [...verificationCommands]
     } as const;
 
     const applicationCapture = await runEvidenceCaptureCommand({
@@ -1357,7 +1371,12 @@ describe("runCli", () => {
     );
     capture.persistenceOrder = [];
 
-    await runEvidenceCaptureCommand({
+    const captureOutcome = async (
+      artifacts: readonly (typeof verificationArtifacts)[number][],
+      captureSuffix: string,
+      targetCommands: readonly string[] = verificationCommands
+    ): Promise<void> => {
+      await runEvidenceCaptureCommand({
       env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
       cwd: path.resolve(process.cwd(), "../.."),
       persist: true,
@@ -1365,16 +1384,16 @@ describe("runCli", () => {
       decisionPacketChecksum: packetBinding.packetChecksum,
       decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
       intendedFiles: [applicationPath],
-      commandOutcomes: [{
-        command: verificationCommand,
-        status: "passed",
-        provenance: "command_runner",
-        exitCode: 0,
-        capturedAt: "2026-06-21T12:01:00.000Z",
-        outputRef: verificationArtifact.outputRef
-      }],
-      commandOutputArtifacts: [verificationArtifact],
-      targetEvidence: applicationTargetEvidence,
+      commandOutcomes: artifacts.map((artifact) => ({
+        command: artifact.command,
+        status: "passed" as const,
+        provenance: "command_runner" as const,
+        exitCode: artifact.exitCode,
+        capturedAt: artifact.completedAt,
+        outputRef: artifact.outputRef
+      })),
+      commandOutputArtifacts: artifacts,
+      targetEvidence: { ...applicationTargetEvidence, commands: targetCommands },
       knowledgeUsefulnessOutcomes: [{
         knowledgeId: "knowledge:ts-boundary-unknown-first-result-state",
         applicationId: "application-1",
@@ -1384,20 +1403,38 @@ describe("runCli", () => {
         evidenceRefs: [
           packetBinding.packetEvidenceRef,
           applicationPath,
-          verificationCommand,
-          verificationArtifact.outputRef
+          ...artifacts.flatMap((artifact) => [artifact.command, artifact.outputRef])
         ],
         doesNotProve: "Ordered evidence does not establish semantic causality."
       }],
       now: () => "2026-06-21T12:10:00.000Z",
-      createId: (prefix) => `${prefix}-1`,
+      createId: (prefix) => `${prefix}-${captureSuffix}`,
       readGitStatus: async () => `?? ${applicationPath}\n`,
       readTargetStateSnapshot: async () => ({
         ...targetSnapshot,
         changedPaths: [applicationPath]
       }),
       createDatabaseRuntime: createRuntime
-    });
+      });
+    };
+
+    await captureOutcome(mixedOrderArtifacts, "mixed-order");
+    expect(capture.knowledgeUsefulnessOutcomes).toEqual([
+      expect.objectContaining({ applicationId: "application-1", outcome: "used" })
+    ]);
+    capture.persistenceOrder = [];
+
+    await captureOutcome(
+      verificationArtifacts,
+      "missing-required-target-command",
+      verificationCommands.slice(0, 2)
+    );
+    expect(capture.knowledgeUsefulnessOutcomes).toEqual([
+      expect.objectContaining({ applicationId: "application-1", outcome: "used" })
+    ]);
+    capture.persistenceOrder = [];
+
+    await captureOutcome(verificationArtifacts, "all-later");
 
     expect(capture.persistenceOrder).toEqual(["feedback"]);
     expect(capture.usefulnessApplications).toEqual([{
@@ -1420,6 +1457,14 @@ describe("runCli", () => {
     expect(capture.knowledgeUsefulnessOutcomes).toEqual([
       expect.objectContaining({ applicationId: "application-1", outcome: "helped" })
     ]);
+    expect(capture.commands).toEqual(expect.arrayContaining(
+      verificationArtifacts.map((artifact) => expect.objectContaining({
+        command: artifact.command,
+        kind: "command_runner",
+        status: "passed",
+        outputRef: artifact.outputRef
+      }))
+    ));
   });
 
   it("downgrades observation-only helped feedback to selected without target application proof", async () => {

@@ -1005,6 +1005,7 @@ const isHeldOutCheck = (value: unknown): boolean =>
 const isTargetChangeManifest = (value: unknown): boolean =>
   isRecord(value) &&
   (value["status"] === "known" || value["status"] === "unknown") &&
+  optionalValue(value, "headMatchesInitialCommit", (matches) => typeof matches === "boolean") &&
   isStringArray(value["trackedFiles"]) &&
   isStringArray(value["untrackedFiles"]) &&
   isStringArray(value["changedFiles"]) &&

@@ -11,6 +11,7 @@ import {
   scoreTargetRepair,
   runCommand,
   runFocusedTestMutationSuite,
+  runHeldOutTargetRepairChecker,
   runHeldOutRuntimeWorker,
   selectHeldOutRuntimePermissionFlag,
   type CommandResult,
@@ -119,6 +120,201 @@ const writeCompiledMutationTarget = async (
 };
 
 describe("paired live Codex repair eval", () => {
+  it("keeps skipped preflight command identities aligned with the issued contract", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-missing-paired-target-"));
+
+    try {
+      const score = await runHeldOutTargetRepairChecker({
+        targetRoot: join(root, "missing"),
+        checkerRoot: process.cwd(),
+        initialCommit: "missing"
+      });
+
+      expect(score.status).toBe("invalid");
+      expect(score.commands).toEqual(expect.objectContaining({
+        test: expect.objectContaining({ command: "pnpm test", exitCode: null }),
+        typecheck: expect.objectContaining({ command: "pnpm typecheck", exitCode: null }),
+        diffCheck: expect.objectContaining({ command: "git diff --check", exitCode: null })
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("invalidates a staged patch that the exact diff command cannot inspect", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-staged-paired-target-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/config.ts"), "export const value = 1;\n", "utf8");
+      for (const args of [
+        ["init", "--quiet"],
+        ["config", "user.email", "paired-test@example.invalid"],
+        ["config", "user.name", "KRN paired test"],
+        ["add", "src/config.ts"],
+        ["commit", "--quiet", "-m", "baseline"]
+      ]) {
+        expect((await runCommand("git", args, root)).exitCode).toBe(0);
+      }
+      const initialCommit = await runCommand("git", ["rev-parse", "HEAD"], root);
+      expect(initialCommit.exitCode).toBe(0);
+      await writeFile(join(root, "src/config.ts"), "export const value = 2; \n", "utf8");
+      expect((await runCommand("git", ["add", "src/config.ts"], root)).exitCode).toBe(0);
+
+      const score = await runHeldOutTargetRepairChecker({
+        targetRoot: root,
+        checkerRoot: process.cwd(),
+        initialCommit: initialCommit.stdout.trim()
+      });
+
+      expect(score.status).toBe("invalid");
+      expect(score.checks).toContainEqual(expect.objectContaining({
+        name: "preflight",
+        passed: false,
+        details: expect.stringContaining("staged changes")
+      }));
+      expect(score.commands?.diffCheck).toEqual(expect.objectContaining({
+        command: "git diff --check",
+        exitCode: null
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("invalidates a committed patch that the worktree-only diff command cannot inspect", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-committed-paired-target-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/config.ts"), "export const value = 1;\n", "utf8");
+      for (const args of [
+        ["init", "--quiet"],
+        ["config", "user.email", "paired-test@example.invalid"],
+        ["config", "user.name", "KRN paired test"],
+        ["add", "src/config.ts"],
+        ["commit", "--quiet", "-m", "baseline"]
+      ]) {
+        expect((await runCommand("git", args, root)).exitCode).toBe(0);
+      }
+      const initialCommit = await runCommand("git", ["rev-parse", "HEAD"], root);
+      expect(initialCommit.exitCode).toBe(0);
+      await writeFile(join(root, "src/config.ts"), "export const value = 2; \n", "utf8");
+      expect((await runCommand("git", ["add", "src/config.ts"], root)).exitCode).toBe(0);
+      expect((await runCommand("git", ["commit", "--quiet", "-m", "forbidden repair commit"], root)).exitCode).toBe(0);
+
+      const score = await runHeldOutTargetRepairChecker({
+        targetRoot: root,
+        checkerRoot: process.cwd(),
+        initialCommit: initialCommit.stdout.trim()
+      });
+
+      expect(score.status).toBe("invalid");
+      expect(score.checks).toContainEqual(expect.objectContaining({
+        name: "preflight",
+        passed: false,
+        details: expect.stringContaining("HEAD changed")
+      }));
+      expect(score.commands?.diffCheck).toEqual(expect.objectContaining({
+        command: "git diff --check",
+        exitCode: null
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("revalidates ownership after target tests mutate the Git index", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-runtime-staged-paired-target-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/config.ts"), "export const value = 1;\n", "utf8");
+      await writeFile(join(root, "package.json"), JSON.stringify({
+        scripts: {
+          test: "git add src/config.ts",
+          typecheck: "true"
+        }
+      }), "utf8");
+      await writeFile(join(root, "tsconfig.json"), JSON.stringify({
+        compilerOptions: { noEmit: true },
+        include: ["src/**/*.ts"]
+      }), "utf8");
+      for (const args of [
+        ["init", "--quiet"],
+        ["config", "user.email", "paired-test@example.invalid"],
+        ["config", "user.name", "KRN paired test"],
+        ["add", "."],
+        ["commit", "--quiet", "-m", "baseline"]
+      ]) {
+        expect((await runCommand("git", args, root)).exitCode).toBe(0);
+      }
+      const initialCommit = await runCommand("git", ["rev-parse", "HEAD"], root);
+      expect(initialCommit.exitCode).toBe(0);
+      await writeFile(join(root, "src/config.ts"), "export const value = 2;\n", "utf8");
+
+      const score = await runHeldOutTargetRepairChecker({
+        targetRoot: root,
+        checkerRoot: process.cwd(),
+        initialCommit: initialCommit.stdout.trim()
+      });
+
+      expect(score.status).toBe("invalid");
+      expect(score.checks).toContainEqual(expect.objectContaining({
+        name: "preflight",
+        passed: false,
+        details: expect.stringContaining("staged changes")
+      }));
+      expect(score.commands?.test).toEqual(expect.objectContaining({
+        command: "pnpm",
+        args: ["test"],
+        exitCode: 0
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("classifies a color-configured untracked patch without inventing staged proof", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-color-status-paired-target-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/config.ts"), "export const value = 1;\n", "utf8");
+      for (const args of [
+        ["init", "--quiet"],
+        ["config", "user.email", "paired-test@example.invalid"],
+        ["config", "user.name", "KRN paired test"],
+        ["add", "src/config.ts"],
+        ["commit", "--quiet", "-m", "baseline"],
+        ["config", "color.status", "always"]
+      ]) {
+        expect((await runCommand("git", args, root)).exitCode).toBe(0);
+      }
+      const initialCommit = await runCommand("git", ["rev-parse", "HEAD"], root);
+      expect(initialCommit.exitCode).toBe(0);
+      await writeFile(join(root, "src/extra.ts"), "export const extra = true;\n", "utf8");
+
+      const score = await runHeldOutTargetRepairChecker({
+        targetRoot: root,
+        checkerRoot: process.cwd(),
+        initialCommit: initialCommit.stdout.trim()
+      });
+
+      expect(score.checks).toContainEqual(expect.objectContaining({
+        name: "preflight",
+        passed: false,
+        details: expect.stringContaining("untracked files")
+      }));
+      expect(score.commands?.diffCheck).toEqual(expect.objectContaining({
+        command: "git diff --check",
+        exitCode: null
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("selects the stable Node permission flag before the legacy alias and fails closed without either", () => {
     expect(selectHeldOutRuntimePermissionFlag(new Set([
       "--experimental-permission",

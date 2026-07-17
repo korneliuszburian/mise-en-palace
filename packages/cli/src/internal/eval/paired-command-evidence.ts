@@ -47,11 +47,14 @@ const commandStatus = (result: CommandResult): EvidenceCommandStatus => {
   return result.exitCode === 0 ? "passed" : "failed";
 };
 
-const commandLabel = (
+export const executedCommandIdentity = (result: CommandResult): string =>
+  `${result.command} ${result.args.join(" ")}`.trim();
+
+const pairedCommandLabel = (
   arm: "baseline" | "krn",
   label: string,
   result: CommandResult
-): string => `${arm}:${label} ${result.command} ${result.args.join(" ")}`.trim();
+): string => `${arm}:${label} ${executedCommandIdentity(result)}`;
 
 const commandDoesNotProve = (result: CommandResult): string =>
   `Command outcome (${result.durationMs ?? "unknown"}ms) does not prove arbitrary-repository portability or product readiness.`;
@@ -88,6 +91,10 @@ const commandRunnerArtifact = (
   );
 
   if (!stdout.exact || !stderr.exact) return undefined;
+  if (
+    stdout.totalByteCount !== stdout.bytes.byteLength ||
+    stderr.totalByteCount !== stderr.bytes.byteLength
+  ) return undefined;
 
   return createCommandOutputArtifact({
     command,
@@ -101,12 +108,10 @@ const commandRunnerArtifact = (
   }, commandOutputArtifactSha256Hex);
 };
 
-export const pairedCommandEvidence = (
-  arm: "baseline" | "krn",
-  label: string,
+const commandEvidence = (
+  command: string,
   result: CommandResult
 ): PairedCommandEvidence => {
-  const command = commandLabel(arm, label, result);
   const commandOutputArtifact = commandRunnerArtifact(command, result);
 
   if (commandOutputArtifact === undefined) {
@@ -126,6 +131,16 @@ export const pairedCommandEvidence = (
     }
   };
 };
+
+export const executedCommandEvidence = (
+  result: CommandResult
+): PairedCommandEvidence => commandEvidence(executedCommandIdentity(result), result);
+
+export const pairedCommandEvidence = (
+  arm: "baseline" | "krn",
+  label: string,
+  result: CommandResult
+): PairedCommandEvidence => commandEvidence(pairedCommandLabel(arm, label, result), result);
 
 const streamSummary = (
   value: string,

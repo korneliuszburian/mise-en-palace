@@ -9,10 +9,12 @@ import {
   runEvidenceCaptureCommand
 } from "../../run-evidence-capture-command.js";
 import {
-  pairedCommandEvidence
+  executedCommandEvidence,
+  executedCommandIdentity
 } from "./paired-command-evidence.js";
 import {
-  runHeldOutTargetRepairChecker
+  runHeldOutTargetRepairChecker,
+  targetChangeManifestClaimsOwnedChanges
 } from "./paired-live-codex-repair.js";
 import type {
   HeldOutArmScore,
@@ -66,7 +68,7 @@ const passedCheck = (
 
 const ownedChangedFiles = (score: HeldOutArmScore): ReadonlySet<string> => {
   const manifest = score.changeManifest;
-  return manifest?.status === "known" && manifest.forbiddenFiles.length === 0
+  return targetChangeManifestClaimsOwnedChanges(manifest)
     ? new Set(manifest.changedFiles)
     : new Set();
 };
@@ -122,6 +124,12 @@ export const pairedDecisionApplicationId = (
 ): string =>
   `paired-source-decision:${runId}:${sha256(sourceDecisionId).slice(0, 24)}`;
 
+const requiredCheckerCommandIdentities = (score: HeldOutArmScore): string[] =>
+  score.commands === undefined
+    ? []
+    : [score.commands.test, score.commands.typecheck, score.commands.diffCheck]
+        .map(executedCommandIdentity);
+
 const targetEvidence = (
   targetRoot: string,
   score: HeldOutArmScore
@@ -137,8 +145,7 @@ const targetEvidence = (
     mode: "headless_repair",
     dirtyBefore: "clean",
     dirtyAfter: changedFiles.length === 0 ? "clean" : "dirty",
-    ownedChanges: score.changeManifest?.status === "known" &&
-      score.changeManifest.forbiddenFiles.length === 0
+    ownedChanges: targetChangeManifestClaimsOwnedChanges(score.changeManifest)
       ? "owned_by_current_krn_run"
       : "unknown",
     targetStatusFreshness: "fresh_current_task",
@@ -150,6 +157,7 @@ const targetEvidence = (
       path,
       ownership: "owned_by_current_krn_run"
     })),
+    commands: requiredCheckerCommandIdentities(score),
     doesNotProve: [
       "A mapped target change proves application only for the named DecisionPacket subject.",
       "Application does not prove that the decision helped or caused the paired outcome."
@@ -170,26 +178,18 @@ const applicationReadback = (
 
 const checkerEvidence = (score: HeldOutArmScore) => [
   ...(score.commands === undefined ? [] : [
-    pairedCommandEvidence("krn", "post-application-test", score.commands.test),
-    pairedCommandEvidence("krn", "post-application-typecheck", score.commands.typecheck),
-    pairedCommandEvidence("krn", "post-application-diff-check", score.commands.diffCheck)
+    executedCommandEvidence(score.commands.test),
+    executedCommandEvidence(score.commands.typecheck),
+    executedCommandEvidence(score.commands.diffCheck)
   ]),
   ...(score.runtimeCommand === undefined
     ? []
-    : [pairedCommandEvidence("krn", "post-application-held-out-runtime", score.runtimeCommand)]),
+    : [executedCommandEvidence(score.runtimeCommand)]),
   ...(score.focusedTestControl === undefined
     ? []
-    : [pairedCommandEvidence(
-        "krn",
-        "post-application-focused-test-control",
-        score.focusedTestControl
-      )]),
+    : [executedCommandEvidence(score.focusedTestControl)]),
   ...(score.focusedTestMutations ?? []).map((mutation) =>
-    pairedCommandEvidence(
-      "krn",
-      `post-application-focused-test-mutation-${mutation.name}`,
-      mutation.command
-    )
+    executedCommandEvidence(mutation.command)
   )
 ];
 
@@ -253,7 +253,9 @@ export const recordPairedDecisionApplications = async (
     ...(item.commandOutputArtifact === undefined ? [] : [item.commandOutputArtifact.outputRef])
   ]);
   const outcomes: SourceUsefulnessOutcomeFeedback[] = applied.map((application) => {
-    const helped = application.differential && passedCheck(verification, application.check);
+    const helped = application.differential &&
+      verification.status === "pass" &&
+      passedCheck(verification, application.check);
     return {
       sourceDecisionId: application.sourceDecisionId,
       applicationId: application.applicationId,
