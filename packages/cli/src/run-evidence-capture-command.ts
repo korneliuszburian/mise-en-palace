@@ -1963,7 +1963,7 @@ const persistEvidenceCapture = async (
       decisionPacketChecksum: runtime.decisionPacketChecksum,
       decisionPacketGeneratedAt: runtime.decisionPacketGeneratedAt,
       runId,
-      runtimeProjectId: databaseRuntime.projectId
+      runtimeProjectId: projectId
     });
     const captureIdentity = evidenceCaptureIdentityFor({
       runId,
@@ -1996,7 +1996,7 @@ const persistEvidenceCapture = async (
       knowledgeUsefulnessOutcomes,
       packetAuthorization: packet.authorization,
       runId,
-      runtimeProjectId: databaseRuntime.projectId,
+      runtimeProjectId: projectId,
       sourceUsefulnessOutcomes
     });
     const memoryCandidates = materializeFeedbackDeltaMemoryCandidates(
