@@ -30,7 +30,10 @@ import {
 } from "./columns.js";
 import {
   contextAssemblies,
-  feedbackDeltas
+  executionRuns,
+  feedbackDeltas,
+  reviewAssessments,
+  usefulnessApplications
 } from "./harness.js";
 import {
   executionRunIdColumn,
@@ -231,6 +234,19 @@ export const memoryCandidates = pgTable(
   "memory_candidates",
   {
     ...memoryCandidateProposalColumns(),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "restrict"
+    }),
+    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
+      onDelete: "restrict"
+    }),
+    reviewAssessmentId: uuid("review_assessment_id").references(() => reviewAssessments.id, {
+      onDelete: "restrict"
+    }),
+    usefulnessApplicationId: text("usefulness_application_id").references(
+      () => usefulnessApplications.applicationId,
+      { onDelete: "restrict" }
+    ),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
     ...memoryGuidanceColumns(),
@@ -243,6 +259,10 @@ export const memoryCandidates = pgTable(
     index("memory_candidates_project_id_idx").on(table.projectId),
     index("memory_candidates_execution_run_id_idx").on(table.executionRunId),
     index("memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
+    index("memory_candidates_review_assessment_id_idx").on(table.reviewAssessmentId),
+    uniqueIndex("memory_candidates_usefulness_application_id_unique").on(
+      table.usefulnessApplicationId
+    ),
     index("memory_candidates_status_idx").on(table.status),
     index("memory_candidates_kind_idx").on(table.kind),
     index("memory_candidates_valid_until_idx").on(table.validUntil),

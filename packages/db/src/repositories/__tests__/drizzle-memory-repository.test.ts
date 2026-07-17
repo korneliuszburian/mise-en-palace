@@ -3,6 +3,12 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { eq, inArray, sql } from "drizzle-orm";
 import postgres from "postgres";
+import {
+  promoteMemoryCandidateThroughGate
+} from "@krn/harness";
+import {
+  ReviewedHelpedLearningBlockedError
+} from "@krn/core/repositories/internal";
 
 import {
   activeMemorySelectionOrder,
@@ -83,6 +89,499 @@ const orderDirection = (order: unknown): "asc" | "desc" | undefined => {
 };
 
 describe("DrizzleMemoryRepository", () => {
+  postgresIt("fails closed before proposing reviewed helped learning from unknown store identities", async () => {
+    const marker = `krn_reviewed_helped_candidate_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "reviewed helped candidate authority",
+      workspacePrefix: "krn-reviewed-helped-candidate",
+      projectSlug: "reviewed-helped-candidate",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `reviewed helped candidate authority ${marker}`,
+      taskContract: {
+        title: "Reject caller-asserted reviewed helped learning",
+        objective: "Require the exact authoritative store chain before proposing memory.",
+        constraints: ["real PostgreSQL"],
+        nonGoals: ["promote a MemoryRecord"],
+        acceptance: ["unknown feedback identity creates no candidate"]
+      },
+      harnessPlan: {
+        summary: "Reviewed helped candidate authority",
+        nextAction: "Attempt a proposal with unknown authority identities."
+      }
+    });
+
+    try {
+      const proposal = scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce({
+        projectId: scaffold.project.id,
+        feedbackDeltaId: crypto.randomUUID(),
+        reviewAssessmentId: crypto.randomUUID(),
+        sourceDecisionId: crypto.randomUUID()
+      });
+
+      await expect(proposal).rejects.toBeInstanceOf(ReviewedHelpedLearningBlockedError);
+      await expect(proposal).rejects.toMatchObject({
+        reason: "feedback_delta_not_found"
+      });
+
+      expect(await scaffold.memoryRepository.listMemoryCandidates(scaffold.project.id))
+        .toEqual([]);
+    } finally {
+      await scaffold.cleanup();
+      await scaffold.client.end();
+    }
+  });
+
+  postgresIt("proposes one exact reviewed helped candidate atomically and rejects weaker authority", async () => {
+    const marker = `krn_reviewed_helped_chain_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "reviewed helped candidate chain",
+      workspacePrefix: "krn-reviewed-helped-chain",
+      projectSlug: "reviewed-helped-chain",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `reviewed helped candidate chain ${marker}`,
+      taskContract: {
+        title: "Persist one exact reviewed helped candidate",
+        objective: "Reject weaker outcomes and duplicate concurrent proposals.",
+        constraints: ["real PostgreSQL", "two repository connections"],
+        nonGoals: ["promote a MemoryRecord"],
+        acceptance: ["one canonical application creates one proposed candidate"]
+      },
+      harnessPlan: {
+        summary: "Reviewed helped candidate chain",
+        nextAction: "Race the exact governed proposal."
+      }
+    });
+    const retryClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+    const retryRepository = new DrizzleMemoryRepository(createKrnDatabase(retryClient));
+
+    try {
+      const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
+        harnessPlanId: scaffold.harnessPlan.id,
+        adapter: "reviewed-helped-chain",
+        metadata: { smokeId: marker }
+      });
+      const sourceMetadata = {
+        smokeId: marker,
+        evidenceRef: `source-authority://${marker}/captured`,
+        evidenceStatus: "captured",
+        evidenceContentHash: `sha256:${marker}:captured-evidence`,
+        evidenceFreshness: "current"
+      };
+      const artifact = await scaffold.sourceRepository.createSourceArtifact({
+        projectId: scaffold.project.id,
+        kind: "doc",
+        sourceAuthority: "project-decision",
+        uri: `source-authority://${marker}`,
+        title: "Reviewed helped authority",
+        contentHash: `sha256:${marker}:artifact`,
+        metadata: sourceMetadata
+      });
+      const chunk = await scaffold.sourceRepository.createSourceChunk({
+        sourceArtifactId: artifact.id,
+        ordinal: 0,
+        content: "Captured evidence for reviewed helped learning.",
+        contentHash: `sha256:${marker}:chunk`,
+        metadata: sourceMetadata
+      });
+      const claim = await scaffold.sourceRepository.createSourceClaim({
+        sourceArtifactId: artifact.id,
+        sourceChunkId: chunk.id,
+        claim: "Only exact reviewed helped applications may propose memory.",
+        mechanism: "The store joins packet, review, application, source, and project authority.",
+        krnImplication: "Caller strings cannot establish learned-memory authority.",
+        doesNotProve: "One store fixture does not prove future task benefit.",
+        sourceAuthority: "project-decision",
+        supportType: "implementation-boundary",
+        consumer: "reviewed helped learning",
+        falsifier: "A used or mismatched subject creates a candidate.",
+        metadata: sourceMetadata
+      });
+      const decision = await scaffold.sourceRepository.createSourceDecision({
+        projectId: scaffold.project.id,
+        sourceClaimId: claim.id,
+        status: "adopt",
+        decision: "Require store-validated reviewed helped learning.",
+        rationale: "Every authority identity is persisted and cross-checked.",
+        falsifier: "A caller-asserted identity bypasses store validation.",
+        consumer: "reviewed helped learning",
+        metadata: { ...sourceMetadata, smokeId: marker }
+      });
+      await scaffold.sourceRepository.createSourceDecisionEdge({
+        sourceClaimId: claim.id,
+        sourceDecisionId: decision.id,
+        targetType: "memory_record",
+        targetId: `reviewed-helped:${marker}`,
+        supportType: "implementation-boundary",
+        confidence: "high",
+        notes: "Captured-current decision-grade support.",
+        metadata: { smokeId: marker }
+      });
+
+      const packetChecksum = crypto.createHash("sha256").update(marker).digest("hex");
+      const packetGeneratedAt = new Date(Date.now() - 2_000).toISOString();
+      const appliedAt = new Date(Date.now() - 1_000).toISOString();
+      const packetEvidenceRef = `packet:${packetChecksum}`;
+      const applicationId = `reviewed-helped:${marker}`;
+      const usedDecisionId = crypto.randomUUID();
+      const bindingMetadata = {
+        smokeId: marker,
+        decisionPacketBindingState: "bound_current",
+        decisionPacketAuthorityAdmission: "current_v1",
+        decisionPacketChecksum: packetChecksum,
+        decisionPacketEvidenceRef: packetEvidenceRef,
+        decisionPacketGeneratedAt: packetGeneratedAt,
+        decisionPacketSourceRunLifecycleRevision: executionRun.lifecycleRevision
+      };
+      const [issuance] = await scaffold.client<{ executionRunId: string }[]>`
+        insert into decision_packet_issuances (
+          execution_run_id, packet_checksum, packet_generated_at,
+          source_run_lifecycle_revision, readback
+        ) values (
+          ${executionRun.id}, ${packetChecksum}, ${packetGeneratedAt},
+          ${executionRun.lifecycleRevision}, ${JSON.stringify({ smokeId: marker })}::jsonb
+        ) returning execution_run_id::text as "executionRunId"
+      `;
+      expect(issuance?.executionRunId).toBe(executionRun.id);
+      const [bundle] = await scaffold.client<{ id: string }[]>`
+        insert into evidence_bundles (
+          execution_run_id, status, changed_files, commands, diff_risk,
+          review_burden, rollback_path, capture_identity, capture_channel, metadata
+        ) values (
+          ${executionRun.id}, 'captured', '[]'::jsonb, '[]'::jsonb, 'low',
+          'Review exact learned authority.', 'Delete marker-scoped rows.',
+          ${marker}, 'evidence_feedback_v1', ${JSON.stringify(bindingMetadata)}::jsonb
+        ) returning id::text as id
+      `;
+      if (bundle === undefined) {
+        throw new Error("reviewed helped EvidenceBundle fixture was not persisted");
+      }
+      const [feedbackReview] = await scaffold.client<{ id: string }[]>`
+        insert into review_assessments (
+          evidence_bundle_id, capture_channel, status, reviewer, summary, metadata
+        ) values (
+          ${bundle.id}, 'evidence_feedback_v1', 'pending', 'capture-checker',
+          'Current packet-bound evidence.', ${JSON.stringify({ smokeId: marker })}::jsonb
+        ) returning id::text as id
+      `;
+      if (feedbackReview === undefined) {
+        throw new Error("evidence feedback ReviewAssessment fixture was not persisted");
+      }
+      const sourceOutcomes = [{
+        sourceDecisionId: decision.id,
+        outcome: "helped",
+        reason: "The exact application improved the mapped result.",
+        evidenceRefs: [packetEvidenceRef],
+        doesNotProve: "One result does not prove portability.",
+        applicationId,
+        appliedAt
+      }, {
+        sourceDecisionId: usedDecisionId,
+        outcome: "used",
+        reason: "The subject was observed without benefit attribution.",
+        evidenceRefs: [packetEvidenceRef],
+        doesNotProve: "Use does not prove help.",
+        applicationId: `${applicationId}:used`,
+        appliedAt
+      }];
+      const [feedback] = await scaffold.client<{ id: string }[]>`
+        insert into feedback_deltas (
+          review_assessment_id, capture_channel, decision_packet_authority_admission,
+          status, metadata
+        ) values (
+          ${feedbackReview.id}, 'evidence_feedback_v1', 'current_v1', 'candidate',
+          ${JSON.stringify({
+            ...bindingMetadata,
+            sourceUsefulnessOutcomes: sourceOutcomes
+          })}::jsonb
+        ) returning id::text as id
+      `;
+      const [acceptedReview] = await scaffold.client<{ id: string }[]>`
+        insert into review_assessments (
+          evidence_bundle_id, capture_channel, status, reviewer, summary, metadata
+        ) values (
+          ${bundle.id}, 'review_assess_v1', 'accepted', 'independent-reviewer',
+          'The exact helped subject is eligible for candidate proposal.',
+          ${JSON.stringify({
+            smokeId: marker,
+            sourceDecisionId: decision.id,
+            sourceClaimId: claim.id,
+            applicationId
+          })}::jsonb
+        ) returning id::text as id
+      `;
+      if (feedback === undefined || acceptedReview === undefined) {
+        throw new Error("reviewed helped feedback fixtures were not persisted");
+      }
+      await scaffold.client`
+        insert into usefulness_applications (
+          application_id, subject_kind, subject_id, project_id, execution_run_id,
+          task_contract_id, packet_checksum, packet_generated_at,
+          source_run_lifecycle_revision, applied_at
+        ) values (
+          ${applicationId}, 'source_decision', ${decision.id}, ${scaffold.project.id},
+          ${executionRun.id}, ${scaffold.taskContract.id}, ${packetChecksum},
+          ${packetGeneratedAt}, ${executionRun.lifecycleRevision}, ${appliedAt}
+        )
+      `;
+
+      const input = {
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id,
+        reviewAssessmentId: acceptedReview.id,
+        sourceDecisionId: decision.id
+      };
+
+      await scaffold.client`
+        update evidence_bundles set capture_channel = 'eval_feedback_v1' where id = ${bundle.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "feedback_delta_not_authoritative" });
+      await scaffold.client`
+        update evidence_bundles set capture_channel = 'evidence_feedback_v1' where id = ${bundle.id}
+      `;
+      await scaffold.client`
+        update review_assessments set capture_channel = 'eval_feedback_v1' where id = ${feedbackReview.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "feedback_delta_not_authoritative" });
+      await scaffold.client`
+        update review_assessments
+        set capture_channel = 'evidence_feedback_v1'
+        where id = ${feedbackReview.id}
+      `;
+
+      await scaffold.client`
+        update usefulness_applications set subject_id = ${usedDecisionId} where application_id = ${applicationId}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "application_identity_mismatch" });
+      await scaffold.client`
+        update usefulness_applications set subject_id = ${decision.id} where application_id = ${applicationId}
+      `;
+
+      const missingApplicationOutcomes = sourceOutcomes.map((outcome, index) =>
+        index === 0 ? { ...outcome, applicationId: `${applicationId}:missing` } : outcome
+      );
+      await scaffold.client`
+        update feedback_deltas
+        set metadata = ${JSON.stringify({
+          ...bindingMetadata,
+          sourceUsefulnessOutcomes: missingApplicationOutcomes
+        })}::jsonb
+        where id = ${feedback.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "application_not_found" });
+      await scaffold.client`
+        update feedback_deltas
+        set metadata = ${JSON.stringify({
+          ...bindingMetadata,
+          sourceUsefulnessOutcomes: sourceOutcomes
+        })}::jsonb
+        where id = ${feedback.id}
+      `;
+
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce({
+        ...input,
+        sourceDecisionId: usedDecisionId
+      })).rejects.toMatchObject({ reason: "source_outcome_not_helped" });
+
+      const concurrent = await Promise.all([
+        scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input),
+        retryRepository.proposeReviewedHelpedMemoryCandidateOnce(input)
+      ]);
+      expect(concurrent.map((result) => result.created).sort()).toEqual([false, true]);
+      expect(new Set(concurrent.map((result) => result.candidate.id)).size).toBe(1);
+      expect(concurrent[0]?.candidate).toMatchObject({
+        projectId: scaffold.project.id,
+        executionRunId: executionRun.id,
+        feedbackDeltaId: feedback.id,
+        reviewAssessmentId: acceptedReview.id,
+        usefulnessApplicationId: applicationId,
+        sourceClaimIds: [claim.id],
+        isUserPreference: false,
+        metadata: {
+          candidateType: "reviewed_helped_source_decision",
+          sourceDecisionId: decision.id,
+          sourceClaimId: claim.id,
+          usefulnessOutcome: "helped",
+          usefulnessApplicationId: applicationId,
+          evidenceBundleId: bundle.id,
+          packetChecksum,
+          reflectionCandidateEvidence: {
+            provenance: "feedback_delta",
+            doesNotProve: "One result does not prove portability."
+          }
+        }
+      });
+      expect(concurrent[0]?.candidate.sourceLineage.map((item) => item.sourceId))
+        .toEqual([claim.id, decision.id, expect.any(String), feedback.id, acceptedReview.id, applicationId]);
+
+      const [counts] = await scaffold.client<{
+        candidateCount: number;
+        recordCount: number;
+      }[]>`
+        select
+          (select count(*)::int from memory_candidates
+            where usefulness_application_id = ${applicationId}) as "candidateCount",
+          (select count(*)::int from memory_records
+            where metadata->>'smokeId' = ${marker}) as "recordCount"
+      `;
+      expect(counts).toEqual({ candidateCount: 1, recordCount: 0 });
+
+      await scaffold.client`
+        update feedback_deltas
+        set metadata = jsonb_set(metadata, '{decisionPacketChecksum}', to_jsonb(${'0'.repeat(64)}::text))
+        where id = ${feedback.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "packet_binding_mismatch" });
+      await scaffold.client`
+        update feedback_deltas
+        set metadata = ${JSON.stringify({
+          ...bindingMetadata,
+          sourceUsefulnessOutcomes: sourceOutcomes
+        })}::jsonb
+        where id = ${feedback.id}
+      `;
+
+      await scaffold.client`
+        update review_assessments set status = 'pending' where id = ${acceptedReview.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "review_assessment_not_accepted" });
+      await scaffold.client`
+        update review_assessments set status = 'accepted' where id = ${acceptedReview.id}
+      `;
+
+      const [foreignBundle] = await scaffold.client<{ id: string }[]>`
+        insert into evidence_bundles (
+          execution_run_id, status, changed_files, commands, diff_risk,
+          review_burden, rollback_path, capture_identity, capture_channel, metadata
+        ) values (
+          ${executionRun.id}, 'captured', '[]'::jsonb, '[]'::jsonb, 'low',
+          'Foreign review bundle.', 'Delete marker-scoped rows.',
+          ${`${marker}:foreign`}, 'evidence_feedback_v1', ${JSON.stringify(bindingMetadata)}::jsonb
+        ) returning id::text as id
+      `;
+      if (foreignBundle === undefined) {
+        throw new Error("foreign EvidenceBundle fixture was not persisted");
+      }
+      await scaffold.client`
+        update review_assessments
+        set evidence_bundle_id = ${foreignBundle.id}
+        where id = ${acceptedReview.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "review_evidence_bundle_mismatch" });
+      await scaffold.client`
+        update review_assessments
+        set evidence_bundle_id = ${bundle.id}
+        where id = ${acceptedReview.id}
+      `;
+
+      await scaffold.client`
+        update review_assessments
+        set metadata = jsonb_set(metadata, '{sourceDecisionId}', to_jsonb(${usedDecisionId}::text))
+        where id = ${acceptedReview.id}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "review_subject_mismatch" });
+      await scaffold.client`
+        update review_assessments
+        set metadata = ${JSON.stringify({
+          smokeId: marker,
+          sourceDecisionId: decision.id,
+          sourceClaimId: claim.id,
+          applicationId
+        })}::jsonb
+        where id = ${acceptedReview.id}
+      `;
+
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce({
+        ...input,
+        projectId: crypto.randomUUID()
+      })).rejects.toMatchObject({ reason: "application_identity_mismatch" });
+
+      const candidateId = concurrent[0]!.candidate.id;
+      await scaffold.client`
+        update memory_candidates set summary = 'corrupt legacy candidate' where id = ${candidateId}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "existing_candidate_identity_conflict" });
+      await scaffold.client`
+        update memory_candidates
+        set summary = ${decision.decision}
+        where id = ${candidateId}
+      `;
+
+      await scaffold.client`
+        update memory_candidates
+        set metadata = metadata || '{"unexpectedAuthority":true}'::jsonb
+        where id = ${candidateId}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "existing_candidate_identity_conflict" });
+      await scaffold.client`
+        update memory_candidates
+        set metadata = metadata - 'unexpectedAuthority'
+        where id = ${candidateId}
+      `;
+
+      await scaffold.client`
+        update memory_candidates set is_user_preference = true where id = ${candidateId}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "existing_candidate_identity_conflict" });
+      await scaffold.client`
+        update memory_candidates set is_user_preference = false where id = ${candidateId}
+      `;
+
+      await expect(scaffold.client`delete from review_assessments where id = ${acceptedReview.id}`)
+        .rejects.toThrow();
+      await expect(scaffold.client`delete from feedback_deltas where id = ${feedback.id}`)
+        .rejects.toThrow();
+      await expect(scaffold.client`delete from usefulness_applications where application_id = ${applicationId}`)
+        .rejects.toThrow();
+
+      const promotion = await promoteMemoryCandidateThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: {
+          candidateId,
+          reviewer: "independent-reviewer",
+          evidenceReviewedRef: `review-assessment:${acceptedReview.id}`,
+          metadata: { promotionBasis: "reviewed_exact_helped" }
+        }
+      });
+      const postPromotionRetry = await scaffold.memoryRepository
+        .proposeReviewedHelpedMemoryCandidateOnce(input);
+      const selected = await scaffold.memoryRepository.listActiveMemory(
+        scaffold.project.id,
+        5,
+        { terms: ["store-validated", "reviewed", "helped"] }
+      );
+
+      expect(postPromotionRetry).toMatchObject({
+        created: false,
+        candidate: { id: candidateId, status: "accepted" }
+      });
+      expect(promotion.reviewedSourceClaims.map((item) => item.id)).toEqual([claim.id]);
+      expect(selected.map((item) => item.id)).toContain(promotion.memoryRecord.id);
+    } finally {
+      await scaffold.cleanup();
+      await Promise.all([scaffold.client.end(), retryClient.end()]);
+    }
+  });
+
   postgresIt("retains the most task-relevant active memory before the bounded limit", async () => {
     const marker = `krn_memory_relevance_${crypto.randomUUID().replaceAll("-", "")}`;
     const scaffold = await createSmokeHarnessScaffold({

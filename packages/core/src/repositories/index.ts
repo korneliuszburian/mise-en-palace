@@ -31,6 +31,9 @@ export type {
   MemoryCandidateReviewRepository,
   PromoteMemoryCandidateInput,
   PromoteAntiMemoryCandidateInput,
+  ProposeReviewedHelpedMemoryCandidateInput,
+  ProposeReviewedHelpedMemoryCandidateResult,
+  ReviewedHelpedLearningBlockedReason,
   RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput

@@ -73,6 +73,15 @@ export const formatMemoryCandidateRejectUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+export const formatMemoryReviewedHelpedProposeUsage = (): string =>
+  [
+    "Usage: krn memory learn propose --feedback-delta-id <id> --review-assessment-id <id> --source-decision-id <id> [--project <project-id>] [--persist]",
+    "",
+    "Validates one exact application-bound helped SourceDecision against an accepted review of the same EvidenceBundle.",
+    "--persist creates at most one MemoryCandidate; it never creates or promotes a MemoryRecord.",
+    "Without --persist the command is a no-store identity preview and does not assert eligibility."
+  ].join("\n") + "\n";
+
 export const formatMemoryRecordApplyUsage = (): string =>
   [
     "Usage: krn memory record apply --run-id <id> --memory-id <id> --decision-packet-checksum <sha256> --decision-packet-generated-at <iso-timestamp> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--evidence-bundle-id <id>] [--persist]",
@@ -181,6 +190,7 @@ export const formatMemoryUsage = (): string =>
     formatMemoryCandidateAddUsage().trim(),
     formatMemoryCandidatePromoteUsage().trim(),
     formatMemoryCandidateRejectUsage().trim(),
+    formatMemoryReviewedHelpedProposeUsage().trim(),
     formatMemoryRecordApplyUsage().trim(),
     formatMemoryKnowledgeSeedUsage().trim(),
     formatMemoryKnowledgeProposeUsage().trim(),
@@ -199,6 +209,10 @@ type MemoryCandidateRejectCommand = Extract<CliCommand, { kind: "memoryCandidate
 type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
 type MemoryKnowledgeSeedCommand = Extract<CliCommand, { kind: "memoryKnowledgeSeed" }>;
 type MemoryKnowledgeProposeCommand = Extract<CliCommand, { kind: "memoryKnowledgePropose" }>;
+type MemoryReviewedHelpedProposeCommand = Extract<
+  CliCommand,
+  { kind: "memoryReviewedHelpedPropose" }
+>;
 type MemoryAntiProposeCommand = Extract<CliCommand, { kind: "memoryAntiPropose" }>;
 type MemoryAntiPromoteCommand = Extract<CliCommand, { kind: "memoryAntiPromote" }>;
 type MemoryAntiRejectCommand = Extract<CliCommand, { kind: "memoryAntiReject" }>;
@@ -1151,6 +1165,57 @@ const parseMemoryKnowledgeProposeArgs = (rest: readonly string[]): ParseArgsResu
   };
 };
 
+// fallow-ignore-next-line complexity -- the identity boundary keeps four options, help, persistence, and required-field failure explicit
+const parseMemoryReviewedHelpedProposeArgs = (
+  rest: readonly string[]
+): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return { command: { kind: "memoryReviewedHelpedProposeHelp" } };
+  }
+
+  const command: MemoryReviewedHelpedProposeCommand = {
+    kind: "memoryReviewedHelpedPropose",
+    persist: false
+  };
+  const fields = {
+    "--project": "projectId",
+    "--feedback-delta-id": "feedbackDeltaId",
+    "--review-assessment-id": "reviewAssessmentId",
+    "--source-decision-id": "sourceDecisionId"
+  } as const;
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === "--persist") {
+      command.persist = true;
+      continue;
+    }
+
+    const option = Object.keys(fields).find((name) =>
+      arg !== undefined && optionMatches(arg, name)
+    ) as keyof typeof fields | undefined;
+    if (option === undefined) {
+      return { error: formatMemoryReviewedHelpedProposeUsage() };
+    }
+    const parsed = optionValue(rest, index, option);
+    if (parsed.error !== undefined || parsed.value === undefined || !hasText(parsed.value)) {
+      return { error: parsed.error ?? formatMemoryReviewedHelpedProposeUsage() };
+    }
+    command[fields[option]] = parsed.value.trim();
+    index = parsed.nextIndex;
+  }
+
+  if (![
+    command.feedbackDeltaId,
+    command.reviewAssessmentId,
+    command.sourceDecisionId
+  ].every(hasText)) {
+    return { error: formatMemoryReviewedHelpedProposeUsage() };
+  }
+
+  return { command };
+};
+
 const parseMemoryAntiProposeArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -1195,6 +1260,7 @@ const memorySubcommandParsers = new Map<string, (rest: readonly string[]) => Par
   ["candidate add", parseMemoryCandidateAddArgs],
   ["candidate promote", parseMemoryCandidatePromoteArgs],
   ["candidate reject", parseMemoryCandidateRejectArgs],
+  ["learn propose", parseMemoryReviewedHelpedProposeArgs],
   ["propose", parseMemoryKnowledgeProposeArgs],
   ["recall", (rest) => parseBrainRecallArgs(rest.slice(1))],
   ["search", (rest) => parseBrainSearchArgs(rest.slice(1))],

@@ -9,6 +9,35 @@ import {
 } from "../parse-memory-args.js";
 
 describe("parseMemoryArgs", () => {
+  it("parses the reviewed helped learning proposal boundary", () => {
+    expect(parseMemoryArgs([
+      "learn",
+      "propose",
+      "--feedback-delta-id",
+      "feedback-1",
+      "--review-assessment-id",
+      "review-1",
+      "--source-decision-id",
+      "decision-1",
+      "--project",
+      "project-1",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryReviewedHelpedPropose",
+        persist: true,
+        feedbackDeltaId: "feedback-1",
+        reviewAssessmentId: "review-1",
+        sourceDecisionId: "decision-1",
+        projectId: "project-1"
+      }
+    });
+
+    expect(parseMemoryArgs(["learn", "propose", "--help"])).toEqual({
+      command: { kind: "memoryReviewedHelpedProposeHelp" }
+    });
+  });
+
   it("parses memory candidate add options and metadata", () => {
     expect(parseMemoryArgs([
       "candidate",

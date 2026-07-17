@@ -178,6 +178,7 @@ export interface DatabaseRuntime {
   > & Partial<Pick<
     MemoryRepository,
     | "listActiveMemory"
+    | "proposeReviewedHelpedMemoryCandidateOnce"
     | "listMemoryCandidates"
     | "listAntiMemoryCandidates"
     | "listAntiMemoryForProject"

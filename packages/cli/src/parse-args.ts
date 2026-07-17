@@ -289,6 +289,9 @@ export type CliCommand =
       kind: "memoryKnowledgeProposeHelp";
     }
   | {
+      kind: "memoryReviewedHelpedProposeHelp";
+    }
+  | {
       kind: "memoryAntiAddHelp";
     }
   | {
@@ -363,6 +366,14 @@ export type CliCommand =
       persist: boolean;
       projectId?: string;
       limit?: number;
+    }
+  | {
+      kind: "memoryReviewedHelpedPropose";
+      persist: boolean;
+      projectId?: string;
+      feedbackDeltaId?: string;
+      reviewAssessmentId?: string;
+      sourceDecisionId?: string;
     }
   | {
       kind: "memoryAntiAdd";
