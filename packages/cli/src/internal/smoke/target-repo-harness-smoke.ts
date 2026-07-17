@@ -1118,6 +1118,11 @@ const capturePacketBoundTargetEvidence = async (input: {
   if (atomicCandidates.length !== 1) {
     throw new Error(`Target repo harness smoke partially persisted mixed cross-project batch (count=${atomicCandidates.length})`);
   }
+  const foreignReadback = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === foreignCandidate.id) ?? [];
+  if (foreignReadback.length !== 0) {
+    throw new Error("Target repo harness smoke persisted a rejected foreign candidate");
+  }
   const concurrentResults = await Promise.allSettled([
     runEvidenceCaptureCommand({
       env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
