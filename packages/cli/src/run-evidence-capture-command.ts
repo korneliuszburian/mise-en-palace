@@ -304,11 +304,12 @@ export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErr
 
 export const formatEvidenceCaptureError = (error: unknown): string => {
   const message = error instanceof Error ? error.message : "Unknown evidence capture error";
+  const sentence = message.endsWith(".") ? message : `${message}.`;
   const disposition = classifyEvidenceCaptureError(error);
 
   if (disposition === "permanent" && error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope") {
     return [
-      `candidate_project_scope (disposition=permanent, non-retryable): ${message}.`,
+      `candidate_project_scope (disposition=permanent, non-retryable): ${sentence}`,
       `Candidates: ${error.handoff.candidateLabels.join(", ")}.`,
       `Remediation: ${error.handoff.remediation} Do not retry unchanged input.`
     ].join(" ");
@@ -316,13 +317,17 @@ export const formatEvidenceCaptureError = (error: unknown): string => {
 
   if (disposition === "transient") {
     return [
-      `evidence_capture (disposition=transient, retryable): ${message}.`,
+      `evidence_capture (disposition=transient, retryable): ${sentence}`,
       "Remediation: Retry the capture after the infrastructure recovers; keep candidate input unchanged.",
       "Does not prove: source truth, candidate usefulness, or product readiness."
     ].join(" ");
   }
 
-  return message;
+  return [
+    `evidence_capture (disposition=unknown, retryable=undetermined): ${sentence}`,
+    "Remediation: Inspect and classify the failure before retrying; keep candidate input unchanged.",
+    "Does not prove: source truth, candidate usefulness, or product readiness."
+  ].join(" ");
 };
 
 export const assertCandidateBatchProjectScope = (input: {

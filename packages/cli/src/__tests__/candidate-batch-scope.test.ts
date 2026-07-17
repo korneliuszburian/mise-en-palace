@@ -143,4 +143,13 @@ describe("candidate batch project scope", () => {
     expect(handoff).toContain("Does not prove: source truth");
     expect(handoff).not.toContain("disposition=permanent");
   });
+
+  it("keeps retry policy undetermined for unknown capture failures", () => {
+    const handoff = formatEvidenceCaptureError(new Error("validation failed"));
+    expect(handoff).toContain("evidence_capture (disposition=unknown, retryable=undetermined)");
+    expect(handoff).toContain("Inspect and classify the failure before retrying");
+    expect(handoff).toContain("keep candidate input unchanged");
+    expect(handoff).not.toContain("retryable):");
+    expect(handoff).not.toContain("disposition=permanent");
+  });
 });
