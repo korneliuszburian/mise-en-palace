@@ -1058,6 +1058,27 @@ const capturePacketBoundTargetEvidence = async (input: {
       liveFeedbackDelta.sourceDecisions.length !== 0) {
     throw new Error("Target repo harness smoke allowed live obedience evidence to mutate memory or source decisions");
   }
+  await runEvidenceCaptureCommand({
+    env: { KRN_DATABASE_URL: input.databaseUrl },
+    cwd: process.cwd(),
+    now: () => input.now,
+    createId: input.createId,
+    persist: true,
+    runId: input.executionRunId,
+    decisionPacketChecksum: input.decisionPacketProof.checksum,
+    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+    commandOutcomes: [targetCommandProof.evidenceCommand],
+    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+    evalCandidateProposals: [liveCandidate],
+    readGitStatus: async () => "",
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+  const replayReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const replayCandidates = replayReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (replayCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke duplicated live obedience candidate on replay (count=${replayCandidates.length})`);
+  }
 
   return {
     ...proof,
