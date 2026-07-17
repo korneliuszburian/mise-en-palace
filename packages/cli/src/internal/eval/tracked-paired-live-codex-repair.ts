@@ -406,6 +406,37 @@ export const parseTrackedTrialManifest = (value: unknown): PairedTrialManifest =
   return value;
 };
 
+export type LiveCodexObedienceOutput = {
+  readonly decisionId: string;
+  readonly rejectedPath: string;
+  readonly staleBoundary: string;
+  readonly nonProof: string;
+  readonly action: string;
+};
+
+/** Parse the bounded JSON contract emitted by a live Codex obedience pilot. */
+export const parseLiveCodexObedienceOutput = (value: unknown): LiveCodexObedienceOutput => {
+  const root = isRecord(value) ? value : undefined;
+  const fields = ["decisionId", "rejectedPath", "staleBoundary", "nonProof", "action"] as const;
+  if (!root) throw new Error("Invalid live Codex obedience output: required boundary fields are missing");
+  const values = fields.map((field) => root[field]);
+  if (values.some((field) => typeof field !== "string" || field.length === 0)) {
+    throw new Error("Invalid live Codex obedience output: required boundary fields are missing");
+  }
+  return Object.fromEntries(fields.map((field) => [field, root[field]])) as LiveCodexObedienceOutput;
+};
+
+export const parseLiveCodexObedienceOutputJson = (raw: string): LiveCodexObedienceOutput => {
+  try {
+    return parseLiveCodexObedienceOutput(JSON.parse(raw) as unknown);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error("Invalid live Codex obedience output: expected JSON", { cause: error });
+    }
+    throw error;
+  }
+};
+
 const missingReason = (condition: boolean, reason: string): string | undefined =>
   condition ? undefined : reason;
 

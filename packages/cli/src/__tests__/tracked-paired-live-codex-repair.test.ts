@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTrackedTrialArtifact,
   hashTree,
+  parseLiveCodexObedienceOutputJson,
   parseTrackedTrialManifest,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
@@ -262,6 +263,31 @@ const passingChecker = async (): Promise<PairedRepairScore> => ({
 });
 
 describe("tracked paired live Codex repair", () => {
+  it("accepts the bounded live obedience output contract", () => {
+    expect(parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      nonProof: "does not prove live product readiness",
+      action: "validate before domain use"
+    }))).toEqual({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      nonProof: "does not prove live product readiness",
+      action: "validate before domain use"
+    });
+  });
+
+  it("rejects live output that omits a boundary field", () => {
+    expect(() => parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      action: "validate before domain use"
+    }))).toThrow("required boundary fields are missing");
+  });
+
   it("accepts only a run-, project-, task-, and authority-bound packet", () => {
     expect(validateTrialPacket(packet, manifest)).toEqual({
       valid: true,
