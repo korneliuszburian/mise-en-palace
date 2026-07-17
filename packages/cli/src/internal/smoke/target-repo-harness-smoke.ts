@@ -1118,6 +1118,38 @@ const capturePacketBoundTargetEvidence = async (input: {
   if (atomicCandidates.length !== 1) {
     throw new Error(`Target repo harness smoke partially persisted mixed cross-project batch (count=${atomicCandidates.length})`);
   }
+  const concurrentResults = await Promise.allSettled([
+    runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
+      createId: input.createId, persist: true, runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [liveCandidate], readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    }),
+    runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
+      createId: input.createId, persist: true, runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [foreignCandidate], readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    })
+  ]);
+  if (concurrentResults.filter((result) => result.status === "fulfilled").length !== 1 ||
+      concurrentResults.filter((result) => result.status === "rejected").length !== 1) {
+    throw new Error("Target repo harness smoke did not isolate concurrent project captures");
+  }
+  const concurrentReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const concurrentCandidates = concurrentReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (concurrentCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke duplicated concurrent live evidence (count=${concurrentCandidates.length})`);
+  }
 
   return {
     ...proof,
