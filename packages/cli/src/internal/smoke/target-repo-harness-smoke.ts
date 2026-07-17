@@ -17,6 +17,7 @@ import type {
 import type {
   CommandOutputArtifact,
   EvidenceCommand,
+  EvalCandidateProposal,
   MemoryRecord
 } from "@krn/core";
 import {
@@ -1005,6 +1006,50 @@ const capturePacketBoundTargetEvidence = async (input: {
 
   if (!consumerEvidenceBoundToPacket) {
     throw new Error("Target repo harness smoke evidence output did not bind to the DecisionPacket checksum");
+  }
+
+  const liveOutput = {
+    decisionId: "validate-unknown-json-boundary",
+    rejectedPath: "cast JSON directly",
+    staleBoundary: "markdown notes are not runtime authority",
+    nonProof: "does not prove live product readiness",
+    action: "validate before domain use"
+  } as const;
+  const liveCandidate: EvalCandidateProposal = {
+    id: `target-repo-live-output:${input.marker}`,
+    status: "candidate",
+    title: "Target repo live obedience output readback",
+    scenario: "target-repo-harness live output persistence",
+    expectedSignal: "liveOutput metadata survives PostgreSQL readback",
+    sourceEvidence: [input.decisionPacketProof.evidenceRef],
+    metadata: { liveOutput },
+    createdAt: input.now
+  };
+  await runEvidenceCaptureCommand({
+    env: { KRN_DATABASE_URL: input.databaseUrl },
+    cwd: process.cwd(),
+    now: () => input.now,
+    createId: input.createId,
+    persist: true,
+    runId: input.executionRunId,
+    decisionPacketChecksum: input.decisionPacketProof.checksum,
+    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+    commandOutcomes: [targetCommandProof.evidenceCommand],
+    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+    evalCandidateProposals: [liveCandidate],
+    readGitStatus: async () => "",
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+  const liveReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const liveCandidates = liveReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates) ?? [];
+  const readBackLiveCandidate = liveCandidates.find((candidate) => candidate.id === liveCandidate.id);
+  const readBackLiveOutput = isRecord(readBackLiveCandidate?.metadata)
+    ? readBackLiveCandidate.metadata["liveOutput"]
+    : undefined;
+  const liveOutputMatches = isRecord(readBackLiveOutput) &&
+    Object.entries(liveOutput).every(([key, value]) => readBackLiveOutput[key] === value);
+  if (!liveOutputMatches) {
+    throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackLiveCandidate)})`);
   }
 
   return {
