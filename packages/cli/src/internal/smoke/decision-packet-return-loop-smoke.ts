@@ -30,6 +30,7 @@ import type {
 } from "@krn/core/repositories/internal";
 import {
   compileHarnessPlan,
+  promoteAntiMemoryCandidateThroughGate,
   proposeMemoryConsolidation
 } from "@krn/harness";
 import {
@@ -229,6 +230,11 @@ export interface DecisionPacketReturnLoopSmokeReport {
   feedbackMaintenanceQueueStatus: string;
   feedbackMaintenanceHandlerBoundaryPassed: boolean;
   feedbackMaintenanceAntiMemoryCandidateId: string;
+  feedbackMaintenanceAntiMemoryRecordId: string;
+  feedbackMaintenanceGovernedProofRunId: string;
+  feedbackMaintenanceGovernedPacketSourceClaimIds: readonly string[];
+  feedbackMaintenanceGovernedPacketRejectedPathIds: readonly string[];
+  feedbackMaintenanceReviewedTransitionGoverned: boolean;
   feedbackMaintenanceCandidateLinkedToFeedbackDelta: boolean;
   feedbackMaintenanceDelayedLookupResolved: boolean;
   feedbackMaintenanceExactReplayIdempotent: boolean;
@@ -486,6 +492,84 @@ const issueDecisionPacket = async (
   await issue.call(repository, executionRunId);
 };
 
+const readDecisionPacketForSmokeRun = async (input: {
+  readonly baseRuntime: SourcePacketProofInput["baseRuntime"];
+  readonly commandRuntime: DatabaseRuntime;
+  readonly runId: string;
+}): Promise<ReturnType<typeof parseDecisionPacket>> => parseDecisionPacket(
+  (await runDecisionPacketCommand({
+    ...input.baseRuntime,
+    runId: input.runId,
+    createDatabaseRuntime: async () => input.commandRuntime
+  })).stdout
+);
+
+const readMcpDecisionPacketForSmokeRun = async (input: {
+  readonly baseRuntime: SourcePacketProofInput["baseRuntime"];
+  readonly commandRuntime: DatabaseRuntime;
+  readonly mcpId: string;
+  readonly runId: string;
+}): Promise<ReturnType<typeof readMcpDecisionPacket>> => readMcpDecisionPacket(
+  await handleDecisionPacketMcpMessage({
+    jsonrpc: "2.0",
+    id: input.mcpId,
+    method: "tools/call",
+    params: {
+      name: "krn_decision_packet",
+      arguments: { runId: input.runId }
+    }
+  }, {
+    env: input.baseRuntime.env,
+    now: input.baseRuntime.now,
+    createId: input.baseRuntime.createId,
+    session: { phase: "ready" },
+    runDecisionPacket: async (runtime) => runDecisionPacketCommand({
+      ...input.baseRuntime,
+      runId: runtime.runId,
+      createDatabaseRuntime: async () => input.commandRuntime
+    })
+  })
+);
+
+const readOnlyDecisionPacketTransports = async (input: {
+  readonly baseRuntime: SourcePacketProofInput["baseRuntime"];
+  readonly client: Sql;
+  readonly commandRuntime: DatabaseRuntime;
+  readonly mcpId: string;
+  readonly runId: string;
+}): Promise<{
+  readonly mcpReadback: ReturnType<typeof readMcpDecisionPacket>;
+  readonly packet: ReturnType<typeof parseDecisionPacket>;
+  readonly usefulnessRowsBefore: number;
+}> => {
+  const usefulnessRowsBefore = await countReadOnlyUsefulnessRows({
+    client: input.client,
+    executionRunId: input.runId
+  });
+  const packet = await readDecisionPacketForSmokeRun(input);
+  const mcpReadback = await readMcpDecisionPacketForSmokeRun(input);
+
+  return { mcpReadback, packet, usefulnessRowsBefore };
+};
+
+const createReturnLoopTargetRepo = async (): Promise<string> => {
+  const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-return-loop-target-"));
+
+  execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
+  for (const [key, value] of [
+    ["user.email", "fixture@example.test"],
+    ["user.name", "Fixture"]
+  ] as const) {
+    execFileSync("git", ["config", key, value], { cwd: targetRepo });
+  }
+  await mkdir(path.join(targetRepo, "src"));
+  await writeFile(path.join(targetRepo, returnLoopApplicationPath), "export const base = true;\n");
+  execFileSync("git", ["add", returnLoopApplicationPath], { cwd: targetRepo });
+  execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+
+  return targetRepo;
+};
+
 interface SourceDissentProofInput extends SourcePacketProofInput {
   readonly client: Sql;
 }
@@ -521,6 +605,14 @@ interface FeedbackMaintenanceProofResult {
   delayedLookupResolved: boolean;
   exactReplayIdempotent: boolean;
   directMutationDelta: number;
+}
+
+interface FeedbackMaintenanceGovernedProofResult {
+  antiMemoryRecordId: string;
+  proofRunId: string;
+  packetSourceClaimIds: readonly string[];
+  packetRejectedPathIds: readonly string[];
+  reviewedTransitionGoverned: boolean;
 }
 
 interface ReturnLoopCheck {
@@ -1419,6 +1511,128 @@ const runFeedbackMaintenanceProof = async (
   };
 };
 
+const runFeedbackMaintenanceGovernedProof = async (
+  input: {
+    readonly baseRuntime: SourcePacketProofInput["baseRuntime"];
+    readonly candidateId: string;
+    readonly commandRuntime: DatabaseRuntime;
+    readonly evidenceReviewedRef: string;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly sourceClaimId: string;
+    readonly repositories: {
+      readonly harnessRunRepository: HarnessRunRepository;
+      readonly memoryRepository: MemoryRepository;
+      readonly retrievalRepository: RetrievalRepository;
+      readonly sourceRepository: SourceRepository;
+    };
+    readonly workspaceId: string;
+  }
+): Promise<FeedbackMaintenanceGovernedProofResult> => {
+  const {
+    harnessRunRepository,
+    memoryRepository,
+    retrievalRepository,
+    sourceRepository
+  } = input.repositories;
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+
+  if (getSourceClaimForProject === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires project-scoped SourceClaim review lookup"
+    );
+  }
+
+  const promotion = await promoteAntiMemoryCandidateThroughGate({
+    memoryRepository,
+    sourceRepository: {
+      getSourceClaimForProject(projectId, sourceClaimId) {
+        return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
+      }
+    },
+    review: {
+      candidateId: input.candidateId,
+      reviewer: "decision-packet-return-loop-smoke",
+      evidenceReviewedRef: input.evidenceReviewedRef,
+      metadata: {
+        smokeId: input.marker,
+        proof: "feedback_maintenance_reviewed_transition"
+      }
+    }
+  });
+  const compiled = await compileHarnessPlan({
+    workspaceId: input.workspaceId,
+    projectId: input.projectId,
+    operatorIntent: {
+      rawIntent: `DecisionPacket return-loop feedback stale source claim ${input.marker}`,
+      source: "cli",
+      metadata: { smokeId: input.marker }
+    },
+    taskContract: {
+      title: "Prove reviewed feedback maintenance governs the next selection",
+      objective:
+        "Select the stale feedback source context after its maintenance candidate was reviewed.",
+      constraints: [
+        "use the promoted AntiMemoryRecord",
+        "keep FeedbackDelta itself review-only"
+      ],
+      nonGoals: ["no autonomous promotion", "no direct FeedbackDelta selection authority"],
+      acceptance: [
+        "the reviewed AntiMemoryRecord excludes its source claim from the next DecisionPacket"
+      ],
+      metadata: {
+        smokeId: input.marker,
+        proof: "feedback_maintenance_reviewed_transition"
+      }
+    },
+    tokenBudget: 360,
+    metadata: {
+      smokeId: input.marker,
+      proof: "feedback_maintenance_reviewed_transition"
+    }
+  }, {
+    harnessRunRepository,
+    memoryRepository,
+    sourceRepository: activationSourceRepositoryFor(sourceRepository),
+    retrievalRepository,
+    now: () => "2026-07-07T12:00:00.000Z",
+    createId: createIdFactory(input.marker, "feedback-maintenance-governed")
+  });
+  const proofRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId: compiled.harnessPlan.id,
+    adapter: "codex",
+    metadata: {
+      smokeId: input.marker,
+      command: "db:smoke:decision-packet-return-loop",
+      phase: "feedback-maintenance-governed-proof",
+      evidenceContract: compiled.evidenceContract
+    }
+  });
+  await issueDecisionPacket(harnessRunRepository, proofRun.id);
+  const packet = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: proofRun.id
+  });
+  const reviewedTransitionGoverned =
+    !packet.packet.sourceClaimIds.includes(input.sourceClaimId) &&
+    packet.packet.rejectedPathIds.includes(promotion.antiMemoryRecord.id) &&
+    packet.readModel.context.exclusionDetails.some((exclusion) =>
+      exclusion.subjectType === "source_claim" &&
+      exclusion.subjectId === input.sourceClaimId &&
+      exclusion.reason === "unsafe" &&
+      exclusion.explanation.includes(promotion.antiMemoryRecord.id)
+    );
+
+  return {
+    antiMemoryRecordId: promotion.antiMemoryRecord.id,
+    proofRunId: proofRun.id,
+    packetSourceClaimIds: packet.packet.sourceClaimIds,
+    packetRejectedPathIds: packet.packet.rejectedPathIds,
+    reviewedTransitionGoverned
+  };
+};
+
 const runStandaloneAntiMemoryProof = async (
   input: StandaloneAntiMemoryProofInput
 ): Promise<StandaloneAntiMemoryProofResult> => {
@@ -1494,34 +1708,14 @@ const runStandaloneAntiMemoryProof = async (
     }
   });
   await issueDecisionPacket(harnessRunRepository, proofRun.id);
-  const usefulnessRowsBefore = await countReadOnlyUsefulnessRows({
+  const transportProof = await readOnlyDecisionPacketTransports({
+    baseRuntime: input.baseRuntime,
     client: input.client,
-    executionRunId: proofRun.id
+    commandRuntime: input.commandRuntime,
+    mcpId: "standalone-anti-memory",
+    runId: proofRun.id
   });
-  const packet = parseDecisionPacket((await runDecisionPacketCommand({
-    ...input.baseRuntime,
-    runId: proofRun.id,
-    createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
-  const mcpReadback = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
-    jsonrpc: "2.0",
-    id: "standalone-anti-memory",
-    method: "tools/call",
-    params: {
-      name: "krn_decision_packet",
-      arguments: { runId: proofRun.id }
-    }
-  }, {
-    env: input.baseRuntime.env,
-    now: input.baseRuntime.now,
-    createId: input.baseRuntime.createId,
-    session: { phase: "ready" },
-    runDecisionPacket: async (runtime) => runDecisionPacketCommand({
-      ...input.baseRuntime,
-      runId: runtime.runId,
-      createDatabaseRuntime: async () => input.commandRuntime
-    })
-  }));
+  const { mcpReadback, packet } = transportProof;
   const usefulnessRowsAfter = await countReadOnlyUsefulnessRows({
     client: input.client,
     executionRunId: proofRun.id
@@ -1577,7 +1771,7 @@ const runStandaloneAntiMemoryProof = async (
     packetRejectedPathIds: packet.packet.rejectedPathIds,
     cliPreserved: transportReadback.cliPreserved,
     mcpPreserved: transportReadback.mcpPreserved,
-    usefulnessRowDelta: usefulnessRowsAfter - usefulnessRowsBefore
+    usefulnessRowDelta: usefulnessRowsAfter - transportProof.usefulnessRowsBefore
   };
 };
 
@@ -1817,11 +2011,11 @@ const runSourceConsensusProof = async (
     }
   });
   await issueDecisionPacket(harnessRunRepository, noFormalRejectionRun.id);
-  const noFormalRejectionPacket = parseDecisionPacket((await runDecisionPacketCommand({
-    ...input.baseRuntime,
-    runId: noFormalRejectionRun.id,
-    createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
+  const noFormalRejectionPacket = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: noFormalRejectionRun.id
+  });
   const noFormalRejectionKeepsTypedState = hasNoFormalRejectionTypedState({
     currentDecisionId,
     packet: noFormalRejectionPacket.packet,
@@ -1895,11 +2089,11 @@ const runSourceConsensusProof = async (
     }
   });
   await issueDecisionPacket(harnessRunRepository, proofRun.id);
-  const packet = parseDecisionPacket((await runDecisionPacketCommand({
-    ...input.baseRuntime,
-    runId: proofRun.id,
-    createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
+  const packet = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: proofRun.id
+  });
   const packetSourceDecisionEdgeIds = packet.packet.sourceConsensus.sourceDecisionEdgeIds;
   const packetSupersededPathIds = packet.packet.sourceConsensus.supersededPathIds;
   const packetRejectedPathIds = packet.packet.rejectedPathIds;
@@ -2262,36 +2456,14 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     metadata: smokeMetadata
   });
   await issueDecisionPacket(harnessRunRepository, proofRun.id);
-  const readOnlyUsefulnessRowsBefore = await countReadOnlyUsefulnessRows({
+  const transportProof = await readOnlyDecisionPacketTransports({
+    baseRuntime: input.baseRuntime,
     client: input.client,
-    executionRunId: proofRun.id
+    commandRuntime: input.commandRuntime,
+    mcpId: "unresolved-source-dissent",
+    runId: proofRun.id
   });
-  const packet = parseDecisionPacket((await runDecisionPacketCommand({
-    ...input.baseRuntime,
-    runId: proofRun.id,
-    createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
-  const mcpReadback = readMcpDecisionPacket(await handleDecisionPacketMcpMessage({
-    jsonrpc: "2.0",
-    id: "unresolved-source-dissent",
-    method: "tools/call",
-    params: {
-      name: "krn_decision_packet",
-      arguments: {
-        runId: proofRun.id
-      }
-    }
-  }, {
-    env: input.baseRuntime.env,
-    now: input.baseRuntime.now,
-    createId: input.baseRuntime.createId,
-    session: { phase: "ready" },
-    runDecisionPacket: async (runtime) => runDecisionPacketCommand({
-      ...input.baseRuntime,
-      runId: runtime.runId,
-      createDatabaseRuntime: async () => input.commandRuntime
-    })
-  }));
+  const { mcpReadback, packet } = transportProof;
   const mcpPacket = mcpReadback.packet;
   const brief = await runCodexBriefCommand({
     ...input.baseRuntime,
@@ -2338,11 +2510,11 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     mcpPreservesDissentAndGap,
     mcpMessageUtf8Bytes: mcpReadback.messageUtf8Bytes,
     mcpStructuredContentMeasurement: mcpReadback.structuredContentMeasurement,
-    readOnlyUsefulnessRowsBefore,
+    readOnlyUsefulnessRowsBefore: transportProof.usefulnessRowsBefore,
     readOnlyUsefulnessRowsAfter,
     readOnlyUsefulnessUnchanged:
-      readOnlyUsefulnessRowsBefore === 0 &&
-      readOnlyUsefulnessRowsAfter === readOnlyUsefulnessRowsBefore
+      transportProof.usefulnessRowsBefore === 0 &&
+      readOnlyUsefulnessRowsAfter === transportProof.usefulnessRowsBefore
   };
 };
 
@@ -2681,11 +2853,11 @@ const runSelectorFeedbackProof = async (
     }
   });
   await issueDecisionPacket(harnessRunRepository, selectorExecutionRun.id);
-  const selectorPacket = parseDecisionPacket((await runDecisionPacketCommand({
-    ...input.baseRuntime,
-    runId: selectorExecutionRun.id,
-    createDatabaseRuntime: async () => input.commandRuntime
-  })).stdout);
+  const selectorPacket = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: selectorExecutionRun.id
+  });
   const includesRetainedMemory = selectorPacket.packet.memoryRefs.includes(
     selectorRetainedMemory.id
   );
@@ -2742,14 +2914,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   let cleanedUp = false;
   let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
   let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
-  const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-return-loop-target-"));
-  execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
-  execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: targetRepo });
-  execFileSync("git", ["config", "user.name", "Fixture"], { cwd: targetRepo });
-  await mkdir(path.join(targetRepo, "src"));
-  await writeFile(path.join(targetRepo, returnLoopApplicationPath), "export const base = true;\n");
-  execFileSync("git", ["add", returnLoopApplicationPath], { cwd: targetRepo });
-  execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+  const targetRepo = await createReturnLoopTargetRepo();
   await writeFile(
     path.join(targetRepo, returnLoopApplicationPath),
     "export const appliedDecision = true;\n"
@@ -2920,11 +3085,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       createId: (prefix: string) => `${prefix}-${marker}`
     };
     await issueDecisionPacket(harnessRunRepository, executionRun.id);
-    const firstPacket = parseDecisionPacket((await runDecisionPacketCommand({
-      ...baseRuntime,
-      runId: executionRun.id,
-      createDatabaseRuntime: async () => commandRuntime
-    })).stdout);
+    const firstPacket = await readDecisionPacketForSmokeRun({
+      baseRuntime,
+      commandRuntime,
+      runId: executionRun.id
+    });
     if (helpedFeedbackSource === undefined || staleFeedbackSource === undefined) {
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
     }
@@ -3103,11 +3268,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       matchingSourceDecisionHelpedOutcomeCount === 1 &&
       matchingSourceDecisionApplicationCount === 1 &&
       matchingEvidence.stdout.includes(`decisionPacketEvidenceRef: ${firstPacket.packetIdentity.evidenceRef}`);
-    const packetAfterMatching = parseDecisionPacket((await runDecisionPacketCommand({
-      ...baseRuntime,
-      runId: executionRun.id,
-      createDatabaseRuntime: async () => commandRuntime
-    })).stdout);
+    const packetAfterMatching = await readDecisionPacketForSmokeRun({
+      baseRuntime,
+      commandRuntime,
+      runId: executionRun.id
+    });
     const staleEvidence = await runEvidenceCaptureCommand({
       ...baseRuntime,
       persist: true,
@@ -3188,11 +3353,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       mismatchedFeedbackOutcome === undefined &&
       decisionPacketBindingReadbackFromMetadata(mismatchedFeedbackDelta.metadata).status ===
         "unbound";
-    const issuedPacketReadback = parseDecisionPacket((await runDecisionPacketCommand({
-      ...baseRuntime,
-      runId: executionRun.id,
-      createDatabaseRuntime: async () => commandRuntime
-    })).stdout);
+    const issuedPacketReadback = await readDecisionPacketForSmokeRun({
+      baseRuntime,
+      commandRuntime,
+      runId: executionRun.id
+    });
     const issuedPacketRetainsActivatedDecision =
       issuedPacketReadback.packet.governingDecisionIds.includes(
         helpedFeedbackSource.decisionTargetId
@@ -3333,6 +3498,22 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       workspaceId: workspace.id
     });
     standaloneAntiMemoryRetrievalRunId = standaloneAntiMemoryProof.retrievalRunId;
+    const feedbackMaintenanceGovernedProof = await runFeedbackMaintenanceGovernedProof({
+      baseRuntime,
+      candidateId: feedbackMaintenanceProof.antiMemoryCandidateId,
+      commandRuntime,
+      evidenceReviewedRef: `feedback_delta:${staleFeedbackDelta.id}`,
+      marker,
+      projectId: project.id,
+      sourceClaimId: staleFeedbackSource.claimId,
+      repositories: {
+        harnessRunRepository,
+        memoryRepository,
+        retrievalRepository,
+        sourceRepository
+      },
+      workspaceId: workspace.id
+    });
 
     assertReturnLoopChecks([
       { label: "return channel checksum binding", passed: returnChannelHasChecksum },
@@ -3369,6 +3550,15 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       {
         label: "feedback maintenance anti-memory candidate linked to feedback delta",
         passed: feedbackMaintenanceProof.candidateLinkedToFeedbackDelta
+      },
+      {
+        label: "reviewed feedback maintenance transition governs the next selection",
+        passed: feedbackMaintenanceGovernedProof.reviewedTransitionGoverned,
+        detail:
+          `antiMemoryRecordId=${feedbackMaintenanceGovernedProof.antiMemoryRecordId}; ` +
+          `sourceClaimId=${staleFeedbackSource.claimId}; ` +
+          `packetSourceClaimIds=${feedbackMaintenanceGovernedProof.packetSourceClaimIds.join(",")}; ` +
+          `packetRejectedPathIds=${feedbackMaintenanceGovernedProof.packetRejectedPathIds.join(",")}`
       },
       {
         label: "feedback maintenance exact replay is idempotent",
@@ -3591,6 +3781,15 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       feedbackMaintenanceQueueStatus: feedbackMaintenanceProof.queueStatus,
       feedbackMaintenanceHandlerBoundaryPassed: feedbackMaintenanceProof.handlerBoundaryPassed,
       feedbackMaintenanceAntiMemoryCandidateId: feedbackMaintenanceProof.antiMemoryCandidateId,
+      feedbackMaintenanceAntiMemoryRecordId:
+        feedbackMaintenanceGovernedProof.antiMemoryRecordId,
+      feedbackMaintenanceGovernedProofRunId: feedbackMaintenanceGovernedProof.proofRunId,
+      feedbackMaintenanceGovernedPacketSourceClaimIds:
+        feedbackMaintenanceGovernedProof.packetSourceClaimIds,
+      feedbackMaintenanceGovernedPacketRejectedPathIds:
+        feedbackMaintenanceGovernedProof.packetRejectedPathIds,
+      feedbackMaintenanceReviewedTransitionGoverned:
+        feedbackMaintenanceGovernedProof.reviewedTransitionGoverned,
       feedbackMaintenanceCandidateLinkedToFeedbackDelta:
         feedbackMaintenanceProof.candidateLinkedToFeedbackDelta,
       feedbackMaintenanceDelayedLookupResolved:

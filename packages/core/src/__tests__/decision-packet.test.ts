@@ -601,10 +601,7 @@ describe("DecisionPacket builder", () => {
       "claim-current",
       "claim-caveated"
     ]);
-    expect(packet.caveatedSourceClaimIds).toEqual([
-      "claim-current",
-      "claim-caveated"
-    ]);
+    expect(packet.caveatedSourceClaimIds).toEqual(["claim-caveated"]);
     expect(packet.sourceDecisionEdgeIds).toEqual([
       "source-decision-edge-current",
       "source-decision-edge-stale",
@@ -623,31 +620,22 @@ describe("DecisionPacket builder", () => {
     }]);
     expect(packet.memoryRefs).toEqual(["memory-current"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
-    expect(packet.staleDecisionIds).toEqual([
-      "source-decision-stale",
-      "source-decision-conflicted"
-    ]);
-    expect(packet.staleKnowledgeIds).toEqual(["memory-current"]);
+    expect(packet.staleDecisionIds).toEqual([]);
+    expect(packet.staleKnowledgeIds).toEqual([]);
     expect(packet.noiseKnowledgeIds).toEqual([]);
     expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
     expect(packet.rejectedPathIds).toEqual(["anti-memory-superseded-template"]);
     expect(packet.sourceRejectionIds).toEqual(["source-rejection-current"]);
-    expect(packet.noiseDecisionIds).toEqual(["source-decision-noise"]);
-    expect(packet.severeStaleAuthorityIds).toEqual([
-      "source-decision-stale",
-      "source-decision-conflicted"
-    ]);
+    expect(packet.noiseDecisionIds).toEqual([]);
+    expect(packet.severeStaleAuthorityIds).toEqual([]);
     expect(packet.falsifiers).toEqual([
       "A matching app setup packet omits the current template decision."
     ]);
     expect(packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
-      "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-current",
       "evidence-gap:run-decision-packet-1:caveated-source-authority:claim-caveated",
-      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current",
-      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-stale",
-      "evidence-gap:run-decision-packet-1:stale-authority:source-decision-conflicted"
+      "evidence-gap:run-decision-packet-1:caveated-memory-authority:memory-current"
     ]);
     expect(packet.rejectedPathIds).not.toContain("anti-memory-candidate-pending-feedback");
     expect(packet.sourceConsensus.supersededPathIds).toEqual(["claim-superseded"]);
@@ -656,10 +644,8 @@ describe("DecisionPacket builder", () => {
       status: "abstain",
       reasons: [
         "evidence_gap",
-        "missing_decision_linked_source",
         "caveated_source_authority",
-        "caveated_memory_authority",
-        "stale_authority"
+        "caveated_memory_authority"
       ]
     });
   });
@@ -1380,7 +1366,7 @@ describe("DecisionPacket builder", () => {
     });
   });
 
-  it("treats hurt and rejected usefulness feedback as maintenance caveats", () => {
+  it("keeps legacy accepted feedback non-governing until a reviewed artifact exists", () => {
     const packet = buildDecisionPacketFromReadModel({
       run: {
         id: "run-hurt-feedback",
@@ -1427,13 +1413,12 @@ describe("DecisionPacket builder", () => {
     });
 
     expect(packet.caveatedSourceClaimIds).toEqual(["claim-hurt"]);
-    expect(packet.caveatedMemoryRefs).toEqual(["memory-hurt"]);
+    expect(packet.caveatedMemoryRefs).toEqual([]);
     expect(packet.rejectedPathIds).not.toContain("source-decision-feedback-rejected");
     expect(packet.sourceRejectionIds).toEqual([]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
       "evidence-gap:run-hurt-feedback:no-governing-decision",
-      "evidence-gap:run-hurt-feedback:caveated-source-authority:claim-hurt",
-      "evidence-gap:run-hurt-feedback:caveated-memory-authority:memory-hurt"
+      "evidence-gap:run-hurt-feedback:caveated-source-authority:claim-hurt"
     ]);
   });
 

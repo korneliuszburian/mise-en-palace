@@ -1,10 +1,10 @@
-import path from "node:path";
 import {
   inspectMigrationReadiness
 } from "@krn/db/dev";
 import {
-  findRepoRoot
-} from "./cli-file-boundary.js";
+  missingDbCommandOutput,
+  resolveDbCommandContext
+} from "./db-command-context.js";
 import {
   connectedButNotReadyRecovery,
   dbBootstrapDoesNotProve,
@@ -45,10 +45,8 @@ export const redactedPostgresEndpoint = (databaseUrl: string): string => {
 export const runDbReadinessCommand = async (
   runtime: DbReadinessRuntime
 ): Promise<DbReadinessResult> => {
-  const repoRoot = await findRepoRoot(runtime.cwd);
-  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
-  const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+  const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
+    await resolveDbCommandContext(runtime);
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot,
     databaseUrl,
@@ -60,16 +58,14 @@ export const runDbReadinessCommand = async (
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
       exitCode: 1,
-      stdout: attachFingerprint([
-        "KRN DB Readiness",
-        `Repo root: ${repoRoot}`,
-        `Migrations folder: ${relativeMigrationsFolder}`,
-        "DB mode: preview/no-DB",
-        "Postgres config: missing KRN_DATABASE_URL",
-        `Next action: ${missingDbConfigRecovery()}`,
-        `Does not prove: ${dbBootstrapDoesNotProve}`,
-        "Memory store readiness: blocked (database not configured)"
-      ].join("\n") + "\n")
+      stdout: attachFingerprint(missingDbCommandOutput({
+        title: "KRN DB Readiness",
+        repoRoot,
+        relativeMigrationsFolder,
+        nextAction: missingDbConfigRecovery(),
+        doesNotProve: dbBootstrapDoesNotProve,
+        extraLines: ["Memory store readiness: blocked (database not configured)"]
+      }))
     };
   }
 

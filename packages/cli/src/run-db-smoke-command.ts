@@ -28,8 +28,8 @@ import {
   formatMaintenanceQueueSmokeReportLines
 } from "./internal/smoke/maintenance-queue-smoke.js";
 import {
-  findRepoRoot
-} from "./cli-file-boundary.js";
+  resolveDbCommandContext
+} from "./db-command-context.js";
 import {
   runRunShowDbSmokeCheck
 } from "./internal/smoke/run-show-db-smoke.js";
@@ -504,6 +504,7 @@ const runRetrievalSubstrateSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+// fallow-ignore-next-line complexity -- the activation smoke formatter preserves one typed report as explicit operator-facing proof lines
 const runActivationSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -937,6 +938,11 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Feedback maintenance queue status: ${report.feedbackMaintenanceQueueStatus}`,
   `Feedback maintenance handler boundary passed: ${yesNo(report.feedbackMaintenanceHandlerBoundaryPassed)}`,
   `Feedback maintenance anti-memory candidate: ${report.feedbackMaintenanceAntiMemoryCandidateId}`,
+  `Feedback maintenance anti-memory record: ${report.feedbackMaintenanceAntiMemoryRecordId}`,
+  `Feedback maintenance governed proof run: ${report.feedbackMaintenanceGovernedProofRunId}`,
+  `Feedback maintenance governed packet source claims: ${report.feedbackMaintenanceGovernedPacketSourceClaimIds.join(", ")}`,
+  `Feedback maintenance governed packet rejected paths: ${report.feedbackMaintenanceGovernedPacketRejectedPathIds.join(", ")}`,
+  `Feedback maintenance reviewed transition governed: ${yesNo(report.feedbackMaintenanceReviewedTransitionGoverned)}`,
   `Feedback maintenance candidate linked to feedback delta: ${yesNo(report.feedbackMaintenanceCandidateLinkedToFeedbackDelta)}`,
   `Feedback maintenance delayed exact lookup: ${yesNo(report.feedbackMaintenanceDelayedLookupResolved)}`,
   `Feedback maintenance exact replay idempotent: ${yesNo(report.feedbackMaintenanceExactReplayIdempotent)}`,
@@ -1195,10 +1201,8 @@ const dbSmokeTargetHandlers = {
 export const runDbSmokeCommand = async (
   runtime: DbSmokeRuntime
 ): Promise<DbSmokeResult> => {
-  const repoRoot = await findRepoRoot(runtime.cwd);
-  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
-  const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+  const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
+    await resolveDbCommandContext(runtime);
   const targetMetadata = dbSmokeTargetMetadata[runtime.target];
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot,

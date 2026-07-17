@@ -244,7 +244,17 @@ describe("runMaintenanceQueueCommand", () => {
       appliesTo: "knowledge:stale-frontend-standard",
       metadata: {
         outcome: "stale",
-        mutation: "none"
+        mutation: "none",
+        reflectionCandidateEvidence: {
+          provenance: "feedback_delta",
+          evidenceRefs: [
+            "feedback_delta:feedback-delta-1",
+            "packet:maintenance-usefulness-packet",
+            "test:maintenance-run"
+          ],
+          doesNotProve:
+            "FeedbackDelta evidence makes this candidate reviewable; it does not authorize AntiMemoryRecord promotion or mutate selection."
+        }
       }
     });
     expect(closed).toBe(true);

@@ -429,8 +429,9 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
     }
   );
 
+  // fallow-ignore-next-line complexity -- one real-PostgreSQL race keeps lock ordering, authority readback, side effects, retries, and caller-mutation assertions in a single transaction narrative
   postgresIt(
-    "rejects an old packet after concurrent captured feedback becomes governing",
+    "keeps an old packet current after concurrent feedback enters review",
     async () => {
       const marker = `krn_capture_authority_race_${crypto.randomUUID().replaceAll("-", "")}`;
       const scaffold = await createSmokeHarnessScaffold({
@@ -444,11 +445,11 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         countMarkerRows: countActivationSmokeMarkerRows,
         rawIntent: `capture authority race ${marker}`,
         taskContract: {
-          title: "Reject an old concurrent capture",
-          objective: "Reread packet authority after another governing capture commits.",
+          title: "Retain packet authority across concurrent review-only feedback",
+          objective: "Reread packet authority after another feedback capture enters review.",
           constraints: ["real PostgreSQL", "independent connections", "no sleeps"],
           nonGoals: ["no unrestricted SQL protection"],
-          acceptance: ["an old packet claim rejects without side effects"]
+          acceptance: ["the unchanged packet claim persists exactly once"]
         },
         harnessPlan: {
           summary: "Capture authority race smoke",
@@ -530,7 +531,7 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
             subjectType: "memory_record",
             subjectId: selectedKnowledgeId,
             reason: "Selected governing knowledge for the capture race.",
-            expectedUse: "Become caveated after governing usefulness feedback.",
+            expectedUse: "Remain selected while usefulness feedback awaits review.",
             sourceAuthority: "high"
           }, {
             subjectType: "source_claim",
@@ -744,19 +745,18 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
           packetGeneratedAt,
           sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
         });
-        expect(packetOne.packetChecksum).not.toBe(packetZero.packetChecksum);
+        expect(packetOne).toMatchObject({
+          packetChecksum: packetZero.packetChecksum,
+          packetEvidenceRef: packetZero.packetEvidenceRef,
+          packetGeneratedAt: packetZero.packetGeneratedAt
+        });
 
         await blockerClient.unsafe("commit");
         blockerTransactionOpen = false;
         const [captureBResult] = await Promise.allSettled([captureB]);
-        const captureBRejection = expectRejectedReason(
-          captureBResult,
-          "capture B unexpectedly persisted an old packet claim"
-        );
-        expect(captureBRejection).toEqual(expect.objectContaining({
-          message: expect.stringContaining(
-            "packet checksum is not the current reconstructed packet checksum"
-          )
+        expect(captureBResult).toEqual(expect.objectContaining({
+          status: "fulfilled",
+          value: expect.objectContaining({ created: true })
         }));
 
         const [captureBSideEffects] = await scaffold.client<{
@@ -782,11 +782,11 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
               where payload->>'captureIdentity' = ${captureBIdentity}) as "runEventCount"
         `;
         expect(captureBSideEffects).toEqual({
-          evidenceBundleCount: 0,
-          reviewAssessmentCount: 0,
-          feedbackDeltaCount: 0,
-          feedbackOutboxCount: 0,
-          runEventCount: 0
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          feedbackOutboxCount: 1,
+          runEventCount: 1
         });
         const captureARetry = await scaffold.harnessRunRepository
           .createEvidenceFeedbackOnce(captureAInput);

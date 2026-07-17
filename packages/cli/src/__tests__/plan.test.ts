@@ -475,7 +475,7 @@ describe("runCli", () => {
     });
   });
 
-  it("applies store-backed usefulness feedback before selecting plan knowledge", async () => {
+  it("attaches store-backed feedback for review without suppressing plan knowledge", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "TypeScript",
       {
@@ -488,17 +488,24 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Selected KRN context: selected");
-    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
-    expect(result.stdout).not.toContain("Selected KRN context IDs: ts-boundary-knowledge-parser-exemplar");
+    expect(result.stdout).toContain(
+      "Selected KRN context IDs: ts-boundary-knowledge-parser-exemplar, ts-boundary-unknown-first-result-state"
+    );
+    expect(result.stdout).toContain(
+      "knowledge=ts-boundary-knowledge-parser-exemplar | readModel=knowledge:ts-boundary-knowledge-parser-exemplar | reviewability=ready | targetFit=target_specific | title=TypeScript parser exemplar metadata-boundary | nextAction=review"
+    );
     expect(executionRunMetadata).toMatchObject({
       knowledgeSelection: {
         status: "selected",
-        selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+        selectedKnowledgeIds: [
+          "ts-boundary-knowledge-parser-exemplar",
+          "ts-boundary-unknown-first-result-state"
+        ],
         proof: {
           proves: [
             "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
             "plan knowledge selection scan limit=100 returned=4 truncated=false",
-            "plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"
+            "plan knowledge selection attached review-only store-backed usefulness feedback"
           ],
           doesNotProve: [
             "DB-backed knowledge selection proves source truth",
@@ -511,7 +518,7 @@ describe("runCli", () => {
     });
   });
 
-  it("backfills plan knowledge after feedback excludes the first twenty ranked records", async () => {
+  it("does not backfill when review-only feedback leaves ranked records eligible", async () => {
     const memoryRecords = Array.from(
       { length: 21 },
       (_, index) => planBackfillMemory(index + 1)
@@ -534,7 +541,13 @@ describe("runCli", () => {
     expect(executionRunMetadata).toMatchObject({
       knowledgeSelection: {
         status: "selected",
-        selectedKnowledgeIds: ["backfill-21"],
+        selectedKnowledgeIds: [
+          "backfill-1",
+          "backfill-2",
+          "backfill-3",
+          "backfill-4",
+          "backfill-5"
+        ],
         proof: {
           proves: expect.arrayContaining([
             "plan knowledge selection scan limit=100 returned=21 truncated=false"
@@ -577,18 +590,24 @@ describe("runCli", () => {
     expect(feedbackFiltered.executionRunMetadata).toMatchObject({
       knowledgeSelection: {
         status: "selected",
-        selectedKnowledgeIds: ["backfill-21"]
+        selectedKnowledgeIds: [
+          "backfill-1",
+          "backfill-2",
+          "backfill-3",
+          "backfill-4",
+          "backfill-5"
+        ]
       }
     });
     expect(feedbackFiltered.result.stdout).toContain(
-      "Selected KRN context IDs: backfill-21"
+      "Selected KRN context IDs: backfill-1, backfill-2, backfill-3, backfill-4, backfill-5"
     );
     expect(renderedDecisionPacket(feedbackFiltered.result.stdout)).toBe(
       renderedDecisionPacket(baseline.result.stdout)
     );
   });
 
-  it("reports exhausted plan knowledge scan when the first hundred records are blocked", async () => {
+  it("does not report exhaustion from review-only feedback", async () => {
     const memoryRecords = Array.from(
       { length: 101 },
       (_, index) => planBackfillMemory(index + 1)
@@ -605,8 +624,14 @@ describe("runCli", () => {
 
     expect(executionRunMetadata).toMatchObject({
       knowledgeSelection: {
-        status: "rejected_or_deferred",
-        selectedKnowledgeIds: [],
+        status: "selected",
+        selectedKnowledgeIds: [
+          "backfill-1",
+          "backfill-2",
+          "backfill-3",
+          "backfill-4",
+          "backfill-5"
+        ],
         proof: {
           proves: expect.arrayContaining([
             "plan knowledge selection scan limit=100 returned=100 truncated=true"

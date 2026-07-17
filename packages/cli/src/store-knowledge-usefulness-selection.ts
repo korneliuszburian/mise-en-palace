@@ -17,18 +17,6 @@ import type {
   KnowledgeUsefulnessFeedback
 } from "@krn/harness";
 
-const blockingUsefulnessOutcomes = new Set<string>([
-  "noise",
-  "stale",
-  "hurt",
-  "rejected"
-]);
-
-const approvedFeedbackStatuses = new Set<FeedbackDelta["status"]>([
-  "accepted",
-  "applied"
-]);
-
 const newestFeedbackFirst = (
   left: FeedbackDelta,
   right: FeedbackDelta
@@ -71,7 +59,7 @@ const usefulnessFeedbackByKnowledgeId = (
 
 export interface StoreKnowledgeUsefulnessSelection {
   readModels: KnowledgeReadModel[];
-  appliedUsefulnessFeedback: boolean;
+  attachedReviewOnlyFeedback: boolean;
 }
 
 const feedbackSubjectsForKnowledgeReadModels = (
@@ -116,10 +104,6 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
     feedbackDeltas,
     (feedbackDelta) => feedbackDelta.status !== "rejected"
   );
-  const approvedFeedback = usefulnessFeedbackByKnowledgeId(
-    feedbackDeltas,
-    (feedbackDelta) => approvedFeedbackStatuses.has(feedbackDelta.status)
-  );
   const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
     readModels,
     [...visibleFeedback.values()]
@@ -127,18 +111,12 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
 
   return {
     readModels: readModelsWithFeedback
-      .map((readModel) => readModel.usefulnessFeedback?.feedbackLifecycleStatus === "candidate"
+      .map((readModel) => readModel.usefulnessFeedback !== undefined
         ? {
           ...readModel,
           nextAction: readModel.nextAction === "use" ? "review" as const : readModel.nextAction
         }
-        : readModel)
-      .filter((readModel) => {
-        const governingFeedback = approvedFeedback.get(readModel.id);
-
-        return governingFeedback === undefined ||
-          !blockingUsefulnessOutcomes.has(governingFeedback.outcome);
-      }),
-    appliedUsefulnessFeedback: visibleFeedback.size > 0
+        : readModel),
+    attachedReviewOnlyFeedback: visibleFeedback.size > 0
   };
 };

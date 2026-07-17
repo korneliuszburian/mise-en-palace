@@ -1,5 +1,4 @@
 import {
-  isReviewableFeedbackOutcome,
   type FeedbackCandidateProposalKind,
   type FeedbackDeltaStatus,
   type SourceUsefulnessOutcome
@@ -511,17 +510,6 @@ export interface DecisionPacketFeedbackDeltaInput {
   }[];
 }
 
-const governingFeedbackDeltaStatuses = new Set<FeedbackDeltaStatus>([
-  "accepted",
-  "applied"
-]);
-
-const governingFeedbackDeltasFor = (
-  readModel: DecisionPacketReadModelInput
-): readonly DecisionPacketFeedbackDeltaInput[] => readModel.feedbackDeltas.filter(
-  (feedback) => governingFeedbackDeltaStatuses.has(feedback.status)
-);
-
 export interface DecisionPacketIdentity {
   packetId: string;
   checksumAlgorithm: "sha256";
@@ -751,21 +739,10 @@ const sourceClaimIdsWithDecisionSupportFor = (
     : []
 ) ?? []);
 
-const sourceClaimIdsWithReviewableFeedback = (
-  readModel: DecisionPacketReadModelInput
-): string[] => unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
-  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-    outcome.sourceClaimId !== undefined && isReviewableFeedbackOutcome(outcome.outcome)
-      ? [outcome.sourceClaimId]
-      : []
-  )
-));
-
 const caveatedSourceClaimIdsFor = (
   readModel: DecisionPacketReadModelInput
 ): string[] => {
   const supportedSourceClaimIds = new Set(sourceClaimIdsWithDecisionSupportFor(readModel));
-  const maintenanceFeedbackSourceClaimIds = new Set(sourceClaimIdsWithReviewableFeedback(readModel));
   const pendingAntiMemoryReviewSourceClaimIds = new Set(
     includedActivationCandidatesFor(readModel).flatMap((candidate) =>
       candidate.subjectType === "source_claim" &&
@@ -777,29 +754,8 @@ const caveatedSourceClaimIdsFor = (
 
   return sourceClaimIdsFor(readModel).filter((sourceClaimId) =>
     !supportedSourceClaimIds.has(sourceClaimId) ||
-    maintenanceFeedbackSourceClaimIds.has(sourceClaimId) ||
     pendingAntiMemoryReviewSourceClaimIds.has(sourceClaimId)
   );
-};
-
-const sourceDecisionIdsWithUsefulness = (
-  readModel: DecisionPacketReadModelInput,
-  outcomes: readonly SourceUsefulnessOutcome[]
-): string[] => {
-  const selectedSourceDecisionIds = new Set(sourceDecisionIdsFor(
-    readModel,
-    sourceClaimIdsFor(readModel)
-  ));
-
-  return unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
-  feedback.sourceUsefulnessOutcomes.flatMap((outcome) =>
-    outcome.sourceDecisionId !== undefined &&
-    selectedSourceDecisionIds.has(outcome.sourceDecisionId) &&
-    outcomes.includes(outcome.outcome)
-      ? [outcome.sourceDecisionId]
-      : []
-  )
-  ));
 };
 
 const memoryRefsFor = (
@@ -807,34 +763,6 @@ const memoryRefsFor = (
 ): string[] => unique(readModel.context.inclusionDetails
   .filter((inclusion) => inclusion.subjectType === "memory_record")
   .map((inclusion) => inclusion.subjectId));
-
-const knowledgeIdsWithUsefulness = (
-  readModel: DecisionPacketReadModelInput,
-  outcomes: readonly SourceUsefulnessOutcome[]
-): string[] => {
-  const selectedMemoryIds = new Set(memoryRefsFor(readModel));
-
-  return unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
-  feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
-    selectedMemoryIds.has(outcome.knowledgeId) && outcomes.includes(outcome.outcome)
-      ? [outcome.knowledgeId]
-      : []
-  )
-  ));
-};
-
-const memoryRefsWithReviewableKnowledgeFeedback = (
-  readModel: DecisionPacketReadModelInput
-): string[] => {
-  const memoryRefs = new Set(memoryRefsFor(readModel));
-  const knowledgeIds = unique(governingFeedbackDeltasFor(readModel).flatMap((feedback) =>
-    feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
-      isReviewableFeedbackOutcome(outcome.outcome) ? [outcome.knowledgeId] : []
-    )
-  ));
-
-  return knowledgeIds.filter((knowledgeId) => memoryRefs.has(knowledgeId));
-};
 
 const memoryRefsWithPendingAntiMemoryReview = (
   readModel: DecisionPacketReadModelInput
@@ -1109,15 +1037,12 @@ export const buildDecisionPacketFromReadModel = (
     governingSourceClaimIds
   );
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
-  const staleDecisionIds = sourceDecisionIdsWithUsefulness(readModel, ["stale"]);
+  const staleDecisionIds: string[] = [];
   const memoryRefs = memoryRefsFor(readModel);
-  const staleKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["stale"]);
-  const noiseKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["noise"]);
-  const unknownKnowledgeIds = knowledgeIdsWithUsefulness(readModel, ["unknown"]);
-  const caveatedMemoryRefs = unique([
-    ...memoryRefsWithReviewableKnowledgeFeedback(readModel),
-    ...memoryRefsWithPendingAntiMemoryReview(readModel)
-  ]);
+  const staleKnowledgeIds: string[] = [];
+  const noiseKnowledgeIds: string[] = [];
+  const unknownKnowledgeIds: string[] = [];
+  const caveatedMemoryRefs = memoryRefsWithPendingAntiMemoryReview(readModel);
   const sourceRejectionIds = sourceRejectionIdsFor(readModel);
   const supersededPathIds = sourceClaimExclusionIdsFor(
     readModel,
@@ -1251,7 +1176,7 @@ export const buildDecisionPacketFromReadModel = (
     }),
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
-    noiseDecisionIds: sourceDecisionIdsWithUsefulness(readModel, ["noise"]),
+    noiseDecisionIds: [],
     severeStaleAuthorityIds,
     brief: {
       includedContextCount: readModel.context.inclusions,

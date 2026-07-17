@@ -110,15 +110,15 @@ const buildStoreMemoryReadback = (
         proves: [
           "store-backed memory search read active MemoryRecord rows from the configured DB project",
           "MemoryRecords were converted to KnowledgeReadModel packets before brain-search selection",
-          ...(input.usefulnessSelection.appliedUsefulnessFeedback
-            ? ["store-backed memory search applied usefulness feedback before selecting knowledge"]
+          ...(input.usefulnessSelection.attachedReviewOnlyFeedback
+            ? ["store-backed memory search attached review-only usefulness feedback to knowledge readback"]
             : [])
         ],
         doesNotProve: [
           "DB-backed memory selection proves source truth",
           "Codex used the selected memory",
           "memory ranking quality is broad or production-ready",
-          ...(input.usefulnessSelection.appliedUsefulnessFeedback
+          ...(input.usefulnessSelection.attachedReviewOnlyFeedback
             ? ["store-backed usefulness feedback proves broad ranking quality"]
             : ["store-backed usefulness feedback was available"]),
           "fixture catalog knowledge was consulted"
