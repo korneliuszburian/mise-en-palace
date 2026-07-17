@@ -612,6 +612,7 @@ describe("tracked paired live Codex repair", () => {
       expect(result.status).toBe("passed");
       expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
+      expect(result.execution.decisionApplicationObservation).toBe("none_observed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
         "conditions_observed",
@@ -710,6 +711,7 @@ describe("tracked paired live Codex repair", () => {
         },
         score: { outcome: "tie" }
       });
+      expect(failedPersistence.execution.decisionApplicationObservation).toBe("persistence_failed");
       expect(await readTrackedTrialArtifact(join(root, "failed-persistence-attempt")))
         .toEqual(failedPersistence);
     } finally {

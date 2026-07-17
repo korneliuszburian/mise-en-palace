@@ -47,6 +47,11 @@ import type {
 type JsonRecord = Record<string, unknown>;
 
 export type TrackedTrialStatus = "passed" | "invalid" | "blocked" | "unverified";
+export type DecisionApplicationObservation =
+  | "not_attempted"
+  | "none_observed"
+  | "observed"
+  | "persistence_failed";
 
 export type PairedDecisionApplicationRule = {
   readonly governingDecisionId: string;
@@ -245,6 +250,7 @@ export type TrackedTrialArtifact = {
       readonly packetOnlyByConstruction: true;
     };
     readonly liveOutput?: LiveCodexObedienceOutput;
+    readonly decisionApplicationObservation?: DecisionApplicationObservation;
     readonly baseline?: CommandResult;
     readonly krn?: CommandResult;
     readonly targets?: {
@@ -1245,6 +1251,9 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "invalidReasons", isStringArray) &&
   optionalValue(value, "promptDelta", isTrialPromptDelta) &&
   optionalValue(value, "liveOutput", isLiveCodexObedienceOutput) &&
+  optionalValue(value, "decisionApplicationObservation", (item) =>
+    item === "not_attempted" || item === "none_observed" || item === "observed" || item === "persistence_failed"
+  ) &&
   optionalValue(value, "baseline", isCommandResult) &&
   optionalValue(value, "krn", isCommandResult);
 
@@ -1947,11 +1956,15 @@ const executeComparableTrial = async (input: {
     environment: input.trial.krnObservationEnvironment
   });
   await input.journal.phase("krn_executed", { result: krnResult, before: input.trial.krnBefore, after: krnAfter });
+  let decisionApplicationObservation: DecisionApplicationObservation | undefined;
   const execution = {
     environmentProfileHash: input.trial.environmentHash,
     promptDelta: prompts.delta,
     baseline: baselineResult,
     krn: krnResult,
+    ...(input.recordDecisionApplications === undefined
+      ? {}
+      : { decisionApplicationObservation: "not_attempted" as const }),
     targets: {
       baseline: { before: input.trial.baselineBefore, after: baselineAfter },
       krn: { before: input.trial.krnBefore, after: krnAfter }
@@ -1979,7 +1992,7 @@ const executeComparableTrial = async (input: {
   await input.journal.phase("checker_scored", { outcome: score.outcome, reason: score.reason });
   if (input.recordDecisionApplications !== undefined && score.outcome !== "invalid") {
     try {
-      await input.recordDecisionApplications({
+      const applications = await input.recordDecisionApplications({
         runId: input.trial.context.manifest.runId,
         packet: input.packet,
         score,
@@ -1990,13 +2003,15 @@ const executeComparableTrial = async (input: {
           initialCommit: input.trial.krn.commit
         }
       });
+      decisionApplicationObservation = applications.length === 0 ? "none_observed" : "observed";
     } catch {
+      decisionApplicationObservation = "persistence_failed";
       return {
         status: "unverified",
         invalidReasons: ["decision application persistence could not be verified"],
         baselineTreeHash: input.trial.baseline.treeHash,
         krnTreeHash: input.trial.krn.treeHash,
-        execution,
+        execution: { ...execution, decisionApplicationObservation },
         score
       };
     }
@@ -2006,7 +2021,7 @@ const executeComparableTrial = async (input: {
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
     baselineTreeHash: input.trial.baseline.treeHash,
     krnTreeHash: input.trial.krn.treeHash,
-    execution,
+    execution: { ...execution, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
     score
   };
 };
