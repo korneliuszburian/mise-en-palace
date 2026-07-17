@@ -902,6 +902,7 @@ describe("paired live Codex repair eval", () => {
       );
 
       expect(result.runtimeAvailable).toBe(false);
+      expect(result.failureReason).toBe("runtime_observer_failed");
       expect(await readFile(sentinel, "utf8")).toBe("must-not-be-read");
     } finally {
       await rm(root, { recursive: true, force: true });

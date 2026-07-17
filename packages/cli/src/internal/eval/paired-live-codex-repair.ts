@@ -119,9 +119,17 @@ export type HeldOutArmScore = {
     readonly diffCheck: CommandResult;
   };
   readonly runtimeCommand?: CommandResult;
+  readonly runtimeFailureReason?: HeldOutRuntimeFailureReason;
   readonly focusedTestControl?: CommandResult;
   readonly focusedTestMutations?: readonly FocusedTestMutationProof[];
 };
+
+export type HeldOutRuntimeFailureReason =
+  | "runtime_permissions_unsupported"
+  | "runtime_command_failed"
+  | "runtime_export_unavailable"
+  | "runtime_observer_failed"
+  | "runtime_envelope_malformed";
 
 export type FocusedTestMutationName = "invalid_json" | "missing_email" | "invalid_role";
 
@@ -221,6 +229,7 @@ export type TargetRepairScoreInput = {
     readonly diffCheck: CommandResult;
   };
   readonly runtimeCommand?: CommandResult;
+  readonly runtimeFailureReason?: HeldOutRuntimeFailureReason;
   readonly focusedTestControl?: CommandResult;
   readonly focusedTestMutations?: readonly FocusedTestMutationProof[];
   readonly runtimeAvailable: boolean;
@@ -293,7 +302,8 @@ const checkFamilyContract = (
   family: PairedEvalFamily,
   files: TargetSourceFiles,
   commands: TargetRepairScoreInput["commands"],
-  runtimeAvailable: boolean
+  runtimeAvailable: boolean,
+  runtimeFailureReason: HeldOutRuntimeFailureReason | undefined
 ): HeldOutCheck => {
   const config = source(files, "src/config.ts");
   const readback = source(files, "src/configReadback.ts");
@@ -313,7 +323,7 @@ const checkFamilyContract = (
     passed,
     details: passed
       ? `${family} family contract and public verification commands passed.`
-      : `${family} family contract, runtime observer, or public verification commands failed.`
+      : `${family} family contract, runtime observer, or public verification commands failed${runtimeFailureReason === undefined ? "" : ` (${runtimeFailureReason})`}.`
   };
 };
 
@@ -467,7 +477,7 @@ export const scoreTargetRepair = (
   if (family !== "weak-json") {
     const checks: HeldOutCheck[] = [
       checkPreflight(changeManifest),
-      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable),
+      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable, input.runtimeFailureReason),
       checkAllowedFiles(input.changedFiles),
       {
         name: "target_test",
@@ -502,6 +512,7 @@ export const scoreTargetRepair = (
       changeManifest,
       commands: input.commands,
       ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
+      ...(input.runtimeFailureReason === undefined ? {} : { runtimeFailureReason: input.runtimeFailureReason }),
       ...(input.focusedTestControl === undefined
         ? {}
         : { focusedTestControl: input.focusedTestControl }),
@@ -605,6 +616,7 @@ export const scoreTargetRepair = (
     changeManifest,
     commands: input.commands,
     ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
+    ...(input.runtimeFailureReason === undefined ? {} : { runtimeFailureReason: input.runtimeFailureReason }),
     ...(input.focusedTestControl === undefined
       ? {}
       : { focusedTestControl: input.focusedTestControl }),
@@ -841,6 +853,13 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const runtimeWorkerMarker = "KRN_HELD_OUT_RUNTIME:";
 
+const isHeldOutRuntimeFailureReason = (value: unknown): value is HeldOutRuntimeFailureReason =>
+  value === "runtime_permissions_unsupported" ||
+  value === "runtime_command_failed" ||
+  value === "runtime_export_unavailable" ||
+  value === "runtime_observer_failed" ||
+  value === "runtime_envelope_malformed";
+
 export type HeldOutRuntimePermissionFlag = "--permission" | "--experimental-permission";
 
 export const selectHeldOutRuntimePermissionFlag = (
@@ -907,8 +926,12 @@ try {
   };
   writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
   }
-} catch {
-  writeSync(1, marker + JSON.stringify({ runtimeAvailable: false }) + "\\n");
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const reason = message.includes("export unavailable")
+    ? "runtime_export_unavailable"
+    : "runtime_observer_failed";
+  writeSync(1, marker + JSON.stringify({ runtimeAvailable: false, reason }) + "\\n");
   process.exitCode = 1;
 }
 `;
@@ -933,6 +956,7 @@ export const runHeldOutRuntimeWorker = async (
 ): Promise<{
   readonly command: CommandResult;
   readonly runtimeAvailable: boolean;
+  readonly failureReason?: HeldOutRuntimeFailureReason;
   readonly observations: RuntimeObservations;
 }> => {
   const permissionFlag = selectHeldOutRuntimePermissionFlag();
@@ -950,6 +974,7 @@ export const runHeldOutRuntimeWorker = async (
         durationMs: 0
       },
       runtimeAvailable: false,
+      failureReason: "runtime_permissions_unsupported",
       observations: unknownRuntimeObservations()
     };
   }
@@ -988,14 +1013,25 @@ export const runHeldOutRuntimeWorker = async (
     }
   }
 
-  if (command.exitCode !== 0 || markerLine === undefined) {
-    return { command, runtimeAvailable: false, observations: unknownRuntimeObservations() };
+  if (markerLine === undefined) {
+    return {
+      command,
+      runtimeAvailable: false,
+      failureReason: "runtime_command_failed",
+      observations: unknownRuntimeObservations()
+    };
   }
 
   try {
     const parsed: unknown = JSON.parse(markerLine.slice(runtimeWorkerMarker.length));
     if (!isRecord(parsed) || parsed["runtimeAvailable"] !== true || !isRecord(parsed["observations"])) {
-      throw new Error("Malformed held-out runtime envelope");
+      const reason = isRecord(parsed) && isHeldOutRuntimeFailureReason(parsed["reason"])
+        ? parsed["reason"]
+        : "runtime_envelope_malformed";
+      return { command, runtimeAvailable: false, failureReason: reason, observations: unknownRuntimeObservations() };
+    }
+    if (command.exitCode !== 0) {
+      return { command, runtimeAvailable: false, failureReason: "runtime_command_failed", observations: unknownRuntimeObservations() };
     }
     const observations = parsed["observations"];
     if (family === "weak-json" && (!isRecord(observations) ||
@@ -1015,7 +1051,12 @@ export const runHeldOutRuntimeWorker = async (
       }
     };
   } catch {
-    return { command, runtimeAvailable: false, observations: unknownRuntimeObservations() };
+    return {
+      command,
+      runtimeAvailable: false,
+      failureReason: "runtime_envelope_malformed",
+      observations: unknownRuntimeObservations()
+    };
   }
 };
 
@@ -1293,6 +1334,7 @@ export const runHeldOutTargetRepairChecker = async (
     }
   );
   let runtimeAvailable = false;
+  let runtimeFailureReason: HeldOutRuntimeFailureReason | undefined;
   let observations = unknownRuntimeObservations();
   let runtimeCommand = skipped("held-out runtime");
   let focusedTestControl = skippedFocusedTestControl("target compilation failed");
@@ -1304,6 +1346,7 @@ export const runHeldOutTargetRepairChecker = async (
       runFocusedTestMutationSuite(compileRoot, input.checkerRoot, sandboxRoot)
     ]);
     runtimeAvailable = runtime.runtimeAvailable;
+    runtimeFailureReason = runtime.failureReason;
     runtimeCommand = runtime.command;
     observations = runtime.observations;
     focusedTestControl = mutationSuite.control;
@@ -1324,6 +1367,7 @@ export const runHeldOutTargetRepairChecker = async (
     changeManifest: finalManifest,
     commands: { test, typecheck, diffCheck },
     runtimeCommand,
+    ...(runtimeFailureReason === undefined ? {} : { runtimeFailureReason }),
     focusedTestControl,
     focusedTestMutations,
     runtimeAvailable,
