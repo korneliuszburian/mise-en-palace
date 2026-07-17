@@ -15,6 +15,7 @@ import {
   runCodexBriefCommand
 } from "./run-codex-brief-command.js";
 import {
+  formatEvidenceCaptureError,
   runEvidenceCaptureCommand
 } from "./run-evidence-capture-command.js";
 import {
@@ -282,6 +283,13 @@ export const runHarnessCliCommand = async (
     const result = await runSelectedHarnessCommand(command, context);
     return harnessCommandResult(result.stdout);
   } catch (error) {
+    if (command.kind === "evidenceCapture") {
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: context.formatCliError(formatEvidenceCaptureError(error))
+      };
+    }
     return harnessCommandError(error, harnessFallbackMessages[command.kind], context);
   }
 };

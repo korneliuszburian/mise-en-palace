@@ -3,6 +3,7 @@ import {
   assertCandidateBatchProjectScope,
   CandidateProjectScopeError,
   classifyEvidenceCaptureError,
+  formatEvidenceCaptureError,
   type MemoryCandidateProposal
 } from "../run-evidence-capture-command.js";
 import type { EvalCandidateProposal, SourceDecision } from "@krn/core";
@@ -132,5 +133,14 @@ describe("candidate batch project scope", () => {
     expect(classifyEvidenceCaptureError(new CandidateProjectScopeError(["eval candidate 1"]))).toBe("permanent");
     expect(classifyEvidenceCaptureError(new Error("postgres connection timeout"))).toBe("transient");
     expect(classifyEvidenceCaptureError(new Error("validation failed"))).toBe("unknown");
+  });
+
+  it("renders a retryable transient handoff without changing the capture input", () => {
+    const handoff = formatEvidenceCaptureError(new Error("postgres connection timeout"));
+    expect(handoff).toContain("evidence_capture (disposition=transient, retryable)");
+    expect(handoff).toContain("Retry the capture after the infrastructure recovers");
+    expect(handoff).toContain("keep candidate input unchanged");
+    expect(handoff).toContain("Does not prove: source truth");
+    expect(handoff).not.toContain("disposition=permanent");
   });
 });

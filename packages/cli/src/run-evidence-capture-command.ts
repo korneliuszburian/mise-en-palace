@@ -293,11 +293,36 @@ export class CandidateProjectScopeError extends Error {
 export type EvidenceCaptureErrorDisposition = "permanent" | "transient" | "unknown";
 
 export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErrorDisposition => {
-  if (error instanceof CandidateProjectScopeError) return "permanent";
+  if (error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope" && !error.retryable) {
+    return "permanent";
+  }
   if (error instanceof Error && /ECONN|ETIMEDOUT|connection|timeout|postgres/i.test(error.message)) {
     return "transient";
   }
   return "unknown";
+};
+
+export const formatEvidenceCaptureError = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : "Unknown evidence capture error";
+  const disposition = classifyEvidenceCaptureError(error);
+
+  if (disposition === "permanent" && error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope") {
+    return [
+      `candidate_project_scope (disposition=permanent, non-retryable): ${message}.`,
+      `Candidates: ${error.handoff.candidateLabels.join(", ")}.`,
+      `Remediation: ${error.handoff.remediation} Do not retry unchanged input.`
+    ].join(" ");
+  }
+
+  if (disposition === "transient") {
+    return [
+      `evidence_capture (disposition=transient, retryable): ${message}.`,
+      "Remediation: Retry the capture after the infrastructure recovers; keep candidate input unchanged.",
+      "Does not prove: source truth, candidate usefulness, or product readiness."
+    ].join(" ");
+  }
+
+  return message;
 };
 
 export const assertCandidateBatchProjectScope = (input: {
