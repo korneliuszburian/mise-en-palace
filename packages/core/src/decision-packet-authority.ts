@@ -10,6 +10,7 @@ import type {
 import {
   buildDecisionPacketContractReadback
 } from "./decision-packet.js";
+import { parseSourceConsensusTimelineReadback } from "./decision-packet-contract.js";
 import {
   decideEvidenceContractActivation
 } from "./evidence-contract.js";
@@ -488,14 +489,19 @@ export const projectDecisionPacketTask = (
 
 const activationTraceForAuthority = (
   aggregate: HarnessRunAggregate
-): DecisionPacketActivationTraceInput | undefined => aggregate.activationTrace === undefined
-  ? undefined
-  : {
+): DecisionPacketActivationTraceInput | undefined => {
+  if (aggregate.activationTrace === undefined) return undefined;
+  const sourceConsensusTimeline = parseSourceConsensusTimelineReadback(
+    aggregate.activationTrace.metadata?.sourceConsensusTimeline
+  );
+  return {
+      ...(sourceConsensusTimeline === undefined ? {} : { sourceConsensusTimeline }),
       candidates: aggregate.activationTrace.candidates.map(
         projectDecisionPacketActivationCandidate
       ),
       decisions: aggregate.activationTrace.decisions.map(projectDecisionPacketActivationDecision)
     };
+};
 
 const feedbackDeltaForAuthority = (
   feedback: HarnessRunAggregate["feedbackDeltas"][number]

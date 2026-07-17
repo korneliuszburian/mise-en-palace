@@ -399,13 +399,6 @@ const runDecisionPacket = async (
   };
   const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
 
-  if (
-    Buffer.byteLength(result.stdout, "utf8")
-      > decisionPacketTransportBudget.maximumMessageUtf8Bytes
-  ) {
-    return outputLimitResult();
-  }
-
   const parsed: unknown = JSON.parse(result.stdout);
   const readback = parseDecisionPacketContractReadback(parsed, runId);
 

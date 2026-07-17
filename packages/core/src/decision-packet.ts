@@ -28,6 +28,7 @@ import type {
   SourceClaimAuthorityStatus,
   SourceDecisionTargetType
 } from "./source.js";
+import type { SourceConsensusTimelineReadback } from "./source-consensus-timeline.js";
 import type { TaskContractStatus } from "./task-contract.js";
 
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
@@ -86,6 +87,12 @@ export interface DecisionPacketSourceConsensus {
   sourceRejectionIds: readonly string[];
   conflictedDecisionIds: readonly string[];
   evidenceGapIds: readonly string[];
+  /**
+   * Evidence-backed temporal explanation for the source claims represented by
+   * this packet. This is projected from activation's authoritative timeline;
+   * it is optional for legacy/read-model inputs that did not capture it.
+   */
+  timeline?: SourceConsensusTimelineReadback;
   doesNotProve: string;
 }
 
@@ -232,6 +239,43 @@ const governingSourceClaimIdsFor = (input: {
   ));
 };
 
+const boundedSourceConsensusTimeline = (
+  timeline: SourceConsensusTimelineReadback,
+  sourceClaimIds: readonly string[]
+): SourceConsensusTimelineReadback => {
+  const retainedIds = new Set(sourceClaimIds);
+  const retainedEntries = timeline.entries.filter((entry) => retainedIds.has(entry.sourceClaimId));
+  const entries = retainedEntries.length >= 8
+    ? retainedEntries.slice(0, 8)
+    : [...retainedEntries, ...timeline.entries
+      .filter((entry) => !retainedIds.has(entry.sourceClaimId))
+      .slice(0, 8 - retainedEntries.length)];
+  return {
+    ...timeline,
+    entries: entries.map((entry) => ({
+      ...entry,
+      evidenceRefs: unique([
+        ...entry.evidenceRefs,
+        ...entry.relationEvidence.flatMap((relation) => [
+          ...relation.metadataEvidenceRefs,
+          `source-claim-edge:${relation.sourceClaimEdgeId}`
+        ])
+      ]),
+      rawEvidenceCitationRefs: [],
+      sourceRanges: [],
+      relationEvidence: entry.relationEvidence.slice(0, 4).map((relation) => ({
+        ...relation,
+        sourceRanges: [],
+        evidenceGaps: []
+      })),
+      supportingSourceClaimIds: [],
+      dissentingSourceClaimIds: [],
+      rejectionIds: [],
+      caveats: []
+    }))
+  };
+};
+
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -247,6 +291,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceRejectionIds: readonly string[];
   readonly conflictedDecisionIds: readonly string[];
   readonly evidenceGapIds: readonly string[];
+  readonly timeline?: SourceConsensusTimelineReadback;
 }): DecisionPacketSourceConsensus => {
   return {
     decisionLinkedSourceClaimIds: decisionLinkedSourceClaimIdsFor(input),
@@ -262,6 +307,9 @@ export const buildDecisionPacketSourceConsensus = (input: {
     sourceRejectionIds: unique(input.sourceRejectionIds),
     conflictedDecisionIds: unique(input.conflictedDecisionIds),
     evidenceGapIds: unique(input.evidenceGapIds),
+    ...(input.timeline === undefined ? {} : {
+      timeline: boundedSourceConsensusTimeline(input.timeline, input.sourceClaimIds)
+    }),
     doesNotProve:
       "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
   };
@@ -447,6 +495,7 @@ export interface DecisionPacketContextExclusionInput {
 export interface DecisionPacketActivationTraceInput {
   candidates: readonly DecisionPacketActivationCandidateInput[];
   decisions: readonly DecisionPacketActivationDecisionInput[];
+  sourceConsensusTimeline?: SourceConsensusTimelineReadback;
 }
 
 export interface DecisionPacketActivationCandidateInput {
@@ -1106,7 +1155,10 @@ export const buildDecisionPacketFromReadModel = (
     rejectedPathIds,
     sourceRejectionIds,
     conflictedDecisionIds: severeStaleAuthorityIds,
-    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id),
+    ...(readModel.context.activationTrace?.sourceConsensusTimeline === undefined
+      ? {}
+      : { timeline: readModel.context.activationTrace.sourceConsensusTimeline })
   });
   const governingGuidanceInput = {
     readModel,

@@ -211,6 +211,8 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusNoFormalRejectionKeepsTypedState: boolean;
   sourceConsensusSupersededClaimIsNonGoverning: boolean;
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
+  sourceConsensusTemporalExplanationPresent: boolean;
+  sourceConsensusTemporalExplanationHasEvidence: boolean;
   sourceDissentProofRunId: string;
   sourceDissentCandidateClaimId: string;
   sourceDissentDissentingClaimId: string;
@@ -276,6 +278,7 @@ interface DecisionPacketSmokeJson {
       rejectedPathIds: readonly string[];
       sourceRejectionIds: readonly string[];
       evidenceGapIds: readonly string[];
+      timeline?: Record<string, unknown>;
     };
     staleDecisionIds: readonly string[];
     abstentionScore: {
@@ -435,6 +438,8 @@ interface SourceConsensusProofResult {
   noFormalRejectionKeepsTypedState: boolean;
   supersededClaimIsNonGoverning: boolean;
   rejectedClaimHasFormalRejection: boolean;
+  temporalExplanationPresent: boolean;
+  temporalExplanationHasEvidence: boolean;
 }
 
 interface SourcePacketProofRepositories {
@@ -686,7 +691,8 @@ const readPacket = (
       supersededPathIds: readStringArray(sourceConsensus, "supersededPathIds"),
       rejectedPathIds: readStringArray(sourceConsensus, "rejectedPathIds"),
       sourceRejectionIds: readStringArray(sourceConsensus, "sourceRejectionIds"),
-      evidenceGapIds: readStringArray(sourceConsensus, "evidenceGapIds")
+      evidenceGapIds: readStringArray(sourceConsensus, "evidenceGapIds"),
+      ...(isRecord(sourceConsensus.timeline) ? { timeline: sourceConsensus.timeline } : {})
     },
     staleDecisionIds: readStringArray(packet, "staleDecisionIds"),
     abstentionScore: {
@@ -2114,6 +2120,16 @@ const runSourceConsensusProof = async (
     rejectedClaimId: rejectedClaim.id,
     sourceRejectionId: sourceRejection.id
   });
+  const timeline = packet.packet.sourceConsensus.timeline;
+  const timelineEntries = isRecord(timeline) ? readRecordArray(timeline, "entries") : [];
+  const currentTimelineEntry = timelineEntries.find((entry) =>
+    readString(entry, "sourceClaimId") === currentClaim.id
+  );
+  const temporalExplanationPresent = currentTimelineEntry !== undefined &&
+    readString(currentTimelineEntry, "createdAt") !== undefined &&
+    readStringArray(currentTimelineEntry, "supersedesSourceClaimIds").includes(supersededClaim.id);
+  const temporalExplanationHasEvidence = temporalExplanationPresent &&
+    readStringArray(currentTimelineEntry, "evidenceRefs").length > 0;
 
   return {
     proofRunId: proofRun.id,
@@ -2143,7 +2159,9 @@ const runSourceConsensusProof = async (
     noFormalRejectionSourceRejectionIds: noFormalRejectionPacket.packet.sourceRejectionIds,
     noFormalRejectionKeepsTypedState,
     supersededClaimIsNonGoverning,
-    rejectedClaimHasFormalRejection
+    rejectedClaimHasFormalRejection,
+    temporalExplanationPresent,
+    temporalExplanationHasEvidence
   };
 };
 
@@ -3716,6 +3734,15 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `sourceRejectionIds=${sourceConsensusProof.packetSourceRejectionIds.join(",")}`
       },
       {
+        label: "source consensus temporal explanation binds transition and evidence",
+        passed:
+          sourceConsensusProof.temporalExplanationPresent &&
+          sourceConsensusProof.temporalExplanationHasEvidence,
+        detail:
+          `present=${sourceConsensusProof.temporalExplanationPresent}; ` +
+          `hasEvidence=${sourceConsensusProof.temporalExplanationHasEvidence}`
+      },
+      {
         label: "unresolved accepted source dissent abstains without governing guidance",
         passed:
           sourceDissentProof.packetStatus === "abstain" &&
@@ -3844,6 +3871,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceConsensusProof.supersededClaimIsNonGoverning,
       sourceConsensusRejectedClaimHasFormalRejection:
         sourceConsensusProof.rejectedClaimHasFormalRejection,
+      sourceConsensusTemporalExplanationPresent:
+        sourceConsensusProof.temporalExplanationPresent,
+      sourceConsensusTemporalExplanationHasEvidence:
+        sourceConsensusProof.temporalExplanationHasEvidence,
       sourceDissentProofRunId: sourceDissentProof.proofRunId,
       sourceDissentCandidateClaimId: sourceDissentProof.candidateClaimId,
       sourceDissentDissentingClaimId: sourceDissentProof.dissentingClaimId,

@@ -281,7 +281,39 @@ const relationReadModel = (
       decisions: [{
         reason: "anti_memory_block",
         antiMemoryRecordId: "anti-memory-superseded-relation"
-      }]
+      }],
+      sourceConsensusTimeline: {
+        currentSourceClaimIds: ["claim-relation-current"],
+        caveatedSourceClaimIds: [],
+        historicalSourceClaimIds: ["claim-relation-old"],
+        staleSourceClaimIds: [],
+        supersededSourceClaimIds: ["claim-relation-old"],
+        unknownSourceClaimIds: [],
+        rejectedSourceClaimIds: [],
+        entries: [{
+          sourceClaimId: "claim-relation-current",
+          claim: "Use the supported relation.",
+          status: "accepted",
+          createdAt: now,
+          sourceAuthority: "project-decision",
+          authorityRank: 3,
+          temporalValidity: { status: "current" as const },
+          authorityState: "accepted",
+          state: "current_authority" as const,
+          decisionSupportEdgeIds: ["source-decision-edge-relation"],
+          evidenceRefs: ["evidence:relation-current"],
+          rawEvidenceCitationRefs: ["citation:relation-current"],
+          sourceRanges: [],
+          relationEvidence: [],
+          supportingSourceClaimIds: [],
+          dissentingSourceClaimIds: [],
+          supersededBySourceClaimIds: [],
+          supersedesSourceClaimIds: ["claim-relation-old"],
+          rejectionIds: [],
+          caveats: []
+        }],
+        doesNotProve: "Timeline evidence does not prove source truth."
+      }
     }
   },
   evidenceBundles: [],
@@ -1166,6 +1198,21 @@ describe("DecisionPacket builder", () => {
       status: "ready",
       reasons: []
     });
+  });
+
+  it("carries the authoritative temporal consensus explanation into the packet", () => {
+    const packet = buildDecisionPacketFromReadModel(relationReadModel([]));
+
+    expect(packet.sourceConsensus.timeline?.entries[0]).toMatchObject({
+      sourceClaimId: "claim-relation-current",
+      createdAt: now,
+      decisionSupportEdgeIds: ["source-decision-edge-relation"],
+      evidenceRefs: ["evidence:relation-current"],
+      supersedesSourceClaimIds: ["claim-relation-old"]
+    });
+    expect(packet.sourceConsensus.timeline?.supersededSourceClaimIds).toEqual([
+      "claim-relation-old"
+    ]);
   });
 
   it("abstains on unresolved accepted source dissent", () => {
