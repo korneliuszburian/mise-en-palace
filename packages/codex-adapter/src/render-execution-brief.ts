@@ -97,6 +97,7 @@ const scalarSectionItemCount = (): number => 1;
 const executionBriefSectionCounters = {
   title: scalarSectionItemCount,
   format_version: scalarSectionItemCount,
+  abstention_reasons: (brief) => brief.abstentionReasons.length,
   objective: scalarSectionItemCount,
   non_goals: (brief) => brief.nonGoals.length,
   current_task_contract: scalarSectionItemCount,
@@ -286,6 +287,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   return {
     formatVersion: executionBriefFormatVersion,
     abstentionStatus,
+    abstentionReasons: [...packet.abstentionScore.reasons],
     title: "KRN Codex Execution Brief",
     objective: packet.task.objective,
     nonGoals: [...packet.task.nonGoals],
@@ -331,6 +333,10 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     brief.title,
     `Format Version: ${brief.formatVersion}`,
     `Packet Status: ${brief.abstentionStatus}`,
+    ...renderOptionalSection(
+      "Packet Readiness Reasons:",
+      brief.abstentionReasons.map((reason) => `- ${reason}`)
+    ),
     "",
     `Objective: ${brief.objective}`,
     "",

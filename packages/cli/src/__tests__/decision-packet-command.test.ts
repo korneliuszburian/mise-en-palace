@@ -761,6 +761,55 @@ describe("decision packet CLI", () => {
     ));
   });
 
+  it("projects persisted tool boundaries and fail-closed abstention guidance", () => {
+    if (aggregate.contextAssembly === undefined) {
+      throw new Error("decision packet fixture requires a context assembly");
+    }
+
+    const abstainedAggregate: HarnessRunAggregate = {
+      ...aggregate,
+      harnessPlan: {
+        ...aggregate.harnessPlan,
+        nextAction: "Render Codex adapter brief.",
+        metadata: {
+          ...aggregate.harnessPlan.metadata,
+          capabilityPlanToolBoundaries: ["Do not mutate memory automatically."]
+        }
+      },
+      executionRun: {
+        ...aggregate.executionRun,
+        metadata: {
+          ...aggregate.executionRun.metadata,
+          decisionPacketNextAction:
+            "Context activation abstained; review exclusions before execution."
+        }
+      },
+      contextAssembly: {
+        ...aggregate.contextAssembly,
+        status: "abstained"
+      }
+    };
+
+    const authorityProjection = buildDecisionPacketAuthorityProjection(abstainedAggregate);
+    const diagnosticProjection = buildDecisionPacketReadModel(abstainedAggregate);
+
+    expect(authorityProjection.toolBoundaries).toEqual([
+      "Do not mutate memory automatically."
+    ]);
+    expect(authorityProjection.nextAction).toBe(
+      "Context activation abstained; review exclusions before execution."
+    );
+    expect(buildDecisionPacketFromReadModel(authorityProjection)).toEqual(
+      buildDecisionPacketFromReadModel(diagnosticProjection)
+    );
+
+    const historicalProjection = buildDecisionPacketAuthorityProjection({
+      ...abstainedAggregate,
+      executionRun: aggregate.executionRun
+    });
+    expect(historicalProjection.nextAction).toBe("Render Codex adapter brief.");
+  });
+
   it("keeps rejected feedback visible without granting it packet caveat authority", () => {
     const rejectedFeedbackAggregate: HarnessRunAggregate = {
       ...aggregate,

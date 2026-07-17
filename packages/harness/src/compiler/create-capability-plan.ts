@@ -4,6 +4,9 @@ import type {
   HarnessPlan,
   TaskContract
 } from "@krn/core";
+import {
+  capabilityPlanToolBoundaries
+} from "@krn/core";
 
 export interface CreateCapabilityPlanInput {
   harnessPlan: HarnessPlan;
@@ -185,12 +188,7 @@ export const createCapabilityPlan = (input: CreateCapabilityPlanInput): Capabili
     id: input.createId("capability-plan"),
     harnessPlanId: input.harnessPlan.id,
     requirements,
-    toolBoundaries: [
-      "Do not invoke Codex from the harness compiler.",
-      "Do not mutate memory automatically.",
-      "Do not write runtime markdown memory.",
-      "Do not spawn agents from the compiler."
-    ],
+    toolBoundaries: [...capabilityPlanToolBoundaries],
     metadata: {
       harnessPlanStatus: input.harnessPlan.status
     },

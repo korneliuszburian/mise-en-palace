@@ -4,6 +4,8 @@ import {
   decisionPacketBindingReadbackFromMetadata,
   decisionPacketReadModelDoesNotProve,
   decisionPacketReadModelProves,
+  decisionPacketNextActionForHarnessRun,
+  decisionPacketToolBoundariesForHarnessRun,
   decideEvidenceContractActivation,
   buildFeedbackRecommendationReadback,
   projectDecisionPacketActivationCandidate,
@@ -607,6 +609,7 @@ export const buildDecisionPacketReadModel = (
   });
   const evidenceContract = evidenceContractActivation.evidenceContract;
   const knowledgeSelection = knowledgeSelectionResource(aggregate);
+  const nextAction = decisionPacketNextActionForHarnessRun(aggregate);
 
   return {
     kind: "krn.decisionPacket.readModel.v1",
@@ -615,9 +618,10 @@ export const buildDecisionPacketReadModel = (
     run: runResource(aggregate, projectResolution),
     task: taskResource(aggregate),
     ...(knowledgeSelection === undefined ? {} : { knowledgeSelection }),
-    ...(aggregate.harnessPlan.nextAction === undefined
+    ...(nextAction === undefined
       ? {}
-      : { nextAction: aggregate.harnessPlan.nextAction }),
+      : { nextAction }),
+    toolBoundaries: decisionPacketToolBoundariesForHarnessRun(aggregate),
     context: contextResource(aggregate, activationTrace),
     evidenceContractActivation,
     ...(evidenceContract === undefined ? {} : { evidenceContract }),

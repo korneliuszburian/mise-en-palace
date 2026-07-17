@@ -26,6 +26,7 @@ export type ExecutionBriefProfileBudgetStatus = "within_budget" | "over_budget";
 export const executionBriefSectionProfiles = [
   { id: "title", kind: "required", emptyBehavior: "render_none" },
   { id: "format_version", kind: "required", emptyBehavior: "render_none" },
+  { id: "abstention_reasons", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "objective", kind: "required", emptyBehavior: "render_none" },
   { id: "non_goals", kind: "required", emptyBehavior: "render_none" },
   { id: "current_task_contract", kind: "required", emptyBehavior: "render_none" },
@@ -140,6 +141,7 @@ export interface ExecutionBriefEvidenceGap {
 export interface ExecutionBrief {
   formatVersion: ExecutionBriefFormatVersion;
   abstentionStatus: "ready" | "weak_context" | "abstain";
+  abstentionReasons: string[];
   title: string;
   objective: string;
   nonGoals: string[];

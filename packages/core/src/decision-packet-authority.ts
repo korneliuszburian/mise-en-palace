@@ -25,6 +25,9 @@ import {
   readMetadataString,
   readMetadataStringList
 } from "./metadata.js";
+import {
+  capabilityPlanToolBoundariesMetadataKey
+} from "./capability-plan.js";
 import type {
   HarnessRunAggregate
 } from "./repositories/harness-run-repository.js";
@@ -515,6 +518,22 @@ const feedbackDeltaForAuthority = (
     }))
 });
 
+export const decisionPacketToolBoundariesForHarnessRun = (
+  aggregate: HarnessRunAggregate
+): string[] => readMetadataStringList(
+  aggregate.harnessPlan.metadata,
+  capabilityPlanToolBoundariesMetadataKey
+);
+
+export const decisionPacketNextActionMetadataKey = "decisionPacketNextAction";
+
+export const decisionPacketNextActionForHarnessRun = (
+  aggregate: HarnessRunAggregate
+): string | undefined => readMetadataString(
+  aggregate.executionRun.metadata,
+  decisionPacketNextActionMetadataKey
+) ?? aggregate.harnessPlan.nextAction;
+
 export const buildDecisionPacketAuthorityProjection = (
   aggregate: HarnessRunAggregate
 ): DecisionPacketReadModelInput => {
@@ -525,6 +544,7 @@ export const buildDecisionPacketAuthorityProjection = (
     harnessPlan: aggregate.harnessPlan,
     executionRun: aggregate.executionRun
   });
+  const nextAction = decisionPacketNextActionForHarnessRun(aggregate);
 
   return {
     run: {
@@ -534,9 +554,10 @@ export const buildDecisionPacketAuthorityProjection = (
       updatedAt: aggregate.executionRun.updatedAt
     },
     task: projectDecisionPacketTask(aggregate.taskContract),
-    ...(aggregate.harnessPlan.nextAction === undefined
+    ...(nextAction === undefined
       ? {}
-      : { nextAction: aggregate.harnessPlan.nextAction }),
+      : { nextAction }),
+    toolBoundaries: decisionPacketToolBoundariesForHarnessRun(aggregate),
     context: {
       inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
       exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
