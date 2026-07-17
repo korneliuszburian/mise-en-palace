@@ -10,9 +10,11 @@ import {
   scorePairedRepairs,
   scoreTargetRepair,
   runCommand,
+  runFocusedTestMutationSuite,
   runHeldOutRuntimeWorker,
   selectHeldOutRuntimePermissionFlag,
   type CommandResult,
+  type FocusedTestMutationName,
   type HeldOutObservation
 } from "../internal/eval/paired-live-codex-repair.js";
 
@@ -32,6 +34,15 @@ const observation = (overrides: Partial<HeldOutObservation> = {}): HeldOutObserv
   ...overrides
 });
 
+const focusedMutationProofs = (
+  failed?: FocusedTestMutationName
+) => (["invalid_json", "missing_email", "invalid_role"] as const).map((name) => ({
+  name,
+  command: command(name === failed ? 1 : 0)
+}));
+
+const focusedTestControl = (): CommandResult => command();
+
 const sourceFiles = {
   "src/config.ts": [
     "export function parseJsonConfig(raw: string): unknown {",
@@ -48,6 +59,63 @@ const sourceFiles = {
     "createUserFromJson(JSON.stringify({ role: 'admin' }), {});",
     "createUserFromJson(JSON.stringify({ email: 'x@example.com', role: 'owner' }), {});"
   ].join("\n")
+};
+
+const focusedVectorExpressions = {
+  invalid_json: JSON.stringify("["),
+  missing_email: "JSON.stringify({ role: 'admin' })",
+  invalid_role: "JSON.stringify({ email: 'x@example.com', role: 'owner' })"
+} as const;
+
+const focusedTestSource = (
+  style: "direct" | "helper" | "table",
+  names: readonly FocusedTestMutationName[]
+): string => {
+  const expressions = names.map((name) => focusedVectorExpressions[name]);
+  const assertion = [
+    "const assertRejected = (raw) => {",
+    "  const savedBefore = listSavedUsers().length;",
+    "  const result = createUserFromJson(raw, {});",
+    "  if (result.status !== 'invalid_input') throw new Error('expected rejection');",
+    "  if (listSavedUsers().length !== savedBefore) throw new Error('unexpected save');",
+    "};"
+  ].join("\n");
+  const body = style === "table"
+    ? `for (const raw of [${expressions.join(", ")}]) assertRejected(raw);`
+    : expressions.map((expression) => `assertRejected(${expression});`).join("\n");
+  return [
+    "import { createUserFromJson, listSavedUsers } from '../src/index.js';",
+    ...(style === "direct" ? [] : ["const reject = (raw) => assertRejected(raw);"]),
+    assertion,
+    style === "helper" ? body.replaceAll("assertRejected", "reject") : body
+  ].join("\n");
+};
+
+const writeCompiledMutationTarget = async (
+  root: string,
+  tests: string
+): Promise<void> => {
+  await mkdir(join(root, "src"), { recursive: true });
+  await mkdir(join(root, "tests"), { recursive: true });
+  await writeFile(join(root, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+  await writeFile(join(root, "src/index.js"), [
+    "export { createUserFromJson, listSavedUsers } from './userService.js';"
+  ].join("\n"), "utf8");
+  await writeFile(join(root, "src/userService.js"), [
+    "const users = [];",
+    "export const listSavedUsers = () => users;",
+    "export const createUserFromJson = (raw) => {",
+    "  let input;",
+    "  try { input = JSON.parse(raw); } catch { return { status: 'invalid_input' }; }",
+    "  if (typeof input?.email !== 'string' || input.email.trim().length === 0) return { status: 'invalid_input' };",
+    "  const role = input.role ?? 'admin';",
+    "  if (role !== 'admin' && role !== 'member') return { status: 'invalid_input' };",
+    "  const user = { id: '1', email: input.email, role };",
+    "  users.push(user);",
+    "  return { status: 'created', user };",
+    "};"
+  ].join("\n"), "utf8");
+  await writeFile(join(root, "tests/userService.test.js"), tests, "utf8");
 };
 
 describe("paired live Codex repair eval", () => {
@@ -145,6 +213,8 @@ describe("paired live Codex repair eval", () => {
         diffCheck: command()
       },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -171,6 +241,8 @@ describe("paired live Codex repair eval", () => {
         diffCheck: command()
       },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation({ accepted: true, savedUserDelta: 1 }),
         missingEmail: observation({ accepted: true, savedUserDelta: 1 }),
@@ -196,6 +268,8 @@ describe("paired live Codex repair eval", () => {
         diffCheck: command()
       },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -207,44 +281,259 @@ describe("paired live Codex repair eval", () => {
     expect(result.status).toBe("fail");
     expect(result.checks).toEqual(expect.arrayContaining([
       expect.objectContaining({ name: "unknown_first", passed: false }),
-      expect.objectContaining({ name: "finite_result_state", passed: false }),
-      expect.objectContaining({ name: "focused_tests", passed: false })
+      expect.objectContaining({ name: "finite_result_state", passed: false })
     ]));
   });
 
-  it("recognizes focused invalid-input vectors without private result-label spellings", () => {
-    const focusedTests = (tests: string): boolean => {
+  it.each(["direct", "helper", "table"] as const)(
+    "proves focused invalid-input coverage for %s test structure",
+    async (style) => {
+      const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-"));
+      const compileRoot = join(root, "compiled");
+      const sandboxRoot = join(root, "sandbox");
+      await writeCompiledMutationTarget(
+        compileRoot,
+        focusedTestSource(style, ["invalid_json", "missing_email", "invalid_role"])
+      );
+      await mkdir(sandboxRoot);
+
+      try {
+        const suite = await runFocusedTestMutationSuite(
+          compileRoot,
+          process.cwd(),
+          sandboxRoot
+        );
+        expect(suite.control.exitCode).toBe(0);
+        const proofs = suite.mutations;
+        expect(proofs.map((proof) => [proof.name, proof.command.exitCode])).toEqual([
+          ["invalid_json", 0],
+          ["missing_email", 0],
+          ["invalid_role", 0]
+        ]);
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it.each(["invalid_json", "missing_email", "invalid_role"] as const)(
+    "fails only the %s mutation proof when that vector is absent",
+    async (missingName) => {
+      const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-missing-"));
+      const compileRoot = join(root, "compiled");
+      const sandboxRoot = join(root, "sandbox");
+      const included = (["invalid_json", "missing_email", "invalid_role"] as const)
+        .filter((name) => name !== missingName);
+      await writeCompiledMutationTarget(compileRoot, focusedTestSource("table", included));
+      await mkdir(sandboxRoot);
+
+      try {
+        const suite = await runFocusedTestMutationSuite(
+          compileRoot,
+          process.cwd(),
+          sandboxRoot
+        );
+        expect(suite.control.exitCode).toBe(0);
+        const proofs = suite.mutations;
+        expect(Object.fromEntries(
+          proofs.map((proof) => [proof.name, proof.command.exitCode])
+        )).toEqual({
+          invalid_json: missingName === "invalid_json" ? 1 : 0,
+          missing_email: missingName === "missing_email" ? 1 : 0,
+          invalid_role: missingName === "invalid_role" ? 1 : 0
+        });
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    }
+  );
+
+  it("does not count a mutant failure when the identical unmutated control also fails", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-control-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(compileRoot, [
+      "import { writeFile } from 'node:fs/promises';",
+      focusedTestSource("table", ["invalid_json", "missing_email", "invalid_role"]),
+      `await writeFile(${JSON.stringify(join(root, "forbidden-write"))}, 'x');`
+    ].join("\n"));
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(suite.control.exitCode).not.toBe(0);
+      expect(suite.mutations.map((proof) => proof.command.exitCode)).toEqual([1, 1, 1]);
+      expect(suite.mutations.every((proof) =>
+        proof.command.stdout.includes("unmutatedControlPassed=false")
+      )).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("returns failed mutation proofs when a compilable target omits the public index module", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-no-index-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(
+      compileRoot,
+      focusedTestSource("table", ["invalid_json", "missing_email", "invalid_role"])
+        .replace("../src/index.js", "../src/userService.js")
+    );
+    await rm(join(compileRoot, "src/index.js"));
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(suite.control.exitCode).toBe(0);
+      expect(suite.mutations.map((proof) => proof.command.exitCode)).toEqual([1, 1, 1]);
+      expect(suite.mutations.every((proof) =>
+        proof.command.stdout.includes("mutationMarkerObserved=false") &&
+        proof.command.stderr.length > 0
+      )).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not let one compound invalid input prove two validation rules", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-compound-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(compileRoot, [
+      focusedTestSource("direct", ["invalid_json"]),
+      "assertRejected(JSON.stringify({ role: 'owner' }));"
+    ].join("\n"));
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(Object.fromEntries(
+        suite.mutations.map((proof) => [proof.name, proof.command.exitCode])
+      )).toEqual({ invalid_json: 0, missing_email: 1, invalid_role: 1 });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not treat a blank email test as proof of the missing-property vector", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-blank-email-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(compileRoot, [
+      focusedTestSource("direct", ["invalid_json", "invalid_role"]),
+      "assertRejected(JSON.stringify({ email: '', role: 'admin' }));"
+    ].join("\n"));
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(Object.fromEntries(
+        suite.mutations.map((proof) => [proof.name, proof.command.exitCode])
+      )).toEqual({ invalid_json: 0, missing_email: 1, invalid_role: 0 });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("does not treat a malformed-email rejection as proof of the invalid-role vector", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-malformed-email-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(compileRoot, [
+      focusedTestSource("direct", ["invalid_json", "missing_email"]),
+      "assertRejected(JSON.stringify({ email: 'not-an-email', role: 'owner' }));"
+    ].join("\n"));
+    const userServicePath = join(compileRoot, "src/userService.js");
+    const userService = await readFile(userServicePath, "utf8");
+    await writeFile(
+      userServicePath,
+      userService.replace(
+        "input.email.trim().length === 0",
+        "input.email.trim().length === 0 || !input.email.includes('@')"
+      ),
+      "utf8"
+    );
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(Object.fromEntries(
+        suite.mutations.map((proof) => [proof.name, proof.command.exitCode])
+      )).toEqual({ invalid_json: 0, missing_email: 0, invalid_role: 1 });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("credits an invalid-role test with any non-empty email allowed by the contract", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-nonempty-email-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await writeCompiledMutationTarget(compileRoot, [
+      focusedTestSource("direct", []),
+      "assertRejected(JSON.stringify({ email: 'x', role: 'owner' }));"
+    ].join("\n"));
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(
+        compileRoot,
+        process.cwd(),
+        sandboxRoot
+      );
+      expect(Object.fromEntries(
+        suite.mutations.map((proof) => [proof.name, proof.command.exitCode])
+      )).toEqual({ invalid_json: 1, missing_email: 1, invalid_role: 0 });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["invalid_json", "missing_email", "invalid_role"] as const)(
+    "requires every distinct %s mutation proof for the focused-test contract",
+    (failedName) => {
       const result = scoreTargetRepair({
-        sourceFiles: { ...sourceFiles, "tests/userService.test.ts": tests },
+        sourceFiles,
         changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
         commands: { test: command(), typecheck: command(), diffCheck: command() },
         runtimeAvailable: true,
+        focusedTestControl: focusedTestControl(),
+        focusedTestMutations: focusedMutationProofs(failedName),
         observations: {
           invalidJson: observation(),
           missingEmail: observation(),
           invalidRole: observation()
         }
       });
-      return result.checks.find((check) => check.name === "focused_tests")?.passed === true;
-    };
-    const baselineStyle = [
-      "const reject = (raw: string) => createUserFromJson(raw, {});",
-      "reject('{');",
-      "reject(JSON.stringify({ role: 'admin' }));",
-      "reject(JSON.stringify({ email: 'x@example.com', role: 'owner' }));"
-    ].join("\n");
-    const krnStyle = [
-      "createUserFromJson('{', {});",
-      "createUserFromJson(JSON.stringify({}), {});",
-      "createUserFromJson(JSON.stringify({ email: 'x@example.com', role: 'superuser' }), {});"
-    ].join("\n");
 
-    expect(focusedTests(baselineStyle)).toBe(true);
-    expect(focusedTests(krnStyle)).toBe(true);
-    expect(focusedTests(krnStyle.replace("createUserFromJson('{', {});", ""))).toBe(false);
-    expect(focusedTests(krnStyle.replace("createUserFromJson(JSON.stringify({}), {});", ""))).toBe(false);
-    expect(focusedTests(krnStyle.replace(", role: 'superuser'", ""))).toBe(false);
-  });
+      expect(result.checks).toContainEqual(expect.objectContaining({
+        name: "focused_tests",
+        passed: false,
+        details: expect.stringContaining(failedName)
+      }));
+    }
+  );
 
   it("does not count validity gates as paired advantage", () => {
     const result = scoreTargetRepair({
@@ -256,6 +545,8 @@ describe("paired live Codex repair eval", () => {
         diffCheck: command()
       },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -265,6 +556,28 @@ describe("paired live Codex repair eval", () => {
 
     expect(result.status).toBe("invalid");
     expect(result.score).toBe(3);
+  });
+
+  it("invalidates an arm when the unmutated focused-test control fails", () => {
+    const result = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      focusedTestControl: command(1),
+      focusedTestMutations: focusedMutationProofs("invalid_json"),
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(result.status).toBe("invalid");
+    expect(result.checks).toContainEqual(expect.objectContaining({
+      name: "focused_test_control",
+      passed: false
+    }));
   });
 
   it("invalidates an untracked forbidden file from the preflight manifest", () => {
@@ -281,6 +594,8 @@ describe("paired live Codex repair eval", () => {
       },
       commands: { test: command(), typecheck: command(), diffCheck: command() },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -367,6 +682,8 @@ describe("paired live Codex repair eval", () => {
         diffCheck: command()
       },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -387,6 +704,8 @@ describe("paired live Codex repair eval", () => {
       changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
       commands: { test: command(), typecheck: command(), diffCheck: command() },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),
@@ -431,6 +750,8 @@ describe("paired live Codex repair eval", () => {
       changedFiles: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
       commands: { test: command(), typecheck: command(), diffCheck: command() },
       runtimeAvailable: true,
+      focusedTestControl: focusedTestControl(),
+      focusedTestMutations: focusedMutationProofs(),
       observations: {
         invalidJson: observation(),
         missingEmail: observation(),

@@ -50,11 +50,12 @@ export type TrackedTrialStatus = "passed" | "invalid" | "blocked" | "unverified"
 export type PairedDecisionApplicationRule = {
   readonly governingDecisionId: string;
   readonly sourceDecisionId: string;
-  readonly check: HeldOutCheckName;
+  readonly check: DecisionApplicationCheckName;
   readonly changedFiles: readonly string[];
 };
 
 type HeldOutCheckName = NonNullable<PairedRepairScore["krn"]["checks"]>[number]["name"];
+type DecisionApplicationCheckName = Exclude<HeldOutCheckName, "focused_test_control">;
 
 export type PairedTrialManifest = {
   readonly kind: "krn.pairedLiveCodexRepairManifest.v1";
@@ -216,7 +217,9 @@ type TrialConditions = {
 };
 
 export type TrackedTrialArtifact = {
-  readonly kind: "krn.pairedLiveCodexRepairArtifact.v1";
+  readonly kind:
+    | "krn.pairedLiveCodexRepairArtifact.v1"
+    | "krn.pairedLiveCodexRepairArtifact.v2";
   readonly status: TrackedTrialStatus;
   readonly artifactHash: string;
   readonly manifestHash: string;
@@ -317,7 +320,7 @@ const isManifestChecker = (value: unknown): boolean =>
   value["heldOut"] === true &&
     value["outcome"] === "win|tie|loss|invalid";
 
-const heldOutCheckNames = new Set<string>([
+const decisionApplicationCheckNames = new Set<DecisionApplicationCheckName>([
   "preflight",
   "invalid_json",
   "missing_email",
@@ -355,7 +358,7 @@ const isDecisionApplicationRule = (value: unknown): value is PairedDecisionAppli
     sourceDecisionId !== undefined &&
     governingDecisionId !== sourceDecisionId &&
     typeof check === "string" &&
-    heldOutCheckNames.has(check) &&
+    decisionApplicationCheckNames.has(check as DecisionApplicationCheckName) &&
     hasSafeDecisionApplicationPaths(value["changedFiles"]);
 };
 
@@ -1016,6 +1019,52 @@ const isHeldOutCommands = (value: unknown): boolean =>
   (isRecord(value) &&
     ["test", "typecheck", "diffCheck"].every((name) => isCommandResult(value[name])));
 
+const isFocusedTestMutations = (value: unknown): value is readonly {
+  readonly name: "invalid_json" | "missing_email" | "invalid_role";
+  readonly command: CommandResult;
+}[] => {
+  if (!Array.isArray(value) || value.length !== 3) return false;
+  const names = value.flatMap((entry) =>
+    isRecord(entry) &&
+    (entry["name"] === "invalid_json" ||
+      entry["name"] === "missing_email" ||
+      entry["name"] === "invalid_role") &&
+    isCommandResult(entry["command"])
+      ? [entry["name"]]
+      : []
+  );
+  return names.length === value.length && new Set(names).size === value.length;
+};
+
+const focusedTestCheckPassed = (checks: unknown): boolean =>
+  Array.isArray(checks) && checks.some((check) =>
+    isRecord(check) && check["name"] === "focused_tests" && check["passed"] === true
+  );
+
+const focusedTestMutationsPassed = (
+  mutations: readonly { readonly command: CommandResult }[]
+): boolean => mutations.every((mutation) => mutation.command.exitCode === 0);
+
+const focusedTestStatusMatchesCheck = (scorePassed: boolean, checkPassed: boolean): boolean =>
+  scorePassed ? checkPassed : true;
+
+const focusedTestCommandsPassed = (
+  control: CommandResult,
+  mutations: readonly { readonly command: CommandResult }[]
+): boolean => control.exitCode === 0 ? focusedTestMutationsPassed(mutations) : false;
+
+const hasConsistentFocusedTestProof = (value: JsonRecord): boolean => {
+  const scorePassed = value["status"] === "pass";
+  const checkPassed = focusedTestCheckPassed(value["checks"]);
+  if (!focusedTestStatusMatchesCheck(scorePassed, checkPassed)) return false;
+  const control = value["focusedTestControl"];
+  const mutations = value["focusedTestMutations"];
+
+  if (!isCommandResult(control)) return false;
+  if (!isFocusedTestMutations(mutations)) return false;
+  return checkPassed ? focusedTestCommandsPassed(control, mutations) : true;
+};
+
 const isHeldOutArmBasics = (value: JsonRecord): boolean =>
   isHeldOutArmStatus(value["status"]) &&
   typeof value["score"] === "number" &&
@@ -1024,19 +1073,23 @@ const isHeldOutArmBasics = (value: JsonRecord): boolean =>
   value["checks"].every(isHeldOutCheck) &&
   isStringArray(value["changedFiles"]);
 
-const isHeldOutArmScore = (value: unknown): boolean => {
+const isHeldOutArmScore = (value: unknown, focusedProofRequired: boolean): boolean => {
   if (!isRecord(value)) return false;
   return isHeldOutArmBasics(value) &&
     optionalValue(value, "changeManifest", isTargetChangeManifest) &&
     isHeldOutCommands(value["commands"]) &&
-    optionalValue(value, "runtimeCommand", isCommandResult);
+    optionalValue(value, "runtimeCommand", isCommandResult) &&
+    (!focusedProofRequired || hasConsistentFocusedTestProof(value));
 };
 
-const isPairedRepairScore = (value: unknown): value is PairedRepairScore =>
+const isPairedRepairScore = (
+  value: unknown,
+  focusedProofRequired = true
+): value is PairedRepairScore =>
   isRecord(value) &&
   (value["outcome"] === "win" || value["outcome"] === "tie" || value["outcome"] === "loss" || value["outcome"] === "invalid") &&
-  isHeldOutArmScore(value["baseline"]) &&
-  isHeldOutArmScore(value["krn"]) &&
+  isHeldOutArmScore(value["baseline"], focusedProofRequired) &&
+  isHeldOutArmScore(value["krn"], focusedProofRequired) &&
   typeof value["reason"] === "string";
 
 const isTrialPromptDelta = (value: unknown): boolean =>
@@ -1116,10 +1169,13 @@ const hasPassedArmExecution = (execution: JsonRecord): boolean => {
     isSuccessfulTrialArm(execution["krn"], krnTargets?.["after"]);
 };
 
+const requiresFocusedTestProof = (value: JsonRecord): boolean =>
+  value["kind"] === "krn.pairedLiveCodexRepairArtifact.v2";
+
 const hasPassedScore = (value: JsonRecord, execution: JsonRecord): boolean => {
   const attempt = nestedRecord(execution, "attempt");
   const score = value["score"];
-  return isPairedRepairScore(score) &&
+  return isPairedRepairScore(score, requiresFocusedTestProof(value)) &&
     score.outcome !== "invalid" &&
     isTrialAttempt(attempt) &&
     attempt.phases.at(-2)?.name === "checker_scored";
@@ -1158,17 +1214,32 @@ const hasArtifactExecution = (value: JsonRecord): boolean =>
   optionalValue(value, "baselineTreeHash", isPresentString) &&
   optionalValue(value, "krnTreeHash", isPresentString) &&
   isTrialExecution(value["execution"]) &&
-  optionalValue(value, "score", isPairedRepairScore);
+  optionalValue(
+    value,
+    "score",
+    (score) => isPairedRepairScore(score, requiresFocusedTestProof(value))
+  );
+
+const isTrackedTrialArtifactKind = (value: unknown): boolean =>
+  value === "krn.pairedLiveCodexRepairArtifact.v1"
+    ? true
+    : value === "krn.pairedLiveCodexRepairArtifact.v2";
+
+const hasArtifactEnvelope = (value: JsonRecord): boolean =>
+  isTrackedTrialStatus(value["status"]) &&
+  hasArtifactIdentity(value) &&
+  hasArtifactPacket(value) &&
+  hasArtifactExecution(value) &&
+  hasArtifactProof(value);
+
+const artifactStatusIsConsistent = (value: JsonRecord): boolean =>
+  value["status"] === "passed" ? isPassedTrialArtifact(value) : true;
 
 const isTrackedTrialArtifactShape = (value: unknown): value is TrackedTrialArtifact => {
   if (!isRecord(value)) return false;
-  return value["kind"] === "krn.pairedLiveCodexRepairArtifact.v1" &&
-    isTrackedTrialStatus(value["status"]) &&
-    hasArtifactIdentity(value) &&
-    hasArtifactPacket(value) &&
-    hasArtifactExecution(value) &&
-    hasArtifactProof(value) &&
-    (value["status"] !== "passed" || isPassedTrialArtifact(value));
+  return isTrackedTrialArtifactKind(value["kind"]) &&
+    hasArtifactEnvelope(value) &&
+    artifactStatusIsConsistent(value);
 };
 
 const artifactHash = (artifact: object): string => sha256(serializedJson(artifact));
@@ -1365,7 +1436,7 @@ const buildTrialArtifact = (
   context: TrialContext,
   input: TrialArtifactInput
 ): TrackedTrialArtifact => buildTrackedTrialArtifact({
-  kind: "krn.pairedLiveCodexRepairArtifact.v1",
+  kind: "krn.pairedLiveCodexRepairArtifact.v2",
   status: input.status,
   manifestHash: context.manifestHash,
   sourceTreeHash: context.sourceTreeHash,

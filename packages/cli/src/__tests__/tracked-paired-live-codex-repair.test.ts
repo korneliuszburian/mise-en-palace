@@ -15,7 +15,11 @@ import {
   verifyTrackedTrialArtifact,
   type PairedTrialManifest
 } from "../internal/eval/tracked-paired-live-codex-repair.js";
-import type { PairedRepairScore } from "../internal/eval/paired-live-codex-repair.js";
+import type {
+  CommandResult,
+  HeldOutArmScore,
+  PairedRepairScore
+} from "../internal/eval/paired-live-codex-repair.js";
 
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
@@ -203,10 +207,57 @@ const runnableManifest = (binRoot: string, timeoutMs: number): PairedTrialManife
   }
 });
 
+const passingProofCommand = (): CommandResult => ({
+  command: "held-out focused-test proof",
+  args: [],
+  exitCode: 0,
+  stdout: "proof passed",
+  stderr: ""
+});
+
+const passingArm = (): HeldOutArmScore => ({
+  status: "pass" as const,
+  score: 3,
+  checks: [{ name: "focused_tests", passed: true, details: "mutants killed" }],
+  changedFiles: [],
+  focusedTestControl: passingProofCommand(),
+  focusedTestMutations: (["invalid_json", "missing_email", "invalid_role"] as const)
+    .map((name) => ({ name, command: passingProofCommand() }))
+});
+
+const withoutFocusedTestProof = (arm: HeldOutArmScore): HeldOutArmScore => {
+  const {
+    focusedTestControl: _focusedTestControl,
+    focusedTestMutations: _focusedTestMutations,
+    ...legacyArm
+  } = arm;
+  return legacyArm;
+};
+
+const withFocusedCheck = (
+  arm: HeldOutArmScore,
+  passed: boolean
+): HeldOutArmScore => ({
+  ...arm,
+  checks: arm.checks.map((check) =>
+    check.name === "focused_tests" ? { ...check, passed } : check
+  )
+});
+
+const withFailedFocusedMutation = (arm: HeldOutArmScore): HeldOutArmScore =>
+  arm.focusedTestMutations === undefined
+    ? arm
+    : {
+        ...arm,
+        focusedTestMutations: arm.focusedTestMutations.map((proof, index) =>
+          index === 0 ? { ...proof, command: { ...proof.command, exitCode: 1 } } : proof
+        )
+      };
+
 const passingChecker = async (): Promise<PairedRepairScore> => ({
   outcome: "tie",
-  baseline: { status: "pass", score: 3, checks: [], changedFiles: [] },
-  krn: { status: "pass", score: 3, checks: [], changedFiles: [] },
+  baseline: passingArm(),
+  krn: passingArm(),
   reason: "deterministic held-out checker fixture"
 });
 
@@ -482,6 +533,7 @@ describe("tracked paired live Codex repair", () => {
       }, passingChecker));
 
       expect(result.status).toBe("passed");
+      expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
@@ -497,6 +549,69 @@ describe("tracked paired live Codex repair", () => {
       expect(await readFile(packetPromptMarker, "utf8")).toBe("packet");
       expect(verifyTrackedTrialArtifact(result)).toBe(true);
       expect(await readTrackedTrialArtifact(join(root, "attempt"))).toEqual(result);
+
+      const { artifactHash: _artifactHash, ...resultContent } = result;
+      const legacyScore: PairedRepairScore = {
+        ...result.score!,
+        baseline: withoutFocusedTestProof(result.score!.baseline),
+        krn: withoutFocusedTestProof(result.score!.krn)
+      };
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact({
+        ...resultContent,
+        kind: "krn.pairedLiveCodexRepairArtifact.v1",
+        score: legacyScore
+      }))).toBe(true);
+
+      const missingFocusedProof: PairedRepairScore = {
+        ...result.score!,
+        krn: withoutFocusedTestProof(result.score!.krn)
+      };
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact({
+        ...resultContent,
+        score: missingFocusedProof
+      }))).toBe(false);
+
+      const failedFocusedProof: PairedRepairScore = {
+        ...result.score!,
+        krn: withFailedFocusedMutation(result.score!.krn)
+      };
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact({
+        ...resultContent,
+        score: failedFocusedProof
+      }))).toBe(false);
+
+      const contradictedFocusedCheck: PairedRepairScore = {
+        ...result.score!,
+        krn: withFocusedCheck(result.score!.krn, false)
+      };
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact({
+        ...resultContent,
+        score: contradictedFocusedCheck
+      }))).toBe(false);
+
+      const failedKrnArm: HeldOutArmScore = {
+        ...withFailedFocusedMutation(withFocusedCheck(result.score!.krn, false)),
+        status: "fail"
+      };
+      const differentialScore: PairedRepairScore = {
+        ...result.score!,
+        outcome: "loss",
+        reason: "KRN missed one focused-test mutation.",
+        krn: failedKrnArm
+      };
+      const differentialContent = {
+        ...resultContent,
+        status: "invalid" as const,
+        score: differentialScore
+      };
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact(differentialContent))).toBe(true);
+      expect(verifyTrackedTrialArtifact(buildTrackedTrialArtifact({
+        ...differentialContent,
+        score: {
+          ...differentialScore,
+          krn: withoutFocusedTestProof(failedKrnArm)
+        }
+      }))).toBe(false);
 
       const failedPersistence = await withProcessEnvironment({
         KRN_TRIAL_CODEX_HOME: binRoot,

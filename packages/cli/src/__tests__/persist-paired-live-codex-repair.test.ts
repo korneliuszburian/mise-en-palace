@@ -91,7 +91,13 @@ const arm = (status: "pass" | "fail" = "pass") => ({
     typecheck: command({ args: ["typecheck"] }),
     diffCheck: command({ args: ["diff-check"] })
   },
-  runtimeCommand: command({ command: "node", args: ["held-out.mjs"] })
+  runtimeCommand: command({ command: "node", args: ["held-out.mjs"] }),
+  focusedTestControl: command({ command: "node", args: ["focused-control.mjs"] }),
+  focusedTestMutations: (["invalid_json", "missing_email", "invalid_role"] as const)
+    .map((name) => ({
+      name,
+      command: command({ command: "held-out focused-test mutation", args: [name] })
+    }))
 });
 
 const score: PairedRepairScore = {
@@ -207,9 +213,10 @@ describe("paired live Codex repair persistence", () => {
     expect(prepared.evidenceRefs).toEqual(expect.arrayContaining([
       `artifact:sha256:${"f".repeat(64)}`,
       `manifest:sha256:${sha256(JSON.stringify(manifest))}`,
+      "checker:paired-live-codex-repair.v1",
       `environment:sha256:${environmentHash}`
     ]));
-    expect(prepared.commandRows).toHaveLength(10);
+    expect(prepared.commandRows).toHaveLength(18);
     expect(prepared.commandRows.every((row) => row.command.status === "passed")).toBe(true);
     expect(JSON.stringify(prepared.commandRows)).not.toContain("PROMPT_SENTINEL");
     expect(prepared.commandRows[0]?.command.command).toContain(
@@ -222,6 +229,13 @@ describe("paired live Codex repair persistence", () => {
       targetPatchLifecycle: "none",
       handoffArtifact: `artifact:sha256:${"f".repeat(64)}`
     });
+  });
+
+  it("attributes mutation-backed v2 artifacts to the v2 checker", () => {
+    const prepared = prepare(artifact({ kind: "krn.pairedLiveCodexRepairArtifact.v2" }));
+
+    expect(prepared.evidenceRefs).toContain("checker:paired-live-codex-repair.v2");
+    expect(prepared.evidenceRefs).not.toContain("checker:paired-live-codex-repair.v1");
   });
 
   it("never turns a failed arm command into a passed row", () => {
@@ -240,8 +254,16 @@ describe("paired live Codex repair persistence", () => {
     );
 
     expect(baselineTest?.command).toMatchObject({ status: "failed", exitCode: 1 });
+    expect(prepared.commandRows.filter((row) =>
+      row.command.command.startsWith("baseline:focused-test-")
+    )).toHaveLength(4);
+    expect(prepared.commandRows.filter((row) =>
+      row.command.command.startsWith("baseline:focused-test-")
+    ).every((row) => row.command.status === "passed")).toBe(true);
     expect(prepared.commandRows.some((row) =>
-      row.command.command.startsWith("baseline:") && row.command.status === "passed"
+      row.command.command.startsWith("baseline:typecheck ") ||
+      row.command.command.startsWith("baseline:diff-check ") ||
+      row.command.command.startsWith("baseline:held-out-runtime ")
     )).toBe(false);
     expect(prepared.candidate.metadata).toMatchObject({
       outcome: "invalid",
