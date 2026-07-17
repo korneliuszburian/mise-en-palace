@@ -1102,7 +1102,7 @@ const capturePacketBoundTargetEvidence = async (input: {
       decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
       commandOutcomes: [targetCommandProof.evidenceCommand],
       commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-      evalCandidateProposals: [foreignCandidate],
+      evalCandidateProposals: [liveCandidate, foreignCandidate],
       readGitStatus: async () => "",
       createDatabaseRuntime: async () => input.decisionRuntime
     });
@@ -1111,6 +1111,12 @@ const capturePacketBoundTargetEvidence = async (input: {
   }
   if (!foreignRejected) {
     throw new Error("Target repo harness smoke accepted a cross-project live evidence candidate");
+  }
+  const atomicReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const atomicCandidates = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (atomicCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke partially persisted mixed cross-project batch (count=${atomicCandidates.length})`);
   }
 
   return {
