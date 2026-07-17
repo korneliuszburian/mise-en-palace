@@ -232,6 +232,35 @@ describe("evidence capture retry boundary", () => {
           intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
+        const readChainCounts = async () => client<{
+          evidenceBundleCount: number;
+          reviewAssessmentCount: number;
+          feedbackDeltaCount: number;
+          memoryCandidateProposalCount: number;
+          outboxEventCount: number;
+          maintenanceCount: number;
+        }[]>`
+          select
+            (select count(*)::int from evidence_bundles
+              where execution_run_id = ${compiled.executionRun.id}) as "evidenceBundleCount",
+            (select count(*)::int from review_assessments review
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "reviewAssessmentCount",
+            (select count(*)::int from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "feedbackDeltaCount",
+            (select coalesce(sum(jsonb_array_length(feedback.memory_candidates)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "memoryCandidateProposalCount",
+            (select count(*)::int from outbox_events
+              where topic = 'feedback.delta.created'
+                and payload->>'projectId' = ${compiled.project.id}) as "outboxEventCount",
+            (select count(*)::int from maintenance_queue_records
+              where payload->>'projectId' = ${compiled.project.id}) as "maintenanceCount"
+        `;
         let transientFailure: { stderr?: string } | undefined;
         try {
           await runEvidenceCaptureCli({
@@ -246,6 +275,14 @@ describe("evidence capture retry boundary", () => {
           transientFailure = error as { stderr?: string };
         }
         expect(transientFailure?.stderr).toContain("evidence_capture (disposition=transient, retryable)");
+        expect(await readChainCounts()).toEqual([{
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          memoryCandidateProposalCount: 1,
+          outboxEventCount: 1,
+          maintenanceCount: 1
+        }]);
 
         const retry = await runEvidenceCaptureCli({
           databaseUrl: disposableDatabase.databaseUrl,
@@ -255,29 +292,7 @@ describe("evidence capture retry boundary", () => {
           intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
-        const counts = await client<{
-          evidenceBundleCount: number;
-          reviewAssessmentCount: number;
-          feedbackDeltaCount: number;
-          outboxEventCount: number;
-          maintenanceCount: number;
-        }[]>`
-          select
-            (select count(*)::int from evidence_bundles
-              where execution_run_id = ${compiled.executionRun.id}) as "evidenceBundleCount",
-            (select count(*)::int from review_assessments review
-              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
-              where bundle.execution_run_id = ${compiled.executionRun.id}) as "reviewAssessmentCount",
-            (select count(*)::int from feedback_deltas feedback
-              inner join review_assessments review on review.id = feedback.review_assessment_id
-              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
-              where bundle.execution_run_id = ${compiled.executionRun.id}) as "feedbackDeltaCount",
-            (select count(*)::int from outbox_events
-              where topic = 'feedback.delta.created'
-                and payload->>'projectId' = ${compiled.project.id}) as "outboxEventCount",
-            (select count(*)::int from maintenance_queue_records
-              where payload->>'projectId' = ${compiled.project.id}) as "maintenanceCount"
-        `;
+        const counts = await readChainCounts();
 
         expect(captureIdentityFrom(retry.stdout)).toBe(captureIdentityFrom(first.stdout));
         expect(memoryCandidateIdFrom(retry.stdout)).toBe(memoryCandidateIdFrom(first.stdout));
@@ -288,6 +303,7 @@ describe("evidence capture retry boundary", () => {
           evidenceBundleCount: 1,
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
+          memoryCandidateProposalCount: 1,
           outboxEventCount: 1,
           maintenanceCount: 1
         });
