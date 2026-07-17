@@ -1,8 +1,12 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   aggregatePairedEvalArtifactDirectories,
-  aggregatePairedEvalArtifacts
+  aggregatePairedEvalArtifacts,
+  aggregatePairedEvalResultFiles
 } from "../internal/eval/paired-live-aggregation.js";
 import type { TrackedTrialArtifact } from "../internal/eval/tracked-paired-live-codex-repair.js";
 
@@ -116,5 +120,26 @@ describe("paired live eval aggregation", () => {
       directory: "/definitely/missing/paired-trial",
       reason: "artifact_or_phase_journal_failed_validation"
     }]);
+  });
+
+  it("reads the generic live result format without treating malformed JSON as quality", async () => {
+    const directory = await mkdtemp("/tmp/krn-aggregate-generic-");
+    const valid = join(directory, "valid.json");
+    const malformed = join(directory, "malformed.json");
+    await writeFile(valid, JSON.stringify({
+      kind: "krn.genericPairedCodexEval.v1",
+      runId: "generic-win",
+      score: { outcome: "win" },
+      promptDelta: { packetOnlyByConstruction: true }
+    }));
+    await writeFile(malformed, "not-json");
+
+    const report = await aggregatePairedEvalResultFiles([
+      { family: "env-config", file: valid },
+      { family: "env-config", file: malformed }
+    ]);
+
+    expect(report.overall).toMatchObject({ wins: 1, qualityTrials: 1, invalidTrials: 1 });
+    expect(report.unreadableFiles).toHaveLength(1);
   });
 });

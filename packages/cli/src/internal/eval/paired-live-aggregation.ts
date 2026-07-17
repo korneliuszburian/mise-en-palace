@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import type {
   PairedEvalFamily,
   PairedRepairOutcome
@@ -40,12 +41,25 @@ export type PairedEvalArtifactDirectory = {
   readonly directory: string;
 };
 
+export type PairedEvalResultFile = {
+  readonly family: PairedEvalFamily;
+  readonly file: string;
+};
+
 export type PairedEvalUnreadableInput = PairedEvalArtifactDirectory & {
   readonly reason: "artifact_or_phase_journal_failed_validation";
 };
 
 export type PairedEvalReadback = PairedEvalAggregate & {
   readonly unreadableInputs: readonly PairedEvalUnreadableInput[];
+};
+
+export type PairedEvalUnreadableFile = PairedEvalResultFile & {
+  readonly reason: "generic_result_failed_validation";
+};
+
+export type PairedEvalFileReadback = PairedEvalAggregate & {
+  readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
 };
 
 const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
@@ -214,5 +228,82 @@ export const aggregatePairedEvalArtifactDirectories = async (
     families: familyAggregates,
     overall,
     unreadableInputs
+  };
+};
+
+const isGenericResult = (value: unknown): value is {
+  readonly kind: "krn.genericPairedCodexEval.v1";
+  readonly runId: string;
+  readonly score: { readonly outcome: PairedRepairOutcome };
+  readonly promptDelta: { readonly packetOnlyByConstruction: true };
+} => {
+  if (typeof value !== "object" || value === null) return false;
+  const result = value as Record<string, unknown>;
+  const score = result.score;
+  const promptDelta = result.promptDelta;
+  return result.kind === "krn.genericPairedCodexEval.v1" &&
+    typeof result.runId === "string" &&
+    typeof score === "object" && score !== null &&
+    qualityOutcomes.includes((score as Record<string, unknown>).outcome as PairedRepairOutcome) &&
+    typeof promptDelta === "object" && promptDelta !== null &&
+    (promptDelta as Record<string, unknown>).packetOnlyByConstruction === true;
+};
+
+export const aggregatePairedEvalResultFiles = async (
+  inputs: readonly PairedEvalResultFile[]
+): Promise<PairedEvalFileReadback> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadableFiles: PairedEvalUnreadableFile[] = [];
+  for (const input of inputs) {
+    try {
+      const parsed: unknown = JSON.parse(await readFile(input.file, "utf8"));
+      if (!isGenericResult(parsed)) throw new Error("invalid generic result");
+      readable.push({
+        family: input.family,
+        artifact: {
+          runId: parsed.runId,
+          status: "passed",
+          score: {
+            outcome: parsed.score.outcome,
+            baseline: { status: "pass", score: 0, checks: [], changedFiles: [] },
+            krn: { status: "pass", score: 0, checks: [], changedFiles: [] },
+            reason: "validated generic paired result"
+          }
+        } as unknown as TrackedTrialArtifact
+      });
+    } catch {
+      unreadableFiles.push({
+        ...input,
+        reason: "generic_result_failed_validation"
+      });
+    }
+  }
+  const aggregate = aggregatePairedEvalArtifacts(readable);
+  const invalidByFamily = new Map<PairedEvalFamily, number>();
+  for (const input of unreadableFiles) {
+    invalidByFamily.set(input.family, (invalidByFamily.get(input.family) ?? 0) + 1);
+  }
+  const familiesWithInvalid = aggregate.families.map((family) => ({
+    ...family,
+    totalInputs: family.totalInputs + (invalidByFamily.get(family.family) ?? 0),
+    invalidTrials: family.invalidTrials + (invalidByFamily.get(family.family) ?? 0)
+  }));
+  const overall = finalizeCounts(familiesWithInvalid.reduce<PairedEvalOutcomeCounts>(
+    (sum, family) => ({
+      wins: sum.wins + family.wins,
+      ties: sum.ties + family.ties,
+      losses: sum.losses + family.losses,
+      qualityTrials: sum.qualityTrials + family.qualityTrials,
+      invalidTrials: sum.invalidTrials + family.invalidTrials,
+      totalInputs: sum.totalInputs + family.totalInputs,
+      winRateAmongQuality: null
+    }),
+    emptyCounts()
+  ));
+  return {
+    ...aggregate,
+    families: familiesWithInvalid,
+    overall,
+    unreadableFiles
   };
 };
