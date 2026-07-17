@@ -24,6 +24,7 @@ import type {
 } from "./tracked-paired-live-codex-repair.js";
 
 export interface ObservedPairedDecisionApplication {
+  readonly governingDecisionId: string;
   readonly sourceDecisionId: string;
   readonly check: PairedDecisionApplicationRule["check"];
   readonly changedFiles: readonly string[];
@@ -80,6 +81,7 @@ export const observedPairedDecisionApplications = (input: {
     passedCheck(input.score.krn, rule.check) &&
     rule.changedFiles.every((path) => krnChangedFiles.has(path))
       ? [{
+          governingDecisionId: rule.governingDecisionId,
           sourceDecisionId: rule.sourceDecisionId,
           check: rule.check,
           changedFiles: [...rule.changedFiles],

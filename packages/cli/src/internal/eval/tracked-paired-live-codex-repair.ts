@@ -48,6 +48,7 @@ type JsonRecord = Record<string, unknown>;
 export type TrackedTrialStatus = "passed" | "invalid" | "blocked" | "unverified";
 
 export type PairedDecisionApplicationRule = {
+  readonly governingDecisionId: string;
   readonly sourceDecisionId: string;
   readonly check: HeldOutCheckName;
   readonly changedFiles: readonly string[];
@@ -331,27 +332,43 @@ const heldOutCheckNames = new Set<string>([
   "held_out_runtime"
 ]);
 
-const isDecisionApplicationRule = (value: unknown): value is PairedDecisionApplicationRule =>
-  isRecord(value) &&
-  readString(value["sourceDecisionId"]) !== undefined &&
-  typeof value["check"] === "string" &&
-  heldOutCheckNames.has(value["check"]) &&
-  Array.isArray(value["changedFiles"]) &&
-  value["changedFiles"].length > 0 &&
-  value["changedFiles"].every((path) =>
-    readString(path) !== undefined &&
-    !isAbsolute(path as string) &&
+const isSafeDecisionApplicationPath = (value: unknown): value is string => {
+  const path = readString(value);
+  return path !== undefined &&
+    !isAbsolute(path) &&
     path !== ".." &&
-    !(path as string).startsWith(`..${sep}`)
-  ) &&
-  new Set(value["changedFiles"]).size === value["changedFiles"].length;
+    !path.startsWith(`..${sep}`);
+};
+
+const hasSafeDecisionApplicationPaths = (value: unknown): value is readonly string[] =>
+  Array.isArray(value) &&
+  value.length > 0 &&
+  value.every(isSafeDecisionApplicationPath) &&
+  new Set(value).size === value.length;
+
+const isDecisionApplicationRule = (value: unknown): value is PairedDecisionApplicationRule => {
+  if (!isRecord(value)) return false;
+  const governingDecisionId = readString(value["governingDecisionId"]);
+  const sourceDecisionId = readString(value["sourceDecisionId"]);
+  const check = value["check"];
+  return governingDecisionId !== undefined &&
+    sourceDecisionId !== undefined &&
+    governingDecisionId !== sourceDecisionId &&
+    typeof check === "string" &&
+    heldOutCheckNames.has(check) &&
+    hasSafeDecisionApplicationPaths(value["changedFiles"]);
+};
 
 const hasUnambiguousDecisionApplicationProofs = (
   rules: readonly PairedDecisionApplicationRule[]
 ): boolean => {
+  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
+  const sourceDecisionIds = rules.map((rule) => rule.sourceDecisionId);
   const checks = rules.map((rule) => rule.check);
   const changedFiles = rules.flatMap((rule) => rule.changedFiles);
-  return new Set(checks).size === checks.length &&
+  return new Set(governingDecisionIds).size === governingDecisionIds.length &&
+    new Set(sourceDecisionIds).size === sourceDecisionIds.length &&
+    new Set(checks).size === checks.length &&
     new Set(changedFiles).size === changedFiles.length;
 };
 
@@ -361,11 +378,13 @@ const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
   if (!Array.isArray(requiredDecisionIds) || !Array.isArray(rules) || !rules.every(isDecisionApplicationRule)) {
     return false;
   }
-  const ruleIds = rules.map((rule) => rule.sourceDecisionId);
-  return new Set(ruleIds).size === ruleIds.length &&
+  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
+  return new Set(requiredDecisionIds).size === requiredDecisionIds.length &&
     hasUnambiguousDecisionApplicationProofs(rules) &&
-    requiredDecisionIds.length === ruleIds.length &&
-    requiredDecisionIds.every((id) => typeof id === "string" && ruleIds.includes(id));
+    requiredDecisionIds.length === governingDecisionIds.length &&
+    requiredDecisionIds.every((id) =>
+      typeof id === "string" && governingDecisionIds.includes(id)
+    );
 };
 
 const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => {
@@ -410,24 +429,36 @@ const packetShapeReasons = (
 
 const packetAuthorityReasons = (
   body: JsonRecord | undefined,
-  requiredDecisionIds: readonly string[]
+  manifest: Pick<PairedTrialManifest, "requiredDecisionIds" | "decisionApplications">
 ): readonly string[] => {
   const governingDecisionIds = readStringArray(body?.["governingDecisionIds"]);
-  const missingRequired = requiredDecisionIds.filter((id) => !governingDecisionIds.includes(id));
+  const sourceDecisionIds = readStringArray(body?.["sourceDecisionIds"]);
+  const missingRequired = manifest.requiredDecisionIds.filter((id) =>
+    !governingDecisionIds.includes(id)
+  );
+  const missingSourceDecisions = manifest.decisionApplications
+    .map((rule) => rule.sourceDecisionId)
+    .filter((id) => !sourceDecisionIds.includes(id));
   const abstention = nestedRecord(body, "abstentionScore");
   return [
     ...(missingRequired.length === 0 ? [] : [`packet lacks task-relevant governing decisions: ${missingRequired.join(", ")}`]),
+    ...(missingSourceDecisions.length === 0 ? [] : [
+      `packet lacks exact SourceDecision subjects: ${missingSourceDecisions.join(", ")}`
+    ]),
     ...(abstention?.["status"] === "ready" ? [] : ["packet abstains or is not ready for the trial"])
   ];
 };
 
 export const validateTrialPacket = (
   packet: unknown,
-  manifest: Pick<PairedTrialManifest, "runId" | "projectId" | "taskId" | "requiredDecisionIds">
+  manifest: Pick<
+    PairedTrialManifest,
+    "runId" | "projectId" | "taskId" | "requiredDecisionIds" | "decisionApplications"
+  >
 ): TrialPacketValidation => {
   const root = isRecord(packet) ? packet : undefined;
   const shape = packetShapeReasons(root, manifest);
-  const reasons = [...shape.reasons, ...packetAuthorityReasons(shape.body, manifest.requiredDecisionIds)];
+  const reasons = [...shape.reasons, ...packetAuthorityReasons(shape.body, manifest)];
   return {
     valid: reasons.length === 0,
     reasons,
@@ -1929,9 +1960,6 @@ const loadTrackedTrialManifest = async (path: string): Promise<PairedTrialManife
   return parseTrackedTrialManifest(parsed);
 };
 
-export const defaultTrackedTrialManifestPath = (): string =>
-  fileURLToPath(new URL("../../../../../tests/fixtures/paired-live-codex-repair/manifest.json", import.meta.url));
-
 const trustedRepositoryRoot = (): string =>
   resolve(fileURLToPath(new URL("../../../../../", import.meta.url)));
 
@@ -2002,7 +2030,7 @@ const fetchDecisionPacketViaMcp = async (
 };
 
 export const runTrackedTrialCommand = async (
-  manifestPath = defaultTrackedTrialManifestPath(),
+  manifestPath: string,
   attemptDirectory?: string
 ): Promise<TrackedTrialArtifact> => {
   const trustedManifestPath = await resolveTrustedRepositoryPath(manifestPath, "trial manifest path");

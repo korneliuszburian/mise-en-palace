@@ -30,8 +30,18 @@ const manifest: PairedTrialManifest = {
   task: "Repair weak-json-boundary-typescript with bounded validation.",
   requiredDecisionIds: ["decision-1", "decision-2"],
   decisionApplications: [
-    { sourceDecisionId: "decision-1", check: "unknown_first", changedFiles: ["src/config.ts"] },
-    { sourceDecisionId: "decision-2", check: "finite_result_state", changedFiles: ["src/userService.ts"] }
+    {
+      governingDecisionId: "decision-1",
+      sourceDecisionId: "source-decision-1",
+      check: "unknown_first",
+      changedFiles: ["src/config.ts"]
+    },
+    {
+      governingDecisionId: "decision-2",
+      sourceDecisionId: "source-decision-2",
+      check: "finite_result_state",
+      changedFiles: ["src/userService.ts"]
+    }
   ],
   runId: "run-1",
   codex: {
@@ -79,6 +89,7 @@ const packet = {
       objective: "Repair weak-json-boundary-typescript safely."
     },
     governingDecisionIds: ["decision-1", "decision-2"],
+    sourceDecisionIds: ["source-decision-1", "source-decision-2"],
     abstentionScore: { status: "ready" }
   }
 };
@@ -223,6 +234,17 @@ describe("tracked paired live Codex repair", () => {
         "packet abstains or is not ready for the trial"
       ])
     });
+
+    expect(validateTrialPacket({
+      ...packet,
+      packet: {
+        ...packet.packet,
+        sourceDecisionIds: ["source-decision-1"]
+      }
+    }, manifest)).toMatchObject({
+      valid: false,
+      reasons: ["packet lacks exact SourceDecision subjects: source-decision-2"]
+    });
   });
 
   it("hashes file content and relative paths, including untracked files", async () => {
@@ -288,11 +310,26 @@ describe("tracked paired live Codex repair", () => {
         check: "unknown_first"
       }))
     })).toThrow("Invalid tracked paired-trial manifest");
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      decisionApplications: manifest.decisionApplications.map((rule) => ({
+        ...rule,
+        sourceDecisionId: "same-source-decision"
+      }))
+    })).toThrow("Invalid tracked paired-trial manifest");
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      requiredDecisionIds: ["decision-1", "decision-1"]
+    })).toThrow("Invalid tracked paired-trial manifest");
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      decisionApplications: manifest.decisionApplications.map((rule) => ({
+        ...rule,
+        governingDecisionId: "decision-1"
+      }))
+    })).toThrow("Invalid tracked paired-trial manifest");
 
-    const root = await mkdtemp(join(
-      resolve(process.cwd(), "../../tests/fixtures/paired-live-codex-repair"),
-      "krn-tracked-trial-manifest-"
-    ));
+    const root = await mkdtemp(join(process.cwd(), ".krn-tracked-trial-manifest-"));
     const escapedPath = join(root, "escaped.json");
     const symlinkPath = join(root, "escaped-source");
     const manifestSymlinkPath = join(root, "escaped-manifest.json");
