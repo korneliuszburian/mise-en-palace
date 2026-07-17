@@ -117,6 +117,7 @@ export interface RetrieveActivationCandidatesResult {
   antiMemoryRecords: readonly AntiMemoryRecord[];
   antiMemoryCandidates: readonly AntiMemoryCandidate[];
   diagnostics: ActivationRetrievalDiagnostics;
+  sourceConsensusTimeline: ReturnType<typeof buildSourceConsensusTimelineReadback>;
 }
 
 export interface PersistActivationTraceInput {
@@ -711,6 +712,13 @@ export const retrieveActivationCandidates = async (
       candidates: [],
       antiMemoryRecords: [],
       antiMemoryCandidates: [],
+      sourceConsensusTimeline: buildSourceConsensusTimelineReadback({
+        sourceClaims: [],
+        sourceClaimEdges: [],
+        sourceDecisionEdges: [],
+        sourceRejections: [],
+        now: activationNow
+      }),
       diagnostics: buildActivationRetrievalDiagnostics({
         projectScoped: false,
         memoryRecordCount: 0,
@@ -971,6 +979,7 @@ export const retrieveActivationCandidates = async (
     candidates,
     antiMemoryRecords,
     antiMemoryCandidates,
+    sourceConsensusTimeline: sourceConsensus,
     diagnostics: buildActivationRetrievalDiagnostics({
       projectScoped: true,
       memoryRecordCount: memoryRecords.length,

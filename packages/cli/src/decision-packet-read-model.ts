@@ -16,6 +16,7 @@ import type {
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
   SourceClaimAuthorityStatus,
+  SourceConsensusTimelineReadback,
   SourceDecisionTargetType,
   SourceUsefulnessOutcome,
   TaskContractStatus,
@@ -160,6 +161,7 @@ export interface DecisionPacketReadModelActivationDecision {
 
 export interface DecisionPacketReadModelActivationTrace {
   retrievalRunId: string;
+  sourceConsensusTimeline?: SourceConsensusTimelineReadback;
   candidates: DecisionPacketReadModelActivationCandidate[];
   decisions: DecisionPacketReadModelActivationDecision[];
 }

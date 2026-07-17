@@ -2178,7 +2178,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     }
 
     const retrievalRunQuery = db
-      .select({ id: retrievalRuns.id })
+      .select({ id: retrievalRuns.id, metadata: retrievalRuns.metadata })
       .from(retrievalRuns)
       .where(and(
         eq(retrievalRuns.id, retrievalRunId),
@@ -2207,6 +2207,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
 
     return {
       retrievalRunId,
+      metadata: ownedRetrievalRun.metadata,
       candidates: retrievalCandidateRows.map(mapRetrievalCandidate),
       decisions: activationDecisionRows.map(mapActivationDecision)
     };

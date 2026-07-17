@@ -476,6 +476,7 @@ export const compileHarnessPlan = async (
     retrievalRepository: dependencies.retrievalRepository,
     metadata: {
       conflictCount: conflictResult.conflictSets.length,
+      sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
       ...targetReadModelMetadata(input, targetOwnerFileRecall)
     }
   });

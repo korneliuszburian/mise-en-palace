@@ -223,6 +223,7 @@ export interface HarnessRunAggregate {
   contextAssembly?: ContextAssembly;
   activationTrace?: {
     retrievalRunId: string;
+    metadata?: Record<string, unknown>;
     candidates: RetrievalCandidateRecord[];
     decisions: ActivationDecisionRecord[];
   };
