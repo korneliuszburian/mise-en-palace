@@ -23,6 +23,7 @@ import {
 import {
   createExpireStaleMemoryMaintenanceHandler
 } from "../../repositories/expire-stale-memory-maintenance-handler.js";
+import { runMaintenanceQueueRecord } from "../../repositories/maintenance-queue-executor.js";
 import {
   maintenanceQueueTypes
 } from "../../repositories/maintenance-queue-types.js";
@@ -472,6 +473,49 @@ export const runMaintenanceQueueSmokeCheck = async (
     const candidateHandlerB = createExpireStaleMemoryMaintenanceHandler({
       memoryRepository: candidateMemoryRepositoryB
     });
+    const executorSuccess = await repository.enqueueMaintenanceQueue({
+      jobType: "expire_stale_memory",
+      payload: {
+        projectId: candidateProject.id,
+        olderThan: "2026-07-08T00:00:00.000Z",
+        reason: "executor production proposal readback"
+      },
+      runAfter: smokeFixtureClocks.maintenanceQueues.runAfter
+    });
+    maintenanceQueueIds.push(executorSuccess.id);
+    const executorSuccessResult = await runMaintenanceQueueRecord({
+      repository,
+      recordId: executorSuccess.id,
+      handlers: [candidateHandlerA]
+    });
+    requireStatus(executorSuccessResult.record, "succeeded", "executor production proposal readback");
+    if (executorSuccessResult.createdReviewCandidates.length !== 1) {
+      throw new Error("Maintenance queue smoke executor did not persist one review candidate");
+    }
+    const executorForged = await repository.enqueueMaintenanceQueue({
+      jobType: "expire_stale_memory",
+      payload: {
+        projectId: candidateProject.id,
+        olderThan: "2026-07-09T00:00:00.000Z",
+        reason: "executor forged boundary readback"
+      },
+      runAfter: smokeFixtureClocks.maintenanceQueues.runAfter
+    });
+    maintenanceQueueIds.push(executorForged.id);
+    const executorForgedResult = await runMaintenanceQueueRecord({
+      repository,
+      recordId: executorForged.id,
+      handlers: [{
+        jobType: "expire_stale_memory",
+        declaredWrites: ["memory_records"],
+        async run() {
+          throw new Error("forged handler must not execute");
+        }
+      }]
+    });
+    if (executorForgedResult.status !== "retried" || executorForgedResult.handlerWriteBoundary?.status !== "failed") {
+      throw new Error("Maintenance queue smoke did not fail closed on forged executor write boundary");
+    }
     const [concurrentOutcomeA, concurrentOutcomeB] = await Promise.all([
       candidateHandlerA.run({
         record: candidateProofRecord,
@@ -520,7 +564,7 @@ export const runMaintenanceQueueSmokeCheck = async (
     const remainingMarkerCount = await countMarkerRows(client, marker);
     const candidateCleanupDeletedCount = await projectRepository.cleanupFixtureProjectRecords(marker);
     cleanedUp =
-      cleanup.deletedCount === enqueuedRecords.length &&
+      cleanup.deletedCount === maintenanceQueueIds.length &&
       candidateCleanupDeletedCount === 1 &&
       remainingMarkerCount === 0;
 
@@ -544,11 +588,13 @@ export const runMaintenanceQueueSmokeCheck = async (
       cleanedUp
     };
   } catch (error) {
+    await repository.cleanupTestMaintenanceQueues({ maintenanceQueueIds });
     await projectRepository.cleanupFixtureProjectRecords(marker);
     await deleteMarkerRows(client, marker);
     throw error;
   } finally {
     if (!cleanedUp) {
+      await repository.cleanupTestMaintenanceQueues({ maintenanceQueueIds });
       await projectRepository.cleanupFixtureProjectRecords(marker);
       await deleteMarkerRows(client, marker);
     }
