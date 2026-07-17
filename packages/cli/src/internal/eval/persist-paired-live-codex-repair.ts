@@ -278,7 +278,9 @@ const artifactEvidenceRefs = (
   `packet:${artifact.packet.checksum ?? "unknown"}`,
   `artifact:sha256:${artifact.artifactHash}`,
   `manifest:sha256:${artifact.manifestHash}`,
-  `checker:paired-live-codex-repair.v1`,
+  artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
+    ? "checker:paired-live-codex-repair.v2"
+    : "checker:paired-live-codex-repair.v1",
   `environment:sha256:${artifact.execution.environmentProfileHash ?? "unknown"}`,
   ...(artifact.execution.targets?.baseline.after?.patchHash === undefined
     ? []
@@ -331,7 +333,7 @@ const scoreCommandRows = (artifact: TrackedTrialArtifact) => {
   if (score === undefined) return [];
   return (["baseline", "krn"] as const).flatMap((arm) => {
     const armScore = score[arm];
-    const rows = [
+    const ordinaryRows = [
       ...(armScore.commands === undefined ? [] : [
         pairedCommandEvidence(arm, "test", armScore.commands.test),
         pairedCommandEvidence(arm, "typecheck", armScore.commands.typecheck),
@@ -341,9 +343,17 @@ const scoreCommandRows = (artifact: TrackedTrialArtifact) => {
         ? []
         : [pairedCommandEvidence(arm, "held-out-runtime", armScore.runtimeCommand)])
     ];
+    const proofRows = [
+      ...(armScore.focusedTestControl === undefined
+        ? []
+        : [pairedCommandEvidence(arm, "focused-test-control", armScore.focusedTestControl)]),
+      ...(armScore.focusedTestMutations ?? []).map((mutation) =>
+        pairedCommandEvidence(arm, `focused-test-mutation-${mutation.name}`, mutation.command)
+      )
+    ];
     return armScore.status === "pass"
-      ? rows
-      : rows.filter((row) => row.command.status !== "passed");
+      ? [...ordinaryRows, ...proofRows]
+      : [...ordinaryRows.filter((row) => row.command.status !== "passed"), ...proofRows];
   });
 };
 

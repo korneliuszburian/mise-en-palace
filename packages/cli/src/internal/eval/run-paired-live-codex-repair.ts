@@ -31,12 +31,12 @@ const main = async (): Promise<void> => {
   });
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot: checkerRoot,
-    evaluatorVersion: "paired-live-codex-repair.v1",
-    checkerVersion: "paired-live-codex-repair-checker.v1"
+    evaluatorVersion: "paired-live-codex-repair.v2",
+    checkerVersion: "paired-live-codex-repair-checker.v2"
   });
 
   const output = {
-    kind: "krn.pairedLiveCodexRepair.score.v1",
+    kind: "krn.pairedLiveCodexRepair.score.v2",
     ...result,
     environmentFingerprint,
     inputs: {

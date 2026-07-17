@@ -176,7 +176,21 @@ const checkerEvidence = (score: HeldOutArmScore) => [
   ]),
   ...(score.runtimeCommand === undefined
     ? []
-    : [pairedCommandEvidence("krn", "post-application-held-out-runtime", score.runtimeCommand)])
+    : [pairedCommandEvidence("krn", "post-application-held-out-runtime", score.runtimeCommand)]),
+  ...(score.focusedTestControl === undefined
+    ? []
+    : [pairedCommandEvidence(
+        "krn",
+        "post-application-focused-test-control",
+        score.focusedTestControl
+      )]),
+  ...(score.focusedTestMutations ?? []).map((mutation) =>
+    pairedCommandEvidence(
+      "krn",
+      `post-application-focused-test-mutation-${mutation.name}`,
+      mutation.command
+    )
+  )
 ];
 
 const applicationEvidenceRefs = (

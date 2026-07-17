@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -51,6 +51,7 @@ export type HeldOutCheck = {
   | "invalid_role"
   | "unknown_first"
   | "finite_result_state"
+  | "focused_test_control"
   | "focused_tests"
   | "forbidden_files"
   | "target_test"
@@ -73,6 +74,15 @@ export type HeldOutArmScore = {
     readonly diffCheck: CommandResult;
   };
   readonly runtimeCommand?: CommandResult;
+  readonly focusedTestControl?: CommandResult;
+  readonly focusedTestMutations?: readonly FocusedTestMutationProof[];
+};
+
+export type FocusedTestMutationName = "invalid_json" | "missing_email" | "invalid_role";
+
+export type FocusedTestMutationProof = {
+  readonly name: FocusedTestMutationName;
+  readonly command: CommandResult;
 };
 
 export type PairedRepairScore = {
@@ -157,6 +167,8 @@ export type TargetRepairScoreInput = {
     readonly diffCheck: CommandResult;
   };
   readonly runtimeCommand?: CommandResult;
+  readonly focusedTestControl?: CommandResult;
+  readonly focusedTestMutations?: readonly FocusedTestMutationProof[];
   readonly runtimeAvailable: boolean;
   readonly observations: {
     readonly invalidJson: HeldOutObservation;
@@ -254,35 +266,46 @@ const checkFiniteResult = (files: TargetSourceFiles): HeldOutCheck => {
   };
 };
 
-const stringifiedObjectBodies = (sourceText: string): readonly string[] =>
-  [...sourceText.matchAll(/JSON\.stringify\s*\(\s*\{([\s\S]*?)\}\s*\)/g)]
-    .map((match) => match[1] ?? "");
-
 const checkFocusedTests = (
-  files: TargetSourceFiles,
-  changedFiles: readonly string[]
+  changedFiles: readonly string[],
+  control: CommandResult | undefined,
+  mutations: readonly FocusedTestMutationProof[] | undefined
 ): HeldOutCheck => {
-  const tests = source(files, "tests/userService.test.ts");
-  const objectBodies = stringifiedObjectBodies(tests);
-  const hasBoundaryCall = /\bcreateUserFromJson\s*\(/.test(tests);
-  const hasMalformedJson = /(["'`])\{\1/.test(tests);
-  const hasMissingEmail = objectBodies.some((body) => !/\bemail\s*:/.test(body));
-  const hasUnsupportedRole = objectBodies.some((body) => {
-    const role = body.match(/\brole\s*:\s*(["'`])([^"'`]+)\1/);
-    return role !== null && role[2] !== "admin" && role[2] !== "member";
-  });
+  const requiredMutations: readonly FocusedTestMutationName[] = [
+    "invalid_json",
+    "missing_email",
+    "invalid_role"
+  ];
+  const passedMutations = new Set(
+    (mutations ?? [])
+      .filter((mutation) => mutation.command.exitCode === 0)
+      .map((mutation) => mutation.name)
+  );
+  const missingMutations = requiredMutations.filter((name) => !passedMutations.has(name));
   const changedFocusedTest = changedFiles.includes("tests/userService.test.ts");
-  const isPassed = changedFocusedTest && hasBoundaryCall &&
-    hasMalformedJson && hasMissingEmail && hasUnsupportedRole;
+  const controlPassed = control?.exitCode === 0;
+  const isPassed = changedFocusedTest && controlPassed && missingMutations.length === 0;
 
   return {
     name: "focused_tests",
     passed: isPassed,
     details: isPassed
-      ? "Focused tests exercise malformed JSON, missing email, and unsupported role inputs."
-      : "Focused invalid-input test coverage is incomplete."
+      ? "Focused tests killed malformed-JSON, missing-email, and unsupported-role mutants."
+      : changedFocusedTest
+        ? controlPassed
+          ? `Focused tests did not kill mutants: ${missingMutations.join(", ")}.`
+          : "The unmutated focused-test control failed in the held-out runtime."
+        : "The focused public-seam test file was not changed."
   };
 };
+
+const checkFocusedTestControl = (control: CommandResult | undefined): HeldOutCheck => ({
+  name: "focused_test_control",
+  passed: control?.exitCode === 0,
+  details: control?.exitCode === 0
+    ? "The unmutated focused-test control passed in the held-out runtime."
+    : "The unmutated focused-test control was unavailable or failed."
+});
 
 const checkAllowedFiles = (changedFiles: readonly string[]): HeldOutCheck => {
   const forbidden = changedFiles.filter((path) =>
@@ -361,7 +384,12 @@ export const scoreTargetRepair = (
     },
     checkUnknownFirst(input.sourceFiles),
     checkFiniteResult(input.sourceFiles),
-    checkFocusedTests(input.sourceFiles, input.changedFiles),
+    checkFocusedTestControl(input.focusedTestControl),
+    checkFocusedTests(
+      input.changedFiles,
+      input.focusedTestControl,
+      input.focusedTestMutations
+    ),
     checkAllowedFiles(input.changedFiles),
     {
       name: "target_test",
@@ -392,7 +420,8 @@ export const scoreTargetRepair = (
     "target_test",
     "target_typecheck",
     "target_diff_check",
-    "held_out_runtime"
+    "held_out_runtime",
+    "focused_test_control"
   ]);
   const behaviorChecks = new Set<HeldOutCheck["name"]>([
     "invalid_json",
@@ -424,7 +453,13 @@ export const scoreTargetRepair = (
     changedFiles: [...input.changedFiles],
     changeManifest,
     commands: input.commands,
-    ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand })
+    ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
+    ...(input.focusedTestControl === undefined
+      ? {}
+      : { focusedTestControl: input.focusedTestControl }),
+    ...(input.focusedTestMutations === undefined
+      ? {}
+      : { focusedTestMutations: input.focusedTestMutations })
   };
 };
 
@@ -659,6 +694,8 @@ export const selectHeldOutRuntimePermissionFlag = (
 };
 
 const runtimeWorkerSource = `
+import { writeSync } from "node:fs";
+
 const marker = "KRN_HELD_OUT_RUNTIME:";
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
 const observeInput = (createUser, listUsers, raw) => {
@@ -697,9 +734,9 @@ try {
     missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" })),
     invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }))
   };
-  process.stdout.write(marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
+  writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
 } catch {
-  process.stdout.write(marker + JSON.stringify({ runtimeAvailable: false }) + "\\n");
+  writeSync(1, marker + JSON.stringify({ runtimeAvailable: false }) + "\\n");
   process.exitCode = 1;
 }
 `;
@@ -805,6 +842,208 @@ export const runHeldOutRuntimeWorker = async (
   }
 };
 
+const focusedTestMutationNames: readonly FocusedTestMutationName[] = [
+  "invalid_json",
+  "missing_email",
+  "invalid_role"
+];
+
+const focusedTestMutationMarker = (name: FocusedTestMutationName): string =>
+  `KRN_FOCUSED_TEST_MUTATION:${name}`;
+
+const parseJsonUnknown = (raw: string): unknown => {
+  const parsed: unknown = JSON.parse(raw);
+  return parsed;
+};
+
+const focusedTestMutationModule = (name: FocusedTestMutationName): string => `
+import { writeSync } from "node:fs";
+import * as original from "./index.original.js";
+export * from "./index.original.js";
+
+const mutationName = ${JSON.stringify(name)};
+const marker = ${JSON.stringify(focusedTestMutationMarker(name))};
+const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
+const parseJson = ${parseJsonUnknown.toString()};
+const parsedRecord = (raw) => {
+  try {
+    const parsed = parseJson(raw);
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+};
+const isMalformedJson = (raw) => {
+  try {
+    parseJson(raw);
+    return false;
+  } catch {
+    return true;
+  }
+};
+const mutatedRaw = (raw) => {
+  if (mutationName === "invalid_json") {
+    return isMalformedJson(raw)
+      ? JSON.stringify({ email: "krn-mutant@example.com", role: "admin" })
+      : undefined;
+  }
+  const parsed = parsedRecord(raw);
+  if (parsed === undefined) return undefined;
+  if (mutationName === "missing_email") {
+    return "email" in parsed
+      ? undefined
+      : JSON.stringify({ ...parsed, email: "krn-mutant@example.com" });
+  }
+  return "role" in parsed && parsed.role !== "admin" && parsed.role !== "member"
+    ? JSON.stringify({ ...parsed, role: "admin" })
+    : undefined;
+};
+
+export const createUserFromJson = (raw, env) => {
+  const replacement = mutatedRaw(raw);
+  if (replacement === undefined) return original.createUserFromJson(raw, env);
+  writeSync(1, marker + "\\n");
+  return original.createUserFromJson(replacement, env);
+};
+`;
+
+const skippedFocusedTestMutations = (reason: string): readonly FocusedTestMutationProof[] =>
+  focusedTestMutationNames.map((name) => ({
+    name,
+    command: {
+      command: "held-out focused-test mutation",
+      args: [name],
+      exitCode: null,
+      stdout: "",
+      stderr: `skipped: ${reason}`,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      durationMs: 0
+    }
+  }));
+
+const skippedFocusedTestControl = (reason: string): CommandResult => ({
+  command: "held-out focused-test control",
+  args: [],
+  exitCode: null,
+  stdout: "",
+  stderr: `skipped: ${reason}`,
+  startedAt: new Date().toISOString(),
+  completedAt: new Date().toISOString(),
+  durationMs: 0
+});
+
+const mutationProofCommand = (
+  name: FocusedTestMutationName,
+  result: CommandResult,
+  controlPassed: boolean
+): CommandResult => {
+  const markerObserved = result.stdout.split("\n").includes(focusedTestMutationMarker(name));
+  const mutationKilled = controlPassed &&
+    markerObserved &&
+    result.exitCode !== null &&
+    result.exitCode !== 0;
+  return {
+    command: "held-out focused-test mutation",
+    args: [name],
+    exitCode: mutationKilled ? 0 : 1,
+    stdout: [
+      `mutationMarkerObserved=${String(markerObserved)}`,
+      `unmutatedControlPassed=${String(controlPassed)}`,
+      `mutatedTestExitCode=${String(result.exitCode)}`,
+      result.stdout
+    ].join("\n"),
+    stderr: result.stderr,
+    ...(result.startedAt === undefined ? {} : { startedAt: result.startedAt }),
+    ...(result.completedAt === undefined ? {} : { completedAt: result.completedAt }),
+    ...(result.durationMs === undefined ? {} : { durationMs: result.durationMs })
+  };
+};
+
+const failedMutationSetup = (name: FocusedTestMutationName, error: unknown): CommandResult => {
+  const observedAt = new Date().toISOString();
+  return {
+    command: "held-out focused-test mutation setup",
+    args: [name],
+    exitCode: 1,
+    stdout: "",
+    stderr: error instanceof Error ? error.message : String(error),
+    startedAt: observedAt,
+    completedAt: observedAt,
+    durationMs: 0
+  };
+};
+
+const runPermissionedFocusedTest = async (
+  root: string,
+  checkerRoot: string,
+  sandboxRoot: string,
+  permissionFlag: HeldOutRuntimePermissionFlag
+): Promise<CommandResult> => {
+  const canonicalRoot = await realpath(root);
+  return runCommand(
+    process.execPath,
+    [
+      permissionFlag,
+      `--allow-fs-read=${canonicalRoot}`,
+      join(canonicalRoot, "tests/userService.test.js")
+    ],
+    checkerRoot,
+    {
+      env: targetEnvironment(sandboxRoot),
+      timeoutMs: targetCommandTimeoutMs
+    }
+  );
+};
+
+export const runFocusedTestMutationSuite = async (
+  compileRoot: string,
+  checkerRoot: string,
+  sandboxRoot: string
+): Promise<{
+  readonly control: CommandResult;
+  readonly mutations: readonly FocusedTestMutationProof[];
+}> => {
+  const permissionFlag = selectHeldOutRuntimePermissionFlag();
+  if (permissionFlag === undefined) {
+    return {
+      control: skippedFocusedTestControl("Node filesystem permissions are unsupported"),
+      mutations: skippedFocusedTestMutations("Node filesystem permissions are unsupported")
+    };
+  }
+
+  const control = await runPermissionedFocusedTest(
+    compileRoot,
+    checkerRoot,
+    sandboxRoot,
+    permissionFlag
+  );
+  const mutations = await Promise.all(focusedTestMutationNames.map(async (name) => {
+    let result: CommandResult;
+    try {
+      const mutationRoot = join(sandboxRoot, `focused-test-${name}`);
+      await cp(compileRoot, mutationRoot, { recursive: true });
+      const indexPath = join(mutationRoot, "src/index.js");
+      await rename(indexPath, join(mutationRoot, "src/index.original.js"));
+      await writeFile(indexPath, focusedTestMutationModule(name), {
+        encoding: "utf8",
+        flag: "wx",
+        mode: 0o600
+      });
+      result = await runPermissionedFocusedTest(
+        mutationRoot,
+        checkerRoot,
+        sandboxRoot,
+        permissionFlag
+      );
+    } catch (error) {
+      result = failedMutationSetup(name, error);
+    }
+    return { name, command: mutationProofCommand(name, result, control.exitCode === 0) };
+  }));
+  return { control, mutations };
+};
+
 export const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
@@ -832,6 +1071,8 @@ export const runHeldOutTargetRepairChecker = async (
         diffCheck: skipped("git diff --check")
       },
       runtimeAvailable: false,
+      focusedTestControl: skippedFocusedTestControl("target preflight was invalid"),
+      focusedTestMutations: skippedFocusedTestMutations("target preflight was invalid"),
       observations: unknownRuntimeObservations()
     });
   }
@@ -853,6 +1094,7 @@ export const runHeldOutTargetRepairChecker = async (
     })
   ]);
   const compileRoot = await mkdtemp(join(tmpdir(), "krn-paired-repair-"));
+  try {
   const compile = await runCommand(
     "pnpm",
     [
@@ -874,20 +1116,21 @@ export const runHeldOutTargetRepairChecker = async (
   let runtimeAvailable = false;
   let observations = unknownRuntimeObservations();
   let runtimeCommand = skipped("held-out runtime");
+  let focusedTestControl = skippedFocusedTestControl("target compilation failed");
+  let focusedTestMutations = skippedFocusedTestMutations("target compilation failed");
 
   if (compile.exitCode === 0) {
-    const runtime = await runHeldOutRuntimeWorker(
-      compileRoot,
-      input.checkerRoot,
-      sandboxRoot
-    );
+    const [runtime, mutationSuite] = await Promise.all([
+      runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot),
+      runFocusedTestMutationSuite(compileRoot, input.checkerRoot, sandboxRoot)
+    ]);
     runtimeAvailable = runtime.runtimeAvailable;
     runtimeCommand = runtime.command;
     observations = runtime.observations;
+    focusedTestControl = mutationSuite.control;
+    focusedTestMutations = mutationSuite.mutations;
   }
 
-  await rm(compileRoot, { recursive: true, force: true });
-  await rm(sandboxRoot, { recursive: true, force: true });
   const postflight = await targetPreflight(input);
   const finalManifest: TargetChangeManifest = {
     ...postflight,
@@ -901,9 +1144,15 @@ export const runHeldOutTargetRepairChecker = async (
     changeManifest: finalManifest,
     commands: { test, typecheck, diffCheck },
     runtimeCommand,
+    focusedTestControl,
+    focusedTestMutations,
     runtimeAvailable,
     observations
   });
+  } finally {
+    await rm(compileRoot, { recursive: true, force: true });
+    await rm(sandboxRoot, { recursive: true, force: true });
+  }
 };
 
 export const runPairedRepairChecker = async (input: {
