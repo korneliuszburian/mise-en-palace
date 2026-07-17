@@ -200,6 +200,8 @@ describe("parseMemoryArgs", () => {
       "add",
       "--run-id",
       "run-1",
+      "--project",
+      "project-1",
       "--rejected-claim",
       "Markdown is runtime memory",
       "--invalidated-by-source-claim-id",
@@ -208,6 +210,7 @@ describe("parseMemoryArgs", () => {
       command: {
         kind: "memoryAntiAdd",
         persist: false,
+        projectId: "project-1",
         runId: "run-1",
         rejectedClaim: "Markdown is runtime memory",
         invalidatedBySourceClaimId: "source-claim-1",

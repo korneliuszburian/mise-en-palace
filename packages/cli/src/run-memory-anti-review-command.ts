@@ -144,7 +144,8 @@ const runPromote = async (
 
   const databaseRuntime = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory anti promote --persist"
+    "KRN_DATABASE_URL is required for krn memory anti promote --persist",
+    command.projectId
   );
 
   try {
@@ -154,6 +155,18 @@ const runPromote = async (
     if (getSourceClaimForProject === undefined) {
       throw new Error(
         "Project-scoped SourceClaim lookup is required before promoting anti-memory candidates. No AntiMemoryRecord created."
+      );
+    }
+
+    const candidate = await databaseRuntime.memoryRepository.getAntiMemoryCandidateById(
+      reviewInput.candidateId
+    );
+    if (candidate === undefined) {
+      throw new Error(`Anti-memory candidate not found: ${reviewInput.candidateId}`);
+    }
+    if (command.projectId !== undefined && candidate.projectId !== command.projectId) {
+      throw new Error(
+        `--project ${command.projectId} does not match candidate project ${candidate.projectId}`
       );
     }
 
@@ -200,11 +213,24 @@ const runReject = async (
 
   const databaseRuntime = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory anti reject --persist"
+    "KRN_DATABASE_URL is required for krn memory anti reject --persist",
+    command.projectId
   );
   const reason = requireMemoryReviewRejectionReason(reviewInput);
 
   try {
+    const candidate = await databaseRuntime.memoryRepository.getAntiMemoryCandidateById(
+      reviewInput.candidateId
+    );
+    if (candidate === undefined) {
+      throw new Error(`Anti-memory candidate not found: ${reviewInput.candidateId}`);
+    }
+    if (command.projectId !== undefined && candidate.projectId !== command.projectId) {
+      throw new Error(
+        `--project ${command.projectId} does not match candidate project ${candidate.projectId}`
+      );
+    }
+
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.rejectAntiMemoryCandidate({
       candidateId: reviewInput.candidateId,
       reviewer: reviewInput.reviewer,

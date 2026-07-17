@@ -380,6 +380,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiAdd";
       persist: boolean;
+      projectId?: string;
       runId?: string;
       rejectedClaim?: string;
       reason?: string;
@@ -405,6 +406,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiPromote";
       persist: boolean;
+      projectId?: string;
       candidateId?: string;
       reviewer?: string;
       decision?: string;
@@ -414,6 +416,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiReject";
       persist: boolean;
+      projectId?: string;
       candidateId?: string;
       reviewer?: string;
       reason?: string;

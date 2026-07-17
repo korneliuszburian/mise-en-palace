@@ -177,9 +177,12 @@ export const createMemoryCommandDatabaseRuntime = async (
 
 export const assertSourceClaimExists = async (
   runtime: DatabaseRuntime,
-  sourceClaimId: string
+  sourceClaimId: string,
+  projectId?: string
 ): Promise<void> => {
-  const sourceClaim = await runtime.sourceRepository.getSourceClaimById(sourceClaimId);
+  const sourceClaim = projectId !== undefined && runtime.sourceRepository.getSourceClaimForProject !== undefined
+    ? await runtime.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId)
+    : await runtime.sourceRepository.getSourceClaimById(sourceClaimId);
 
   if (sourceClaim === undefined) {
     throw new Error(`SourceClaim not found: ${sourceClaimId}`);

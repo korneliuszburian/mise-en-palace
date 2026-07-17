@@ -106,10 +106,11 @@ export const formatMemoryRecordApplyUsage = (): string =>
 
 export const formatMemoryAntiAddUsage = (): string =>
   [
-    "Usage: krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" [--invalidated-by-source-claim-id <id>|--source-lineage <id>] [--persist]",
+    "Usage: krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" [--project <project-id>] [--invalidated-by-source-claim-id <id>|--source-lineage <id>] [--persist]",
     "",
     "Required:",
     "--run-id",
+    "--project <project-id> (when supplied, must match the persisted run project)",
     "--rejected-claim",
     "--invalidated-by-source-claim-id or --source-lineage",
     "",
@@ -139,7 +140,7 @@ export const formatMemoryAntiProposeUsage = (): string =>
 
 export const formatMemoryAntiPromoteUsage = (): string =>
   [
-    "Usage: krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
+    "Usage: krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--project <project-id>] [--persist]",
     "",
     "Required:",
     "--candidate-id",
@@ -148,13 +149,14 @@ export const formatMemoryAntiPromoteUsage = (): string =>
     "--evidence-reviewed-ref",
     "",
     "Optional:",
+    "--project <project-id> (must match the candidate project)",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
 
 export const formatMemoryAntiRejectUsage = (): string =>
   [
-    "Usage: krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
+    "Usage: krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--project <project-id>] [--persist]",
     "",
     "Required:",
     "--candidate-id",
@@ -162,6 +164,7 @@ export const formatMemoryAntiRejectUsage = (): string =>
     "--reason",
     "",
     "Optional:",
+    "--project <project-id> (must match the candidate project)",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -318,6 +321,7 @@ const memoryCandidateAddStringOptions = {
 
 const memoryAntiAddStringOptions = {
   "--run-id": "runId",
+  "--project": "projectId",
   "--rejected-claim": "rejectedClaim",
   "--reason": "reason",
   "--invalidated-by-source-claim-id": "invalidatedBySourceClaimId",
@@ -362,9 +366,17 @@ const memoryRecordApplyStringOptions = {
 
 const memoryAntiPromoteStringOptions = {
   "--candidate-id": "candidateId",
+  "--project": "projectId",
   "--reviewer": "reviewer",
   "--decision": "decision",
   "--evidence-reviewed-ref": "evidenceReviewedRef"
+} as const;
+
+const memoryAntiRejectStringOptions = {
+  "--candidate-id": "candidateId",
+  "--project": "projectId",
+  "--reviewer": "reviewer",
+  "--reason": "reason"
 } as const;
 
 type MemoryCandidateAddStringKey = typeof memoryCandidateAddStringOptions[keyof typeof memoryCandidateAddStringOptions];
@@ -373,6 +385,7 @@ type MemoryCandidatePromoteStringKey = typeof memoryCandidatePromoteStringOption
 type MemoryRejectStringKey = typeof memoryRejectStringOptions[keyof typeof memoryRejectStringOptions];
 type MemoryRecordApplyStringKey = typeof memoryRecordApplyStringOptions[keyof typeof memoryRecordApplyStringOptions];
 type MemoryAntiPromoteStringKey = typeof memoryAntiPromoteStringOptions[keyof typeof memoryAntiPromoteStringOptions];
+type MemoryAntiRejectStringKey = typeof memoryAntiRejectStringOptions[keyof typeof memoryAntiRejectStringOptions];
 
 const memoryNext = (nextIndex: number): MemoryTokenParseResult => ({
   kind: "next",
@@ -498,6 +511,9 @@ const parseMemoryAntiAddToken = (
     assignOption: mapStringOptionAssignment<MemoryAntiAddCommand, MemoryAntiAddStringKey>({
       runId: (command, value) => {
         command.runId = value;
+      },
+      projectId: (command, value) => {
+        command.projectId = value;
       },
       rejectedClaim: (command, value) => {
         command.rejectedClaim = value;
@@ -651,6 +667,9 @@ const parseMemoryAntiPromoteToken = (
       candidateId: (command, value) => {
         command.candidateId = value;
       },
+      projectId: (command, value) => {
+        command.projectId = value;
+      },
       reviewer: (command, value) => {
         command.reviewer = value;
       },
@@ -668,7 +687,24 @@ const parseMemoryAntiRejectToken = (
   index: number,
   memoryCommand: MemoryAntiRejectCommand
 ): MemoryTokenParseResult =>
-  parseMemoryRejectToken(rest, index, memoryCommand, formatMemoryAntiRejectUsage());
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryAntiRejectUsage(),
+    optionMap: memoryAntiRejectStringOptions,
+    assignOption: mapStringOptionAssignment<MemoryAntiRejectCommand, MemoryAntiRejectStringKey>({
+      candidateId: (command, value) => {
+        command.candidateId = value;
+      },
+      projectId: (command, value) => {
+        command.projectId = value;
+      },
+      reviewer: (command, value) => {
+        command.reviewer = value;
+      },
+      reason: (command, value) => {
+        command.reason = value;
+      }
+    }, memoryCommand)
+  });
 
 const parseMemoryKnowledgeSeedToken = (
   rest: readonly string[],
