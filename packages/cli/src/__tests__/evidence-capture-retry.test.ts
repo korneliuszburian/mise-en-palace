@@ -350,7 +350,7 @@ describe("evidence capture retry boundary", () => {
           sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
         });
         const evalProposal: EvalCandidateProposal = {
-          id: "eval-candidate-postgres-retry" as EvalCandidateProposal["id"],
+          id: "eval-candidate-postgres-retry",
           status: "candidate",
           title: "Postgres retry eval proposal",
           scenario: "A transient persistence failure occurs",

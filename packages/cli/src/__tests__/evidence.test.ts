@@ -1091,7 +1091,7 @@ describe("runCli", () => {
     const aggregate = createEvidencePersistenceAggregate();
     const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
     const evalCandidateProposal: EvalCandidateProposal = {
-      id: "eval-candidate-retry" as EvalCandidateProposal["id"],
+      id: "eval-candidate-retry",
       status: "candidate",
       title: "Retry-safe eval proposal",
       scenario: "A transient capture failure is retried",
