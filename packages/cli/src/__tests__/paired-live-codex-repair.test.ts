@@ -169,6 +169,28 @@ describe("paired live Codex repair eval", () => {
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
   });
 
+  it("accepts an explicit alternate clock seam in the async family contract", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "type Clock = { nowMs: () => number };",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'dead_lettered' };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+  });
+
   it("invalidates a family arm when its independent runtime observer is unavailable", () => {
     const score = scoreTargetRepair({
       family: "env-config",

@@ -314,7 +314,8 @@ const checkFamilyContract = (
       /secretKeyPattern\.test\(key\)[\s\S]*\[redacted\]/.test(readback) && /invalid_config/.test(tests)
     : family === "async-job"
       ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
-        /dead_lettered/.test(job) && /JobClock/.test(job)
+        /dead_lettered/.test(job) &&
+        (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job))
       : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
   const passed = passedContract && passedCommands && (family === "weak-json" || runtimeAvailable);
