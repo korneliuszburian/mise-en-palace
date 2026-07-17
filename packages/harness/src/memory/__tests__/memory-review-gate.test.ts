@@ -7,6 +7,7 @@ import type {
   TaskContract
 } from "@krn/core";
 import type {
+  ApplyReviewedMemoryRevisionInput,
   PromoteMemoryCandidateInput
 } from "@krn/core/repositories";
 import {
@@ -17,6 +18,7 @@ import {
   toMemoryCandidate
 } from "../../activation/index.js";
 import {
+  applyReviewedHelpedAuthorityUpgradeThroughGate,
   promoteMemoryCandidateThroughGate
 } from "../memory-review-gate.js";
 
@@ -398,6 +400,149 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       }
     });
+  });
+
+  it("binds an authority upgrade to the reviewed source and atomic revision port", async () => {
+    let capturedRevision: ApplyReviewedMemoryRevisionInput | undefined;
+
+    const result = await applyReviewedHelpedAuthorityUpgradeThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate({
+            feedbackDeltaId: "feedback-1",
+            reviewAssessmentId: "review-1",
+            usefulnessApplicationId: "application-1",
+            metadata: {
+              ...candidate().metadata,
+              memoryRevision: {
+                action: "replace",
+                sourceMemoryRecordId: "memory-wrong-1",
+                reason: "Untrusted pre-existing revision metadata.",
+                evidenceRefs: ["raw-evidence:wrong"],
+                doesNotProve: "Candidate metadata cannot choose the authority predecessor."
+              }
+            }
+          });
+        },
+        async applyReviewedMemoryRevision(input) {
+          capturedRevision = input;
+          return {
+            memoryRecord: memoryRecord({ id: "memory-authority-1" }),
+            supersededMemoryRecord: memoryRecord({
+              id: "memory-legacy-1",
+              status: "superseded"
+            })
+          };
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimForProject() {
+          return sourceClaim();
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "review-assessment:upgrade-review-1"
+      },
+      sourceMemoryRecordId: "memory-legacy-1",
+      reason: "Replace legacy helped memory with first-class authority bindings"
+    });
+
+    expect(result.memoryRecord.id).toBe("memory-authority-1");
+    expect(result.supersededMemoryRecord.status).toBe("superseded");
+    expect(capturedRevision).toMatchObject({
+      candidateId: "memory-candidate-1",
+      sourceMemoryRecordId: "memory-legacy-1",
+      metadata: {
+        reviewGate: {
+          evidenceReviewedRef: "review-assessment:upgrade-review-1",
+          sourceClaimIds: ["source-claim-1"]
+        },
+        memoryRevision: {
+          action: "merge_duplicate",
+          sourceMemoryRecordId: "memory-legacy-1",
+          evidenceRefs: ["review-assessment:upgrade-review-1", "source-claim-1"]
+        },
+        revisionReview: {
+          reviewer: "operator",
+          sourceMemoryRecordId: "memory-legacy-1"
+        }
+      }
+    });
+  });
+
+  it("fails closed unless the upgrade candidate carries every first-class authority binding", async () => {
+    let revisionCalled = false;
+
+    await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate({
+            metadata: {
+              ...candidate().metadata,
+              memoryRevision: {
+                action: "merge_duplicate",
+                sourceMemoryRecordId: "memory-legacy-1",
+                reason: "A generic revision must not enter the authority-upgrade gate.",
+                evidenceRefs: ["raw-evidence:run-event-1"],
+                doesNotProve: "A generic revision is not reviewed-helped authority."
+              }
+            }
+          });
+        },
+        async applyReviewedMemoryRevision() {
+          revisionCalled = true;
+          throw new Error("must not be called");
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimForProject() {
+          return sourceClaim();
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "review-assessment:review-1"
+      },
+      sourceMemoryRecordId: "memory-legacy-1",
+      reason: "Reject generic revision bypass"
+    })).rejects.toThrow("requires first-class feedback, review, and application bindings");
+    expect(revisionCalled).toBe(false);
+  });
+
+  it("requires the exact first-class review assessment as upgrade evidence", async () => {
+    let revisionCalled = false;
+
+    await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate({
+            feedbackDeltaId: "feedback-1",
+            reviewAssessmentId: "review-1",
+            usefulnessApplicationId: "application-1"
+          });
+        },
+        async applyReviewedMemoryRevision() {
+          revisionCalled = true;
+          throw new Error("must not be called");
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimForProject() {
+          return sourceClaim();
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: " review-assessment:review-1 "
+      },
+      sourceMemoryRecordId: "memory-legacy-1",
+      reason: "Reject mismatched review authority"
+    })).rejects.toThrow("requires a distinct reviewed predecessor assessment");
+    expect(revisionCalled).toBe(false);
   });
 
   it("records untrusted source review metadata when promoting from external source lineage", async () => {

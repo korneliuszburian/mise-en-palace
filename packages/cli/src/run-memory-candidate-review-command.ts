@@ -2,6 +2,7 @@ import {
   parseMemoryPromotionInput
 } from "@krn/core";
 import {
+  applyReviewedHelpedAuthorityUpgradeThroughGate,
   promoteMemoryCandidateThroughGate
 } from "@krn/harness";
 import {
@@ -43,11 +44,18 @@ export interface MemoryCandidateReviewCommandResult {
 
 const formatPromotePreview = (
   review: ReturnType<typeof parseMemoryPromotionInput>,
-  untrustedSourceReviewRef: string | undefined
+  untrustedSourceReviewRef: string | undefined,
+  revision: { sourceMemoryRecordId: string; reason: string } | undefined,
+  authorityBinding?: {
+    memoryCandidateId: string;
+    fingerprint: string;
+  }
 ): string =>
   [
     "KRN Memory Candidate Promote",
-    "Persistence: disabled (no-store preview; use --persist to write)",
+    revision === undefined
+      ? "Persistence: disabled (no-store preview; use --persist to write)"
+      : "Persistence: disabled (read-only predecessor preview; use --persist to write)",
     "DB writes: none",
     "",
     "Memory candidate review preview:",
@@ -57,8 +65,25 @@ const formatPromotePreview = (
     ...(untrustedSourceReviewRef === undefined
       ? []
       : [`untrustedSourceReviewRef: ${untrustedSourceReviewRef}`]),
+    ...(revision === undefined
+      ? []
+      : [
+          `sourceMemoryRecordId: ${revision.sourceMemoryRecordId}`,
+          `reason: ${revision.reason}`,
+          "Revision mode: candidate promotion and predecessor supersession are one transaction",
+          ...(authorityBinding === undefined
+            ? []
+            : [
+                `authorityUpgradeMemoryRecordId: ${revision.sourceMemoryRecordId}`,
+                `authorityUpgradeMemoryCandidateId: ${authorityBinding.memoryCandidateId}`,
+                `authorityUpgradePredecessorFingerprint: ${authorityBinding.fingerprint}`
+              ])
+        ]),
     "No MemoryRecord created",
-    "No memory application recorded"
+    "No memory application recorded",
+    revision === undefined
+      ? "Does not prove: preview does not read the store or assert revision eligibility"
+      : "Does not prove: readback fingerprint is not an accepted predecessor review"
   ].join("\n");
 
 const formatRejectPreview = (
@@ -102,6 +127,7 @@ const formatPromoted = (input: {
   evidenceReviewedRef: string;
   untrustedSourceReviewRef: string | undefined;
   sourceClaimIds: string[];
+  supersededMemoryRecordId?: string;
 }): string =>
   [
     "KRN Memory Candidate Promote",
@@ -111,6 +137,9 @@ const formatPromoted = (input: {
     "Persisted IDs:",
     `memoryCandidate: ${input.candidateId}`,
     `memoryRecord: ${input.memoryRecordId}`,
+    ...(input.supersededMemoryRecordId === undefined
+      ? []
+      : [`supersededMemoryRecord: ${input.supersededMemoryRecordId}`]),
     `reviewer: ${input.reviewer}`,
     `evidenceReviewedRef: ${input.evidenceReviewedRef}`,
     ...(input.untrustedSourceReviewRef === undefined
@@ -125,6 +154,7 @@ const formatPromoted = (input: {
     "No memory application recorded"
   ].join("\n");
 
+// fallow-ignore-next-line complexity -- one review command exhaustively routes normal promotion and atomic predecessor revision through the same gate
 const runPromote = async (
   runtime: MemoryCandidateReviewCommandRuntime,
   command: MemoryCandidatePromoteCommand
@@ -141,12 +171,52 @@ const runPromote = async (
   }
 
   if (!command.persist) {
-    return {
-      stdout: formatPromotePreview(
-        reviewInput,
-        trimmedOptional(command.untrustedSourceReviewRef)
-      )
-    };
+    const sourceMemoryRecordId = trimmedOptional(command.sourceMemoryRecordId);
+    const reason = trimmedOptional(command.reason);
+    const revision = sourceMemoryRecordId === undefined || reason === undefined
+      ? undefined
+      : { sourceMemoryRecordId, reason };
+
+    if (revision === undefined) {
+      return {
+        stdout: formatPromotePreview(
+          reviewInput,
+          trimmedOptional(command.untrustedSourceReviewRef),
+          undefined
+        )
+      };
+    }
+
+    const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+      runtime,
+      "KRN_DATABASE_URL is required for reviewed predecessor preview"
+    );
+
+    try {
+      if (databaseRuntime.memoryRepository.getAuthorityUpgradePredecessorPreview === undefined) {
+        throw new Error("Database runtime does not support authority upgrade predecessor preview");
+      }
+      const predecessor = await databaseRuntime.memoryRepository.getAuthorityUpgradePredecessorPreview({
+        memoryRecordId: revision.sourceMemoryRecordId
+      });
+      if (predecessor === undefined) {
+        throw new Error(`Memory record not found: ${revision.sourceMemoryRecordId}`);
+      }
+
+      return {
+        stdout: formatPromotePreview(
+          reviewInput,
+          trimmedOptional(command.untrustedSourceReviewRef),
+          revision,
+          {
+            memoryCandidateId: predecessor.memoryCandidate.id,
+            fingerprint: predecessor.fingerprint
+          }
+        )
+      };
+    } finally {
+      await databaseRuntime.close();
+    }
   }
 
   const evidenceReviewedRef = command.evidenceReviewedRef?.trim();
@@ -162,6 +232,8 @@ const runPromote = async (
     "KRN_DATABASE_URL is required for krn memory candidate promote --persist"
   );
   const untrustedSourceReviewRef = trimmedOptional(command.untrustedSourceReviewRef);
+  const sourceMemoryRecordId = trimmedOptional(command.sourceMemoryRecordId);
+  const reason = trimmedOptional(command.reason);
 
   try {
     const sourceRepository = databaseRuntime.sourceRepository;
@@ -173,10 +245,10 @@ const runPromote = async (
       );
     }
 
-    const result = await promoteMemoryCandidateThroughGate({
+    const gateInput = {
       memoryRepository: databaseRuntime.memoryRepository,
       sourceRepository: {
-        getSourceClaimForProject(projectId, sourceClaimId) {
+        getSourceClaimForProject(projectId: string, sourceClaimId: string) {
           return getSourceClaimForProject.call(sourceRepository, projectId, sourceClaimId);
         }
       },
@@ -187,7 +259,34 @@ const runPromote = async (
         ...(untrustedSourceReviewRef === undefined ? {} : { untrustedSourceReviewRef }),
         metadata: reviewInput.metadata
       }
-    });
+    };
+    const applyReviewedMemoryRevision =
+      databaseRuntime.memoryRepository.applyReviewedMemoryRevision;
+
+    const result = sourceMemoryRecordId === undefined || reason === undefined
+      ? await promoteMemoryCandidateThroughGate(gateInput)
+      : await (async () => {
+          if (applyReviewedMemoryRevision === undefined) {
+            throw new Error(
+              "Atomic reviewed memory revision is unavailable. No MemoryRecord created."
+            );
+          }
+
+          return applyReviewedHelpedAuthorityUpgradeThroughGate({
+            ...gateInput,
+            memoryRepository: {
+              getMemoryCandidateById:
+                databaseRuntime.memoryRepository.getMemoryCandidateById.bind(
+                  databaseRuntime.memoryRepository
+                ),
+              applyReviewedMemoryRevision: applyReviewedMemoryRevision.bind(
+                databaseRuntime.memoryRepository
+              )
+            },
+            sourceMemoryRecordId,
+            reason
+          });
+        })();
 
     return {
       stdout: formatPromoted({
@@ -196,7 +295,10 @@ const runPromote = async (
         reviewer: reviewInput.reviewer,
         evidenceReviewedRef,
         untrustedSourceReviewRef,
-        sourceClaimIds: toReviewedSourceClaimIds(result.reviewedSourceClaims)
+        sourceClaimIds: toReviewedSourceClaimIds(result.reviewedSourceClaims),
+        ...(!("supersededMemoryRecord" in result)
+          ? {}
+          : { supersededMemoryRecordId: result.supersededMemoryRecord.id })
       })
     };
   } finally {

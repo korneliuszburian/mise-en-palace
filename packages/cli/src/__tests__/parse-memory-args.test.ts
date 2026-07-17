@@ -131,6 +131,10 @@ describe("parseMemoryArgs", () => {
       "review-1",
       "--untrusted-source-review-ref",
       "security-review:source-lineage-1",
+      "--source-memory-id",
+      "memory-legacy-1",
+      "--reason",
+      "Replace legacy helped memory with first-class authority bindings",
       "--metadata",
       "gate=memory-review",
       "--persist"
@@ -143,11 +147,26 @@ describe("parseMemoryArgs", () => {
         decision: "accepted",
         evidenceReviewedRef: "review-1",
         untrustedSourceReviewRef: "security-review:source-lineage-1",
+        sourceMemoryRecordId: "memory-legacy-1",
+        reason: "Replace legacy helped memory with first-class authority bindings",
         metadata: {
           gate: "memory-review"
         }
       }
     });
+
+    expect(parseMemoryArgs([
+      "candidate",
+      "promote",
+      "--candidate-id",
+      "candidate-1",
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--source-memory-id",
+      "memory-legacy-1"
+    ])).toMatchObject({ error: expect.stringContaining("--source-memory-id") });
 
     expect(parseMemoryArgs([
       "candidate",

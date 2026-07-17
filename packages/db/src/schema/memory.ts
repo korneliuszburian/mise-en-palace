@@ -243,6 +243,10 @@ export const memoryCandidates = pgTable(
     reviewAssessmentId: uuid("review_assessment_id").references(() => reviewAssessments.id, {
       onDelete: "restrict"
     }),
+    revisionReviewAssessmentId: uuid("revision_review_assessment_id").references(
+      () => reviewAssessments.id,
+      { onDelete: "restrict" }
+    ),
     usefulnessApplicationId: text("usefulness_application_id").references(
       () => usefulnessApplications.applicationId,
       { onDelete: "restrict" }
@@ -260,6 +264,9 @@ export const memoryCandidates = pgTable(
     index("memory_candidates_execution_run_id_idx").on(table.executionRunId),
     index("memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
     index("memory_candidates_review_assessment_id_idx").on(table.reviewAssessmentId),
+    index("memory_candidates_revision_review_assessment_id_idx").on(
+      table.revisionReviewAssessmentId
+    ),
     uniqueIndex("memory_candidates_usefulness_application_id_unique").on(
       table.usefulnessApplicationId
     ),

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { eq, inArray, sql } from "drizzle-orm";
 import postgres from "postgres";
 import {
+  applyReviewedHelpedAuthorityUpgradeThroughGate,
   promoteMemoryCandidateThroughGate
 } from "@krn/harness";
 import {
@@ -16,6 +17,7 @@ import {
   assertAntiMemoryCandidateInvariants,
   assertMemoryCoreInvariants,
   DrizzleMemoryRepository,
+  memoryAuthorityPredecessorFingerprint,
   memoryPromotionMetadata
 } from "../drizzle-memory-repository.js";
 import { createKrnDatabase } from "../../database.js";
@@ -135,6 +137,7 @@ describe("DrizzleMemoryRepository", () => {
     }
   });
 
+  // fallow-ignore-next-line complexity -- one real-store authority chain owns rejection, concurrency, rollback, retry corruption, and final selection falsifiers
   postgresIt("proposes one exact reviewed helped candidate atomically and rejects weaker authority", async () => {
     const marker = `krn_reviewed_helped_chain_${crypto.randomUUID().replaceAll("-", "")}`;
     const scaffold = await createSmokeHarnessScaffold({
@@ -160,7 +163,10 @@ describe("DrizzleMemoryRepository", () => {
       }
     });
     const retryClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+    const lockClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
+    const observerClient = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
     const retryRepository = new DrizzleMemoryRepository(createKrnDatabase(retryClient));
+    let releaseAuthorityLock = (): void => {};
 
     try {
       const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
@@ -552,33 +558,405 @@ describe("DrizzleMemoryRepository", () => {
       await expect(scaffold.client`delete from usefulness_applications where application_id = ${applicationId}`)
         .rejects.toThrow();
 
-      const promotion = await promoteMemoryCandidateThroughGate({
+      const legacyCandidate = await scaffold.memoryRepository.createMemoryCandidate({
+        projectId: scaffold.project.id,
+        executionRunId: executionRun.id,
+        feedbackDeltaId: feedback.id,
+        proposedBy: "legacy-reviewed-helped-path",
+        kind: concurrent[0]!.candidate.kind,
+        summary: decision.decision,
+        body: decision.rationale,
+        owner: concurrent[0]!.candidate.owner,
+        confidence: 92,
+        applicationGuidance: decision.decision,
+        invalidationRule: decision.falsifier,
+        sourceClaimIds: [claim.id],
+        sourceLineage: [{ sourceId: claim.id }],
+        isUserPreference: false,
+        validFrom: appliedAt,
+        metadata: {
+          smokeId: marker,
+          usefulnessApplicationId: applicationId,
+          sourceDecisionId: decision.id,
+          reviewAssessmentId: acceptedReview.id,
+          reflectionCandidateEvidence: {
+            provenance: "feedback_delta",
+            evidenceRefs: [`review-assessment:${acceptedReview.id}`],
+            doesNotProve: "Legacy metadata does not establish first-class authority."
+          }
+        }
+      });
+      const legacyPromotion = await promoteMemoryCandidateThroughGate({
         memoryRepository: scaffold.memoryRepository,
         sourceRepository: scaffold.sourceRepository,
         review: {
-          candidateId,
-          reviewer: "independent-reviewer",
+          candidateId: legacyCandidate.id,
+          reviewer: "legacy-independent-reviewer",
           evidenceReviewedRef: `review-assessment:${acceptedReview.id}`,
-          metadata: { promotionBasis: "reviewed_exact_helped" }
+          metadata: { smokeId: marker, promotionBasis: "legacy_reviewed_helped" }
         }
       });
+      const reviewedLegacyCandidate = await scaffold.memoryRepository.getMemoryCandidateById(
+        legacyCandidate.id
+      );
+      if (reviewedLegacyCandidate === undefined) {
+        throw new Error("reviewed legacy candidate was not readable");
+      }
+      const [upgradeBundle] = await scaffold.client<{ id: string }[]>`
+        insert into evidence_bundles (
+          execution_run_id, status, changed_files, commands, diff_risk,
+          review_burden, rollback_path, capture_identity, capture_channel, metadata
+        ) values (
+          ${executionRun.id}, 'captured', '[]'::jsonb, '[]'::jsonb, 'low',
+          'Review exact legacy predecessor authority.', 'Do not apply the revision.',
+          ${`authority-upgrade:${marker}`}, 'evidence_feedback_v1',
+          ${JSON.stringify({ smokeId: marker })}::jsonb
+        ) returning id::text as id
+      `;
+      if (upgradeBundle === undefined) {
+        throw new Error("authority upgrade evidence bundle was not persisted");
+      }
+      const { reviewAssessment: upgradeReview } =
+        await scaffold.harnessRunRepository.createReviewFeedbackOnce({
+          evidenceBundleId: upgradeBundle.id,
+          requestIdentity: `authority-upgrade-review:${marker}`,
+          review: {
+            status: "accepted",
+            reviewer: "independent-reviewer",
+            summary: "The exact legacy predecessor projection is approved for authority upgrade.",
+            findings: [],
+            metadata: {
+              smokeId: marker,
+              authorityUpgradeMemoryRecordId: legacyPromotion.memoryRecord.id,
+              authorityUpgradeMemoryCandidateId: reviewedLegacyCandidate.id,
+              authorityUpgradePredecessorFingerprint: memoryAuthorityPredecessorFingerprint({
+                candidate: reviewedLegacyCandidate,
+                memoryRecord: legacyPromotion.memoryRecord
+              })
+            }
+          },
+          feedback: {
+            status: "candidate",
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: { smokeId: marker, memoryRecordMutation: "none" }
+          }
+        });
+      const forgedLegacyCandidate = await scaffold.memoryRepository.createMemoryCandidate({
+        projectId: scaffold.project.id,
+        executionRunId: executionRun.id,
+        feedbackDeltaId: feedback.id,
+        proposedBy: "forged-legacy-predecessor",
+        kind: concurrent[0]!.candidate.kind,
+        summary: decision.decision,
+        body: "Altered content must not substitute the canonical legacy predecessor.",
+        owner: concurrent[0]!.candidate.owner,
+        confidence: 90,
+        applicationGuidance: decision.decision,
+        invalidationRule: decision.falsifier,
+        sourceClaimIds: [claim.id],
+        sourceLineage: [{ sourceId: claim.id }],
+        isUserPreference: false,
+        validFrom: appliedAt,
+        metadata: {
+          smokeId: marker,
+          usefulnessApplicationId: applicationId,
+          sourceDecisionId: decision.id,
+          reviewAssessmentId: acceptedReview.id,
+          reflectionCandidateEvidence: {
+            provenance: "feedback_delta",
+            evidenceRefs: [`review-assessment:${acceptedReview.id}`],
+            doesNotProve: "Copied authority IDs do not establish canonical legacy content."
+          }
+        }
+      });
+      const revisionReview = {
+        candidateId,
+        reviewer: "independent-reviewer",
+        evidenceReviewedRef: `review-assessment:${upgradeReview.id}`,
+        metadata: { promotionBasis: "reviewed_exact_helped" }
+      };
+      await scaffold.client`
+        update memory_records set status = 'invalidated'
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      const forgedLegacyPromotion = await promoteMemoryCandidateThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: {
+          candidateId: forgedLegacyCandidate.id,
+          reviewer: "forged-legacy-reviewer",
+          evidenceReviewedRef: `review-assessment:${acceptedReview.id}`,
+          metadata: { smokeId: marker, promotionBasis: "forged_legacy_predecessor" }
+        }
+      });
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: forgedLegacyPromotion.memoryRecord.id,
+        reason: "Reject sole active same-authority altered predecessor"
+      })).rejects.toThrow("failed coordinates: predecessor_review");
+      expect(await scaffold.memoryRepository.getMemoryCandidateById(candidateId))
+        .toMatchObject({ status: "proposed" });
+      await scaffold.client`
+        update memory_records set status = 'invalidated'
+        where id = ${forgedLegacyPromotion.memoryRecord.id}
+      `;
+      await scaffold.client`
+        update memory_records set status = 'active'
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      const raceLegacyCandidate = await scaffold.memoryRepository.createMemoryCandidate({
+        projectId: scaffold.project.id,
+        executionRunId: executionRun.id,
+        feedbackDeltaId: feedback.id,
+        proposedBy: "concurrent-forged-legacy-predecessor",
+        kind: concurrent[0]!.candidate.kind,
+        summary: decision.decision,
+        body: "A queued altered predecessor must not survive the authority transaction.",
+        owner: concurrent[0]!.candidate.owner,
+        confidence: 90,
+        applicationGuidance: decision.decision,
+        invalidationRule: decision.falsifier,
+        sourceClaimIds: [claim.id],
+        sourceLineage: [{ sourceId: claim.id }],
+        isUserPreference: false,
+        validFrom: appliedAt,
+        metadata: {
+          smokeId: marker,
+          usefulnessApplicationId: applicationId,
+          sourceDecisionId: decision.id,
+          reviewAssessmentId: acceptedReview.id,
+          reflectionCandidateEvidence: {
+            provenance: "feedback_delta",
+            evidenceRefs: [`review-assessment:${acceptedReview.id}`],
+            doesNotProve: "Queued copied authority IDs do not establish predecessor authority."
+          }
+        }
+      });
+      await scaffold.client`
+        update memory_record_versions set owner = 'corrupt-legacy-version-owner'
+        where id = ${legacyPromotion.memoryRecord.currentVersionId}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Reject malformed legacy version projection"
+      })).rejects.toThrow(
+        "authority upgrade requires matching legacy feedback and application lineage"
+      );
+      await scaffold.client`
+        update memory_record_versions set owner = ${legacyCandidate.owner}
+        where id = ${legacyPromotion.memoryRecord.currentVersionId}
+      `;
+      const [authorityBackend] = await scaffold.client<{ pid: number }[]>`
+        select pg_backend_pid()::int as pid
+      `;
+      const [legacyBackend] = await retryClient<{ pid: number }[]>`
+        select pg_backend_pid()::int as pid
+      `;
+      if (authorityBackend === undefined || legacyBackend === undefined) {
+        throw new Error("authority upgrade race backend identities were not available");
+      }
+      let markAuthorityLockAcquired = (): void => {};
+      const authorityLockRelease = new Promise<void>((resolve) => {
+        releaseAuthorityLock = resolve;
+      });
+      const authorityLockAcquired = new Promise<void>((resolve) => {
+        markAuthorityLockAcquired = resolve;
+      });
+      const lockKey = `memory-feedback-authority:${scaffold.project.id}:${feedback.id}`;
+      const heldLock = lockClient.begin(async (tx) => {
+        await tx`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
+        markAuthorityLockAcquired();
+        await authorityLockRelease;
+      });
+      await authorityLockAcquired;
+      const promotionPromise = applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      });
+      await waitForBackendTableLock(observerClient, authorityBackend.pid);
+      const forgedPromotionPromise = retryRepository.promoteReviewedMemoryCandidate({
+        candidateId: raceLegacyCandidate.id,
+        reviewer: "forged-legacy-reviewer",
+        decision: "accepted",
+        metadata: { smokeId: marker, promotionBasis: "forged_legacy_predecessor" }
+      });
+      await waitForBackendTableLock(observerClient, legacyBackend.pid);
+      releaseAuthorityLock();
+      await heldLock;
+      const promotion = await promotionPromise;
+      await expect(forgedPromotionPromise).rejects.toThrow(
+        "already has active memory; use the reviewed authority upgrade path"
+      );
+      expect(await scaffold.memoryRepository.getMemoryCandidateById(raceLegacyCandidate.id))
+        .toMatchObject({ status: "proposed" });
+      expect(await scaffold.memoryRepository.getMemoryCandidateById(candidateId))
+        .toMatchObject({ revisionReviewAssessmentId: upgradeReview.id });
+      await expect(scaffold.client`
+        delete from evidence_bundles where id = ${upgradeBundle.id}
+      `).rejects.toThrow();
+      const retry = await applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: retryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      });
+      await scaffold.client`
+        update memory_records set current_version_id = null
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      })).rejects.toThrow("identity conflict for accepted candidate");
+      await scaffold.client`
+        update memory_records set current_version_id = ${legacyPromotion.memoryRecord.currentVersionId}
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await scaffold.client`
+        update memory_records set current_version_id = null
+        where id = ${promotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      })).rejects.toThrow("identity conflict for accepted candidate");
+      await scaffold.client`
+        update memory_records set current_version_id = ${promotion.memoryRecord.currentVersionId}
+        where id = ${promotion.memoryRecord.id}
+      `;
+      const supersededAt = promotion.supersededMemoryRecord.invalidatedAt;
+      if (supersededAt === undefined) {
+        throw new Error("authority upgrade did not return supersession time");
+      }
+      await scaffold.client`
+        update memory_records
+        set metadata = jsonb_set(
+          metadata,
+          '{supersessionReview,supersededAt}',
+          ${JSON.stringify("1900-01-01T00:00:00.000Z")}::jsonb
+        )
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      })).rejects.toThrow("identity conflict for accepted candidate");
+      await scaffold.client`
+        update memory_records
+        set metadata = jsonb_set(
+          metadata,
+          '{supersessionReview,supersededAt}',
+          ${JSON.stringify(supersededAt)}::jsonb
+        ), invalidated_at = null
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      })).rejects.toThrow("identity conflict for accepted candidate");
+      await scaffold.client`
+        update memory_records set invalidated_at = ${supersededAt}
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await scaffold.client`
+        update memory_records set metadata = metadata - 'usefulnessApplicationId'
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "Replace legacy helped memory with first-class authority bindings"
+      })).rejects.toThrow("identity conflict for accepted candidate");
+      await scaffold.client`
+        update memory_records set metadata = jsonb_set(
+          metadata,
+          '{usefulnessApplicationId}',
+          ${JSON.stringify(applicationId)}::jsonb
+        )
+        where id = ${legacyPromotion.memoryRecord.id}
+      `;
+      await expect(applyReviewedHelpedAuthorityUpgradeThroughGate({
+        memoryRepository: scaffold.memoryRepository,
+        sourceRepository: scaffold.sourceRepository,
+        review: revisionReview,
+        sourceMemoryRecordId: legacyPromotion.memoryRecord.id,
+        reason: "A different retry reason"
+      })).rejects.toThrow("identity conflict for accepted candidate");
       const postPromotionRetry = await scaffold.memoryRepository
         .proposeReviewedHelpedMemoryCandidateOnce(input);
+      const acceptedAuthorityCandidate = await scaffold.memoryRepository.getMemoryCandidateById(
+        candidateId
+      );
+      if (acceptedAuthorityCandidate === undefined) {
+        throw new Error("accepted authority candidate was not readable");
+      }
+      await scaffold.client`
+        update memory_candidates
+        set metadata = metadata - 'memoryRevision' - 'revisionReview'
+        where id = ${candidateId}
+      `;
+      await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
+        .rejects.toMatchObject({ reason: "existing_candidate_identity_conflict" });
+      await scaffold.client`
+        update memory_candidates set metadata = ${JSON.stringify(acceptedAuthorityCandidate.metadata)}::jsonb
+        where id = ${candidateId}
+      `;
       const selected = await scaffold.memoryRepository.listActiveMemory(
         scaffold.project.id,
         5,
         { terms: ["store-validated", "reviewed", "helped"] }
       );
+      const legacyReadback = await scaffold.memoryRepository.getMemoryRecordById(
+        legacyPromotion.memoryRecord.id
+      );
 
+      expect(retry.memoryRecord.id).toBe(promotion.memoryRecord.id);
+      expect(retry.supersededMemoryRecord.id).toBe(legacyPromotion.memoryRecord.id);
+      expect(legacyReadback).toMatchObject({
+        status: "superseded",
+        metadata: { replacementMemoryRecordId: promotion.memoryRecord.id }
+      });
       expect(postPromotionRetry).toMatchObject({
         created: false,
         candidate: { id: candidateId, status: "accepted" }
       });
       expect(promotion.reviewedSourceClaims.map((item) => item.id)).toEqual([claim.id]);
       expect(selected.map((item) => item.id)).toContain(promotion.memoryRecord.id);
+      expect(selected.map((item) => item.id)).not.toContain(legacyPromotion.memoryRecord.id);
     } finally {
+      releaseAuthorityLock();
       await scaffold.cleanup();
-      await Promise.all([scaffold.client.end(), retryClient.end()]);
+      await Promise.all([
+        scaffold.client.end(),
+        retryClient.end(),
+        lockClient.end(),
+        observerClient.end()
+      ]);
     }
   });
 

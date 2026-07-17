@@ -83,7 +83,9 @@ const postPromotionMetadataKeys = new Set([
   "createdFromCandidateId",
   "sourceClaimIds",
   "reviewGate",
-  "promotionBasis"
+  "promotionBasis",
+  "memoryRevision",
+  "revisionReview"
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -100,9 +102,16 @@ const reviewGateMetadataMatches = (
   }
   const candidateEvidence = expected.metadata["reflectionCandidateEvidence"];
   const untrustedSourceClaimIds = reviewGate["untrustedSourceClaimIds"];
+  const evidenceReviewedRef = reviewGate["evidenceReviewedRef"];
+  const hasAuthorityRevision = candidate.metadata["memoryRevision"] !== undefined ||
+    candidate.metadata["revisionReview"] !== undefined;
+  const expectedEvidenceReviewedRef = hasAuthorityRevision
+    ? candidate.revisionReviewAssessmentId === null
+      ? undefined
+      : `review-assessment:${candidate.revisionReviewAssessmentId}`
+    : `review-assessment:${expected.reviewAssessmentId}`;
 
-  return reviewGate["evidenceReviewedRef"] ===
-      `review-assessment:${expected.reviewAssessmentId}` &&
+  return evidenceReviewedRef === expectedEvidenceReviewedRef &&
     jsonEquals(reviewGate["candidateEvidence"], candidateEvidence) &&
     jsonEquals(reviewGate["sourceClaimIds"], expected.sourceClaimIds) &&
     jsonEquals(reviewGate["reviewedSourceClaimIds"], expected.sourceClaimIds) &&
@@ -115,7 +124,47 @@ const reviewGateMetadataMatches = (
         reviewGate["untrustedSourceReviewRef"].trim().length > 0));
 };
 
-// fallow-ignore-next-line complexity -- accepted candidates permit only four named promotion-owned metadata additions with explicit shape checks
+// fallow-ignore-next-line complexity -- accepted authority upgrades must bind every revision and review coordinate before idempotent readback
+const authorityRevisionMetadataMatches = (
+  candidate: typeof memoryCandidates.$inferSelect,
+  expected: typeof memoryCandidates.$inferInsert
+): boolean => {
+  const revision = candidate.metadata["memoryRevision"];
+  const revisionReview = candidate.metadata["revisionReview"];
+  const reviewGate = candidate.metadata["reviewGate"];
+
+  if (revision === undefined && revisionReview === undefined) {
+    return true;
+  }
+  if (!isRecord(revision) || !isRecord(revisionReview) || !isRecord(reviewGate)) {
+    return false;
+  }
+
+  const sourceMemoryRecordId = revision["sourceMemoryRecordId"];
+  const reason = revision["reason"];
+  const evidenceRefs = revision["evidenceRefs"];
+  const evidenceReviewedRef = reviewGate["evidenceReviewedRef"];
+
+  return revision["action"] === "merge_duplicate" &&
+    typeof sourceMemoryRecordId === "string" &&
+    sourceMemoryRecordId.trim().length > 0 &&
+    typeof reason === "string" &&
+    reason.trim().length > 0 &&
+    Array.isArray(evidenceRefs) &&
+    typeof evidenceReviewedRef === "string" &&
+    candidate.revisionReviewAssessmentId !== null &&
+    evidenceReviewedRef === `review-assessment:${candidate.revisionReviewAssessmentId}` &&
+    evidenceReviewedRef !== `review-assessment:${expected.reviewAssessmentId}` &&
+    evidenceRefs.includes(evidenceReviewedRef) &&
+    candidate.sourceClaimIds.every((id) => evidenceRefs.includes(id)) &&
+    revision["doesNotProve"] ===
+      "Reviewed authority upgrade preserves legacy history; it does not prove the replacement is broadly useful." &&
+    revisionReview["reviewer"] === candidate.reviewer &&
+    revisionReview["reason"] === reason &&
+    revisionReview["sourceMemoryRecordId"] === sourceMemoryRecordId;
+};
+
+// fallow-ignore-next-line complexity -- accepted candidates permit only named gate/revision metadata additions with explicit shape checks
 const canonicalCandidateMetadataMatches = (
   candidate: typeof memoryCandidates.$inferSelect,
   expected: typeof memoryCandidates.$inferInsert
@@ -131,6 +180,7 @@ const canonicalCandidateMetadataMatches = (
     candidate.metadata["createdFromCandidateId"] === candidate.id &&
     jsonEquals(candidate.metadata["sourceClaimIds"], candidate.sourceClaimIds) &&
     reviewGateMetadataMatches(candidate.metadata["reviewGate"], candidate, expected) &&
+    authorityRevisionMetadataMatches(candidate, expected) &&
     (candidate.metadata["promotionBasis"] === undefined ||
       typeof candidate.metadata["promotionBasis"] === "string");
 };

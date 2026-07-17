@@ -45,7 +45,7 @@ export const formatMemoryCandidateAddUsage = (): string =>
 
 export const formatMemoryCandidatePromoteUsage = (): string =>
   [
-    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--evidence-reviewed-ref <ref>] [--untrusted-source-review-ref <ref>] [--persist]",
+    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--evidence-reviewed-ref <ref>] [--untrusted-source-review-ref <ref>] [--source-memory-id <id> --reason \"...\"] [--persist]",
     "",
     "Required:",
     "--candidate-id",
@@ -55,6 +55,7 @@ export const formatMemoryCandidatePromoteUsage = (): string =>
     "Optional:",
     "--evidence-reviewed-ref <ref> (required before persisted promotion)",
     "--untrusted-source-review-ref <ref> (required by the review gate for non-trusted source lineage)",
+    "--source-memory-id <id> with --reason \"...\" atomically supersedes one active predecessor",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -335,7 +336,9 @@ const memoryCandidatePromoteStringOptions = {
   "--reviewer": "reviewer",
   "--decision": "decision",
   "--evidence-reviewed-ref": "evidenceReviewedRef",
-  "--untrusted-source-review-ref": "untrustedSourceReviewRef"
+  "--untrusted-source-review-ref": "untrustedSourceReviewRef",
+  "--source-memory-id": "sourceMemoryRecordId",
+  "--reason": "reason"
 } as const;
 
 const memoryRejectStringOptions = {
@@ -555,6 +558,12 @@ const parseMemoryCandidatePromoteToken = (
       },
       untrustedSourceReviewRef: (command, value) => {
         command.untrustedSourceReviewRef = value;
+      },
+      sourceMemoryRecordId: (command, value) => {
+        command.sourceMemoryRecordId = value;
+      },
+      reason: (command, value) => {
+        command.reason = value;
       }
     }, memoryCommand)
   });
@@ -849,6 +858,7 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
   };
 };
 
+// fallow-ignore-next-line complexity -- promotion parser keeps ordinary and atomic-revision option completeness explicit at argv ingress
 const parseMemoryCandidatePromoteArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -877,6 +887,15 @@ const parseMemoryCandidatePromoteArgs = (rest: readonly string[]): ParseArgsResu
   }
 
   if (!hasMemoryCandidatePromoteRequiredFields(memoryCommand)) {
+    return {
+      error: formatMemoryCandidatePromoteUsage()
+    };
+  }
+
+  if (
+    (hasText(memoryCommand.sourceMemoryRecordId) && !hasText(memoryCommand.reason)) ||
+    (!hasText(memoryCommand.sourceMemoryRecordId) && hasText(memoryCommand.reason))
+  ) {
     return {
       error: formatMemoryCandidatePromoteUsage()
     };

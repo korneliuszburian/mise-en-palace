@@ -127,6 +127,7 @@ export interface MemoryCandidate {
   executionRunId?: ExecutionRunId;
   feedbackDeltaId?: FeedbackDeltaId;
   reviewAssessmentId?: ReviewAssessmentId;
+  revisionReviewAssessmentId?: ReviewAssessmentId;
   usefulnessApplicationId?: string;
   proposedBy: string;
   kind: MemoryRecordKind;

@@ -779,7 +779,8 @@ export const runMemoryGovernanceSmokeCheck = async (
         : undefined;
       const expectedLosingRevisionMessages = new Set([
         `Memory candidate ${revisionCandidate.id} cannot be promoted from accepted`,
-        `applyReviewedMemoryRevision.acceptCandidate could not transition candidate ${revisionCandidate.id}; expected proposed or candidate status`
+        `applyReviewedMemoryRevision.acceptCandidate could not transition candidate ${revisionCandidate.id}; expected proposed or candidate status`,
+        `applyReviewedMemoryRevision identity conflict for accepted candidate ${revisionCandidate.id}`
       ]);
       const replacementRow = revisionRows[0];
       const replacementVersionRow = revisionVersionRows[0];

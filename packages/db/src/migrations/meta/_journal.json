@@ -379,6 +379,13 @@
       "when": 1784272467970,
       "tag": "0053_cloudy_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1784281452630,
+      "tag": "0054_dry_rockslide",
+      "breakpoints": true
     }
   ]
 }
