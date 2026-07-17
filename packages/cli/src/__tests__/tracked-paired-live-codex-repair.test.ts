@@ -9,6 +9,7 @@ import {
   hashTree,
   extractLiveCodexObedienceOutput,
   parseLiveCodexObedienceOutputJson,
+  validateLiveCodexObedienceOutputAgainstPacket,
   parseTrackedTrialManifest,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
@@ -287,6 +288,35 @@ describe("tracked paired live Codex repair", () => {
       staleBoundary: "markdown notes are not runtime authority",
       action: "validate before domain use"
     }))).toThrow("required boundary fields are missing");
+  });
+
+  it("accepts multiple governing decisions and rejects invented packet authority", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: ["decision-a", "decision-b"],
+      rejectedPath: "rejected-id",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a", "decision-b"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+    expect(validateLiveCodexObedienceOutputAgainstPacket({
+      ...output,
+      decisionId: ["invented-decision"]
+    }, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    }).valid).toBe(false);
   });
 
   it("extracts the final bounded JSON message from Codex logs", () => {

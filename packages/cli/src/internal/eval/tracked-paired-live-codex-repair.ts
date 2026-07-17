@@ -408,7 +408,7 @@ export const parseTrackedTrialManifest = (value: unknown): PairedTrialManifest =
 };
 
 export type LiveCodexObedienceOutput = {
-  readonly decisionId: string;
+  readonly decisionId: string | readonly string[];
   readonly rejectedPath: string;
   readonly staleBoundary: string;
   readonly nonProof: string;
@@ -416,15 +416,96 @@ export type LiveCodexObedienceOutput = {
 };
 
 /** Parse the bounded JSON contract emitted by a live Codex obedience pilot. */
-export const parseLiveCodexObedienceOutput = (value: unknown): LiveCodexObedienceOutput => {
+const parseLiveCodexObedienceOutput = (value: unknown): LiveCodexObedienceOutput => {
   const root = isRecord(value) ? value : undefined;
   const fields = ["decisionId", "rejectedPath", "staleBoundary", "nonProof", "action"] as const;
   if (!root) throw new Error("Invalid live Codex obedience output: required boundary fields are missing");
   const values = fields.map((field) => root[field]);
-  if (values.some((field) => typeof field !== "string" || field.length === 0)) {
+  const decisionIds = root.decisionId;
+  const validDecisionIds = typeof decisionIds === "string"
+    ? decisionIds.length > 0
+    : Array.isArray(decisionIds) && decisionIds.length > 0 && decisionIds.every(
+      (id) => typeof id === "string" && id.length > 0
+    );
+  if (!validDecisionIds || values.slice(1).some((field) => typeof field !== "string" || field.length === 0)) {
     throw new Error("Invalid live Codex obedience output: required boundary fields are missing");
   }
   return Object.fromEntries(fields.map((field) => [field, root[field]])) as LiveCodexObedienceOutput;
+};
+
+export type LiveCodexObedienceValidation = {
+  readonly valid: boolean;
+  readonly reasons: readonly string[];
+};
+
+const outputDecisionIds = (output: LiveCodexObedienceOutput): readonly string[] =>
+  typeof output.decisionId === "string" ? [output.decisionId] : output.decisionId;
+
+const packetStringArray = (body: JsonRecord | undefined, key: string): readonly string[] | undefined => {
+  const value = body?.[key];
+  return Array.isArray(value) && value.every((item) => typeof item === "string")
+    ? value
+    : undefined;
+};
+
+const decisionValidationReasons = (
+  output: LiveCodexObedienceOutput,
+  governing: readonly string[] | undefined
+): readonly string[] => {
+  if (governing === undefined) return ["packet governing decision ids are unavailable"];
+  return outputDecisionIds(output).some((id) => !governing.includes(id))
+    ? ["live output names a decision outside the packet governing authority"]
+    : [];
+};
+
+const rejectedPathValidationReasons = (
+  output: LiveCodexObedienceOutput,
+  rejected: readonly string[] | undefined
+): readonly string[] => {
+  if (rejected === undefined || rejected.length === 0) return ["packet rejected-path ids are unavailable"];
+  return rejected.some((id) => output.rejectedPath.includes(id))
+    ? []
+    : ["live output does not identify a packet rejected path"];
+};
+
+const staleBoundaryValidationReasons = (
+  output: LiveCodexObedienceOutput,
+  stale: readonly string[] | undefined
+): readonly string[] => {
+  if (stale === undefined) return ["packet stale-boundary ids are unavailable"];
+  return stale.some((id) => !output.staleBoundary.includes(id))
+    ? ["live output omits a packet stale boundary"]
+    : [];
+};
+
+const nonProofValidationReasons = (
+  output: LiveCodexObedienceOutput,
+  nonProofs: readonly string[] | undefined
+): readonly string[] => {
+  if (nonProofs === undefined || nonProofs.length === 0) return ["packet non-proof boundary is unavailable"];
+  return /does not prove|unknown/i.test(output.nonProof)
+    ? []
+    : ["live output does not preserve the packet non-proof or unknown boundary"];
+};
+
+/** Validate that a live output refers only to the packet's current authority and proof boundary. */
+export const validateLiveCodexObedienceOutputAgainstPacket = (
+  output: LiveCodexObedienceOutput,
+  packet: unknown
+): LiveCodexObedienceValidation => {
+  const packetRoot = isRecord(packet) ? packet : undefined;
+  const body = packetRoot !== undefined && isRecord(packetRoot.packet) ? packetRoot.packet : undefined;
+  const governing = packetStringArray(body, "governingDecisionIds");
+  const rejected = packetStringArray(body, "rejectedPathIds");
+  const stale = packetStringArray(body, "staleDecisionIds");
+  const nonProofs = packetStringArray(body, "doesNotProve") ?? packetStringArray(body, "nonProofs");
+  const reasons = [
+    ...decisionValidationReasons(output, governing),
+    ...rejectedPathValidationReasons(output, rejected),
+    ...staleBoundaryValidationReasons(output, stale),
+    ...nonProofValidationReasons(output, nonProofs)
+  ];
+  return { valid: reasons.length === 0, reasons };
 };
 
 export const parseLiveCodexObedienceOutputJson = (raw: string): LiveCodexObedienceOutput => {

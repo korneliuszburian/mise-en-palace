@@ -116,7 +116,7 @@ export const pairedRepairEvalCandidate = (input: {
   readonly createdAt: string;
   readonly projectId?: string;
   readonly liveOutput?: {
-    readonly decisionId: string;
+    readonly decisionId: string | readonly string[];
     readonly rejectedPath: string;
     readonly staleBoundary: string;
     readonly nonProof: string;
