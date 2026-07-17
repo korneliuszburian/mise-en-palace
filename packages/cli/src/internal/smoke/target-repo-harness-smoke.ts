@@ -1084,6 +1084,34 @@ const capturePacketBoundTargetEvidence = async (input: {
   if (replayCandidates.length !== 1) {
     throw new Error(`Target repo harness smoke duplicated live obedience candidate on replay (count=${replayCandidates.length})`);
   }
+  const foreignCandidate: EvalCandidateProposal = {
+    ...liveCandidate,
+    id: `target-repo-live-output-foreign:${input.marker}`,
+    projectId: `foreign-project:${input.marker}`
+  };
+  let foreignRejected = false;
+  try {
+    await runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl },
+      cwd: process.cwd(),
+      now: () => input.now,
+      createId: input.createId,
+      persist: true,
+      runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [foreignCandidate],
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    });
+  } catch {
+    foreignRejected = true;
+  }
+  if (!foreignRejected) {
+    throw new Error("Target repo harness smoke accepted a cross-project live evidence candidate");
+  }
 
   return {
     ...proof,

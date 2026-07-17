@@ -1974,6 +1974,14 @@ const persistEvidenceCapture = async (
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
     const projectId = evidenceCaptureProjectIdFor(aggregate, databaseRuntime.projectId);
+    const crossProjectEvalCandidates = evalCandidateProposals.filter((candidate) =>
+      candidate.projectId !== undefined && candidate.projectId !== projectId
+    );
+    if (crossProjectEvalCandidates.length > 0) {
+      throw new Error(
+        `Eval candidate project scope does not match execution project: ${crossProjectEvalCandidates.map((candidate) => candidate.id).join(", ")}`
+      );
+    }
     const packet = packetBindingForEvidenceCapture({
       aggregate,
       decisionPacketChecksum: runtime.decisionPacketChecksum,
