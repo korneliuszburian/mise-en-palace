@@ -42,7 +42,7 @@ const formatEntrypointError = (error: unknown): string => {
     const remediation = typeof handoff?.remediation === "string"
       ? handoff.remediation
       : "Align candidate project scope with the execution project and submit a new capture.";
-    return `candidate_project_scope (non-retryable): ${error.message}. Candidates: ${labels}. Remediation: ${remediation} do not retry unchanged input.`;
+    return `candidate_project_scope (disposition=permanent, non-retryable): ${error.message}. Candidates: ${labels}. Remediation: ${remediation} do not retry unchanged input.`;
   }
   return error instanceof Error ? error.message : "Unknown CLI error";
 };

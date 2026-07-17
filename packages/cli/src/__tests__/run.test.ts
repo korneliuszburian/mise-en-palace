@@ -325,7 +325,20 @@ describe("runCli", () => {
       }
     );
     expect(exitCode).toBe(1);
-    expect(stderr.join("")).toContain("candidate_project_scope (non-retryable)");
+    expect(stderr.join("")).toContain("candidate_project_scope (disposition=permanent, non-retryable)");
     expect(stderr.join("")).toContain("do not retry unchanged input");
+  });
+
+  it("does not mislabel transient database failures as permanent", async () => {
+    const stderr: string[] = [];
+    const exitCode = await runCliEntrypoint(
+      [],
+      { env: {}, now: () => now, createId: (prefix) => `${prefix}-1` },
+      { stdout: { write: () => undefined }, stderr: { write: (chunk) => { stderr.push(chunk); } } },
+      async () => { throw new Error("postgres connection timeout"); }
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr.join("")).toContain("postgres connection timeout");
+    expect(stderr.join("")).not.toContain("disposition=permanent");
   });
 });
