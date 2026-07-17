@@ -78,4 +78,21 @@ describe("candidate batch project scope", () => {
       evalCandidateProposals: [evalCandidate("project-b")]
     })).toThrow(/eval candidate/);
   });
+
+  it("reports scope safely without leaking candidate metadata", () => {
+    const secret = "do-not-render-this-payload";
+    let message = "";
+    try {
+      assertCandidateBatchProjectScope({
+        projectId,
+        sourceDecisionCandidates: [],
+        memoryCandidateProposals: [],
+        evalCandidateProposals: [{ ...evalCandidate("project-b"), metadata: { secret } }]
+      });
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    expect(message).toContain("eval candidate eval-candidate-1");
+    expect(message).not.toContain(secret);
+  });
 });
