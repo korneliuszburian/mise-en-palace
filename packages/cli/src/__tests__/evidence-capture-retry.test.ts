@@ -232,6 +232,21 @@ describe("evidence capture retry boundary", () => {
           intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
+        let transientFailure: { stderr?: string } | undefined;
+        try {
+          await runEvidenceCaptureCli({
+            databaseUrl: "postgres://127.0.0.1:1/krn",
+            runId: compiled.executionRun.id,
+            packetChecksum: packetBinding.packetChecksum,
+            packetGeneratedAt: packetBinding.packetGeneratedAt,
+            intendedFile,
+            sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
+          });
+        } catch (error) {
+          transientFailure = error as { stderr?: string };
+        }
+        expect(transientFailure?.stderr).toContain("evidence_capture (disposition=transient, retryable)");
+
         const retry = await runEvidenceCaptureCli({
           databaseUrl: disposableDatabase.databaseUrl,
           runId: compiled.executionRun.id,
