@@ -420,6 +420,8 @@ describe("paired live Codex repair eval", () => {
 
     expect(first).toEqual(second);
     expect(first.baseline).not.toContain("packetIdentity");
+    expect(first.baseline).toContain("contract documentation present in the target");
+    expect(first.baseline).not.toContain("docs/repair-contract.md");
     expect(first.krn).toContain("packetIdentity");
     expect(first.delta).toMatchObject({
       generated: true,
