@@ -290,6 +290,16 @@ export class CandidateProjectScopeError extends Error {
   }
 }
 
+export type EvidenceCaptureErrorDisposition = "permanent" | "transient" | "unknown";
+
+export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErrorDisposition => {
+  if (error instanceof CandidateProjectScopeError) return "permanent";
+  if (error instanceof Error && /ECONN|ETIMEDOUT|connection|timeout|postgres/i.test(error.message)) {
+    return "transient";
+  }
+  return "unknown";
+};
+
 export const assertCandidateBatchProjectScope = (input: {
   readonly projectId: string;
   readonly sourceDecisionCandidates: readonly SourceDecision[];
