@@ -311,4 +311,21 @@ describe("runCli", () => {
     expect(stdout).toEqual([]);
     expect(stderr.join("")).toBe("KRN CLI failed: simulated entrypoint failure\n");
   });
+
+  it("renders candidate scope failures as non-retryable remediation", async () => {
+    const stderr: string[] = [];
+    const exitCode = await runCliEntrypoint(
+      [],
+      { env: {}, now: () => now, createId: (prefix) => `${prefix}-1` },
+      { stdout: { write: () => undefined }, stderr: { write: (chunk) => { stderr.push(chunk); } } },
+      async () => {
+        const error = new Error("Candidate project scope does not match execution project: eval candidate-1") as Error & { code: string };
+        error.code = "candidate_project_scope";
+        throw error;
+      }
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr.join("")).toContain("candidate_project_scope (non-retryable)");
+    expect(stderr.join("")).toContain("do not retry unchanged input");
+  });
 });

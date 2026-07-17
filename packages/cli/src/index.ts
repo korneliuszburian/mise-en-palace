@@ -28,8 +28,15 @@ type CliRunner = (
   runtime: CliRuntime
 ) => Promise<CliResult>;
 
-const formatEntrypointError = (error: unknown): string =>
-  error instanceof Error ? error.message : "Unknown CLI error";
+const formatEntrypointError = (error: unknown): string => {
+  if (error instanceof Error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "candidate_project_scope") {
+    return `candidate_project_scope (non-retryable): ${error.message}. Remediation: align candidate project scope with the execution project; do not retry unchanged input.`;
+  }
+  return error instanceof Error ? error.message : "Unknown CLI error";
+};
 
 const writeCliResult = (
   result: CliResult,
