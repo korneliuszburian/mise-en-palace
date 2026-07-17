@@ -114,7 +114,16 @@ describe("candidate batch project scope", () => {
     const first = run();
     const second = run();
     expect(first).toBeInstanceOf(CandidateProjectScopeError);
-    expect(first).toMatchObject({ code: "candidate_project_scope", retryable: false });
+    expect(first).toMatchObject({
+      code: "candidate_project_scope",
+      retryable: false,
+      handoff: {
+        kind: "krn.candidateScopeFailure.v1",
+        candidateLabels: ["eval candidate eval-candidate-1"],
+        remediation: expect.stringContaining("submit a new capture"),
+        doesNotProve: expect.arrayContaining(["source truth"])
+      }
+    });
     expect((first as Error).message).toBe((second as Error).message);
   });
 });

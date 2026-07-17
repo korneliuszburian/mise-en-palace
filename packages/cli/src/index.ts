@@ -33,7 +33,16 @@ const formatEntrypointError = (error: unknown): string => {
       typeof error === "object" &&
       "code" in error &&
       error.code === "candidate_project_scope") {
-    return `candidate_project_scope (non-retryable): ${error.message}. Remediation: align candidate project scope with the execution project; do not retry unchanged input.`;
+    const handoff = "handoff" in error && typeof error.handoff === "object" && error.handoff !== null
+      ? error.handoff as { remediation?: unknown; candidateLabels?: unknown }
+      : undefined;
+    const labels = Array.isArray(handoff?.candidateLabels)
+      ? handoff.candidateLabels.filter((label): label is string => typeof label === "string").join(", ")
+      : "unknown candidate";
+    const remediation = typeof handoff?.remediation === "string"
+      ? handoff.remediation
+      : "Align candidate project scope with the execution project and submit a new capture.";
+    return `candidate_project_scope (non-retryable): ${error.message}. Candidates: ${labels}. Remediation: ${remediation} do not retry unchanged input.`;
   }
   return error instanceof Error ? error.message : "Unknown CLI error";
 };

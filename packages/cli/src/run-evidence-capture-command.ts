@@ -267,10 +267,26 @@ export interface MemoryCandidateProposal {
 export class CandidateProjectScopeError extends Error {
   readonly code = "candidate_project_scope" as const;
   readonly retryable = false as const;
+  readonly handoff: {
+    readonly kind: "krn.candidateScopeFailure.v1";
+    readonly candidateLabels: readonly string[];
+    readonly remediation: string;
+    readonly doesNotProve: readonly string[];
+  };
 
   constructor(candidateLabels: readonly string[]) {
     super(`Candidate project scope does not match execution project: ${candidateLabels.join(", ")}`);
     this.name = "CandidateProjectScopeError";
+    this.handoff = {
+      kind: "krn.candidateScopeFailure.v1",
+      candidateLabels: [...candidateLabels],
+      remediation: "Align candidate project scope with the execution project and submit a new capture.",
+      doesNotProve: [
+        "source truth",
+        "candidate usefulness",
+        "product readiness"
+      ]
+    };
   }
 }
 
