@@ -243,6 +243,7 @@ export type TrackedTrialArtifact = {
       readonly deltaBytes: number;
       readonly packetOnlyByConstruction: true;
     };
+    readonly liveOutput?: LiveCodexObedienceOutput;
     readonly baseline?: CommandResult;
     readonly krn?: CommandResult;
     readonly targets?: {
@@ -434,6 +435,15 @@ export const parseLiveCodexObedienceOutputJson = (raw: string): LiveCodexObedien
       throw new Error("Invalid live Codex obedience output: expected JSON", { cause: error });
     }
     throw error;
+  }
+};
+
+const isLiveCodexObedienceOutput = (value: unknown): value is LiveCodexObedienceOutput => {
+  try {
+    parseLiveCodexObedienceOutput(value);
+    return true;
+  } catch {
+    return false;
   }
 };
 
@@ -1138,6 +1148,7 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "attempt", isTrialAttempt) &&
   optionalValue(value, "invalidReasons", isStringArray) &&
   optionalValue(value, "promptDelta", isTrialPromptDelta) &&
+  optionalValue(value, "liveOutput", isLiveCodexObedienceOutput) &&
   optionalValue(value, "baseline", isCommandResult) &&
   optionalValue(value, "krn", isCommandResult);
 
