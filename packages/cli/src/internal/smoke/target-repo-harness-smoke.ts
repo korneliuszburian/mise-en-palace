@@ -1051,6 +1051,13 @@ const capturePacketBoundTargetEvidence = async (input: {
   if (!liveOutputMatches) {
     throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackLiveCandidate)})`);
   }
+  const liveFeedbackDelta = liveReadback?.feedbackDeltas.find((delta) =>
+    delta.evalCandidates.some((candidate) => candidate.id === liveCandidate.id)
+  );
+  if (liveFeedbackDelta === undefined || liveFeedbackDelta.memoryCandidates.length !== 0 ||
+      liveFeedbackDelta.sourceDecisions.length !== 0) {
+    throw new Error("Target repo harness smoke allowed live obedience evidence to mutate memory or source decisions");
+  }
 
   return {
     ...proof,
