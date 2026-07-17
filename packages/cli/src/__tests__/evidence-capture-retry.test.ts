@@ -237,6 +237,8 @@ describe("evidence capture retry boundary", () => {
           reviewAssessmentCount: number;
           feedbackDeltaCount: number;
           memoryCandidateProposalCount: number;
+          sourceDecisionProposalCount: number;
+          evalCandidateProposalCount: number;
           outboxEventCount: number;
           maintenanceCount: number;
         }[]>`
@@ -255,6 +257,16 @@ describe("evidence capture retry boundary", () => {
               inner join review_assessments review on review.id = feedback.review_assessment_id
               inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
               where bundle.execution_run_id = ${compiled.executionRun.id}) as "memoryCandidateProposalCount",
+            (select coalesce(sum(jsonb_array_length(feedback.source_decisions)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "sourceDecisionProposalCount",
+            (select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "evalCandidateProposalCount",
             (select count(*)::int from outbox_events
               where topic = 'feedback.delta.created'
                 and payload->>'projectId' = ${compiled.project.id}) as "outboxEventCount",
@@ -280,6 +292,8 @@ describe("evidence capture retry boundary", () => {
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
           memoryCandidateProposalCount: 1,
+          sourceDecisionProposalCount: 0,
+          evalCandidateProposalCount: 0,
           outboxEventCount: 1,
           maintenanceCount: 1
         }]);
@@ -304,6 +318,8 @@ describe("evidence capture retry boundary", () => {
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
           memoryCandidateProposalCount: 1,
+          sourceDecisionProposalCount: 0,
+          evalCandidateProposalCount: 0,
           outboxEventCount: 1,
           maintenanceCount: 1
         });
