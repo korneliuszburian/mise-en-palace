@@ -11,6 +11,7 @@ import {
   parseLiveCodexObedienceOutputJson,
   validateLiveCodexObedienceOutputAgainstPacket,
   parseTrackedTrialManifest,
+  promptPacketForContext,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
   runTrackedTrialCommand,
@@ -27,6 +28,33 @@ import type {
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 const profileConfig = "model = \"gpt-5.6-sol\"\n";
+
+describe("packet context ablation", () => {
+  it("keeps packet identity and task while removing decision context", () => {
+    const packet = {
+      packetIdentity: { checksum: "a".repeat(64) },
+      packet: {
+        task: { id: "task-1", projectId: "project-1" },
+        contextInclusions: [{ subjectId: "decision-1" }],
+        contextExclusions: [{ subjectId: "decision-2" }],
+        governingDecisionIds: ["decision-1"],
+        sourceDecisionIds: ["source-1"],
+        governingStatements: ["use decision-1"],
+        sourceClaimIds: ["claim-1"],
+        taskStandardDecisions: [{ id: "decision-1" }],
+        sourceConsensus: { status: "current" },
+        sourceConsensusTimeline: { status: "current" },
+        memoryConsensusTimeline: { status: "current" }
+      }
+    };
+
+    expect(promptPacketForContext(packet, "full")).toBe(packet);
+    expect(promptPacketForContext(packet, "task-only")).toEqual({
+      packetIdentity: packet.packetIdentity,
+      packet: { task: packet.packet.task }
+    });
+  });
+});
 
 const manifest: PairedTrialManifest = {
   kind: "krn.pairedLiveCodexRepairManifest.v1",

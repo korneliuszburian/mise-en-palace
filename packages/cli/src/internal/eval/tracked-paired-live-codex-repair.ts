@@ -103,6 +103,7 @@ export type PairedTrialManifest = {
     readonly heldOut: true;
     readonly outcome: "win|tie|loss|invalid";
   };
+  readonly packetContextMode?: "full" | "task-only";
 };
 
 export type TrialPacketValidation = {
@@ -251,6 +252,7 @@ export type TrackedTrialArtifact = {
     };
     readonly liveOutput?: LiveCodexObedienceOutput;
     readonly decisionApplicationObservation?: DecisionApplicationObservation;
+    readonly packetContextMode?: "full" | "task-only";
     readonly baseline?: CommandResult;
     readonly krn?: CommandResult;
     readonly targets?: {
@@ -404,6 +406,7 @@ const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => 
     Array.isArray(value["requiredDecisionIds"]) &&
     value["requiredDecisionIds"].every((id) => readString(id) !== undefined) &&
     hasCompleteDecisionApplicationRules(value) &&
+    (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
     isManifestCodex(value["codex"]) &&
     isManifestContainment(value["containment"]) &&
     isManifestChecker(value["checker"]);
@@ -1265,6 +1268,7 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "decisionApplicationObservation", (item) =>
     item === "not_attempted" || item === "none_observed" || item === "observed" || item === "persistence_failed"
   ) &&
+  optionalValue(value, "packetContextMode", (item) => item === "full" || item === "task-only") &&
   optionalValue(value, "baseline", isCommandResult) &&
   optionalValue(value, "krn", isCommandResult);
 
@@ -1596,6 +1600,7 @@ const trialExecution = (
       : [...input.invalidReasons]
   ),
   ...(input.execution ?? {}),
+  packetContextMode: context.manifest.packetContextMode ?? "full",
   ...optionalField("attempt", input.attempt),
   ...optionalField(
     "liveOutput",
@@ -1931,6 +1936,50 @@ const prepareComparableTrial = async (input: {
   };
 };
 
+export const promptPacketForContext = (
+  packet: unknown,
+  mode: "full" | "task-only"
+): unknown => {
+  if (mode === "full" || !isRecord(packet) || !isRecord(packet["packet"])) return packet;
+  const body = { ...packet["packet"] };
+  for (const key of [
+    "toolBoundaries",
+    "nextAction",
+    "contextInclusions",
+    "contextExclusions",
+    "governingDecisionIds",
+    "sourceDecisionIds",
+    "governingStatements",
+    "sourceClaimIds",
+    "caveatedSourceClaimIds",
+    "sourceDecisionEdgeIds",
+    "sourceDecisionTargets",
+    "sourceRejectionIds",
+    "memoryRefs",
+    "caveatedMemoryRefs",
+    "staleDecisionIds",
+    "staleKnowledgeIds",
+    "noiseKnowledgeIds",
+    "unknownKnowledgeIds",
+    "supersededPathIds",
+    "rejectedPathIds",
+    "falsifiers",
+    "verificationCommands",
+    "evidenceGaps",
+    "abstentionScore",
+    "doesNotProve",
+    "nonProofs",
+    "noiseDecisionIds",
+    "severeStaleAuthorityIds",
+    "sourceConsensusTimeline",
+    "memoryConsensusTimeline",
+    "brief",
+    "taskStandardDecisions",
+    "sourceConsensus"
+  ]) delete body[key];
+  return { ...packet, packet: body };
+};
+
 const executeComparableTrial = async (input: {
   readonly trial: ComparableTrial;
   readonly packet: unknown;
@@ -1960,7 +2009,11 @@ const executeComparableTrial = async (input: {
       timeoutMs: input.trial.context.manifest.codex.budget.timeoutMs
     });
   };
-  const prompts = buildPairedRepairPrompts({ task: input.trial.context.manifest.task, decisionPacket: input.packet });
+  const promptPacket = promptPacketForContext(
+    input.packet,
+    input.trial.context.manifest.packetContextMode ?? "full"
+  );
+  const prompts = buildPairedRepairPrompts({ task: input.trial.context.manifest.task, decisionPacket: promptPacket });
   const baselineResult = await runArm(input.trial.baseline, prompts.baseline, input.trial.baselineArmEnvironment);
   const baselineAfter = await captureTargetState({
     targetRoot: input.trial.baseline.root,
