@@ -176,6 +176,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   selectorPacketMemoryRefs: readonly string[];
   selectorPacketIncludesRetainedMemory: boolean;
   selectorPacketExcludesStaleMemory: boolean;
+  selectorLegacyMemoryApplicationsPacketStable: boolean;
   selectorMaintenanceCandidateId: string;
   selectorMaintenanceAntiMemoryCandidateId: string;
   selectorMaintenanceFeedbackEventId: string;
@@ -307,6 +308,7 @@ interface SelectorFeedbackProofResult {
   packetMemoryRefs: readonly string[];
   includesRetainedMemory: boolean;
   excludesStaleMemory: boolean;
+  legacyMemoryApplicationsPacketStable: boolean;
   maintenanceCandidateId: string;
   maintenanceAntiMemoryCandidateId: string;
   maintenanceFeedbackEventId: string;
@@ -2526,6 +2528,7 @@ const runSelectorFeedbackProof = async (
       readonly now: () => string;
       readonly createId: (prefix: string) => string;
     };
+    readonly client: Sql;
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
     readonly feedbackDeltaId: string;
@@ -2870,6 +2873,55 @@ const runSelectorFeedbackProof = async (
       exclusion.explanation.includes("unresolved_negative_feedback")
     );
 
+  await input.client`
+    insert into memory_applications (
+      memory_record_id,
+      execution_run_id,
+      decision_packet_checksum,
+      expected_use,
+      outcome,
+      notes,
+      metadata
+    ) values
+      (
+        ${selectorRetainedMemory.id},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'hurt',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      ),
+      (
+        ${selectorStaleMemory.id},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'helped',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      )
+  `;
+
+  const rebuildMemoryApplicationCounters = memoryRepository.rebuildMemoryApplicationCounters;
+  if (rebuildMemoryApplicationCounters === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires memory application counter rebuild readback"
+    );
+  }
+  await rebuildMemoryApplicationCounters.call(memoryRepository);
+  const selectorPacketAfterLegacyRows = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: selectorExecutionRun.id
+  });
+  const legacyMemoryApplicationsPacketStable =
+    selectorPacketAfterLegacyRows.packetIdentity.checksum === selectorPacket.packetIdentity.checksum &&
+    JSON.stringify(selectorPacketAfterLegacyRows.packet.memoryRefs) ===
+      JSON.stringify(selectorPacket.packet.memoryRefs) &&
+    JSON.stringify(selectorPacketAfterLegacyRows.readModel.context.exclusionDetails) ===
+      JSON.stringify(selectorPacket.readModel.context.exclusionDetails);
+
   return {
     proofRunId: selectorExecutionRun.id,
     retrievalRunId:
@@ -2883,6 +2935,7 @@ const runSelectorFeedbackProof = async (
     packetMemoryRefs: selectorPacket.packet.memoryRefs,
     includesRetainedMemory,
     excludesStaleMemory,
+    legacyMemoryApplicationsPacketStable,
     maintenanceCandidateId: maintenanceCandidate.id,
     maintenanceAntiMemoryCandidateId: maintenanceProposal.antiMemoryCandidate.id,
     maintenanceFeedbackEventId: maintenanceProposal.feedbackEvent.id,
@@ -3438,6 +3491,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
 
     const selectorProof = await runSelectorFeedbackProof({
       baseRuntime,
+      client,
       commandRuntime,
       executionRunId: executionRun.id,
       feedbackDeltaId: staleFeedbackDelta.id,
@@ -3539,6 +3593,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         passed: selectorProof.includesRetainedMemory
       },
       { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
+      {
+        label: "unbound legacy memory applications cannot alter DecisionPacket selection",
+        passed: selectorProof.legacyMemoryApplicationsPacketStable
+      },
       {
         label: "feedback maintenance queue succeeded",
         passed: feedbackMaintenanceProof.queueStatus === "succeeded"
@@ -3712,6 +3770,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       selectorPacketMemoryRefs: selectorProof.packetMemoryRefs,
       selectorPacketIncludesRetainedMemory: selectorProof.includesRetainedMemory,
       selectorPacketExcludesStaleMemory: selectorProof.excludesStaleMemory,
+      selectorLegacyMemoryApplicationsPacketStable:
+        selectorProof.legacyMemoryApplicationsPacketStable,
       selectorMaintenanceCandidateId: selectorProof.maintenanceCandidateId,
       selectorMaintenanceAntiMemoryCandidateId: selectorProof.maintenanceAntiMemoryCandidateId,
       selectorMaintenanceFeedbackEventId: selectorProof.maintenanceFeedbackEventId,
