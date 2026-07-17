@@ -11,6 +11,9 @@ import {
 import {
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
+import type {
+  EvalCandidateProposal
+} from "@krn/core";
 import {
   createCompiledSmokeExecution,
   migrateDatabase
@@ -26,6 +29,7 @@ import {
   defaultProjectSlug,
   defaultWorkspaceSlug
 } from "../database-runtime.js";
+import { runEvidenceCaptureCommand } from "../run-evidence-capture-command.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const execFileAsync = promisify(execFile);
@@ -121,6 +125,7 @@ const memoryCandidateIdFrom = (stdout: string): string => {
 describe("evidence capture retry boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps a sequential changed-file retry in one evidence chain across CLI processes",
+    // fallow-ignore-next-line complexity -- one disposable PostgreSQL smoke owns source, eval, transient-failure, idempotency, and proposal-only readbacks
     async () => {
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
       const client = postgres(disposableDatabase.databaseUrl, {
@@ -328,6 +333,74 @@ describe("evidence capture retry boundary", () => {
           outboxEventCount: 1,
           maintenanceCount: 1
         });
+
+        const evalExecutionRun = await compiled.harnessRunRepository.createExecutionRun({
+          harnessPlanId: compiled.result.harnessPlan.id,
+          adapter: "codex",
+          metadata: { smokeId: "evidence-capture-eval-retry" }
+        });
+        const evalAggregate = await compiled.harnessRunRepository
+          .getHarnessRunByExecutionRunId(evalExecutionRun.id);
+        if (evalAggregate === undefined) {
+          throw new Error("compiled eval retry run is missing");
+        }
+        const evalPacketBinding = currentDecisionPacketBindingForHarnessRun({
+          aggregate: evalAggregate,
+          packetGeneratedAt: "2026-07-15T00:00:00.000Z",
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        const evalProposal: EvalCandidateProposal = {
+          id: "eval-candidate-postgres-retry" as EvalCandidateProposal["id"],
+          status: "candidate",
+          title: "Postgres retry eval proposal",
+          scenario: "A transient persistence failure occurs",
+          expectedSignal: "The same eval proposal is retained exactly once",
+          sourceEvidence: [evalPacketBinding.packetEvidenceRef],
+          metadata: { consumer: "evidence capture retry smoke" },
+          createdAt: "2026-07-15T00:00:00.000Z"
+        };
+        const runEvalCapture = (url: string) => runEvidenceCaptureCommand({
+          env: { KRN_DATABASE_URL: url },
+          cwd: repoRoot,
+          persist: true,
+          runId: evalExecutionRun.id,
+          decisionPacketChecksum: evalPacketBinding.packetChecksum,
+          decisionPacketGeneratedAt: evalPacketBinding.packetGeneratedAt,
+          intendedFiles: [intendedFile],
+          evalCandidateProposals: [evalProposal],
+          now: () => "2026-07-15T00:00:00.000Z",
+          createId: (prefix) => `${prefix}-eval-retry`,
+          readGitStatus: async () => `?? ${intendedFile}`
+        });
+        const evalFirst = await runEvalCapture(disposableDatabase.databaseUrl);
+        let evalTransientError: unknown;
+        try {
+          await runEvalCapture("postgres://127.0.0.1:0/krn");
+        } catch (error) {
+          evalTransientError = error;
+        }
+        expect(evalTransientError).toBeInstanceOf(Error);
+        expect((evalTransientError as Error).message).toMatch(/ECONNREFUSED|connect/i);
+        const evalCountsAfterFailure = await client<{ count: number }[]>`
+          select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int as count
+          from feedback_deltas feedback
+          inner join review_assessments review on review.id = feedback.review_assessment_id
+          inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+          where bundle.execution_run_id = ${evalExecutionRun.id}
+        `;
+        expect(evalCountsAfterFailure[0]?.count).toBe(1);
+        const evalRetry = await runEvalCapture(disposableDatabase.databaseUrl);
+        const evalCountsAfterRetry = await client<{ count: number }[]>`
+          select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int as count
+          from feedback_deltas feedback
+          inner join review_assessments review on review.id = feedback.review_assessment_id
+          inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+          where bundle.execution_run_id = ${evalExecutionRun.id}
+        `;
+        expect(evalCountsAfterRetry[0]?.count).toBe(1);
+        expect(evalFirst.stdout).toContain("evalCandidateProposals: 1");
+        expect(evalRetry.stdout).toContain("evalCandidateProposals: 1");
+        expect(captureIdentityFrom(evalRetry.stdout)).toBe(captureIdentityFrom(evalFirst.stdout));
       } finally {
         await rm(path.join(repoRoot, intendedFile), { force: true });
         await client.end();
