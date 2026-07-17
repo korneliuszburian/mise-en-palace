@@ -1982,6 +1982,22 @@ const persistEvidenceCapture = async (
         `Eval candidate project scope does not match execution project: ${crossProjectEvalCandidates.map((candidate) => candidate.id).join(", ")}`
       );
     }
+    const crossProjectSourceDecisions = sourceDecisionCandidates.filter((candidate) =>
+      candidate.projectId !== undefined && candidate.projectId !== projectId
+    );
+    if (crossProjectSourceDecisions.length > 0) {
+      throw new Error(
+        `Source decision project scope does not match execution project: ${crossProjectSourceDecisions.map((candidate) => candidate.id).join(", ")}`
+      );
+    }
+    const crossProjectMemoryCandidates = memoryCandidateProposals.filter((candidate) =>
+      typeof candidate.metadata["projectId"] === "string" && candidate.metadata["projectId"] !== projectId
+    );
+    if (crossProjectMemoryCandidates.length > 0) {
+      throw new Error(
+        `Memory candidate project scope does not match execution project: ${crossProjectMemoryCandidates.map((candidate) => candidate.id).join(", ")}`
+      );
+    }
     const packet = packetBindingForEvidenceCapture({
       aggregate,
       decisionPacketChecksum: runtime.decisionPacketChecksum,
