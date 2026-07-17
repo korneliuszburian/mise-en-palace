@@ -697,7 +697,7 @@ describe("tracked paired live Codex repair", () => {
           ...differentialScore,
           krn: withoutFocusedTestProof(failedKrnArm)
         }
-      }))).toBe(false);
+      }))).toBe(true);
 
       const failedPersistence = await withProcessEnvironment({
         KRN_TRIAL_CODEX_HOME: binRoot,

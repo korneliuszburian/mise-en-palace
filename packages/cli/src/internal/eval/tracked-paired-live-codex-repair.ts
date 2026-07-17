@@ -1234,7 +1234,7 @@ const isHeldOutArmScore = (value: unknown, focusedProofRequired: boolean): boole
     optionalValue(value, "changeManifest", isTargetChangeManifest) &&
     isHeldOutCommands(value["commands"]) &&
     optionalValue(value, "runtimeCommand", isCommandResult) &&
-    (!focusedProofRequired || hasConsistentFocusedTestProof(value));
+    (!focusedProofRequired || value["status"] !== "pass" || hasConsistentFocusedTestProof(value));
 };
 
 const isPairedRepairScore = (

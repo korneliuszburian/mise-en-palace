@@ -501,7 +501,13 @@ export const scoreTargetRepair = (
       changedFiles: [...input.changedFiles],
       changeManifest,
       commands: input.commands,
-      ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand })
+      ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
+      ...(input.focusedTestControl === undefined
+        ? {}
+        : { focusedTestControl: input.focusedTestControl }),
+      ...(input.focusedTestMutations === undefined
+        ? {}
+        : { focusedTestMutations: input.focusedTestMutations })
     };
   }
   const checks: HeldOutCheck[] = [
