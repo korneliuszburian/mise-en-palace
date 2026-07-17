@@ -313,6 +313,9 @@ const observationCandidate = (input: {
         packetChecksum: input.artifact.packet.checksum ?? "unknown",
         artifactHash: input.artifact.artifactHash,
         evidenceRefs: [...input.evidenceRefs],
+        ...(input.artifact.execution.liveOutput === undefined
+          ? {}
+          : { liveOutput: input.artifact.execution.liveOutput }),
         doesNotProve: [
           "An incomplete paired trial does not prove memory usefulness.",
           "The candidate is an observation and does not mutate MemoryRecord or SourceClaim truth."
@@ -326,7 +329,10 @@ const observationCandidate = (input: {
       projectId: input.manifest.projectId,
       packetChecksum: input.artifact.packet.checksum ?? "unknown",
       evidenceRefs: input.evidenceRefs,
-      createdAt: input.createdAt
+      createdAt: input.createdAt,
+      ...(input.artifact.execution.liveOutput === undefined
+        ? {}
+        : { liveOutput: input.artifact.execution.liveOutput })
     });
 
 const scoreCommandRows = (artifact: TrackedTrialArtifact) => {

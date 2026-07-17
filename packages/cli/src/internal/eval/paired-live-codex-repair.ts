@@ -115,6 +115,13 @@ export const pairedRepairEvalCandidate = (input: {
   readonly evidenceRefs: readonly string[];
   readonly createdAt: string;
   readonly projectId?: string;
+  readonly liveOutput?: {
+    readonly decisionId: string;
+    readonly rejectedPath: string;
+    readonly staleBoundary: string;
+    readonly nonProof: string;
+    readonly action: string;
+  };
 }): EvalCandidateProposal => ({
   id: `paired-target-repair:${input.runId}`,
   ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
@@ -134,6 +141,7 @@ export const pairedRepairEvalCandidate = (input: {
     packetChecksum: input.packetChecksum,
     packetEvidenceRef: `packet:${input.packetChecksum}`,
     evidenceRefs: [...input.evidenceRefs],
+    ...(input.liveOutput === undefined ? {} : { liveOutput: input.liveOutput }),
     doesNotProve: [
       "A single paired trial does not prove arbitrary-repository portability.",
       "A tie, loss, or invalid trial does not prove memory usefulness.",
