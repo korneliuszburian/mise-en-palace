@@ -2520,6 +2520,72 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   };
 };
 
+const legacyMemoryApplicationsPacketStabilityProof = async (input: {
+  readonly baseRuntime: {
+    readonly cwd: string;
+    readonly env: { readonly KRN_DATABASE_URL: string };
+    readonly now: () => string;
+    readonly createId: (prefix: string) => string;
+  };
+  readonly client: Sql;
+  readonly commandRuntime: DatabaseRuntime;
+  readonly marker: string;
+  readonly memoryRepository: MemoryRepository;
+  readonly retainedMemoryId: string;
+  readonly staleMemoryId: string;
+  readonly selectorPacket: ReturnType<typeof parseDecisionPacket>;
+  readonly selectorExecutionRunId: string;
+}): Promise<boolean> => {
+  await input.client`
+    insert into memory_applications (
+      memory_record_id,
+      execution_run_id,
+      decision_packet_checksum,
+      expected_use,
+      outcome,
+      notes,
+      metadata
+    ) values
+      (
+        ${input.retainedMemoryId},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'hurt',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      ),
+      (
+        ${input.staleMemoryId},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'helped',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      )
+  `;
+
+  const rebuildMemoryApplicationCounters = input.memoryRepository.rebuildMemoryApplicationCounters;
+  if (rebuildMemoryApplicationCounters === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires memory application counter rebuild readback"
+    );
+  }
+  await rebuildMemoryApplicationCounters.call(input.memoryRepository);
+  const selectorPacketAfterLegacyRows = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: input.selectorExecutionRunId
+  });
+
+  return selectorPacketAfterLegacyRows.packetIdentity.checksum === input.selectorPacket.packetIdentity.checksum &&
+    JSON.stringify(selectorPacketAfterLegacyRows.packet.memoryRefs) ===
+      JSON.stringify(input.selectorPacket.packet.memoryRefs) &&
+    JSON.stringify(selectorPacketAfterLegacyRows.readModel.context.exclusionDetails) ===
+      JSON.stringify(input.selectorPacket.readModel.context.exclusionDetails);
+};
+
 const runSelectorFeedbackProof = async (
   input: {
     readonly baseRuntime: {
@@ -2873,54 +2939,17 @@ const runSelectorFeedbackProof = async (
       exclusion.explanation.includes("unresolved_negative_feedback")
     );
 
-  await input.client`
-    insert into memory_applications (
-      memory_record_id,
-      execution_run_id,
-      decision_packet_checksum,
-      expected_use,
-      outcome,
-      notes,
-      metadata
-    ) values
-      (
-        ${selectorRetainedMemory.id},
-        null,
-        null,
-        'Unbound legacy packet-selection falsifier.',
-        'hurt',
-        'This row has no packet identity and must remain historical.',
-        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
-      ),
-      (
-        ${selectorStaleMemory.id},
-        null,
-        null,
-        'Unbound legacy packet-selection falsifier.',
-        'helped',
-        'This row has no packet identity and must remain historical.',
-        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
-      )
-  `;
-
-  const rebuildMemoryApplicationCounters = memoryRepository.rebuildMemoryApplicationCounters;
-  if (rebuildMemoryApplicationCounters === undefined) {
-    throw new Error(
-      "DecisionPacket return-loop smoke requires memory application counter rebuild readback"
-    );
-  }
-  await rebuildMemoryApplicationCounters.call(memoryRepository);
-  const selectorPacketAfterLegacyRows = await readDecisionPacketForSmokeRun({
+  const legacyMemoryApplicationsPacketStable = await legacyMemoryApplicationsPacketStabilityProof({
     baseRuntime: input.baseRuntime,
+    client: input.client,
     commandRuntime: input.commandRuntime,
-    runId: selectorExecutionRun.id
+    marker: input.marker,
+    memoryRepository,
+    retainedMemoryId: selectorRetainedMemory.id,
+    selectorExecutionRunId: selectorExecutionRun.id,
+    selectorPacket,
+    staleMemoryId: selectorStaleMemory.id
   });
-  const legacyMemoryApplicationsPacketStable =
-    selectorPacketAfterLegacyRows.packetIdentity.checksum === selectorPacket.packetIdentity.checksum &&
-    JSON.stringify(selectorPacketAfterLegacyRows.packet.memoryRefs) ===
-      JSON.stringify(selectorPacket.packet.memoryRefs) &&
-    JSON.stringify(selectorPacketAfterLegacyRows.readModel.context.exclusionDetails) ===
-      JSON.stringify(selectorPacket.readModel.context.exclusionDetails);
 
   return {
     proofRunId: selectorExecutionRun.id,
