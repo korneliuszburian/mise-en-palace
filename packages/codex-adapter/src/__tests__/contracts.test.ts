@@ -16,6 +16,7 @@ describe("Codex adapter contracts", () => {
     const brief: ExecutionBrief = {
       formatVersion: executionBriefFormatVersion,
       abstentionStatus: "ready",
+      abstentionReasons: [],
       title: "KRN Codex Execution Brief",
       objective: "Render a bounded Codex brief.",
       nonGoals: ["do not invoke Codex"],
@@ -92,7 +93,7 @@ describe("Codex adapter contracts", () => {
         emptyBehavior: "render_none"
       }],
       budget: {
-        maxRenderedSections: 20,
+        maxRenderedSections: 21,
         maxRenderedItems: 80,
         renderedSections: 12,
         renderedItems: 20,

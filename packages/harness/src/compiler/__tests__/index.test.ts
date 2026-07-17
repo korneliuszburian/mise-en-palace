@@ -826,6 +826,9 @@ describe("compileHarnessPlan", () => {
     expect(result.capabilityPlan.requirements.map((requirement) => requirement.kind)).toEqual(
       expect.arrayContaining(["source_grounding", "type_safety", "test_boundary"])
     );
+    expect(result.harnessPlan.metadata.capabilityPlanToolBoundaries).toEqual(
+      result.capabilityPlan.toolBoundaries
+    );
     expect("requiredSkills" in result.taskContract).toBe(false);
   });
 

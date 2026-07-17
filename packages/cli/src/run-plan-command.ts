@@ -4,7 +4,8 @@ import {
 import type {
   ContextAssembly,
   ContextExclusion,
-  ContextInclusion
+  ContextInclusion,
+  DecisionPacket
 } from "@krn/core";
 import {
   activationRetrievalDiagnosticsFromMetadata,
@@ -25,6 +26,7 @@ import type {
   RepoInstallationRecord
 } from "@krn/core/repositories";
 import {
+  decisionPacketNextActionMetadataKey,
   parseHarnessCompileInput,
   parseOperatorIntentInput,
   parseTaskContractInput
@@ -98,6 +100,11 @@ interface PersistedPlanIdentity {
   harnessPlanId: string;
   contextAssemblyId: string;
   executionRunId: string;
+}
+
+interface PersistedPlanOutput {
+  identity: PersistedPlanIdentity;
+  issuedDecisionPacket: DecisionPacket;
 }
 
 interface ProjectScopedPlanMetadata {
@@ -804,8 +811,12 @@ const compilePlanForCommand = (
     compilerRuntime.compilerDependencies
   );
 
-const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
-  renderExecutionBrief({ packet: decisionPacketForCompiledPlan(result) });
+const renderPlanExecutionBrief = (
+  result: CompiledHarnessPlan,
+  issuedDecisionPacket: DecisionPacket | undefined
+): string => renderExecutionBrief({
+  packet: issuedDecisionPacket ?? decisionPacketForCompiledPlan(result)
+});
 
 const targetReadModelMetadata = (
   targetReadModel: TargetActivationReadModel | undefined,
@@ -852,13 +863,13 @@ const knowledgeSelectionMetadataForRun = (
     : { [knowledgePlanSelectionMetadataKey]: knowledgeSelection };
 };
 
-const createPersistedPlanIdentity = async (
+const createPersistedPlanOutput = async (
   compilerRuntime: CompilerRuntimeResolution,
   result: CompiledHarnessPlan,
   command: string,
   targetReadModel: TargetActivationReadModel | undefined,
   targetOwnerFileRecall: TargetOwnerFileRecall | undefined
-): Promise<PersistedPlanIdentity | undefined> => {
+): Promise<PersistedPlanOutput | undefined> => {
   const executionRun =
     compilerRuntime.harnessRunRepository === undefined
       ? undefined
@@ -873,29 +884,34 @@ const createPersistedPlanIdentity = async (
             ...(compilerRuntime.projectResolution === undefined
               ? {}
               : { projectResolution: compilerRuntime.projectResolution }),
+            [decisionPacketNextActionMetadataKey]: result.nextAction,
             evidenceContract: result.evidenceContract,
             codexAdapterPlanRef: result.codexAdapterPlanRef
           }
         });
 
-  if (
-    executionRun !== undefined &&
-    compilerRuntime.harnessRunRepository?.issueDecisionPacketForExecutionRun !== undefined
-  ) {
-    await compilerRuntime.harnessRunRepository.issueDecisionPacketForExecutionRun(
-      executionRun.id
-    );
+  if (executionRun === undefined) {
+    return undefined;
   }
 
-  return executionRun === undefined
-    ? undefined
-    : {
-        operatorIntentId: result.operatorIntent.id,
-        taskContractId: result.taskContract.id,
-        harnessPlanId: result.harnessPlan.id,
-        contextAssemblyId: result.contextAssembly.id,
-        executionRunId: executionRun.id
-      };
+  if (compilerRuntime.harnessRunRepository?.issueDecisionPacketForExecutionRun === undefined) {
+    throw new Error("Persisted plan requires authoritative DecisionPacket issuance");
+  }
+
+  const issuedDecisionPacket = (
+    await compilerRuntime.harnessRunRepository.issueDecisionPacketForExecutionRun(executionRun.id)
+  ).packet;
+
+  return {
+    identity: {
+      operatorIntentId: result.operatorIntent.id,
+      taskContractId: result.taskContract.id,
+      harnessPlanId: result.harnessPlan.id,
+      contextAssemblyId: result.contextAssembly.id,
+      executionRunId: executionRun.id
+    },
+    issuedDecisionPacket
+  };
 };
 
 export const runPlanCommand = async (
@@ -919,14 +935,20 @@ export const runPlanCommand = async (
     const result = await compilePlanForCommand(compilerRuntime, compileInput, targetReadModel);
     const targetOwnerFileRecall =
       targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(targetReadModel);
-    const executionBrief = renderPlanExecutionBrief(result);
-    const evidenceCommands = result.evidenceContract.commands.map((command) => command.command);
-    const persistedIdentity = await createPersistedPlanIdentity(
+    const persistedPlan = await createPersistedPlanOutput(
       compilerRuntime,
       result,
       commandLabelForRuntime(runtime),
       targetReadModel,
       targetOwnerFileRecall
+    );
+    const authoritativePacket = persistedPlan?.issuedDecisionPacket;
+    const evidenceCommands = authoritativePacket?.verificationCommands ??
+      result.evidenceContract.commands.map((command) => command.command);
+    const nextAction = authoritativePacket?.nextAction ?? result.nextAction;
+    const executionBrief = renderPlanExecutionBrief(
+      result,
+      authoritativePacket
     );
 
     return {
@@ -937,12 +959,12 @@ export const runPlanCommand = async (
         compilerRuntime.projectResolution,
         result.contextAssembly,
         evidenceCommands,
-        result.nextAction,
+        nextAction,
         executionBrief,
         knowledgeSelection,
         compilerRuntime.projectScopedMetadata,
         targetReadModel,
-        persistedIdentity
+        persistedPlan?.identity
       )
     };
   } finally {

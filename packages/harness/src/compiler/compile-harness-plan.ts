@@ -10,6 +10,8 @@ import type {
   WorkspaceId
 } from "@krn/core";
 import {
+  capabilityPlanToolBoundaries,
+  capabilityPlanToolBoundariesMetadataKey,
   decisionPacketFormatVersion,
   decisionPacketNegativePathsForContext
 } from "@krn/core";
@@ -267,6 +269,7 @@ const createReadyHarnessPlan = (
   nextAction: "Render Codex adapter brief.",
   metadata: {
     ...(metadata ?? {}),
+    [capabilityPlanToolBoundariesMetadataKey]: [...capabilityPlanToolBoundaries],
     evidenceContract
   }
 });

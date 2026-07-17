@@ -188,6 +188,7 @@ export interface DecisionPacketReadModel {
     status: TaskContractStatus;
   };
   nextAction?: string;
+  toolBoundaries: string[];
   knowledgeSelection?: KnowledgePlanSelection;
   context: {
     status: string;

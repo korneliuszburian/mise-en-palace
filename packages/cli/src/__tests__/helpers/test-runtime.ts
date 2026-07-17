@@ -6,6 +6,7 @@ import {
 } from "../../no-store-repositories.js";
 import type {
   AntiMemoryRecord,
+  DecisionPacketContractReadback,
   FeedbackDelta,
   MemoryRecord
 } from "@krn/core";
@@ -34,6 +35,9 @@ import type {
 import type {
   DatabaseRuntimeInput
 } from "../../database-runtime.js";
+import {
+  decisionPacketMcpFixture
+} from "../support/decision-packet-mcp-fixture.js";
 
 export const now = "2026-06-21T12:00:00.000Z";
 
@@ -45,6 +49,7 @@ export type CapturedPlanRun = {
 interface PersistedPlanOptions {
   feedbackDeltas?: readonly FeedbackDelta[];
   memoryRecords?: readonly MemoryRecord[];
+  omitDecisionPacketIssuance?: boolean;
   onListActiveMemory?: (limit: number) => void;
 }
 
@@ -193,6 +198,13 @@ export const runPersistedPlanWithCapturedMetadata = async (
             };
         const harnessRunRepository = {
           ...dependencies.harnessRunRepository,
+          ...(options.omitDecisionPacketIssuance
+            ? {}
+            : {
+                async issueDecisionPacketForExecutionRun(): Promise<DecisionPacketContractReadback> {
+                  return decisionPacketMcpFixture as DecisionPacketContractReadback;
+                }
+              }),
           async createExecutionRun(runInput: CreateExecutionRunInput) {
             executionRunMetadata = runInput.metadata ?? {};
 

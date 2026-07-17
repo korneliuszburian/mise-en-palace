@@ -325,7 +325,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 20,
+      maxRenderedSections: 21,
       maxRenderedItems: 80,
       status: "within_budget"
     });
@@ -774,6 +774,14 @@ describe("renderExecutionBrief", () => {
       sourceAuthority: "project-decision"
     }]);
     expect(rendered).toContain("Packet Status: weak_context");
+    expect(rendered).toContain("Packet Readiness Reasons:");
+    expect(rendered).toContain("- missing_rejected_path_evidence");
+    expect(describeExecutionBriefProfile(brief).sections.find(
+      (section) => section.id === "abstention_reasons"
+    )).toMatchObject({
+      rendered: true,
+      itemCount: 1
+    });
     expect(rendered).toContain("source_claim:claim-agent-unsafe");
     expect(rendered).toContain("reason=unsafe");
   });

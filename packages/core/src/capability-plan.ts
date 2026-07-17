@@ -4,6 +4,15 @@ import type {
 } from "./ids.js";
 import type { IsoTimestamp } from "./time.js";
 
+export const capabilityPlanToolBoundariesMetadataKey = "capabilityPlanToolBoundaries";
+
+export const capabilityPlanToolBoundaries = [
+  "Do not invoke Codex from the harness compiler.",
+  "Do not mutate memory automatically.",
+  "Do not write runtime markdown memory.",
+  "Do not spawn agents from the compiler."
+] as const;
+
 export type CapabilityRequirementKind =
   | "source_grounding"
   | "type_safety"

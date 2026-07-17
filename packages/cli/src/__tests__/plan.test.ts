@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 import {
   runCli
@@ -9,18 +10,30 @@ import {
 } from "../no-store-repositories.js";
 import type {
   AntiMemoryRecord,
+  DecisionPacketContractReadback,
+  ContextAssembly,
+  ExecutionRun,
   FeedbackDelta,
+  HarnessPlan,
   MemoryRecord,
-  SourceClaim
+  OperatorIntent,
+  SourceClaim,
+  TaskContract
 } from "@krn/core";
 import {
+  buildDecisionPacketIssuance,
   stampCurrentDecisionPacketAuthorityMetadata
 } from "@krn/core";
 import type {
+  CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
   CreateFeedbackDeltaInput,
   CreateExecutionRunInput,
+  CreateHarnessPlanInput,
+  CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
+  CreateTaskContractInput,
+  HarnessRunAggregate,
   SearchDocumentSearchResult
 } from "@krn/core/repositories/internal";
 import type {
@@ -32,7 +45,15 @@ import {
   brainRecallMemoryRepository,
   unusedMemoryRepository
 } from "./helpers/test-runtime.js";
+import {
+  decisionPacketMcpFixture
+} from "./support/decision-packet-mcp-fixture.js";
 
+const fixtureDecisionPacketIssuer = {
+  async issueDecisionPacketForExecutionRun(): Promise<DecisionPacketContractReadback> {
+    return decisionPacketMcpFixture as DecisionPacketContractReadback;
+  }
+};
 const shouldNotBeCalled = (method: string): never => {
   throw new Error(`Plan test runtime method should not be called: ${method}`);
 };
@@ -126,6 +147,7 @@ describe("runCli", () => {
     );
     expect(result.stdout).toContain("Evidence expected: pnpm typecheck, pnpm test, git diff --check");
     expect(result.stdout).toContain("KRN Codex Execution Brief");
+    expect(result.stdout).toContain("Packet Status: abstain");
     expect(result.stdout).toContain("Context activation abstained");
   });
 
@@ -162,7 +184,21 @@ describe("runCli", () => {
     );
   });
 
+  it("fails closed when a persisted runtime cannot issue a DecisionPacket", async () => {
+    const { result } = await runPersistedPlanWithCapturedMetadata(
+      "persist without packet issuance",
+      { omitDecisionPacketIssuance: true }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "Persisted plan requires authoritative DecisionPacket issuance"
+    );
+  });
+
   it("prints persisted IDs for plan --persist", async () => {
+    let issuedReadback: DecisionPacketContractReadback | undefined;
     const result = await runCli(
       ["plan", "--task", "persist harness run", "--persist"],
       {
@@ -173,10 +209,38 @@ describe("runCli", () => {
         createId: (prefix) => `${prefix}-1`,
         createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
           const dependencies = createNoStoreCompilerDependencies(input);
+          let operatorIntent: OperatorIntent | undefined;
+          let taskContract: TaskContract | undefined;
+          let harnessPlan: HarnessPlan | undefined;
+          let contextAssembly: ContextAssembly | undefined;
+          let executionRun: ExecutionRun | undefined;
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
+            async createOperatorIntent(intentInput: CreateOperatorIntentInput) {
+              operatorIntent = await dependencies.harnessRunRepository.createOperatorIntent(
+                intentInput
+              );
+              return operatorIntent;
+            },
+            async createTaskContract(contractInput: CreateTaskContractInput) {
+              taskContract = await dependencies.harnessRunRepository.createTaskContract(
+                contractInput
+              );
+              return taskContract;
+            },
+            async createHarnessPlan(planInput: CreateHarnessPlanInput) {
+              harnessPlan = await dependencies.harnessRunRepository.createHarnessPlan(planInput);
+              return harnessPlan;
+            },
+            async createContextAssembly(assemblyInput: CreateContextAssemblyInput) {
+              contextAssembly = await dependencies.harnessRunRepository.createContextAssembly(
+                assemblyInput
+              );
+              return contextAssembly;
+            },
             async createExecutionRun(runInput: CreateExecutionRunInput) {
-              return {
+              executionRun = {
                 id: "execution-run-1",
                 harnessPlanId: runInput.harnessPlanId,
                 adapter: runInput.adapter,
@@ -187,6 +251,40 @@ describe("runCli", () => {
                 createdAt: now,
                 updatedAt: now
               };
+              return executionRun;
+            },
+            async issueDecisionPacketForExecutionRun(
+              executionRunId: string
+            ): Promise<DecisionPacketContractReadback> {
+              if (
+                operatorIntent === undefined ||
+                taskContract === undefined ||
+                harnessPlan === undefined ||
+                contextAssembly === undefined ||
+                executionRun === undefined ||
+                executionRun.id !== executionRunId
+              ) {
+                throw new Error("DecisionPacket issuance requires the captured persisted run");
+              }
+
+              const aggregate: HarnessRunAggregate = {
+                operatorIntent,
+                taskContract,
+                harnessPlan,
+                contextAssembly,
+                executionRun,
+                evidenceBundles: [],
+                reviewAssessments: [],
+                feedbackDeltas: [],
+                runEvents: []
+              };
+
+              issuedReadback = buildDecisionPacketIssuance({
+                aggregate,
+                packetGeneratedAt: now,
+                sha256Hex: (value) => createHash("sha256").update(value).digest("hex")
+              });
+              return issuedReadback;
             },
             async getHarnessRunByExecutionRunId() {
               return undefined;
@@ -253,6 +351,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("harnessPlan: harness-plan-1");
     expect(result.stdout).toContain("contextAssembly: context-assembly-1");
     expect(result.stdout).toContain("executionRun: execution-run-1");
+    expect(issuedReadback).toBeDefined();
+    if (issuedReadback === undefined) {
+      throw new Error("Persisted plan did not issue a DecisionPacket");
+    }
+    expect(result.stdout).toContain(
+      `Packet Status: ${issuedReadback.packet.abstentionScore.status}`
+    );
+    expect(issuedReadback.packet.abstentionScore.reasons).not.toHaveLength(0);
+    for (const reason of issuedReadback.packet.abstentionScore.reasons) {
+      expect(result.stdout).toContain(`- ${reason}`);
+    }
+    for (const boundary of issuedReadback.packet.toolBoundaries) {
+      expect(result.stdout).toContain(`- ${boundary}`);
+    }
   });
 
   it("persists selected knowledge IDs for plan --persist", async () => {
@@ -269,6 +381,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               executionRunMetadata = runInput.metadata ?? {};
 
@@ -580,6 +693,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               executionRunMetadata = runInput.metadata ?? {};
 
@@ -736,6 +850,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               executionRunMetadata = runInput.metadata ?? {};
 
@@ -899,6 +1014,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               executionRunMetadata = runInput.metadata ?? {};
 
@@ -1128,6 +1244,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               return {
                 id: "execution-run-1",
@@ -1288,6 +1405,7 @@ describe("runCli", () => {
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
+            ...fixtureDecisionPacketIssuer,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
               return {
                 id: "execution-run-1",
