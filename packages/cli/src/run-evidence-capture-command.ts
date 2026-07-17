@@ -248,7 +248,7 @@ interface EvidencePersistenceCounts {
   targetEvidencePresent: boolean;
 }
 
-interface MemoryCandidateProposal {
+export interface MemoryCandidateProposal {
   id: string;
   projectId?: string;
   kind: MemoryCandidate["kind"];
