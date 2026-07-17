@@ -23,9 +23,15 @@ export type PairedEvalOutcomeCounts = {
   readonly winRateAmongQuality: number | null;
 };
 
+export type PairedEvalInvalidReason = {
+  readonly reason: string;
+  readonly count: number;
+};
+
 export type PairedEvalFamilyAggregate = PairedEvalOutcomeCounts & {
   readonly family: PairedEvalFamily;
   readonly duplicateRunIds: readonly string[];
+  readonly invalidReasons: readonly PairedEvalInvalidReason[];
 };
 
 export type PairedEvalAggregate = {
@@ -34,6 +40,7 @@ export type PairedEvalAggregate = {
   readonly overall: PairedEvalOutcomeCounts;
   readonly proves: readonly string[];
   readonly doesNotProve: readonly string[];
+  readonly invalidReasons: readonly PairedEvalInvalidReason[];
 };
 
 export type PairedEvalArtifactDirectory = {
@@ -64,6 +71,32 @@ export type PairedEvalFileReadback = PairedEvalAggregate & {
 
 const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
 const qualityOutcomes: readonly PairedRepairOutcome[] = ["win", "tie", "loss"];
+
+const invalidReasonsForArtifact = (artifact: TrackedTrialArtifact): readonly string[] => {
+  const reasons = [
+    ...(artifact.execution.invalidReasons ?? []),
+    ...(artifact.score?.reason === undefined ? [] : [artifact.score.reason]),
+    ...(["baseline", "krn"] as const).flatMap((arm) => {
+      const score = artifact.score?.[arm];
+      if (score?.status !== "invalid") return [];
+      return score.checks
+        .filter((check) => !check.passed)
+        .map((check) => `${arm}.${check.name}: ${check.details}`);
+    })
+  ];
+  return reasons.length === 0 ? [`artifact status ${artifact.status}`] : reasons;
+};
+
+const reasonCounts = (reasons: readonly string[]): readonly PairedEvalInvalidReason[] => {
+  const counts = new Map<string, number>();
+  for (const reason of reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([reason, count]) => ({ reason, count }));
+};
+
+const expandReasonCounts = (reasons: readonly PairedEvalInvalidReason[]): readonly string[] =>
+  reasons.flatMap(({ reason, count }) => Array.from({ length: count }, () => reason));
 
 const emptyCounts = (): PairedEvalOutcomeCounts => ({
   wins: 0,
@@ -111,6 +144,7 @@ const aggregateFamily = (
   duplicateIndices: ReadonlySet<number>
 ): PairedEvalFamilyAggregate => {
   const duplicateRunIds = new Set<string>();
+  const invalidReasons: string[] = [];
   let counts = emptyCounts();
 
   for (const { input, index } of inputs) {
@@ -118,8 +152,10 @@ const aggregateFamily = (
     if (duplicateIndices.has(index)) {
       duplicateRunIds.add(input.artifact.runId);
       counts = { ...counts, invalidTrials: counts.invalidTrials + 1 };
+      invalidReasons.push(`duplicate run id: ${input.artifact.runId}`);
       continue;
     }
+    if (!isQualityArtifact(input.artifact)) invalidReasons.push(...invalidReasonsForArtifact(input.artifact));
     counts = addOutcome(
       counts,
       input.artifact.score?.outcome,
@@ -130,7 +166,8 @@ const aggregateFamily = (
   return {
     family,
     ...finalizeCounts(counts),
-    duplicateRunIds: [...duplicateRunIds].sort()
+    duplicateRunIds: [...duplicateRunIds].sort(),
+    invalidReasons: reasonCounts(invalidReasons)
   };
 };
 
@@ -174,7 +211,8 @@ export const aggregatePairedEvalArtifacts = (
       "causal KRN advantage or arbitrary-repository portability",
       "comparability of differently designed evaluation families",
       "Codex obedience outside the observed bounded trials"
-    ]
+    ],
+    invalidReasons: reasonCounts(familyAggregates.flatMap((family) => expandReasonCounts(family.invalidReasons)))
   };
 };
 
@@ -227,6 +265,10 @@ export const aggregatePairedEvalArtifactDirectories = async (
     ...aggregate,
     families: familyAggregates,
     overall,
+    invalidReasons: reasonCounts([
+      ...expandReasonCounts(aggregate.invalidReasons),
+      ...unreadableInputs.map(({ reason }) => reason)
+    ]),
     unreadableInputs
   };
 };

@@ -79,6 +79,35 @@ describe("paired live eval aggregation", () => {
     expect(report.overall.qualityTrials).toBe(1);
   });
 
+  it("preserves arm-level invalid reasons without scoring unavailable as quality", () => {
+    const base = artifact("invalid-arm", "invalid", "invalid");
+    const invalidArm: TrackedTrialArtifact = {
+      ...base,
+      execution: {
+        ...base.execution,
+        invalidReasons: ["baseline arm timed out"]
+      },
+      score: {
+        ...base.score!,
+        baseline: {
+          ...base.score!.baseline,
+          status: "invalid",
+          checks: [{ name: "held_out_runtime", passed: false, details: "runtime observer unavailable" }]
+        },
+        krn: base.score!.krn
+      }
+    };
+
+    const report = aggregatePairedEvalArtifacts([{ family: "env-config", artifact: invalidArm }]);
+
+    expect(report.overall).toMatchObject({ qualityTrials: 0, invalidTrials: 1 });
+    expect(report.invalidReasons).toEqual([
+      { reason: "baseline arm timed out", count: 1 },
+      { reason: "baseline.held_out_runtime: runtime observer unavailable", count: 1 },
+      { reason: "fixture", count: 1 }
+    ]);
+  });
+
   it("returns explicit empty rates instead of inventing evidence", () => {
     const report = aggregatePairedEvalArtifacts([]);
 
