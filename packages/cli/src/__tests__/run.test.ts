@@ -341,4 +341,21 @@ describe("runCli", () => {
     expect(stderr.join("")).toContain("postgres connection timeout");
     expect(stderr.join("")).not.toContain("disposition=permanent");
   });
+
+  it("renders transient handoff through the real evidence capture CLI dispatch", async () => {
+    const result = await runCli(["evidence", "capture", "--persist", "--run-id", "run-transient-1"], {
+      env: { KRN_DATABASE_URL: "postgres://unused" },
+      cwd: process.cwd(),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => {
+        throw new Error("postgres connection timeout");
+      }
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("evidence_capture (disposition=transient, retryable)");
+    expect(result.stderr).toContain("keep candidate input unchanged");
+    expect(result.stderr).not.toContain("disposition=permanent");
+  }, 20000);
 });
