@@ -1328,8 +1328,15 @@ const hasPassedArmExecution = (execution: JsonRecord): boolean => {
     isSuccessfulTrialArm(execution["krn"], krnTargets?.["after"]);
 };
 
-const requiresFocusedTestProof = (value: JsonRecord): boolean =>
-  value["kind"] === "krn.pairedLiveCodexRepairArtifact.v2";
+const requiresFocusedTestProof = (value: JsonRecord): boolean => {
+  if (value["kind"] !== "krn.pairedLiveCodexRepairArtifact.v2") return false;
+  const score = nestedRecord(value, "score");
+  return [nestedRecord(score, "baseline"), nestedRecord(score, "krn")].some((arm) =>
+    Array.isArray(arm?.["checks"]) && arm["checks"].some((check) =>
+      isRecord(check) && check["name"] === "focused_tests"
+    )
+  );
+};
 
 const hasPassedScore = (value: JsonRecord, execution: JsonRecord): boolean => {
   const attempt = nestedRecord(execution, "attempt");
@@ -1412,6 +1419,7 @@ export const verifyTrackedTrialArtifact = (value: unknown): value is TrackedTria
   const { artifactHash: expectedArtifactHash, ...content } = value;
   return artifactHash(content) === expectedArtifactHash;
 };
+
 
 const phaseRecordMatchesArtifact = (
   value: unknown,
