@@ -30,6 +30,7 @@ import {
 } from "@krn/core";
 import type {
   DecisionPacketAuthorization,
+  EvalCandidateProposal,
   UsefulnessApplicationEvidence,
   UsefulnessApplicationEvidenceIdentity
 } from "@krn/core";
@@ -1089,6 +1090,16 @@ describe("runCli", () => {
     });
     const aggregate = createEvidencePersistenceAggregate();
     const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const evalCandidateProposal: EvalCandidateProposal = {
+      id: "eval-candidate-retry" as EvalCandidateProposal["id"],
+      status: "candidate",
+      title: "Retry-safe eval proposal",
+      scenario: "A transient capture failure is retried",
+      expectedSignal: "The proposal remains exactly once",
+      sourceEvidence: [packetBinding.packetEvidenceRef],
+      metadata: { consumer: "evidence retry test" },
+      createdAt: now
+    };
     const capture: EvidencePersistenceCapture = {};
     const capturedInputs: CreateEvidenceFeedbackOnceInput[] = [];
     const baseRepository = createCapturingEvidenceHarnessRunRepository(
@@ -1137,9 +1148,10 @@ describe("runCli", () => {
         evidenceRefs: [packetBinding.packetEvidenceRef],
         doesNotProve: "One stale report does not prove future selection quality."
       }],
+      evalCandidateProposals: [evalCandidateProposal],
       now: () => now,
       createId: (prefix: string) => `${prefix}-retry`,
-      readGitStatus: async () => " M packages/cli/src/run-evidence-capture-command.ts\n",
+      readGitStatus: async () => " M KRN_ROADMAP.md\n",
       createDatabaseRuntime: async () => ({
         workspaceId: "workspace-1",
         projectId: "project-1",
@@ -1167,6 +1179,10 @@ describe("runCli", () => {
     );
     expect(retryInput?.maintenance).toEqual(firstInput?.maintenance);
     expect(retryInput?.semanticRequest).toEqual(firstInput?.semanticRequest);
+    expect(firstInput?.feedback.sourceDecisions).toHaveLength(1);
+    expect(firstInput?.feedback.evalCandidates).toEqual([evalCandidateProposal]);
+    expect(retryInput?.feedback.sourceDecisions).toEqual(firstInput?.feedback.sourceDecisions);
+    expect(retryInput?.feedback.evalCandidates).toEqual(firstInput?.feedback.evalCandidates);
     expect(retry.stdout).toContain("outcome=stale knowledge=knowledge:frontend-template");
     expect(retry.stdout).toContain(`feedbackDelta: ${storedResult?.feedbackDelta.id}`);
     expect(first.stdout).toContain(`feedbackDelta: ${storedResult?.feedbackDelta.id}`);

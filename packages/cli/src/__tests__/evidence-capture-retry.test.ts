@@ -127,7 +127,7 @@ describe("evidence capture retry boundary", () => {
         max: 1,
         onnotice: () => undefined
       });
-      const intendedFile = `.krn-evidence-capture-retry-${crypto.randomUUID()}.tmp`;
+      const intendedFile = `.krn-evidence-capture-retry-source-fixture-${crypto.randomUUID()}.ts`;
 
       try {
         await writeFile(
@@ -292,7 +292,7 @@ describe("evidence capture retry boundary", () => {
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
           memoryCandidateProposalCount: 1,
-          sourceDecisionProposalCount: 0,
+          sourceDecisionProposalCount: 1,
           evalCandidateProposalCount: 0,
           outboxEventCount: 1,
           maintenanceCount: 1
@@ -318,7 +318,7 @@ describe("evidence capture retry boundary", () => {
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
           memoryCandidateProposalCount: 1,
-          sourceDecisionProposalCount: 0,
+          sourceDecisionProposalCount: 1,
           evalCandidateProposalCount: 0,
           outboxEventCount: 1,
           maintenanceCount: 1
