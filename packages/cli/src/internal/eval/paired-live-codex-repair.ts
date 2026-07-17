@@ -46,6 +46,7 @@ export type TargetChangeManifest = {
 
 export type HeldOutCheck = {
   readonly name:
+  | "family_contract"
   | "preflight"
   | "invalid_json"
   | "missing_email"
@@ -61,6 +62,48 @@ export type HeldOutCheck = {
   | "held_out_runtime";
   readonly passed: boolean;
   readonly details: string;
+};
+
+export type PairedEvalFamily = "weak-json" | "env-config" | "async-job";
+
+export type HeldOutFamilyContract = {
+  readonly family: PairedEvalFamily;
+  readonly sourcePaths: readonly string[];
+  readonly allowedPrefixes: readonly string[];
+  readonly requiredChecks: readonly string[];
+};
+
+export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
+  const normalized = scenario.toLowerCase();
+  if (normalized.includes("env-config")) return "env-config";
+  if (normalized.includes("async-job")) return "async-job";
+  return "weak-json";
+};
+
+export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamilyContract => {
+  switch (family) {
+    case "env-config":
+      return {
+        family,
+        sourcePaths: ["src/config.ts", "src/configReadback.ts", "tests/config.test.ts"],
+        allowedPrefixes: ["src/", "tests/", "docs/"],
+        requiredChecks: ["target_test", "target_typecheck", "target_diff_check"]
+      };
+    case "async-job":
+      return {
+        family,
+        sourcePaths: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
+        allowedPrefixes: ["src/", "tests/", "docs/"],
+        requiredChecks: ["target_test", "target_typecheck", "target_diff_check"]
+      };
+    case "weak-json":
+      return {
+        family,
+        sourcePaths: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+        allowedPrefixes: ["src/", "tests/", "docs/"],
+        requiredChecks: ["held_out_runtime", "target_test", "target_typecheck", "target_diff_check"]
+      };
+  }
 };
 
 export type HeldOutArmScore = {
@@ -167,6 +210,7 @@ export type PairedRepairPrompts = {
 type TargetSourceFiles = Readonly<Record<string, string | undefined>>;
 
 export type TargetRepairScoreInput = {
+  readonly family?: PairedEvalFamily;
   readonly sourceFiles: TargetSourceFiles;
   readonly changedFiles: readonly string[];
   readonly changeManifest?: TargetChangeManifest;
@@ -190,6 +234,7 @@ export type HeldOutCheckerInput = {
   readonly targetRoot: string;
   readonly checkerRoot: string;
   readonly initialCommit: string;
+  readonly family?: PairedEvalFamily;
 };
 
 const basePrompt = (task: string): string => [
@@ -242,6 +287,33 @@ const observationPassed = (observation: HeldOutObservation): boolean =>
   observation.resultState !== "undefined";
 
 const source = (files: TargetSourceFiles, path: string): string => files[path] ?? "";
+
+const checkFamilyContract = (
+  family: PairedEvalFamily,
+  files: TargetSourceFiles,
+  commands: TargetRepairScoreInput["commands"]
+): HeldOutCheck => {
+  const config = source(files, "src/config.ts");
+  const readback = source(files, "src/configReadback.ts");
+  const job = source(files, "src/jobQueue.ts");
+  const tests = Object.values(files).filter((value): value is string => value !== undefined).join("\n");
+  const passedContract = family === "env-config"
+    ? /development.*staging.*production/s.test(config) &&
+      /\[redacted\]/.test(readback) && /invalid_config/.test(tests)
+    : family === "async-job"
+      ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
+        /dead_lettered/.test(job) && /JobClock/.test(job)
+      : false;
+  const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
+  const passed = passedContract && passedCommands;
+  return {
+    name: "family_contract",
+    passed,
+    details: passed
+      ? `${family} family contract and public verification commands passed.`
+      : `${family} family contract or public verification commands failed.`
+  };
+};
 
 const checkUnknownFirst = (files: TargetSourceFiles): HeldOutCheck => {
   const config = source(files, "src/config.ts");
@@ -389,6 +461,39 @@ export const scoreTargetRepair = (
   input: TargetRepairScoreInput
 ): HeldOutArmScore => {
   const changeManifest = input.changeManifest ?? knownChangeManifest(input.changedFiles);
+  const family = input.family ?? "weak-json";
+  if (family !== "weak-json") {
+    const checks: HeldOutCheck[] = [
+      checkPreflight(changeManifest),
+      checkFamilyContract(family, input.sourceFiles, input.commands),
+      checkAllowedFiles(input.changedFiles),
+      {
+        name: "target_test",
+        passed: passed(input.commands.test),
+        details: passed(input.commands.test) ? "Target test command passed." : "Target test command failed."
+      },
+      {
+        name: "target_typecheck",
+        passed: passed(input.commands.typecheck),
+        details: passed(input.commands.typecheck) ? "Target typecheck passed." : "Target typecheck failed."
+      },
+      {
+        name: "target_diff_check",
+        passed: passed(input.commands.diffCheck),
+        details: passed(input.commands.diffCheck) ? "Target diff check passed." : "Target diff check failed."
+      }
+    ];
+    const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check"].includes(check.name) && !check.passed);
+    const contract = checks.find((check) => check.name === "family_contract");
+    return {
+      status: invalid ? "invalid" : contract?.passed === true ? "pass" : "fail",
+      score: checks.filter((check) => check.passed).length,
+      checks,
+      changedFiles: [...input.changedFiles],
+      changeManifest,
+      commands: input.commands
+    };
+  }
   const checks: HeldOutCheck[] = [
     checkPreflight(changeManifest),
     {
@@ -693,12 +798,11 @@ const targetPreflight = async (input: HeldOutCheckerInput): Promise<TargetChange
 };
 
 const readTargetSourceFiles = async (
-  targetRoot: string
+  targetRoot: string,
+  family: PairedEvalFamily = "weak-json"
 ): Promise<TargetSourceFiles> => Object.fromEntries(
   await Promise.all([
-    "src/config.ts",
-    "src/userService.ts",
-    "tests/userService.test.ts"
+    ...pairedEvalFamilyContract(family).sourcePaths
   ].map(async (path) => {
     try {
       return [path, await readFile(join(targetRoot, path), "utf8")] as const;
@@ -1084,8 +1188,9 @@ export const runFocusedTestMutationSuite = async (
 export const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
+  const family = input.family ?? "weak-json";
   const preflight = await targetPreflight(input);
-  const sourceFiles = await readTargetSourceFiles(input.targetRoot);
+  const sourceFiles = await readTargetSourceFiles(input.targetRoot, family);
   const skipped = (command: string): CommandResult => ({
     command,
     args: [],
@@ -1099,6 +1204,7 @@ export const runHeldOutTargetRepairChecker = async (
 
   if (!targetChangeManifestClaimsOwnedChanges(preflight)) {
     return scoreTargetRepair({
+      family,
       sourceFiles,
       changedFiles: preflight.changedFiles,
       changeManifest: preflight,
@@ -1176,6 +1282,7 @@ export const runHeldOutTargetRepairChecker = async (
   };
 
   return scoreTargetRepair({
+    family,
     sourceFiles,
     changedFiles: finalManifest.changedFiles,
     changeManifest: finalManifest,

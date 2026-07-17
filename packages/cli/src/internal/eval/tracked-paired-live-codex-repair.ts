@@ -30,6 +30,7 @@ import {
   buildPairedRepairPrompts,
   runCommand,
   runPairedRepairChecker,
+  resolvePairedEvalFamily,
   selectHeldOutRuntimePermissionFlag,
   type CommandResult,
   type HeldOutRuntimePermissionFlag,
@@ -1972,8 +1973,8 @@ const executeComparableTrial = async (input: {
     };
   }
   const score = await checker({
-    baseline: { targetRoot: input.trial.baseline.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.baseline.commit },
-    krn: { targetRoot: input.trial.krn.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.krn.commit }
+    baseline: { targetRoot: input.trial.baseline.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.baseline.commit, family: resolvePairedEvalFamily(input.trial.context.manifest.scenario) },
+    krn: { targetRoot: input.trial.krn.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.krn.commit, family: resolvePairedEvalFamily(input.trial.context.manifest.scenario) }
   });
   await input.journal.phase("checker_scored", { outcome: score.outcome, reason: score.reason });
   if (input.recordDecisionApplications !== undefined && score.outcome !== "invalid") {

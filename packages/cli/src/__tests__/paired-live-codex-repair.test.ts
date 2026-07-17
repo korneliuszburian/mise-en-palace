@@ -13,6 +13,8 @@ import {
   runFocusedTestMutationSuite,
   runHeldOutTargetRepairChecker,
   runHeldOutRuntimeWorker,
+  pairedEvalFamilyContract,
+  resolvePairedEvalFamily,
   selectHeldOutRuntimePermissionFlag,
   type CommandResult,
   type FocusedTestMutationName,
@@ -120,6 +122,13 @@ const writeCompiledMutationTarget = async (
 };
 
 describe("paired live Codex repair eval", () => {
+  it("routes scenarios to one explicit family contract", () => {
+    expect(resolvePairedEvalFamily("env-config-contract-typescript held-out")).toBe("env-config");
+    expect(resolvePairedEvalFamily("async-job-boundary-typescript held-out")).toBe("async-job");
+    expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
+    expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
+  });
+
   it("keeps skipped preflight command identities aligned with the issued contract", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-missing-paired-target-"));
 
