@@ -188,3 +188,20 @@ export const assertSourceClaimExists = async (
     throw new Error(`SourceClaim not found: ${sourceClaimId}`);
   }
 };
+
+export const assertAntiMemoryCandidateProject = async (
+  runtime: DatabaseRuntime,
+  candidateId: string,
+  projectId: string | undefined
+) => {
+  const candidate = await runtime.memoryRepository.getAntiMemoryCandidateById(candidateId);
+
+  if (candidate === undefined) {
+    throw new Error(`Anti-memory candidate not found: ${candidateId}`);
+  }
+  if (projectId !== undefined && candidate.projectId !== projectId) {
+    throw new Error(`--project ${projectId} does not match candidate project ${candidate.projectId}`);
+  }
+
+  return candidate;
+};

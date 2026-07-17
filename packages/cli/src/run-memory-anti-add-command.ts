@@ -39,30 +39,39 @@ const defaultOwner = "operator";
 const defaultConfidence = 90;
 const defaultProposedBy = "cli";
 
+type AntiAddDatabaseRuntime = Awaited<ReturnType<typeof createMemoryCommandDatabaseRuntime>>;
+
+const persistedRunProjectId = async (
+  databaseRuntime: AntiAddDatabaseRuntime,
+  executionRunId: string | undefined
+): Promise<string | undefined> => {
+  if (executionRunId === undefined) return undefined;
+  const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(executionRunId);
+  return aggregate?.taskContract.projectId ?? aggregate?.operatorIntent.projectId;
+};
+
+const assertAntiAddProjectMatch = (
+  requestedProjectId: string | undefined,
+  runProjectId: string | undefined
+): void => {
+  if (requestedProjectId !== undefined && runProjectId !== undefined && requestedProjectId !== runProjectId) {
+    throw new Error(`--project ${requestedProjectId} does not match persisted run project ${runProjectId}`);
+  }
+};
+
 const createScopedAntiAddRuntime = async (
   runtime: MemoryAntiAddCommandRuntime,
   command: MemoryAntiAddCommand,
   executionRunId: string | undefined
-): Promise<{ databaseRuntime: Awaited<ReturnType<typeof createMemoryCommandDatabaseRuntime>>; requestedProjectId: string | undefined }> => {
+): Promise<{ databaseRuntime: AntiAddDatabaseRuntime; requestedProjectId: string | undefined }> => {
   const requestedProjectId = command.projectId?.trim() || undefined;
   let databaseRuntime = await createMemoryCommandDatabaseRuntime(
     runtime,
     "KRN_DATABASE_URL is required for krn memory anti add --persist",
     requestedProjectId
   );
-  const aggregate = executionRunId === undefined
-    ? undefined
-    : await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(executionRunId);
-
-  if (aggregate === undefined) {
-    return { databaseRuntime, requestedProjectId };
-  }
-
-  const runProjectId = aggregate.taskContract.projectId ?? aggregate.operatorIntent.projectId;
-  if (requestedProjectId !== undefined && runProjectId !== undefined && requestedProjectId !== runProjectId) {
-    await databaseRuntime.close();
-    throw new Error(`--project ${requestedProjectId} does not match persisted run project ${runProjectId}`);
-  }
+  const runProjectId = await persistedRunProjectId(databaseRuntime, executionRunId);
+  assertAntiAddProjectMatch(requestedProjectId, runProjectId);
   if (requestedProjectId === undefined && runProjectId !== undefined && runProjectId !== databaseRuntime.projectId) {
     await databaseRuntime.close();
     databaseRuntime = await createMemoryCommandDatabaseRuntime(

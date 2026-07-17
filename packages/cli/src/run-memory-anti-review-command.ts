@@ -7,6 +7,7 @@ import {
 import {
   buildRejectedMemoryPromotionInput,
   createMemoryCommandDatabaseRuntime,
+  assertAntiMemoryCandidateProject,
   requireMemoryReviewRejectionReason,
   toReviewedSourceClaimIds
 } from "./memory-command-support.js";
@@ -158,17 +159,11 @@ const runPromote = async (
       );
     }
 
-    const candidate = await databaseRuntime.memoryRepository.getAntiMemoryCandidateById(
-      reviewInput.candidateId
+    await assertAntiMemoryCandidateProject(
+      databaseRuntime,
+      reviewInput.candidateId,
+      command.projectId
     );
-    if (candidate === undefined) {
-      throw new Error(`Anti-memory candidate not found: ${reviewInput.candidateId}`);
-    }
-    if (command.projectId !== undefined && candidate.projectId !== command.projectId) {
-      throw new Error(
-        `--project ${command.projectId} does not match candidate project ${candidate.projectId}`
-      );
-    }
 
     const result = await promoteAntiMemoryCandidateThroughGate({
       memoryRepository: databaseRuntime.memoryRepository,
@@ -219,17 +214,11 @@ const runReject = async (
   const reason = requireMemoryReviewRejectionReason(reviewInput);
 
   try {
-    const candidate = await databaseRuntime.memoryRepository.getAntiMemoryCandidateById(
-      reviewInput.candidateId
+    await assertAntiMemoryCandidateProject(
+      databaseRuntime,
+      reviewInput.candidateId,
+      command.projectId
     );
-    if (candidate === undefined) {
-      throw new Error(`Anti-memory candidate not found: ${reviewInput.candidateId}`);
-    }
-    if (command.projectId !== undefined && candidate.projectId !== command.projectId) {
-      throw new Error(
-        `--project ${command.projectId} does not match candidate project ${candidate.projectId}`
-      );
-    }
 
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.rejectAntiMemoryCandidate({
       candidateId: reviewInput.candidateId,
