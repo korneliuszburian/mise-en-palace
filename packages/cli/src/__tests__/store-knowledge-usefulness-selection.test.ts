@@ -62,30 +62,30 @@ describe("store knowledge usefulness lifecycle selection", () => {
       feedbackDeltas: [feedback({ id: "feedback-rejected", status: "rejected", outcome: "stale" })],
       expectedIds: ["knowledge:status-policy"],
       expectedFeedback: undefined,
-      expectedApplied: false
+      expectedAttached: false
     },
     {
       name: "candidate blocking feedback is a review caveat without exclusion",
       feedbackDeltas: [feedback({ id: "feedback-candidate", status: "candidate", outcome: "stale" })],
       expectedIds: ["knowledge:status-policy"],
       expectedFeedback: { outcome: "stale", feedbackLifecycleStatus: "candidate" },
-      expectedApplied: true
+      expectedAttached: true
     },
     {
-      name: "accepted blocking feedback excludes knowledge",
+      name: "legacy accepted feedback remains a review caveat",
       feedbackDeltas: [feedback({ id: "feedback-accepted", status: "accepted", outcome: "stale" })],
-      expectedIds: [],
-      expectedFeedback: undefined,
-      expectedApplied: true
+      expectedIds: ["knowledge:status-policy"],
+      expectedFeedback: { outcome: "stale", feedbackLifecycleStatus: "accepted" },
+      expectedAttached: true
     },
     {
-      name: "applied blocking feedback excludes knowledge",
+      name: "legacy applied feedback remains a review caveat",
       feedbackDeltas: [feedback({ id: "feedback-applied", status: "applied", outcome: "stale" })],
-      expectedIds: [],
-      expectedFeedback: undefined,
-      expectedApplied: true
+      expectedIds: ["knowledge:status-policy"],
+      expectedFeedback: { outcome: "stale", feedbackLifecycleStatus: "applied" },
+      expectedAttached: true
     }
-  ])("$name", ({ feedbackDeltas, expectedIds, expectedFeedback, expectedApplied }) => {
+  ])("$name", ({ feedbackDeltas, expectedIds, expectedFeedback, expectedAttached }) => {
     const result = applyStoreKnowledgeUsefulnessFeedback([knowledge()], feedbackDeltas);
 
     expect(result.readModels.map((readModel) => readModel.id)).toEqual(expectedIds);
@@ -96,13 +96,13 @@ describe("store knowledge usefulness lifecycle selection", () => {
     }
     if (result.readModels[0] !== undefined) {
       expect(result.readModels[0].nextAction).toBe(
-        expectedFeedback?.feedbackLifecycleStatus === "candidate" ? "review" : "use"
+        expectedFeedback === undefined ? "use" : "review"
       );
     }
-    expect(result.appliedUsefulnessFeedback).toBe(expectedApplied);
+    expect(result.attachedReviewOnlyFeedback).toBe(expectedAttached);
   });
 
-  it("keeps newest candidate caveats separate from newest approved blocking policy", () => {
+  it("uses the newest non-rejected delta as a review caveat without suppression", () => {
     const result = applyStoreKnowledgeUsefulnessFeedback([knowledge()], [
       feedback({
         id: "feedback-new-candidate",
@@ -118,7 +118,14 @@ describe("store knowledge usefulness lifecycle selection", () => {
       })
     ]);
 
-    expect(result.readModels).toEqual([]);
+    expect(result.readModels).toHaveLength(1);
+    expect(result.readModels[0]).toMatchObject({
+      nextAction: "review",
+      usefulnessFeedback: {
+        outcome: "helped",
+        feedbackLifecycleStatus: "candidate"
+      }
+    });
   });
 
   it("does not weaken a pre-existing next action when candidate feedback adds a caveat", () => {
@@ -145,6 +152,7 @@ describe("store knowledge usefulness lifecycle selection", () => {
       outcome: "helped",
       feedbackLifecycleStatus: "accepted"
     });
+    expect(result.readModels[0]?.nextAction).toBe("review");
   });
 
   it("requests only project-scoped feedback for the selected knowledge subjects", async () => {

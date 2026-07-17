@@ -623,17 +623,17 @@ const readKnowledgeSelection = async (
         proves: [
           "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
           `plan knowledge selection scan limit=${planKnowledgeScanLimit} returned=${records.length} truncated=${scanTruncated}`,
-          ...(usefulnessSelection.appliedUsefulnessFeedback
-            ? ["plan knowledge selection applied store-backed usefulness feedback before selecting knowledge"]
+          ...(usefulnessSelection.attachedReviewOnlyFeedback
+            ? ["plan knowledge selection attached review-only store-backed usefulness feedback"]
             : [])
         ],
         doesNotProve: [
           "DB-backed knowledge selection proves source truth",
           "Codex used the selected memory",
           `bounded plan knowledge selection proves no eligible knowledge exists beyond the first ${planKnowledgeScanLimit} ranked active rows`,
-          ...(usefulnessSelection.appliedUsefulnessFeedback
+          ...(usefulnessSelection.attachedReviewOnlyFeedback
             ? ["store-backed usefulness feedback proves broad ranking quality"]
-            : ["store-backed usefulness feedback has been applied"])
+            : ["store-backed usefulness feedback was available"])
         ]
       }
     })

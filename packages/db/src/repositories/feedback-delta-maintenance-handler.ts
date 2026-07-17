@@ -179,6 +179,10 @@ const antiMemoryCandidateForFeedback = (input: {
   readonly now?: IsoTimestamp;
 }): CreateAntiMemoryCandidateInput => {
   const { outcome, subject } = input;
+  const candidateEvidenceRefs = unique([
+    `feedback_delta:${input.feedbackDelta.id}`,
+    ...outcome.evidenceRefs
+  ]);
   const recommendation = buildFeedbackRecommendationReadback({
     subjectKind: subject.subjectKind,
     subjectId: subject.subjectId,
@@ -224,6 +228,12 @@ const antiMemoryCandidateForFeedback = (input: {
       ...subject.metadata,
       recommendationActions: recommendation.recommendations.map((item) => item.action),
       mutation: "none",
+      reflectionCandidateEvidence: {
+        provenance: "feedback_delta",
+        evidenceRefs: candidateEvidenceRefs,
+        doesNotProve:
+          "FeedbackDelta evidence makes this candidate reviewable; it does not authorize AntiMemoryRecord promotion or mutate selection."
+      },
       doesNotProve:
         "Feedback maintenance candidates do not mutate Memory Core, source truth, source decisions, or activation state until reviewed."
     }

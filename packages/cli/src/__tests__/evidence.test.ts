@@ -1081,7 +1081,8 @@ describe("runCli", () => {
     ]).size).toBe(4);
   }, 15_000);
 
-  it("replays reviewable caller feedback after captured feedback becomes governing", async () => {
+  // fallow-ignore-next-line complexity -- one idempotent retry scenario owns the first write, governing-status legacy readback, maintenance replay, and exact returned identities
+  it("replays review-only caller feedback through the idempotent capture boundary", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-retry`
@@ -1160,9 +1161,11 @@ describe("runCli", () => {
     expect(firstInput?.decisionPacketClaim).toBeDefined();
     expect(firstInput?.knowledgeUsefulnessOutcomes).toHaveLength(1);
     expect(firstInput?.maintenance).toBeDefined();
-    expect(retryInput?.decisionPacketClaim).toBeUndefined();
-    expect(retryInput?.knowledgeUsefulnessOutcomes).toBeUndefined();
-    expect(retryInput?.maintenance).toBeUndefined();
+    expect(retryInput?.decisionPacketClaim).toEqual(firstInput?.decisionPacketClaim);
+    expect(retryInput?.knowledgeUsefulnessOutcomes).toEqual(
+      firstInput?.knowledgeUsefulnessOutcomes
+    );
+    expect(retryInput?.maintenance).toEqual(firstInput?.maintenance);
     expect(retryInput?.semanticRequest).toEqual(firstInput?.semanticRequest);
     expect(retry.stdout).toContain("outcome=stale knowledge=knowledge:frontend-template");
     expect(retry.stdout).toContain(`feedbackDelta: ${storedResult?.feedbackDelta.id}`);
@@ -2386,7 +2389,7 @@ describe("runCli", () => {
     });
   });
 
-  it("feeds persisted usefulness feedback into the next DecisionPacket caveats", async () => {
+  it("keeps persisted usefulness feedback review-only in the next DecisionPacket", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -2484,20 +2487,24 @@ describe("runCli", () => {
     const packet = buildDecisionPacketFromReadModel(
       buildDecisionPacketReadModel(nextAggregate)
     );
+    const packetWithoutFeedback = buildDecisionPacketFromReadModel(
+      buildDecisionPacketReadModel({
+        ...nextAggregate,
+        feedbackDeltas: []
+      })
+    );
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(packet.caveatedSourceClaimIds).toEqual(["source-claim-stale"]);
-    expect(packet.caveatedMemoryRefs).toEqual(["knowledge:frontend-template"]);
-    expect(packet.staleKnowledgeIds).toEqual(["knowledge:frontend-template"]);
-    expect(packet.sourceConsensus.evidenceGapIds).toContain(
-      "evidence-gap:execution-run-1:caveated-source-authority:source-claim-stale"
+    expect(packet.caveatedSourceClaimIds).toEqual(packetWithoutFeedback.caveatedSourceClaimIds);
+    expect(packet.caveatedMemoryRefs).toEqual(packetWithoutFeedback.caveatedMemoryRefs);
+    expect(packet.staleKnowledgeIds).toEqual(packetWithoutFeedback.staleKnowledgeIds);
+    expect(packet.sourceConsensus.evidenceGapIds).toEqual(
+      packetWithoutFeedback.sourceConsensus.evidenceGapIds
     );
-    expect(packet.sourceConsensus.evidenceGapIds).toContain(
-      "evidence-gap:execution-run-1:caveated-memory-authority:knowledge:frontend-template"
+    expect(packet.abstentionScore.reasons).toEqual(
+      packetWithoutFeedback.abstentionScore.reasons
     );
-    expect(packet.abstentionScore.reasons).toContain("caveated_source_authority");
-    expect(packet.abstentionScore.reasons).toContain("caveated_memory_authority");
   });
 
   it("validates current, stale, and missing packet bindings before usefulness subjects", () => {
@@ -2898,11 +2905,8 @@ describe("runCli", () => {
     });
 
     expect(staleSelectedPacket.sourceDecisionIds).toContain("source-decision-canonical-1");
-    expect(staleSelectedPacket.staleDecisionIds).toContain("source-decision-canonical-1");
-    expectPacketAuthorizationRejection(
-      staleSelectedAuthorization,
-      "not selected by the current packet"
-    );
+    expect(staleSelectedPacket.staleDecisionIds).not.toContain("source-decision-canonical-1");
+    expect(staleSelectedAuthorization.authorized).toBe(true);
 
     const authorization = authorizeDecisionPacketUsefulness({
       aggregate: aggregateWithDecisionTarget,

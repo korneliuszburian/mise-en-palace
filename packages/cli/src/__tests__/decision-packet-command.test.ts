@@ -899,10 +899,7 @@ describe("decision packet CLI", () => {
           "claim-agent-1",
           "claim-agent-caveated"
         ],
-        caveatedSourceClaimIds: [
-          "claim-agent-1",
-          "claim-agent-caveated"
-        ],
+        caveatedSourceClaimIds: ["claim-agent-caveated"],
         sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
         sourceDecisionTargets: [{
           targetType: "architecture_decision",
@@ -911,11 +908,8 @@ describe("decision packet CLI", () => {
         }],
         sourceRejectionIds: ["source-rejection-agent-1"],
         sourceConsensus: {
-          decisionLinkedSourceClaimIds: [],
-          caveatedSourceClaimIds: [
-            "claim-agent-1",
-            "claim-agent-caveated"
-          ],
+          decisionLinkedSourceClaimIds: ["claim-agent-1"],
+          caveatedSourceClaimIds: ["claim-agent-caveated"],
           sourceDecisionEdgeIds: ["source-decision-edge-agent-1"],
           sourceDecisionTargets: [{
             targetType: "architecture_decision",
@@ -928,29 +922,23 @@ describe("decision packet CLI", () => {
           sourceRejectionIds: ["source-rejection-agent-1"],
           conflictedDecisionIds: [],
           evidenceGapIds: [
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated"
           ]
         },
         abstentionScore: {
           status: "abstain",
-          score: 0,
+          score: 40,
           reasons: [
             "evidence_gap",
-            "missing_decision_linked_source",
-            "caveated_source_authority",
-            "caveated_memory_authority"
+            "caveated_source_authority"
           ],
           evidenceGapIds: [
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated"
           ]
         },
         memoryRefs: ["memory-agent-1"],
-        caveatedMemoryRefs: ["memory-agent-1"],
-        staleKnowledgeIds: ["memory-agent-1"],
+        caveatedMemoryRefs: [],
+        staleKnowledgeIds: [],
         noiseKnowledgeIds: [],
         unknownKnowledgeIds: [],
         staleDecisionIds: [],
@@ -971,9 +959,7 @@ describe("decision packet CLI", () => {
           excludedMemoryRecordIds: ["memory-rejected-1"],
           excludedAntiMemoryRecordIds: [],
           evidenceGapIds: [
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-1",
-            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated",
-            "evidence-gap:run-agent-1:caveated-memory-authority:memory-agent-1"
+            "evidence-gap:run-agent-1:caveated-source-authority:claim-agent-caveated"
           ]
         }
       },
@@ -1047,15 +1033,13 @@ describe("decision packet CLI", () => {
       "source-decision-canonical-agent-1"
     ]);
     expect(json.packet.sourceClaimIds).toContain("claim-agent-caveated");
-    expect(json.packet.caveatedSourceClaimIds).toEqual([
-      "claim-agent-1",
-      "claim-agent-caveated"
-    ]);
+    expect(json.packet.caveatedSourceClaimIds).toEqual(["claim-agent-caveated"]);
     expect(json.packet.taskStandardDecisions[0]?.decision).toBe(
       "Use the refreshed frontend bootstrap standard for matching new frontend projects."
     );
     expect(json.packet.abstentionScore.status).toBe("abstain");
-    expect(json.packet.abstentionScore.reasons).toContain("missing_decision_linked_source");
+    expect(json.packet.abstentionScore.reasons).toContain("caveated_source_authority");
+    expect(json.packet.abstentionScore.reasons).not.toContain("missing_decision_linked_source");
     expect(json.packet.abstentionScore.reasons).not.toContain("stale_authority");
     expect(json.packet.verificationCommands).toEqual(["pnpm --filter frontend test"]);
     expect(json.returnChannels.evidence.persistedCommand).toContain(json.packetIdentity.checksum);

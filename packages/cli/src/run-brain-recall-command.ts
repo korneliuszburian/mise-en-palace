@@ -23,7 +23,7 @@ export type KnowledgeOutputFormat = "text" | "json" | "html";
 
 export interface BrainRecallStoreUsefulnessSelection {
   readModels: KnowledgeReadModel[];
-  appliedUsefulnessFeedback: boolean;
+  attachedReviewOnlyFeedback: boolean;
 }
 
 export interface BrainRecallCommandRuntime {
@@ -257,7 +257,7 @@ export const runBrainRecallCommand = async (
   const cwd = runtime.cwd ?? process.cwd();
   const loaded = await loadKnowledgeReadModels(runtime, cwd);
   const storeSelection = runtime.usefulnessProvider === undefined
-    ? { readModels: loaded.readModels, appliedUsefulnessFeedback: false }
+    ? { readModels: loaded.readModels, attachedReviewOnlyFeedback: false }
     : await runtime.usefulnessProvider(loaded.readModels);
   const source: "explicit_files" | "memory_store" =
     runtime.readModelProvider === undefined ? "explicit_files" : "memory_store";

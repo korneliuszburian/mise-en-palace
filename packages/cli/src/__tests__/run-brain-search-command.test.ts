@@ -819,7 +819,7 @@ describe("runBrainSearchCommand", () => {
     });
   });
 
-  it("excludes store-backed knowledge with blocking usefulness feedback", async () => {
+  it("keeps store-backed feedback review-only until governed memory changes", async () => {
     const staleMemoryRecord: MemoryRecord = {
       id: "memory-record-stale",
       projectId: "project-1",
@@ -976,15 +976,19 @@ describe("runBrainSearchCommand", () => {
     expect(parsed).toMatchObject({
       memoryRecallReadback: "store_backed",
       knowledgeReadModels: {
-        returnedReadModels: 1,
-        readModelIds: ["memory-record-current"],
+        returnedReadModels: 2,
+        readModelIds: ["memory-record-stale", "memory-record-current"],
         selectedKnowledge: [{
+          id: "memory-record-stale",
+          source: "memory_store",
+          nextAction: "review"
+        }, {
           id: "memory-record-current",
           source: "memory_store"
         }]
       }
     });
-    expect(JSON.stringify(parsed)).not.toContain("memory-record-stale");
+    expect(JSON.stringify(parsed)).toContain("memory-record-stale");
   });
 
   it("keeps store-backed memory search resilient when DB memory readback is unavailable", async () => {

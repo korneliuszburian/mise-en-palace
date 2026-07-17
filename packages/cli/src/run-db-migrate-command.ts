@@ -1,12 +1,11 @@
-import path from "node:path";
-
 import {
   migrateDatabase
 } from "@krn/db/dev";
 
 import {
-  findRepoRoot
-} from "./cli-file-boundary.js";
+  missingDbCommandOutput,
+  resolveDbCommandContext
+} from "./db-command-context.js";
 import {
   missingDbConfigRecovery,
   unreachablePostgresRecovery
@@ -38,10 +37,8 @@ const migrationDoesNotProve =
 export const runDbMigrateCommand = async (
   runtime: DbMigrateRuntime
 ): Promise<DbMigrateResult> => {
-  const repoRoot = await findRepoRoot(runtime.cwd);
-  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
-  const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+  const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
+    await resolveDbCommandContext(runtime);
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot,
     databaseUrl,
@@ -53,15 +50,13 @@ export const runDbMigrateCommand = async (
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
       exitCode: 1,
-      stdout: attachFingerprint([
-        "KRN DB Migrate",
-        `Repo root: ${repoRoot}`,
-        `Migrations folder: ${relativeMigrationsFolder}`,
-        "DB mode: preview/no-DB",
-        "Postgres config: missing KRN_DATABASE_URL",
-        `Next action: ${missingDbConfigRecovery()}`,
-        `Does not prove: ${migrationDoesNotProve}`
-      ].join("\n") + "\n")
+      stdout: attachFingerprint(missingDbCommandOutput({
+        title: "KRN DB Migrate",
+        repoRoot,
+        relativeMigrationsFolder,
+        nextAction: missingDbConfigRecovery(),
+        doesNotProve: migrationDoesNotProve
+      }))
     };
   }
 
