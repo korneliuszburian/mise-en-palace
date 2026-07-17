@@ -292,12 +292,27 @@ export class CandidateProjectScopeError extends Error {
 
 export type EvidenceCaptureErrorDisposition = "permanent" | "transient" | "unknown";
 
+const transientInfrastructureErrorCodes = new Set([
+  "ECONNABORTED",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EAI_AGAIN",
+  "ETIMEDOUT"
+]);
+
 export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErrorDisposition => {
   if (error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope" && !error.retryable) {
     return "permanent";
   }
-  if (error instanceof Error && /ECONN|ETIMEDOUT|connection|timeout|postgres/i.test(error.message)) {
-    return "transient";
+  if (error instanceof Error) {
+    const code = "code" in error && typeof error.code === "string" ? error.code : undefined;
+    if (code !== undefined && transientInfrastructureErrorCodes.has(code)) {
+      return "transient";
+    }
+    if (/\b(?:timeout|timed out)\b/i.test(error.message) ||
+        /\bconnection\s+(?:refused|reset|aborted|closed|lost)\b/i.test(error.message)) {
+      return "transient";
+    }
   }
   return "unknown";
 };

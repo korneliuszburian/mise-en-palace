@@ -132,6 +132,8 @@ describe("candidate batch project scope", () => {
   it("separates permanent scope failures from transient infrastructure failures", () => {
     expect(classifyEvidenceCaptureError(new CandidateProjectScopeError(["eval candidate 1"]))).toBe("permanent");
     expect(classifyEvidenceCaptureError(new Error("postgres connection timeout"))).toBe("transient");
+    expect(classifyEvidenceCaptureError(Object.assign(new Error("connect refused"), { code: "ECONNREFUSED" }))).toBe("transient");
+    expect(classifyEvidenceCaptureError(new Error("invalid postgres connection string"))).toBe("unknown");
     expect(classifyEvidenceCaptureError(new Error("validation failed"))).toBe("unknown");
   });
 
