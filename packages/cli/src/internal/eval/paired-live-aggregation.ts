@@ -2,7 +2,10 @@ import type {
   PairedEvalFamily,
   PairedRepairOutcome
 } from "./paired-live-codex-repair.js";
-import type { TrackedTrialArtifact } from "./tracked-paired-live-codex-repair.js";
+import {
+  readTrackedTrialArtifact,
+  type TrackedTrialArtifact
+} from "./tracked-paired-live-codex-repair.js";
 
 export type PairedEvalArtifactInput = {
   readonly family: PairedEvalFamily;
@@ -30,6 +33,19 @@ export type PairedEvalAggregate = {
   readonly overall: PairedEvalOutcomeCounts;
   readonly proves: readonly string[];
   readonly doesNotProve: readonly string[];
+};
+
+export type PairedEvalArtifactDirectory = {
+  readonly family: PairedEvalFamily;
+  readonly directory: string;
+};
+
+export type PairedEvalUnreadableInput = PairedEvalArtifactDirectory & {
+  readonly reason: "artifact_or_phase_journal_failed_validation";
+};
+
+export type PairedEvalReadback = PairedEvalAggregate & {
+  readonly unreadableInputs: readonly PairedEvalUnreadableInput[];
 };
 
 const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
@@ -145,5 +161,58 @@ export const aggregatePairedEvalArtifacts = (
       "comparability of differently designed evaluation families",
       "Codex obedience outside the observed bounded trials"
     ]
+  };
+};
+
+export const aggregatePairedEvalArtifactDirectories = async (
+  inputs: readonly PairedEvalArtifactDirectory[]
+): Promise<PairedEvalReadback> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadableInputs: PairedEvalUnreadableInput[] = [];
+
+  for (const input of inputs) {
+    const artifact = await readTrackedTrialArtifact(input.directory);
+    if (artifact === undefined) {
+      unreadableInputs.push({
+        ...input,
+        reason: "artifact_or_phase_journal_failed_validation"
+      });
+    } else {
+      readable.push({ family: input.family, artifact });
+    }
+  }
+
+  const aggregate = aggregatePairedEvalArtifacts(readable);
+  const unreadableByFamily = new Map<PairedEvalFamily, number>();
+  for (const input of unreadableInputs) {
+    unreadableByFamily.set(input.family, (unreadableByFamily.get(input.family) ?? 0) + 1);
+  }
+  const addUnreadable = (counts: PairedEvalOutcomeCounts, family: PairedEvalFamily) => ({
+    ...counts,
+    totalInputs: counts.totalInputs + (unreadableByFamily.get(family) ?? 0),
+    invalidTrials: counts.invalidTrials + (unreadableByFamily.get(family) ?? 0)
+  });
+  const familyAggregates = aggregate.families.map((family) => ({
+    ...family,
+    ...addUnreadable(family, family.family)
+  }));
+  const overall = finalizeCounts(familyAggregates.reduce<PairedEvalOutcomeCounts>(
+    (sum, family) => ({
+      wins: sum.wins + family.wins,
+      ties: sum.ties + family.ties,
+      losses: sum.losses + family.losses,
+      qualityTrials: sum.qualityTrials + family.qualityTrials,
+      invalidTrials: sum.invalidTrials + family.invalidTrials,
+      totalInputs: sum.totalInputs + family.totalInputs,
+      winRateAmongQuality: null
+    }),
+    emptyCounts()
+  ));
+
+  return {
+    ...aggregate,
+    families: familyAggregates,
+    overall,
+    unreadableInputs
   };
 };

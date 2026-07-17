@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { aggregatePairedEvalArtifacts } from "../internal/eval/paired-live-aggregation.js";
+import {
+  aggregatePairedEvalArtifactDirectories,
+  aggregatePairedEvalArtifacts
+} from "../internal/eval/paired-live-aggregation.js";
 import type { TrackedTrialArtifact } from "../internal/eval/tracked-paired-live-codex-repair.js";
 
 const artifact = (
@@ -93,5 +96,25 @@ describe("paired live eval aggregation", () => {
     expect(report.overall).toMatchObject({ wins: 1, qualityTrials: 1, invalidTrials: 1 });
     expect(report.families.find((family) => family.family === "async-job")?.duplicateRunIds)
       .toEqual(["cross-family"]);
+  });
+
+  it("reports an unreadable artifact as invalid without creating a quality outcome", async () => {
+    const report = await aggregatePairedEvalArtifactDirectories([{
+      family: "env-config",
+      directory: "/definitely/missing/paired-trial"
+    }]);
+
+    expect(report.overall).toMatchObject({
+      wins: 0,
+      qualityTrials: 0,
+      invalidTrials: 1,
+      totalInputs: 1,
+      winRateAmongQuality: null
+    });
+    expect(report.unreadableInputs).toEqual([{
+      family: "env-config",
+      directory: "/definitely/missing/paired-trial",
+      reason: "artifact_or_phase_journal_failed_validation"
+    }]);
   });
 });
