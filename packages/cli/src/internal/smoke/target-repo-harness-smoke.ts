@@ -930,6 +930,7 @@ const capturePacketBoundTargetEvidence = async (input: {
   readonly harnessRunRepository: DatabaseRuntime["harnessRunRepository"];
   readonly memoryRecordId: string;
   readonly marker: string;
+  readonly projectId: string;
   readonly now: string;
   readonly targetRepoPath: string;
 }): Promise<PacketBoundTargetEvidenceProof> => {
@@ -1017,6 +1018,7 @@ const capturePacketBoundTargetEvidence = async (input: {
   } as const;
   const liveCandidate: EvalCandidateProposal = {
     id: `target-repo-live-output:${input.marker}`,
+    projectId: input.projectId,
     status: "candidate",
     title: "Target repo live obedience output readback",
     scenario: "target-repo-harness live output persistence",
@@ -1050,6 +1052,9 @@ const capturePacketBoundTargetEvidence = async (input: {
     Object.entries(liveOutput).every(([key, value]) => readBackLiveOutput[key] === value);
   if (!liveOutputMatches) {
     throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackLiveCandidate)})`);
+  }
+  if (readBackLiveCandidate?.projectId !== input.projectId) {
+    throw new Error("Target repo harness smoke lost live evidence project scope in PostgreSQL readback");
   }
   const liveFeedbackDelta = liveReadback?.feedbackDeltas.find((delta) =>
     delta.evalCandidates.some((candidate) => candidate.id === liveCandidate.id)
@@ -1660,6 +1665,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       harnessRunRepository,
       memoryRecordId: memoryRecord.id,
       marker,
+      projectId: project.id,
       now,
       targetRepoPath: input.targetRepoPath
     });
