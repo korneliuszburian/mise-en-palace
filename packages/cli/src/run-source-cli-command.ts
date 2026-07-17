@@ -149,6 +149,7 @@ const runSourceDecisionCommand = async (
     case "sourceDecisionLink":
       return runSourceDecisionLinkCommand({
         ...standardSourceInput(context),
+        cwd: context.cwd,
         command
       });
     case "sourceDecisionAdopt":

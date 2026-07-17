@@ -1052,6 +1052,7 @@ describe("runCli", () => {
   });
 
   it("persists source decision link and prints edge details", async () => {
+    let databaseRuntimeInput: DatabaseRuntimeInput | undefined;
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1083,11 +1084,13 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: dependencies,
-          sourceRepository: {
+        createDatabaseRuntime: async (input) => {
+          databaseRuntimeInput = input;
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: dependencies,
+            sourceRepository: {
             ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
@@ -1143,13 +1146,14 @@ describe("runCli", () => {
                 createdAt: now
               };
             }
-          },
-          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
-          memoryRepository: unusedMemoryRepository,
-          async close() {
-            return undefined;
-          }
-        })
+            },
+            harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
       }
     );
 
@@ -1164,6 +1168,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("confidence: medium");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("doesNotProve: SourceDecisionEdge readback does not prove source truth");
+    expect(databaseRuntimeInput?.repoPathHint).toBe(await findRepoRoot(process.cwd()));
   });
 
   it("rejects source decision link when the source claim is rejected", async () => {
