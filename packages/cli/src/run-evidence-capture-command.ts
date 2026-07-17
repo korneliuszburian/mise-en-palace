@@ -264,6 +264,28 @@ interface MemoryCandidateProposal {
   metadata: Record<string, unknown>;
 }
 
+export const assertCandidateBatchProjectScope = (input: {
+  readonly projectId: string;
+  readonly sourceDecisionCandidates: readonly SourceDecision[];
+  readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
+  readonly evalCandidateProposals: readonly EvalCandidateProposal[];
+}): void => {
+  const foreign = [
+    ...input.sourceDecisionCandidates
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `source decision ${candidate.id}`),
+    ...input.memoryCandidateProposals
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `memory candidate ${candidate.id}`),
+    ...input.evalCandidateProposals
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `eval candidate ${candidate.id}`)
+  ];
+  if (foreign.length > 0) {
+    throw new Error(`Candidate project scope does not match execution project: ${foreign.join(", ")}`);
+  }
+};
+
 const candidateReviewabilityDoesNotProve =
   "This reviewability classification does not approve, promote, or persist the candidate as Memory Core truth.";
 
@@ -1977,30 +1999,12 @@ const persistEvidenceCapture = async (
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
     const projectId = evidenceCaptureProjectIdFor(aggregate, databaseRuntime.projectId);
-    const crossProjectEvalCandidates = evalCandidateProposals.filter((candidate) =>
-      candidate.projectId !== undefined && candidate.projectId !== projectId
-    );
-    if (crossProjectEvalCandidates.length > 0) {
-      throw new Error(
-        `Eval candidate project scope does not match execution project: ${crossProjectEvalCandidates.map((candidate) => candidate.id).join(", ")}`
-      );
-    }
-    const crossProjectSourceDecisions = sourceDecisionCandidates.filter((candidate) =>
-      candidate.projectId !== undefined && candidate.projectId !== projectId
-    );
-    if (crossProjectSourceDecisions.length > 0) {
-      throw new Error(
-        `Source decision project scope does not match execution project: ${crossProjectSourceDecisions.map((candidate) => candidate.id).join(", ")}`
-      );
-    }
-    const crossProjectMemoryCandidates = memoryCandidateProposals.filter((candidate) =>
-      typeof candidate.metadata["projectId"] === "string" && candidate.metadata["projectId"] !== projectId
-    );
-    if (crossProjectMemoryCandidates.length > 0) {
-      throw new Error(
-        `Memory candidate project scope does not match execution project: ${crossProjectMemoryCandidates.map((candidate) => candidate.id).join(", ")}`
-      );
-    }
+    assertCandidateBatchProjectScope({
+      projectId,
+      sourceDecisionCandidates,
+      memoryCandidateProposals,
+      evalCandidateProposals
+    });
     const packet = packetBindingForEvidenceCapture({
       aggregate,
       decisionPacketChecksum: runtime.decisionPacketChecksum,
