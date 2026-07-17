@@ -1264,7 +1264,7 @@ describe("runCli", () => {
     expect(retry.stdout).not.toContain("usefulnessAuthorization:");
   });
 
-  it("persists explicit application evidence before packet-bound helped feedback", async () => {
+  it("persists explicit application evidence against the run project when the runtime fallback differs", async () => {
     const verificationCommand = "pnpm typecheck";
     const applicationPath = "packages/cli/src/generated-application.ts";
     const appliedAt = "2026-06-21T12:00:30.000Z";
@@ -1300,7 +1300,7 @@ describe("runCli", () => {
     );
     const createRuntime = async () => ({
       workspaceId: "workspace-1",
-      projectId: "project-1",
+      projectId: "fallback-project-that-does-not-own-the-run",
       compilerDependencies: { ...dependencies, harnessRunRepository },
       harnessRunRepository,
       sourceRepository: unusedSourceRepository,
