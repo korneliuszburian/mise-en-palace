@@ -8,6 +8,7 @@ import type {
   HeldOutArmScore
 } from "../internal/eval/paired-live-codex-repair.js";
 import {
+  executedCommandEvidence,
   pairedArmScoreSummary,
   pairedCommandEvidence
 } from "../internal/eval/paired-command-evidence.js";
@@ -27,6 +28,33 @@ const commandResult = (overrides: Partial<CommandResult> = {}): CommandResult =>
 });
 
 describe("paired command evidence", () => {
+  it("preserves exact executed command identity for contract verification", () => {
+    const evidence = executedCommandEvidence(commandResult({
+      command: "pnpm",
+      args: ["typecheck"]
+    }));
+
+    expect(evidence.command.command).toBe("pnpm typecheck");
+    expect(evidence.commandOutputArtifact?.command).toBe("pnpm typecheck");
+  });
+
+  it("keeps truncated executed output ineligible for strict command proof", () => {
+    const storedBytes = new TextEncoder().encode("captured prefix");
+    const evidence = executedCommandEvidence(commandResult({
+      stdout: "captured prefix plus omitted tail",
+      stdoutStoredBytes: storedBytes,
+      stdoutTotalByteCount: storedBytes.byteLength + 10
+    }));
+
+    expect(evidence).toEqual({
+      command: expect.objectContaining({
+        command: "pnpm test",
+        status: "passed",
+        provenance: "operator_reported"
+      })
+    });
+  });
+
   it("summarizes command and status output without rendering raw text", () => {
     const result = commandResult();
     const arm: HeldOutArmScore = {

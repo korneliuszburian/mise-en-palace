@@ -41,6 +41,7 @@ const arm = (
   changedFiles: [...changedFiles],
   changeManifest: {
     status: "known",
+    headMatchesInitialCommit: true,
     trackedFiles: changedFiles.filter((path) => !untrackedFiles.includes(path)),
     untrackedFiles: [...untrackedFiles],
     changedFiles: [...changedFiles],
@@ -55,12 +56,26 @@ const arm = (
   runtimeCommand: command("held-out runtime")
 });
 
-const score = (outcome: "win" | "tie", krnUntracked = false): PairedRepairScore => ({
+const score = (outcome: "win" | "tie"): PairedRepairScore => ({
   outcome,
   baseline: arm(outcome === "tie", ["src/config.ts"]),
-  krn: arm(true, ["src/config.ts"], krnUntracked ? ["src/config.ts"] : []),
+  krn: arm(true, ["src/config.ts"]),
   reason: outcome
 });
+
+const stagedInvalidVerification = (): HeldOutArmScore => {
+  const verification = arm(true, ["src/config.ts"]);
+  const manifest = verification.changeManifest;
+  if (manifest === undefined) throw new Error("test verification requires a change manifest");
+  return {
+    ...verification,
+    status: "invalid",
+    changeManifest: {
+      ...manifest,
+      statusOutput: "M  src/config.ts\n"
+    }
+  };
+};
 
 const rules = [{
   governingDecisionId: "governing-unknown-first",
@@ -85,18 +100,52 @@ describe("paired decision applications", () => {
     }]);
   });
 
-  it.each(["tie", "win"] as const)(
-    "records application before verification and admits an honest %s outcome",
-    async (outcome) => {
+  it("does not record an application from a staged target patch", () => {
+    const pairedScore = score("win");
+    const manifest = pairedScore.krn.changeManifest;
+    if (manifest === undefined) throw new Error("test score requires a change manifest");
+    const stagedScore: PairedRepairScore = {
+      ...pairedScore,
+      krn: {
+        ...pairedScore.krn,
+        changeManifest: {
+          ...manifest,
+          statusOutput: "M  src/config.ts\n"
+        }
+      }
+    };
+
+    expect(observedPairedDecisionApplications({ score: stagedScore, rules })).toEqual([]);
+  });
+
+  it("does not record an application from an untracked target patch", () => {
+    const pairedScore: PairedRepairScore = {
+      ...score("win"),
+      krn: arm(true, ["src/config.ts"], ["src/config.ts"])
+    };
+
+    expect(observedPairedDecisionApplications({ score: pairedScore, rules })).toEqual([]);
+  });
+
+  it.each([
+    { outcome: "tie", verificationInvalid: false, admittedOutcome: "used" },
+    { outcome: "win", verificationInvalid: false, admittedOutcome: "helped" },
+    { outcome: "win", verificationInvalid: true, admittedOutcome: "used" }
+  ] as const)(
+    "records application before verification and admits $admittedOutcome for $outcome with invalid=$verificationInvalid",
+    async ({ outcome, verificationInvalid, admittedOutcome }) => {
       const order: string[] = [];
-      const captures: Array<{ sourceUsefulnessOutcomes?: readonly unknown[] }> = [];
+      const captures: Array<{
+        commandOutcomes?: readonly { readonly command: string }[];
+        sourceUsefulnessOutcomes?: readonly unknown[];
+      }> = [];
       const targetEvidence: unknown[] = [];
       const applicationId = pairedDecisionApplicationId("run-1", "decision-unknown-first");
 
       const result = await recordPairedDecisionApplications({
         runId: "run-1",
         packet: { packetIdentity: { checksum, generatedAt } },
-        score: score(outcome, true),
+        score: score(outcome),
         rules,
         krnTarget: {
           targetRoot: "/tmp/paired-target",
@@ -108,9 +157,14 @@ describe("paired decision applications", () => {
         now: () => "2026-07-16T10:03:00.000Z",
         captureEvidence: async (runtime) => {
           order.push(captures.length === 0 ? "application" : "outcome");
-          captures.push(runtime.sourceUsefulnessOutcomes === undefined
-            ? {}
-            : { sourceUsefulnessOutcomes: runtime.sourceUsefulnessOutcomes });
+          captures.push({
+            ...(runtime.commandOutcomes === undefined
+              ? {}
+              : { commandOutcomes: runtime.commandOutcomes }),
+            ...(runtime.sourceUsefulnessOutcomes === undefined
+              ? {}
+              : { sourceUsefulnessOutcomes: runtime.sourceUsefulnessOutcomes })
+          });
           targetEvidence.push(runtime.targetEvidence);
           return captures.length === 1
             ? {
@@ -130,14 +184,17 @@ describe("paired decision applications", () => {
         },
         verifyTarget: async () => {
           order.push("verify");
-          return arm(true, ["src/config.ts"]);
+          return verificationInvalid
+            ? stagedInvalidVerification()
+            : arm(true, ["src/config.ts"]);
         }
       });
 
       expect(order).toEqual(["application", "verify", "outcome"]);
       expect(targetEvidence[0]).toEqual(expect.objectContaining({
+        commands: ["pnpm test", "pnpm typecheck", "git diff --check"],
         changedFiles: [{
-          status: "??",
+          status: "modified",
           path: "src/config.ts",
           ownership: "owned_by_current_krn_run"
         }]
@@ -149,14 +206,20 @@ describe("paired decision applications", () => {
         expect.objectContaining({
           applicationId,
           appliedAt,
-          outcome: outcome === "win" ? "helped" : "used"
+          outcome: admittedOutcome
         })
+      ]);
+      expect(captures[1]?.commandOutcomes?.map((command) => command.command)).toEqual([
+        "pnpm test",
+        "pnpm typecheck",
+        "git diff --check",
+        "held-out runtime"
       ]);
       expect(result).toEqual([{
         sourceDecisionId: "decision-unknown-first",
         applicationId,
         appliedAt,
-        outcome: outcome === "win" ? "helped" : "used"
+        outcome: admittedOutcome
       }]);
     }
   );

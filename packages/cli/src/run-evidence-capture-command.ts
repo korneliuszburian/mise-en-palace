@@ -975,6 +975,7 @@ const outcomeHasCurrentEvidenceRef = (
 
 interface UsefulnessEvidenceClass {
   applicationRefs: ReadonlySet<string>;
+  requiredVerificationCommands: readonly string[];
   verificationRefs: ReadonlySet<string>;
   verificationCommands: readonly EvidenceCommandReadback[];
   verificationArtifactsByRef: ReadonlyMap<string, CommandOutputArtifact>;
@@ -993,6 +994,7 @@ const evidenceCommandOutputRefs = (
 const usefulnessEvidenceClassFor = (input: {
   readonly commands: readonly EvidenceCommandReadback[];
   readonly commandOutputArtifacts: readonly CommandOutputArtifact[];
+  readonly requiredVerificationCommands: readonly string[];
   readonly strictVerificationRefs: readonly string[];
   readonly targetEvidence: TargetEvidence | undefined;
 }): UsefulnessEvidenceClass => {
@@ -1003,6 +1005,7 @@ const usefulnessEvidenceClassFor = (input: {
     applicationRefs: new Set(ownsExactCurrentPatch
       ? target.changedFiles.map((file) => file.path)
       : []),
+    requiredVerificationCommands: input.requiredVerificationCommands,
     verificationRefs: new Set(input.strictVerificationRefs),
     verificationArtifactsByRef: new Map(
       input.commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
@@ -1020,17 +1023,22 @@ const verificationFollowsApplication = (input: {
 }): boolean => {
   const appliedAt = input.appliedAt;
 
-  return appliedAt !== undefined && input.evidenceClass.verificationCommands.some((command) =>
-    command.kind === "command_runner" &&
-    command.outputRef !== undefined &&
-    Date.parse(
-      input.evidenceClass.verificationArtifactsByRef.get(command.outputRef)?.startedAt ?? ""
-    ) > Date.parse(appliedAt) &&
-    Date.parse(command.capturedAt) > Date.parse(appliedAt) &&
-    [command.command, ...evidenceCommandOutputRefs(command)].some((ref) =>
-      input.evidenceRefs.has(ref) && input.evidenceClass.verificationRefs.has(ref)
-    )
-  );
+  return appliedAt !== undefined &&
+    input.evidenceClass.requiredVerificationCommands.length > 0 &&
+    input.evidenceClass.requiredVerificationCommands.every((requiredCommand) =>
+      input.evidenceClass.verificationCommands.some((command) =>
+        command.command === requiredCommand &&
+        command.kind === "command_runner" &&
+        command.outputRef !== undefined &&
+        Date.parse(
+          input.evidenceClass.verificationArtifactsByRef.get(command.outputRef)?.startedAt ?? ""
+        ) > Date.parse(appliedAt) &&
+        Date.parse(command.capturedAt) > Date.parse(appliedAt) &&
+        [command.command, ...evidenceCommandOutputRefs(command)].some((ref) =>
+          input.evidenceRefs.has(ref) && input.evidenceClass.verificationRefs.has(ref)
+        )
+      )
+    );
 };
 
 const evidenceClassDowngradeReason = (
@@ -1510,6 +1518,7 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
   const evidenceClass = usefulnessEvidenceClassFor({
     commands: input.commands,
     commandOutputArtifacts: input.commandOutputArtifacts,
+    requiredVerificationCommands: input.helpedProof.requiredVerificationCommands,
     strictVerificationRefs: input.helpedProof.verificationRefs,
     targetEvidence: input.targetEvidence
   });
@@ -1793,6 +1802,7 @@ const renderEvidenceCaptureOutput = (input: {
 
 interface CaptureHelpedProof {
   assessment: EvidenceBundleHelpedProofAssessment;
+  requiredVerificationCommands: string[];
   verificationRefs: string[];
 }
 
@@ -1813,6 +1823,7 @@ const captureHelpedProof = (input: {
   if (input.packetBinding === undefined) {
     return {
       assessment: { status: "ineligible", reason: "packet_not_bound_current" },
+      requiredVerificationCommands: [],
       verificationRefs: []
     };
   }
@@ -1839,15 +1850,20 @@ const captureHelpedProof = (input: {
     createdAt: input.createdAt,
     sha256Hex
   });
+  const requiredVerificationCommands = assessment.status === "eligible" &&
+    evidenceContract !== undefined
+    ? evidenceContract.commands
+      .filter((command) => command.required)
+      .map((command) => command.command)
+    : [];
 
   return {
     assessment,
-    verificationRefs: assessment.status === "eligible" && evidenceContract !== undefined
+    requiredVerificationCommands,
+    verificationRefs: requiredVerificationCommands.length > 0
       ? strictVerificationRefs(
         input.evidence,
-        new Set(evidenceContract.commands
-          .filter((command) => command.required)
-          .map((command) => command.command))
+        new Set(requiredVerificationCommands)
       )
       : []
   };

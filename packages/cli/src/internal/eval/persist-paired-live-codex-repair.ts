@@ -5,7 +5,8 @@ import { resolve } from "node:path";
 import type { EvalCandidateProposal, TargetEvidenceInput } from "@krn/core";
 
 import {
-  pairedRepairEvalCandidate
+  pairedRepairEvalCandidate,
+  targetChangeManifestClaimsOwnedChanges
 } from "./paired-live-codex-repair.js";
 import {
   observedPairedDecisionApplications,
@@ -201,14 +202,14 @@ const targetChangedFiles = (
       ...score.changeManifest.trackedFiles.map((path) => ({
         status: "modified",
         path: `${arm}/${path}`,
-        ownership: score.changeManifest?.forbiddenFiles.length === 0
+        ownership: targetChangeManifestClaimsOwnedChanges(score.changeManifest)
           ? "owned_by_current_krn_run"
           : "partial"
       })),
       ...score.changeManifest.untrackedFiles.map((path) => ({
         status: "untracked",
         path: `${arm}/${path}`,
-        ownership: score.changeManifest?.forbiddenFiles.length === 0
+        ownership: targetChangeManifestClaimsOwnedChanges(score.changeManifest)
           ? "owned_by_current_krn_run"
           : "partial"
       }))
@@ -243,8 +244,8 @@ const targetOwnership = (
     score.baseline.changeManifest?.status !== "known" ||
     score.krn.changeManifest?.status !== "known"
   ) return "unknown";
-  return score.baseline.changeManifest.forbiddenFiles.length === 0 &&
-    score.krn.changeManifest.forbiddenFiles.length === 0
+  return targetChangeManifestClaimsOwnedChanges(score.baseline.changeManifest) &&
+    targetChangeManifestClaimsOwnedChanges(score.krn.changeManifest)
     ? "owned_by_current_krn_run"
     : "partial";
 };
