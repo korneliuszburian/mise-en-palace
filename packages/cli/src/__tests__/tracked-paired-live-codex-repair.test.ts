@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTrackedTrialArtifact,
   hashTree,
+  extractLiveCodexObedienceOutput,
   parseLiveCodexObedienceOutputJson,
   parseTrackedTrialManifest,
   readTrackedTrialArtifact,
@@ -286,6 +287,26 @@ describe("tracked paired live Codex repair", () => {
       staleBoundary: "markdown notes are not runtime authority",
       action: "validate before domain use"
     }))).toThrow("required boundary fields are missing");
+  });
+
+  it("extracts the final bounded JSON message from Codex logs", () => {
+    expect(extractLiveCodexObedienceOutput([
+      "codex startup log",
+      "not-json",
+      JSON.stringify({
+        decisionId: "d",
+        rejectedPath: "r",
+        staleBoundary: "s",
+        nonProof: "n",
+        action: "a"
+      })
+    ].join("\n"))).toEqual({
+      decisionId: "d",
+      rejectedPath: "r",
+      staleBoundary: "s",
+      nonProof: "n",
+      action: "a"
+    });
   });
 
   it("accepts only a run-, project-, task-, and authority-bound packet", () => {

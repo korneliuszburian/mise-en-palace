@@ -438,6 +438,20 @@ export const parseLiveCodexObedienceOutputJson = (raw: string): LiveCodexObedien
   }
 };
 
+export const extractLiveCodexObedienceOutput = (
+  stdout: string
+): LiveCodexObedienceOutput | undefined => {
+  const lines = stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).reverse();
+  for (const line of lines) {
+    try {
+      return parseLiveCodexObedienceOutputJson(line);
+    } catch {
+      // Codex logs are allowed before the final bounded JSON message.
+    }
+  }
+  return undefined;
+};
+
 const isLiveCodexObedienceOutput = (value: unknown): value is LiveCodexObedienceOutput => {
   try {
     parseLiveCodexObedienceOutput(value);
@@ -1472,7 +1486,11 @@ const trialExecution = (
       : [...input.invalidReasons]
   ),
   ...(input.execution ?? {}),
-  ...optionalField("attempt", input.attempt)
+  ...optionalField("attempt", input.attempt),
+  ...optionalField(
+    "liveOutput",
+    input.execution?.liveOutput ?? extractLiveCodexObedienceOutput(input.execution?.krn?.stdout ?? "")
+  )
 });
 
 const buildTrialArtifact = (
