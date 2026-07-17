@@ -30,6 +30,9 @@ import {
   runMemoryKnowledgeProposeCommand
 } from "./run-memory-knowledge-propose-command.js";
 import {
+  runMemoryReviewedHelpedProposeCommand
+} from "./run-memory-reviewed-helped-propose-command.js";
+import {
   runMemoryAntiProposeCommand
 } from "./run-memory-anti-propose-command.js";
 
@@ -41,6 +44,7 @@ type MemoryCliCommand = Extract<
   | { kind: "memoryRecordApply" }
   | { kind: "memoryKnowledgeSeed" }
   | { kind: "memoryKnowledgePropose" }
+  | { kind: "memoryReviewedHelpedPropose" }
   | { kind: "memoryAntiAdd" }
   | { kind: "memoryAntiPropose" }
   | { kind: "memoryAntiPromote" }
@@ -66,6 +70,7 @@ const memoryCommandKinds = new Set<string>([
   "memoryRecordApply",
   "memoryKnowledgeSeed",
   "memoryKnowledgePropose",
+  "memoryReviewedHelpedPropose",
   "memoryAntiAdd",
   "memoryAntiPropose",
   "memoryAntiPromote",
@@ -118,12 +123,14 @@ const memoryFallbackMessages = {
   memoryRecordApply: "Unknown memory record apply error",
   memoryKnowledgeSeed: "Unknown memory seed error",
   memoryKnowledgePropose: "Unknown memory propose error",
+  memoryReviewedHelpedPropose: "Unknown reviewed helped memory proposal error",
   memoryAntiAdd: "Unknown memory anti add error",
   memoryAntiPropose: "Unknown memory anti propose error",
   memoryAntiPromote: "Unknown memory anti review error",
   memoryAntiReject: "Unknown memory anti review error"
 } satisfies Record<MemoryCliCommand["kind"], string>;
 
+// fallow-ignore-next-line complexity -- exhaustive discriminant routing keeps every memory command handler compiler-checked
 const runSelectedMemoryCommand = async (
   command: MemoryCliCommand,
   context: MemoryCliCommandContext
@@ -161,6 +168,13 @@ const runSelectedMemoryCommand = async (
 
   if (command.kind === "memoryKnowledgePropose") {
     return runMemoryKnowledgeProposeCommand({
+      ...standardMemoryInput(context),
+      command
+    });
+  }
+
+  if (command.kind === "memoryReviewedHelpedPropose") {
+    return runMemoryReviewedHelpedProposeCommand({
       ...standardMemoryInput(context),
       command
     });

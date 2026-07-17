@@ -154,7 +154,8 @@ export const requireMemoryReviewRejectionReason = (
 
 export const createMemoryCommandDatabaseRuntime = async (
   runtime: MemoryCommandDatabaseRuntimeInput,
-  missingDatabaseUrlMessage: string
+  missingDatabaseUrlMessage: string,
+  projectId?: string
 ): Promise<DatabaseRuntime> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
@@ -168,6 +169,7 @@ export const createMemoryCommandDatabaseRuntime = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
+    ...(projectId === undefined ? {} : { projectId }),
     now: runtime.now,
     createId: runtime.createId
   });

@@ -16,8 +16,10 @@ import type {
   MemoryRecordStatus,
   MemoryRecordVersionId,
   ProjectId,
+  ReviewAssessmentId,
   IsoTimestamp,
   SourceClaimId,
+  SourceDecisionId,
   SourceLineageRef,
   TaskContractId,
   ContextAssemblyId
@@ -61,6 +63,47 @@ export interface CreateMemoryCandidateInput extends RepositoryMetadata {
   isUserPreference: boolean;
   validFrom?: string;
   validUntil?: string;
+}
+
+export interface ProposeReviewedHelpedMemoryCandidateInput {
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  reviewAssessmentId: ReviewAssessmentId;
+  sourceDecisionId: SourceDecisionId;
+}
+
+export interface ProposeReviewedHelpedMemoryCandidateResult {
+  candidate: MemoryCandidate;
+  created: boolean;
+  sourceClaimId: SourceClaimId;
+  evidenceBundleId: string;
+  usefulnessApplicationId: string;
+  packetChecksum: string;
+}
+
+export type ReviewedHelpedLearningBlockedReason =
+  | "feedback_delta_not_found"
+  | "feedback_delta_not_authoritative"
+  | "review_assessment_not_found"
+  | "review_assessment_not_accepted"
+  | "review_evidence_bundle_mismatch"
+  | "review_subject_mismatch"
+  | "evidence_bundle_not_passed"
+  | "source_outcome_missing"
+  | "source_outcome_ambiguous"
+  | "source_outcome_not_helped"
+  | "application_reference_missing"
+  | "application_not_found"
+  | "application_identity_mismatch"
+  | "packet_binding_mismatch"
+  | "source_decision_not_eligible"
+  | "existing_candidate_identity_conflict";
+
+export class ReviewedHelpedLearningBlockedError extends Error {
+  constructor(readonly reason: ReviewedHelpedLearningBlockedReason) {
+    super(`reviewed helped learning blocked: ${reason}`);
+    this.name = "ReviewedHelpedLearningBlockedError";
+  }
 }
 
 export interface PromoteMemoryCandidateInput extends RepositoryMetadata {
@@ -276,6 +319,9 @@ export interface MemoryRepository {
     options?: HistoricalMemoryWarningSelectionOptions
   ): Promise<MemoryRecord[]>;
   createMemoryCandidate(input: CreateMemoryCandidateInput): Promise<MemoryCandidate>;
+  proposeReviewedHelpedMemoryCandidateOnce(
+    input: ProposeReviewedHelpedMemoryCandidateInput
+  ): Promise<ProposeReviewedHelpedMemoryCandidateResult>;
   getMemoryCandidateById(id: string): Promise<MemoryCandidate | undefined>;
   promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord>;
   rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate>;

@@ -54,6 +54,8 @@ import type {
   RecordMemoryApplicationWithEffectsOnceInput,
   RecordMemoryApplicationWithEffectsOnceResult,
   RebuildMemoryApplicationCountersResult,
+  ProposeReviewedHelpedMemoryCandidateInput,
+  ProposeReviewedHelpedMemoryCandidateResult,
   SupersedeMemoryRecordInput,
   HarnessRunAggregate
 } from "@krn/core/repositories/internal";
@@ -94,6 +96,9 @@ import {
   DrizzleHarnessRunRepository,
   mapDecisionPacketIssuance
 } from "./drizzle-harness-run-repository.js";
+import {
+  proposeReviewedHelpedMemoryCandidateOnce
+} from "./reviewed-helped-memory-candidate.js";
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
@@ -2497,5 +2502,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
 
     return rows.map(mapAntiMemoryRecord);
+  }
+
+  async proposeReviewedHelpedMemoryCandidateOnce(
+    input: ProposeReviewedHelpedMemoryCandidateInput
+  ): Promise<ProposeReviewedHelpedMemoryCandidateResult> {
+    return proposeReviewedHelpedMemoryCandidateOnce(this.db, input);
   }
 }

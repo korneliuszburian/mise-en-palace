@@ -98,15 +98,28 @@ const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   });
 };
 
+const memoryCandidateAuthorityRefs = (
+  item: MemoryCandidateJson
+): Pick<
+  MemoryCandidate,
+  "executionRunId" | "feedbackDeltaId" | "reviewAssessmentId" | "usefulnessApplicationId"
+> => ({
+  ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
+  ...(typeof item.feedbackDeltaId === "string" ? { feedbackDeltaId: item.feedbackDeltaId } : {}),
+  ...(typeof item.reviewAssessmentId === "string"
+    ? { reviewAssessmentId: item.reviewAssessmentId }
+    : {}),
+  ...(typeof item.usefulnessApplicationId === "string"
+    ? { usefulnessApplicationId: item.usefulnessApplicationId }
+    : {})
+});
+
 const memoryCandidateFromJson = (
   item: MemoryCandidateJson
 ): MemoryCandidate => ({
   id: item.id,
   projectId: item.projectId,
-  ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
-  ...(typeof item.feedbackDeltaId === "string"
-    ? { feedbackDeltaId: item.feedbackDeltaId }
-    : {}),
+  ...memoryCandidateAuthorityRefs(item),
   proposedBy: item.proposedBy,
   kind: item.kind,
   status: item.status,
@@ -262,6 +275,12 @@ export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => 
     id: row.id,
     projectId: row.projectId,
     ...candidateRunRefs(row),
+    ...(row.reviewAssessmentId === null
+      ? {}
+      : { reviewAssessmentId: row.reviewAssessmentId }),
+    ...(row.usefulnessApplicationId === null
+      ? {}
+      : { usefulnessApplicationId: row.usefulnessApplicationId }),
     proposedBy: row.proposedBy,
     kind: row.kind,
     status: row.status,

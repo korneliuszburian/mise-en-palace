@@ -10,6 +10,7 @@ import type {
   MemoryRecordId,
   MemoryRecordVersionId,
   ProjectId,
+  ReviewAssessmentId,
   SourceClaimId,
   TaskContractId
 } from "./ids.js";
@@ -125,6 +126,8 @@ export interface MemoryCandidate {
   projectId: ProjectId;
   executionRunId?: ExecutionRunId;
   feedbackDeltaId?: FeedbackDeltaId;
+  reviewAssessmentId?: ReviewAssessmentId;
+  usefulnessApplicationId?: string;
   proposedBy: string;
   kind: MemoryRecordKind;
   status: MemoryCandidateStatus;
