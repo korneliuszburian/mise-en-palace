@@ -936,6 +936,12 @@ describe("tracked paired live Codex repair", () => {
       expect(timeout.execution.krn?.exitCode).toBeNull();
       expect(timeout.execution.baseline?.timedOut).toBe(true);
       expect(timeout.execution.krn?.timedOut).toBe(true);
+      expect(timeout.execution.baseline?.durationMs).toBeGreaterThanOrEqual(
+        timeoutManifest.codex.budget.timeoutMs - 100
+      );
+      expect(timeout.execution.krn?.durationMs).toBeGreaterThanOrEqual(
+        timeoutManifest.codex.budget.timeoutMs - 100
+      );
       expect(timeout.execution.invalidReasons).toEqual([
         "baseline arm timed out",
         "krn arm timed out"
