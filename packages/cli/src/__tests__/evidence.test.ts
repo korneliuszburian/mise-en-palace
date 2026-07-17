@@ -1388,6 +1388,14 @@ describe("runCli", () => {
     expect(applicationCapture.stdout).toContain(
       `usefulnessApplication: application-1|${appliedAt}`
     );
+    expect(capture.usefulnessApplications).toEqual([
+      expect.objectContaining({
+        applicationId: "application-1",
+        targetState: expect.objectContaining({
+          changedFiles: [applicationPath]
+        })
+      })
+    ]);
     capture.persistenceOrder = [];
 
     const captureOutcome = async (

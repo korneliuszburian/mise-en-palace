@@ -2239,7 +2239,7 @@ const applicationTargetEvidence = async (
   const changedFiles = snapshot.changedPaths.map((changedPath) => ({
     status: claimedFiles.get(changedPath)?.status ?? "??",
     path: changedPath,
-    ownership: claimedFiles.get(changedPath)?.ownership ?? "unknown"
+    ownership: claimedFiles.get(changedPath)?.ownership ?? targetEvidence.ownedChanges ?? "unknown"
   }));
 
   return normalizeTargetEvidence({
