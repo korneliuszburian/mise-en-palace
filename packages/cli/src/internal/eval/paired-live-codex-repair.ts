@@ -518,10 +518,12 @@ export const scoreTargetRepair = (
       },
       {
         name: "held_out_runtime",
-        passed: input.runtimeAvailable && runtimeObservationPassed(family, input.observations),
-        details: input.runtimeAvailable && runtimeObservationPassed(family, input.observations)
-          ? "Family-specific held-out runtime observer passed."
-          : "Family-specific held-out runtime observer was unavailable or failed its observable contract."
+        passed: input.runtimeAvailable,
+        details: !input.runtimeAvailable
+          ? "Family-specific held-out runtime observer was unavailable or malformed."
+          : runtimeObservationPassed(family, input.observations)
+            ? "Family-specific held-out runtime observer passed."
+            : "Family-specific held-out runtime observer completed and measured a contract failure."
       }
     ];
     const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check", "held_out_runtime"].includes(check.name) && !check.passed);

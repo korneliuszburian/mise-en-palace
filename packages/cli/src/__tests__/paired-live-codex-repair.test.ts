@@ -171,7 +171,7 @@ describe("paired live Codex repair eval", () => {
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
   });
 
-  it("invalidates env-config when the runtime observer reports an unsafe readback", () => {
+  it("records env-config runtime contract failure when redaction is unsafe", () => {
     const score = scoreTargetRepair({
       family: "env-config",
       sourceFiles: {
@@ -190,11 +190,11 @@ describe("paired live Codex repair eval", () => {
       }
     });
 
-    expect(score.status).toBe("invalid");
-    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: true, details: expect.stringContaining("contract failure") }));
   });
 
-  it("invalidates async-job when the runtime observer rejects the enqueue contract", () => {
+  it("records async-job runtime contract failure when enqueue is rejected", () => {
     const score = scoreTargetRepair({
       family: "async-job",
       sourceFiles: {
@@ -211,8 +211,8 @@ describe("paired live Codex repair eval", () => {
       }
     });
 
-    expect(score.status).toBe("invalid");
-    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: true, details: expect.stringContaining("contract failure") }));
   });
 
   it("accepts an explicit alternate clock seam in the async family contract", () => {
