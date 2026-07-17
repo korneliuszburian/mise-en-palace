@@ -204,12 +204,19 @@ const prepare = (
 
 describe("paired live Codex repair persistence", () => {
   it("derives a neutral proposal and exact command evidence from the immutable artifact", () => {
-    const prepared = prepare();
+    const liveOutput = {
+      decisionId: "decision-1",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      nonProof: "does not prove live product readiness",
+      action: "validate before domain use"
+    };
+    const prepared = prepare(artifact({ execution: { ...artifact().execution, liveOutput } }));
 
     expect(prepared.candidate).toMatchObject({
       id: "paired-target-repair:run-1",
       projectId: "project-1",
-      metadata: { outcome: "tie", usefulnessOutcome: "neutral" }
+      metadata: { outcome: "tie", usefulnessOutcome: "neutral", liveOutput }
     });
     expect(prepared.evidenceRefs).toEqual(expect.arrayContaining([
       `artifact:sha256:${"f".repeat(64)}`,
