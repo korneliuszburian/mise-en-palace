@@ -230,9 +230,11 @@ const sourceDecisionCandidatesForCapture = (
 const memoryCandidateProposalsForCapture = (
   proposals: readonly MemoryCandidateProposal[],
   captureIdentity: string,
-  stableTimestamp: string
+  stableTimestamp: string,
+  projectId: string
 ): MemoryCandidateProposal[] => proposals.map((proposal, index) => ({
   ...proposal,
+  projectId,
   id: `memory-candidate-proposal-${captureIdentity}-${index + 1}`,
   createdAt: stableTimestamp,
   updatedAt: stableTimestamp
@@ -248,6 +250,7 @@ interface EvidencePersistenceCounts {
 
 interface MemoryCandidateProposal {
   id: string;
+  projectId?: string;
   kind: MemoryCandidate["kind"];
   status: MemoryCandidate["status"];
   summary: string;
@@ -2027,8 +2030,12 @@ const persistEvidenceCapture = async (
     const persistedMemoryCandidateProposals = memoryCandidateProposalsForCapture(
       memoryCandidateProposals,
       captureIdentity,
-      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt
+      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt,
+      projectId
     );
+    if (persistedMemoryCandidateProposals.some((candidate) => candidate.projectId !== projectId)) {
+      throw new Error("Memory candidate project scope does not match execution project");
+    }
     const usefulness = prepareUsefulnessOutcomes({
       aggregate,
       callerPacketChecksum: packet.callerPacketChecksum,
