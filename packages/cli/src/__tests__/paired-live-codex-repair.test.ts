@@ -151,6 +151,24 @@ describe("paired live Codex repair eval", () => {
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
   });
 
+  it("fails an async-job family contract when finite clock/state seams are absent", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: { "src/jobQueue.ts": "export interface JobEnvelope { readonly idempotencyKey: string; }" },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: false,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
   it("keeps skipped preflight command identities aligned with the issued contract", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-missing-paired-target-"));
 
