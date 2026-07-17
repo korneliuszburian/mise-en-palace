@@ -1146,6 +1146,48 @@ describe("paired live Codex repair eval", () => {
     }
   });
 
+  it("accepts semantic async lease readback when fields use an Ms suffix", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-ms-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leasedAtMs: 123, leaseExpiresAtMs: 1123 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects async lease readback when the clock value is not observed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-wrong-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leasedAtMs: 999, leaseExpiresAtMs: 1999 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("invalidates an arm when the target test or forbidden-file boundary fails", () => {
     const result = scoreTargetRepair({
       sourceFiles,

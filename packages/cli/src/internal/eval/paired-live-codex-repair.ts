@@ -952,9 +952,13 @@ try {
         const key = isRecord(output) && typeof output.idempotencyKey === "string"
           ? output.idempotencyKey
           : undefined;
+        const processedNumericValues = isRecord(processed)
+          ? Object.values(processed).filter((value) => typeof value === "number")
+          : [];
+        // The contract is about a clock-derived lease value, not one property
+        // spelling. Accept legacy names and equivalent Ms-suffixed readback.
         const clockObserved = typeof service.leaseJob !== "function" || (
-          isRecord(processed) &&
-          (processed.leasedAt === 123 || processed.leaseExpiresAt === 1123)
+          processedNumericValues.includes(123) || processedNumericValues.includes(1123)
         );
         enqueueAccepted = key !== undefined && key.trim().length > 0 && clockObserved;
       }
