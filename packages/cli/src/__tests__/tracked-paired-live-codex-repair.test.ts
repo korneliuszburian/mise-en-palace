@@ -373,6 +373,14 @@ describe("tracked paired live Codex repair", () => {
       valid: false,
       reasons: ["packet lacks exact SourceDecision subjects: source-decision-2"]
     });
+
+    expect(validateTrialPacket(packet, {
+      ...manifest,
+      scenario: "unrelated-boundary"
+    })).toMatchObject({
+      valid: false,
+      reasons: ["packet task does not describe the manifest scenario"]
+    });
   });
 
   it("hashes file content and relative paths, including untracked files", async () => {
@@ -879,6 +887,8 @@ describe("tracked paired live Codex repair", () => {
       expect(first.status).toBe("invalid");
       expect(first.execution.baseline?.exitCode).toBe(1);
       expect(first.execution.krn?.exitCode).toBe(1);
+      expect(first.execution.baseline?.timedOut).toBe(false);
+      expect(first.execution.krn?.timedOut).toBe(false);
       expect(first.execution.baseline?.args).toEqual(expect.arrayContaining([
         "--proc",
         "/proc",
@@ -924,6 +934,12 @@ describe("tracked paired live Codex repair", () => {
       expect(timeout.status).toBe("invalid");
       expect(timeout.execution.baseline?.exitCode).toBeNull();
       expect(timeout.execution.krn?.exitCode).toBeNull();
+      expect(timeout.execution.baseline?.timedOut).toBe(true);
+      expect(timeout.execution.krn?.timedOut).toBe(true);
+      expect(timeout.execution.invalidReasons).toEqual([
+        "baseline arm timed out",
+        "krn arm timed out"
+      ]);
       expect(checkerCalls).toBe(0);
 
       const phasePath = join(root, "first-attempt", "01-claimed.json");

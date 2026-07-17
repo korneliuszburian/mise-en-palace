@@ -552,9 +552,16 @@ const isLiveCodexObedienceOutput = (value: unknown): value is LiveCodexObedience
 const missingReason = (condition: boolean, reason: string): string | undefined =>
   condition ? undefined : reason;
 
+const scenarioBoundToTask = (scenario: string, task: JsonRecord | undefined): boolean => {
+  const taskText = `${readString(task?.["title"]) ?? ""} ${readString(task?.["objective"]) ?? ""}`
+    .toLowerCase();
+  const tokens = scenario.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length > 2);
+  return tokens.length > 0 && tokens.every((token) => taskText.includes(token));
+};
+
 const packetShapeReasons = (
   root: JsonRecord | undefined,
-  manifest: Pick<PairedTrialManifest, "runId" | "projectId" | "taskId">
+  manifest: Pick<PairedTrialManifest, "runId" | "projectId" | "taskId" | "scenario">
 ): { readonly reasons: readonly string[]; readonly body?: JsonRecord; readonly checksum?: string } => {
   const request = nestedRecord(root, "request");
   const identity = nestedRecord(root, "packetIdentity");
@@ -567,7 +574,8 @@ const packetShapeReasons = (
     missingReason(request?.["runId"] === manifest.runId, "packet runId does not match the trial manifest"),
     missingReason(checksum !== undefined, "packet checksum is missing"),
     missingReason(task?.["id"] === manifest.taskId, "packet task id does not match the trial manifest"),
-    missingReason(task?.["projectId"] === manifest.projectId, "packet task is not bound to the manifest project")
+    missingReason(task?.["projectId"] === manifest.projectId, "packet task is not bound to the manifest project"),
+    missingReason(scenarioBoundToTask(manifest.scenario, task), "packet task does not describe the manifest scenario")
   ].filter((reason): reason is string => reason !== undefined);
 
   return { reasons, ...(body === undefined ? {} : { body }), ...(checksum === undefined ? {} : { checksum }) };
@@ -599,7 +607,7 @@ export const validateTrialPacket = (
   packet: unknown,
   manifest: Pick<
     PairedTrialManifest,
-    "runId" | "projectId" | "taskId" | "requiredDecisionIds" | "decisionApplications"
+    "runId" | "projectId" | "taskId" | "scenario" | "requiredDecisionIds" | "decisionApplications"
   >
 ): TrialPacketValidation => {
   const root = isRecord(packet) ? packet : undefined;
@@ -947,7 +955,9 @@ const armFailureReason = (arm: "baseline" | "krn", result: CommandResult): strin
   result.exitCode === 0
     ? undefined
     : result.exitCode === null
-      ? `${arm} arm did not complete successfully`
+      ? result.timedOut === true
+        ? `${arm} arm timed out`
+        : `${arm} arm did not complete successfully`
       : `${arm} arm exited with ${result.exitCode}`;
 
 type TrialJournal = {
@@ -1029,6 +1039,7 @@ const isCommandResult = (value: unknown): value is CommandResult => {
     (typeof value["exitCode"] === "number" || value["exitCode"] === null) &&
     typeof value["stdout"] === "string" &&
     typeof value["stderr"] === "string" &&
+    optionalValue(value, "timedOut", (timedOut) => typeof timedOut === "boolean") &&
     optionalValue(value, "durationMs", (duration) =>
       typeof duration === "number" && Number.isFinite(duration) && duration >= 0
     );

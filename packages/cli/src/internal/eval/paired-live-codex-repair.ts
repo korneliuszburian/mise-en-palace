@@ -23,6 +23,7 @@ export type CommandResult = {
   readonly command: string;
   readonly args: readonly string[];
   readonly exitCode: number | null;
+  readonly timedOut?: boolean;
   readonly stdout: string;
   readonly stderr: string;
   readonly stdoutStoredBytes?: Uint8Array;
@@ -716,6 +717,7 @@ export const runCommand = (
       command,
       args: [...args],
       exitCode: timedOut ? null : exitCode,
+      timedOut,
       stdout,
       stderr: timedOut ? `${stderr}command timed out` : stderr,
       stdoutTotalByteCount: stdoutSnapshot.totalByteCount,
