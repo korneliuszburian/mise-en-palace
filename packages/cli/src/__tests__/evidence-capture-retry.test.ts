@@ -276,7 +276,7 @@ describe("evidence capture retry boundary", () => {
         let transientFailure: { stderr?: string } | undefined;
         try {
           await runEvidenceCaptureCli({
-            databaseUrl: "postgres://127.0.0.1:1/krn",
+            databaseUrl: "postgres://127.0.0.1:0/krn",
             runId: compiled.executionRun.id,
             packetChecksum: packetBinding.packetChecksum,
             packetGeneratedAt: packetBinding.packetGeneratedAt,
