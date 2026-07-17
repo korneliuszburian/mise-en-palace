@@ -298,8 +298,8 @@ const checkFamilyContract = (
   const job = source(files, "src/jobQueue.ts");
   const tests = Object.values(files).filter((value): value is string => value !== undefined).join("\n");
   const passedContract = family === "env-config"
-    ? /development.*staging.*production/s.test(config) &&
-      /\[redacted\]/.test(readback) && /invalid_config/.test(tests)
+    ? /mode\s*!==\s*["']development["'][\s\S]*mode\s*!==\s*["']staging["'][\s\S]*mode\s*!==\s*["']production["']/.test(config) &&
+      /secretKeyPattern\.test\(key\)[\s\S]*\[redacted\]/.test(readback) && /invalid_config/.test(tests)
     : family === "async-job"
       ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
         /dead_lettered/.test(job) && /JobClock/.test(job)

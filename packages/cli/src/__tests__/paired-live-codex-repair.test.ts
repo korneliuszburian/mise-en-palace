@@ -129,6 +129,28 @@ describe("paired live Codex repair eval", () => {
     expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
   });
 
+  it("fails a family contract when an env boundary leaks the guarded behavior", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "export type RuntimeMode = 'development' | 'staging' | 'production';",
+        "src/configReadback.ts": "export const redactConfigReadback = (env: Record<string, unknown>) => env;",
+        "tests/config.test.ts": "assert.equal(result.kind, 'invalid_config');"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: false,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
   it("keeps skipped preflight command identities aligned with the issued contract", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-missing-paired-target-"));
 
