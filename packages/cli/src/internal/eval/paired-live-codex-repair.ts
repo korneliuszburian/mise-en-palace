@@ -1117,11 +1117,12 @@ const mutatedRaw = (raw) => {
     : undefined;
 };
 
-export const createUserFromJson = (raw, env) => {
+export const createUserFromJson = (...args) => {
+  const [raw] = args;
   const replacement = mutatedRaw(raw);
-  if (replacement === undefined) return original.createUserFromJson(raw, env);
+  if (replacement === undefined) return original.createUserFromJson(...args);
   writeSync(1, marker + "\\n");
-  return original.createUserFromJson(replacement, env);
+  return original.createUserFromJson(replacement, ...args.slice(1));
 };
 `;
 

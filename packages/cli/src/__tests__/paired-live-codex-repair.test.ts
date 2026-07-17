@@ -585,6 +585,54 @@ describe("paired live Codex repair eval", () => {
     }
   );
 
+  it("preserves injected clock arguments through focused mutation wrappers", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(join(compileRoot, "tests"), { recursive: true });
+    await writeFile(join(compileRoot, "src/index.js"),
+      "export { createUserFromJson, listSavedUsers } from './userService.js';\n",
+      "utf8");
+    await writeFile(join(compileRoot, "src/userService.js"), [
+      "const users = [];",
+      "export const listSavedUsers = () => users;",
+      "export const createUserFromJson = (raw, _env, now) => {",
+      "  let input;",
+      "  try { input = JSON.parse(raw); } catch { return { status: 'invalid_input' }; }",
+      "  if (typeof input?.email !== 'string' || input.email.length === 0) return { status: 'invalid_input' };",
+      "  if (input.role !== undefined && input.role !== 'admin' && input.role !== 'member') return { status: 'invalid_input' };",
+      "  const user = { id: String(now()), email: input.email, role: 'admin' };",
+      "  users.push(user);",
+      "  return { status: 'created', user };",
+      "};"
+    ].join("\n"), "utf8");
+    await writeFile(join(compileRoot, "tests/userService.test.js"), [
+      "import { createUserFromJson, listSavedUsers } from '../src/index.js';",
+      "const clock = () => 1;",
+      "const created = createUserFromJson(JSON.stringify({ email: 'ok@example.com' }), {}, clock);",
+      "if (created.status !== 'created' || created.user.id !== '1') throw new Error('create failed');",
+      "for (const raw of ['{', JSON.stringify({}), JSON.stringify({ email: 'bad@example.com', role: 'owner' })]) {",
+      "  const before = listSavedUsers().length;",
+      "  const result = createUserFromJson(raw, {}, clock);",
+      "  if (result.status !== 'invalid_input' || listSavedUsers().length !== before) throw new Error('invalid input accepted');",
+      "}"
+    ].join("\n"), "utf8");
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(compileRoot, process.cwd(), sandboxRoot);
+      expect(suite.control.exitCode).toBe(0);
+      expect(suite.mutations.map((proof) => [proof.name, proof.command.exitCode])).toEqual([
+        ["invalid_json", 0],
+        ["missing_email", 0],
+        ["invalid_role", 0]
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it.each(["invalid_json", "missing_email", "invalid_role"] as const)(
     "fails only the %s mutation proof when that vector is absent",
     async (missingName) => {
