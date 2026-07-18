@@ -119,6 +119,11 @@ describe("paired live eval aggregation", () => {
       winRateAmongQuality: null
     });
     expect(report.families).toHaveLength(4);
+    expect(report.comparison).toEqual({
+      outcomeLevel: "cross-family",
+      scoreLevel: "family-local-only",
+      reason: expect.stringContaining("must not be compared across families")
+    });
     expect(report.families.find((family) => family.family === "user-create")).toMatchObject({
       qualityTrials: 0,
       invalidTrials: 0,

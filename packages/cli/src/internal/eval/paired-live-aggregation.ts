@@ -38,6 +38,11 @@ export type PairedEvalAggregate = {
   readonly kind: "krn.pairedEvalAggregate.v1";
   readonly families: readonly PairedEvalFamilyAggregate[];
   readonly overall: PairedEvalOutcomeCounts;
+  readonly comparison: {
+    readonly outcomeLevel: "cross-family";
+    readonly scoreLevel: "family-local-only";
+    readonly reason: string;
+  };
   readonly proves: readonly string[];
   readonly doesNotProve: readonly string[];
   readonly invalidReasons: readonly PairedEvalInvalidReason[];
@@ -213,6 +218,11 @@ export const aggregatePairedEvalArtifacts = (
     kind: "krn.pairedEvalAggregate.v1",
     families: familyAggregates,
     overall,
+    comparison: {
+      outcomeLevel: "cross-family",
+      scoreLevel: "family-local-only",
+      reason: "win/tie/loss outcomes share a bounded contract gate; numeric arm scores count family-specific checks and must not be compared across families."
+    },
     proves: [
       "quality outcome counts are deterministic for unique validated run ids",
       "invalid, blocked, unverified, and duplicate inputs are excluded from quality outcomes"
