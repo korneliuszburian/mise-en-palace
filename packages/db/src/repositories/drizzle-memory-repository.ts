@@ -547,6 +547,12 @@ const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
     );
   }
 
+  if (candidate.sourceClaimIds.length === 0) {
+    throw new Error(
+      `Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`
+    );
+  }
+
   assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
 };
 

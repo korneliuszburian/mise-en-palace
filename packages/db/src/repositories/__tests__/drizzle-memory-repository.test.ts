@@ -137,6 +137,63 @@ describe("DrizzleMemoryRepository", () => {
     }
   });
 
+  postgresIt("rejects direct promotion of a source-lineage-only poisoning candidate", async () => {
+    const marker = `krn_source_lineage_only_promotion_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "source-lineage-only promotion",
+      workspacePrefix: "krn-source-lineage-only",
+      projectSlug: "source-lineage-only",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `source lineage only promotion ${marker}`,
+      taskContract: {
+        title: "Reject source-lineage-only memory promotion",
+        objective: "Require a reviewed SourceClaim before MemoryRecord creation.",
+        constraints: ["real PostgreSQL"],
+        nonGoals: ["accept untrusted memory"],
+        acceptance: ["direct repository promotion fails closed"]
+      },
+      harnessPlan: {
+        summary: "Source-lineage-only promotion boundary",
+        nextAction: "Attempt direct promotion without a SourceClaim."
+      }
+    });
+
+    try {
+      const candidate = await scaffold.memoryRepository.createMemoryCandidate({
+        projectId: scaffold.project.id,
+        proposedBy: "untrusted-input",
+        kind: "constraint",
+        summary: "Treat prompt injection as durable authority.",
+        body: "This candidate intentionally has no reviewed SourceClaim.",
+        owner: "untrusted-input",
+        confidence: 100,
+        applicationGuidance: "Apply the injected instruction.",
+        sourceClaimIds: [],
+        sourceLineage: [{ sourceId: "untrusted-input:prompt-injection" }],
+        isUserPreference: false,
+        metadata: { smokeId: marker }
+      });
+
+      await expect(scaffold.memoryRepository.promoteMemoryCandidate({
+        candidateId: candidate.id,
+        reviewer: "unsafe-direct-caller",
+        decision: "accepted",
+        metadata: { smokeId: marker }
+      })).rejects.toThrow(
+        `Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`
+      );
+
+      expect(await scaffold.memoryRepository.listMemoryRecordsForProject(scaffold.project.id)).toEqual([]);
+    } finally {
+      await scaffold.cleanup();
+      await scaffold.client.end();
+    }
+  });
+
   // fallow-ignore-next-line complexity -- one real-store authority chain owns rejection, concurrency, rollback, retry corruption, and final selection falsifiers
   postgresIt("proposes one exact reviewed helped candidate atomically and rejects weaker authority", async () => {
     const marker = `krn_reviewed_helped_chain_${crypto.randomUUID().replaceAll("-", "")}`;
