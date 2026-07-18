@@ -798,7 +798,10 @@ describe("tracked paired live Codex repair", () => {
     await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
 
     try {
-      const passedManifest = runnableManifest(binRoot, 1_000);
+      const passedManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        treatment: "semantic_governed" as const
+      };
       let fetchCalls = 0;
       let applicationRecorderCalls = 0;
       const result = await withProcessEnvironment({
@@ -832,6 +835,7 @@ describe("tracked paired live Codex repair", () => {
       expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
       expect(result.execution.decisionApplicationObservation).toBe("observed");
+      expect(result.execution.treatment).toBe("semantic_governed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
         "conditions_observed",
