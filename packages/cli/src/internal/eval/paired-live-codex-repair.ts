@@ -25,6 +25,7 @@ export type HeldOutRuntimeObservations = {
   readonly invalidRole: HeldOutObservation;
   readonly redactionSafe?: boolean;
   readonly enqueueAccepted?: boolean;
+  readonly validCreation?: boolean;
 };
 
 export type CommandResult = {
@@ -73,7 +74,7 @@ export type HeldOutCheck = {
   readonly details: string;
 };
 
-export type PairedEvalFamily = "weak-json" | "env-config" | "async-job";
+export type PairedEvalFamily = "weak-json" | "env-config" | "async-job" | "user-create";
 
 export type HeldOutFamilyContract = {
   readonly family: PairedEvalFamily;
@@ -86,6 +87,7 @@ export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
   const normalized = scenario.toLowerCase();
   if (normalized.includes("env-config")) return "env-config";
   if (normalized.includes("async-job")) return "async-job";
+  if (normalized.includes("user-create")) return "user-create";
   return "weak-json";
 };
 
@@ -106,6 +108,13 @@ export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamil
         requiredChecks: ["target_test", "target_typecheck", "target_diff_check"]
       };
     case "weak-json":
+      return {
+        family,
+        sourcePaths: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
+        allowedPrefixes: ["src/", "tests/", "docs/"],
+        requiredChecks: ["held_out_runtime", "target_test", "target_typecheck", "target_diff_check"]
+      };
+    case "user-create":
       return {
         family,
         sourcePaths: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
@@ -313,6 +322,11 @@ const runtimeObservationPassed = (
       return observationPassed(observations.invalidJson) &&
         observationPassed(observations.missingEmail) &&
         observationPassed(observations.invalidRole);
+    case "user-create":
+      return observations.validCreation === true &&
+        observationPassed(observations.invalidJson) &&
+        observationPassed(observations.missingEmail) &&
+        observationPassed(observations.invalidRole);
   }
 };
 
@@ -337,7 +351,12 @@ const checkFamilyContract = (
       ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
         /dead_lettered/.test(job) &&
         (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job))
-      : false;
+      : family === "user-create"
+        ? /CreateUserResult/.test(source(files, "src/userService.ts")) &&
+          /(?:status|state|kind)\s*[:?]/.test(source(files, "src/userService.ts")) &&
+          !/CreatedUser\s*\|\s*null/.test(source(files, "src/userService.ts")) &&
+          /admin/.test(tests) && /member/.test(tests)
+        : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
   const passed = passedContract && passedCommands && runtimeAvailable && runtimeObservationPassed(family, observations);
   return {
@@ -907,7 +926,7 @@ const observeInput = (createUser, listUsers, raw) => {
     const after = listUsers();
     const afterCount = Array.isArray(after) ? after.length : beforeCount;
     const resultRecord = isRecord(result) ? result : undefined;
-    const accepted = resultRecord?.ok === true || resultRecord?.kind === "created" || resultRecord?.status === "created";
+    const accepted = resultRecord?.ok === true || resultRecord?.kind === "created" || resultRecord?.status === "created" || resultRecord?.state === "created";
     const resultState = resultRecord === undefined
       ? String(result)
       : typeof resultRecord.ok === "boolean"
@@ -916,7 +935,9 @@ const observeInput = (createUser, listUsers, raw) => {
           ? "kind:" + resultRecord.kind
           : typeof resultRecord.status === "string"
             ? "status:" + resultRecord.status
-            : "object";
+            : typeof resultRecord.state === "string"
+              ? "state:" + resultRecord.state
+              : "object";
     return { threw: false, accepted, savedUserDelta: afterCount - beforeCount, resultState };
   } catch {
     return { threw: true, accepted: false, savedUserDelta: 0, resultState: "thrown" };
@@ -977,7 +998,23 @@ try {
     missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" })),
     invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }))
   };
-  writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations }) + "\\n");
+  let validCreation = false;
+  if (family === "user-create") {
+    try {
+      const explicit = createUser(JSON.stringify({ email: "held-out@example.com", role: "member" }), { DEFAULT_ROLE: "admin" });
+      const configured = createUser(JSON.stringify({ email: "held-out-default@example.com" }), { DEFAULT_ROLE: "admin" });
+      const explicitRecord = isRecord(explicit) ? explicit : undefined;
+      const configuredRecord = isRecord(configured) ? configured : undefined;
+      const explicitUser = explicitRecord && isRecord(explicitRecord.user) ? explicitRecord.user : explicitRecord;
+      const configuredUser = configuredRecord && isRecord(configuredRecord.user) ? configuredRecord.user : configuredRecord;
+      validCreation = (explicitRecord?.ok === true || explicitRecord?.kind === "created" || explicitRecord?.status === "created" || explicitRecord?.state === "created") &&
+        (configuredRecord?.ok === true || configuredRecord?.kind === "created" || configuredRecord?.status === "created" || configuredRecord?.state === "created") &&
+        explicitUser?.role === "member" && configuredUser?.role === "admin";
+    } catch {
+      validCreation = false;
+    }
+  }
+  writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { ...observations, validCreation } }) + "\\n");
   }
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
@@ -1083,7 +1120,7 @@ export const runHeldOutRuntimeWorker = async (
       return { command, runtimeAvailable: false, failureReason: "runtime_command_failed", observations: unknownRuntimeObservations() };
     }
     const observations = parsed["observations"];
-    if (family === "weak-json" && (!isRecord(observations) ||
+    if ((family === "weak-json" || family === "user-create") && (!isRecord(observations) ||
       !isRecord(observations["invalidJson"]) ||
       !isRecord(observations["missingEmail"]) ||
       !isRecord(observations["invalidRole"]))) {
@@ -1105,7 +1142,10 @@ export const runHeldOutRuntimeWorker = async (
             missingEmail: observations["missingEmail"] as HeldOutObservation,
             invalidRole: observations["invalidRole"] as HeldOutObservation,
             redactionSafe: false,
-            enqueueAccepted: false
+            enqueueAccepted: false,
+            ...(family === "user-create"
+              ? { validCreation: observations["validCreation"] === true }
+              : {})
           };
 
     return {

@@ -125,8 +125,56 @@ describe("paired live Codex repair eval", () => {
   it("routes scenarios to one explicit family contract", () => {
     expect(resolvePairedEvalFamily("env-config-contract-typescript held-out")).toBe("env-config");
     expect(resolvePairedEvalFamily("async-job-boundary-typescript held-out")).toBe("async-job");
+    expect(resolvePairedEvalFamily("user-create-boundary-typescript held-out")).toBe("user-create");
     expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
     expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
+    expect(pairedEvalFamilyContract("user-create").sourcePaths).toContain("src/userService.ts");
+  });
+
+  it("requires finite user creation and supported default/role behavior", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "export type CreateUserResult = { status: 'created' | 'invalid_input'; user?: { role: string } }; export function createUserFromJson() { return { status: 'created' }; }",
+        "tests/userService.test.ts": "admin member"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: false
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("accepts the user-create family when its held-out creation and rejection gates pass", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "export type CreateUserResult = { state: 'created' | 'rejected'; user?: { role: 'admin' | 'member' } }; export function createUserFromJson() { return { state: 'created' }; }",
+        "tests/userService.test.ts": "admin member malformed missing unsupported"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: true
+      }
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
   });
 
   it("fails a family contract when an env boundary leaks the guarded behavior", () => {

@@ -118,7 +118,13 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: null
     });
-    expect(report.families).toHaveLength(3);
+    expect(report.families).toHaveLength(4);
+    expect(report.families.find((family) => family.family === "user-create")).toMatchObject({
+      qualityTrials: 0,
+      invalidTrials: 0,
+      totalInputs: 0,
+      winRateAmongQuality: null
+    });
   });
 
   it("deduplicates a run globally even when mislabeled across families", () => {

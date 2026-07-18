@@ -79,7 +79,7 @@ export type PairedEvalMixedReadback = PairedEvalAggregate & {
   readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
 };
 
-const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
+const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json", "user-create"];
 const qualityOutcomes: readonly PairedRepairOutcome[] = ["win", "tie", "loss"];
 
 const invalidReasonsForArtifact = (artifact: TrackedTrialArtifact): readonly string[] => {

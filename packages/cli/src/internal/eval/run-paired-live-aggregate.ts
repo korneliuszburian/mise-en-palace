@@ -5,7 +5,7 @@ import {
 } from "./paired-live-aggregation.js";
 import type { PairedEvalFamily } from "./paired-live-codex-repair.js";
 
-const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json"];
+const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json", "user-create"];
 
 const usage = "Usage: run-paired-live-aggregate <family=artifact-directory> [...]";
 
