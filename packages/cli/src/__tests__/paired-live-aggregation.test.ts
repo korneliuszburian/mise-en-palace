@@ -14,7 +14,8 @@ import type { TrackedTrialArtifact } from "../internal/eval/tracked-paired-live-
 const artifact = (
   runId: string,
   status: TrackedTrialArtifact["status"],
-  outcome?: "win" | "tie" | "loss" | "invalid"
+  outcome?: "win" | "tie" | "loss" | "invalid",
+  checkerRevision?: string
 ): TrackedTrialArtifact => ({
   kind: "krn.pairedLiveCodexRepairArtifact.v2",
   status,
@@ -22,6 +23,7 @@ const artifact = (
   manifestHash: `manifest-${runId}`,
   sourceTreeHash: `source-${runId}`,
   runId,
+  ...(checkerRevision === undefined ? {} : { checkerRevision }),
   packet: { validation: { valid: true, reasons: [] } },
   execution: { conditions: { requested: {} as never } },
   ...(outcome === undefined ? {} : {
@@ -145,6 +147,27 @@ describe("paired live eval aggregation", () => {
     expect(report.overall).toMatchObject({ wins: 1, qualityTrials: 1, invalidTrials: 1 });
     expect(report.families.find((family) => family.family === "async-job")?.duplicateRunIds)
       .toEqual(["cross-family"]);
+  });
+
+  it("partitions checker revisions instead of pooling unlike-for-like artifacts", () => {
+    const single = aggregatePairedEvalArtifacts([
+      { family: "weak-json", artifact: artifact("current", "passed", "tie", "checker.v2") }
+    ]);
+    expect(single.checkerBoundary).toEqual({
+      status: "single-revision",
+      revision: "checker.v2",
+      partitions: { "checker.v2": ["current"] },
+      reason: "All readable artifacts carry checker revision checker.v2."
+    });
+
+    const mixed = aggregatePairedEvalArtifacts([
+      { family: "weak-json", artifact: artifact("current", "passed", "tie", "checker.v2") },
+      { family: "weak-json", artifact: artifact("legacy", "passed", "win") }
+    ]);
+    expect(mixed.checkerBoundary).toMatchObject({
+      status: "mixed-revisions",
+      partitions: { "checker.v2": ["current"], unknown: ["legacy"] }
+    });
   });
 
   it("reports an unreadable artifact as invalid without creating a quality outcome", async () => {

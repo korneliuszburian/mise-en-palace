@@ -12,6 +12,8 @@ import {
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
+/** Canonical held-out checker identity bound into every new tracked artifact. */
+export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v2" as const;
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;

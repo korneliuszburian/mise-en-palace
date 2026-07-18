@@ -46,6 +46,7 @@ export type PairedEvalAggregate = {
   readonly checkerBoundary: {
     readonly status: "unknown" | "single-revision" | "mixed-revisions";
     readonly revision?: string;
+    readonly partitions?: Readonly<Record<string, readonly string[]>>;
     readonly reason: string;
   };
   readonly proves: readonly string[];
@@ -191,6 +192,48 @@ const aggregateFamily = (
   };
 };
 
+const checkerBoundaryFor = (
+  inputs: readonly PairedEvalArtifactInput[]
+): PairedEvalAggregate["checkerBoundary"] => {
+  const partitions = new Map<string, string[]>();
+  const unknownRunIds: string[] = [];
+  for (const { artifact } of inputs) {
+    const revision = artifact.checkerRevision;
+    if (revision === undefined) {
+      unknownRunIds.push(artifact.runId);
+      continue;
+    }
+    const runIds = partitions.get(revision) ?? [];
+    runIds.push(artifact.runId);
+    partitions.set(revision, runIds);
+  }
+  const serializedPartitions: Record<string, readonly string[]> = Object.fromEntries(
+    [...partitions.entries()].map(([revision, runIds]) => [revision, [...runIds].sort()])
+  );
+  if (partitions.size === 1 && unknownRunIds.length === 0) {
+    const revision = [...partitions.keys()][0]!;
+    return {
+      status: "single-revision",
+      revision,
+      partitions: serializedPartitions,
+      reason: `All readable artifacts carry checker revision ${revision}.`
+    };
+  }
+  if (partitions.size === 0) {
+    return {
+      status: "unknown",
+      partitions: unknownRunIds.length === 0 ? {} : { unknown: [...unknownRunIds].sort() },
+      reason: "Readable artifacts do not currently carry a checker revision; no single-version estimate is allowed."
+    };
+  }
+  if (unknownRunIds.length > 0) serializedPartitions.unknown = [...unknownRunIds].sort();
+  return {
+    status: "mixed-revisions",
+    partitions: serializedPartitions,
+    reason: "Readable artifacts span multiple checker revisions or include legacy artifacts without a revision; outcomes must remain partitioned."
+  };
+};
+
 export const aggregatePairedEvalArtifacts = (
   inputs: readonly PairedEvalArtifactInput[]
 ): PairedEvalAggregate => {
@@ -228,10 +271,7 @@ export const aggregatePairedEvalArtifacts = (
       scoreLevel: "family-local-only",
       reason: "win/tie/loss outcomes share a bounded contract gate; numeric arm scores count family-specific checks and must not be compared across families."
     },
-    checkerBoundary: {
-      status: "unknown",
-      reason: "Tracked artifacts do not currently carry a checker revision; callers must not interpret the aggregate as a single-version estimate without an explicit partition."
-    },
+    checkerBoundary: checkerBoundaryFor(inputs),
     proves: [
       "quality outcome counts are deterministic for unique validated run ids",
       "invalid, blocked, unverified, and duplicate inputs are excluded from quality outcomes"

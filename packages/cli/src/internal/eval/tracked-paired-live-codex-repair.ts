@@ -28,6 +28,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   buildPairedRepairPrompts,
+  pairedLiveCheckerRevision,
   runCommand,
   runPairedRepairChecker,
   resolvePairedEvalFamily,
@@ -267,6 +268,7 @@ export type TrackedTrialArtifact = {
   readonly artifactHash: string;
   readonly manifestHash: string;
   readonly sourceTreeHash: string;
+  readonly checkerRevision?: string;
   readonly baselineTreeHash?: string;
   readonly krnTreeHash?: string;
   readonly runId: string;
@@ -1818,6 +1820,7 @@ const buildTrialArtifact = (
   status: input.status,
   manifestHash: context.manifestHash,
   sourceTreeHash: context.sourceTreeHash,
+  checkerRevision: context.manifest.checkerRevision ?? pairedLiveCheckerRevision,
   ...optionalField("baselineTreeHash", input.baselineTreeHash),
   ...optionalField("krnTreeHash", input.krnTreeHash),
   runId: context.manifest.runId,
