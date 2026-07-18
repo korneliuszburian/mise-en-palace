@@ -152,7 +152,7 @@ describe("paired live eval aggregation", () => {
     }]);
   });
 
-  it("reads the generic live result format without treating malformed JSON as quality", async () => {
+  it("quarantines generic live result files instead of treating them as quality", async () => {
     const directory = await mkdtemp("/tmp/krn-aggregate-generic-");
     const valid = join(directory, "valid.json");
     const malformed = join(directory, "malformed.json");
@@ -169,8 +169,11 @@ describe("paired live eval aggregation", () => {
       { family: "env-config", file: malformed }
     ]);
 
-    expect(report.overall).toMatchObject({ wins: 1, qualityTrials: 1, invalidTrials: 1 });
-    expect(report.unreadableFiles).toHaveLength(1);
+    expect(report.overall).toMatchObject({ wins: 0, qualityTrials: 0, invalidTrials: 2 });
+    expect(report.unreadableFiles).toEqual([
+      { family: "env-config", file: valid, reason: "generic_result_not_quality_proof" },
+      { family: "env-config", file: malformed, reason: "generic_result_failed_validation" }
+    ]);
   });
 
   it("combines tracked-directory reads and generic result files with global duplicate exclusion", async () => {
@@ -199,15 +202,15 @@ describe("paired live eval aggregation", () => {
     });
 
     expect(report.overall).toMatchObject({
-      wins: 1,
-      qualityTrials: 1,
-      invalidTrials: 2,
+      wins: 0,
+      qualityTrials: 0,
+      invalidTrials: 3,
       totalInputs: 3
     });
     expect(report.families.find((family) => family.family === "weak-json")?.duplicateRunIds)
-      .toEqual(["mixed-run"]);
+      .toEqual([]);
     expect(report.unreadableInputs).toHaveLength(1);
-    expect(report.unreadableFiles).toHaveLength(0);
+    expect(report.unreadableFiles).toHaveLength(2);
     expect(report.doesNotProve).toContain("causal KRN advantage or arbitrary-repository portability");
   });
 });

@@ -62,7 +62,7 @@ export type PairedEvalReadback = PairedEvalAggregate & {
 };
 
 export type PairedEvalUnreadableFile = PairedEvalResultFile & {
-  readonly reason: "generic_result_failed_validation";
+  readonly reason: "generic_result_failed_validation" | "generic_result_not_quality_proof";
 };
 
 export type PairedEvalFileReadback = PairedEvalAggregate & {
@@ -283,45 +283,6 @@ export const aggregatePairedEvalArtifactDirectories = async (
   };
 };
 
-const isGenericResult = (value: unknown): value is {
-  readonly kind: "krn.genericPairedCodexEval.v1";
-  readonly runId: string;
-  readonly score: { readonly outcome: PairedRepairOutcome };
-  readonly promptDelta: { readonly packetOnlyByConstruction: true };
-} => {
-  if (typeof value !== "object" || value === null) return false;
-  const result = value as Record<string, unknown>;
-  const score = result.score;
-  const promptDelta = result.promptDelta;
-  return result.kind === "krn.genericPairedCodexEval.v1" &&
-    typeof result.runId === "string" &&
-    typeof score === "object" && score !== null &&
-    qualityOutcomes.includes((score as Record<string, unknown>).outcome as PairedRepairOutcome) &&
-    typeof promptDelta === "object" && promptDelta !== null &&
-    (promptDelta as Record<string, unknown>).packetOnlyByConstruction === true;
-};
-
-const genericResultToArtifact = (parsed: {
-  readonly runId: string;
-  readonly score: { readonly outcome: PairedRepairOutcome };
-}): TrackedTrialArtifact => ({
-  kind: "krn.pairedLiveCodexRepairArtifact.v2",
-  runId: parsed.runId,
-  status: "passed",
-  artifactHash: `generic-artifact-${parsed.runId}`,
-  manifestHash: `generic-manifest-${parsed.runId}`,
-  sourceTreeHash: `generic-source-${parsed.runId}`,
-  packet: { validation: { valid: true, reasons: [] } },
-  execution: { conditions: { requested: {} as never } },
-  score: {
-    outcome: parsed.score.outcome,
-    baseline: { status: "pass", score: 0, checks: [], changedFiles: [] },
-    krn: { status: "pass", score: 0, checks: [], changedFiles: [] },
-    reason: "validated generic paired result"
-  },
-  proof: { proves: [], doesNotProve: [] }
-} as TrackedTrialArtifact);
-
 const readGenericResultInputs = async (
   inputs: readonly PairedEvalResultFile[]
 ): Promise<{ readonly readable: readonly PairedEvalArtifactInput[]; readonly unreadable: readonly PairedEvalUnreadableFile[] }> => {
@@ -330,8 +291,15 @@ const readGenericResultInputs = async (
   for (const input of inputs) {
     try {
       const parsed: unknown = JSON.parse(await readFile(input.file, "utf8"));
-      if (!isGenericResult(parsed)) throw new Error("invalid generic result");
-      readable.push({ family: input.family, artifact: genericResultToArtifact(parsed) });
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        (parsed as Record<string, unknown>)["kind"] === "krn.genericPairedCodexEval.v1"
+      ) {
+        unreadable.push({ ...input, reason: "generic_result_not_quality_proof" });
+      } else {
+        unreadable.push({ ...input, reason: "generic_result_failed_validation" });
+      }
     } catch {
       unreadable.push({ ...input, reason: "generic_result_failed_validation" });
     }
