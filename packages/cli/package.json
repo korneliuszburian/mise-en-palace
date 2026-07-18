@@ -14,6 +14,7 @@
     "eval:paired-live-codex-repair": "tsx src/internal/eval/run-paired-live-codex-repair.ts",
     "eval:paired-live-codex-repair:persist": "tsx src/internal/eval/persist-paired-live-codex-repair.ts",
     "eval:paired-live-codex-repair:tracked": "tsx src/internal/eval/run-tracked-paired-live-codex-repair.ts",
+    "eval:paired-live-codex-repair:prepare-retained": "tsx src/internal/eval/prepare-retained-paired-live-fixture.ts",
     "eval:corpus-closure": "tsx src/internal/eval/run-corpus-closure-smoke.ts",
     "eval:real-recall": "tsx src/index.ts db smoke real-recall-advantage",
     "eval:determinism": "tsx src/internal/eval/run-deterministic-eval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json ../../tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json ../../tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json ../../tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",
