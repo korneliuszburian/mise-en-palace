@@ -148,6 +148,25 @@ const finalizeCounts = (counts: PairedEvalOutcomeCounts): PairedEvalOutcomeCount
     : counts.wins / counts.qualityTrials
 });
 
+const sumCounts = (
+  left: PairedEvalOutcomeCounts,
+  right: PairedEvalOutcomeCounts
+): PairedEvalOutcomeCounts => ({
+  wins: left.wins + right.wins,
+  ties: left.ties + right.ties,
+  losses: left.losses + right.losses,
+  qualityTrials: left.qualityTrials + right.qualityTrials,
+  invalidTrials: left.invalidTrials + right.invalidTrials,
+  totalInputs: left.totalInputs + right.totalInputs,
+  winRateAmongQuality: null,
+  capabilityConfiguredTrials: left.capabilityConfiguredTrials + right.capabilityConfiguredTrials,
+  capabilityUseObservedTrials: left.capabilityUseObservedTrials + right.capabilityUseObservedTrials,
+  capabilityUseMissingTrials: left.capabilityUseMissingTrials + right.capabilityUseMissingTrials,
+  decisionApplicationAttemptedTrials: left.decisionApplicationAttemptedTrials + right.decisionApplicationAttemptedTrials,
+  decisionApplicationObservedTrials: left.decisionApplicationObservedTrials + right.decisionApplicationObservedTrials,
+  decisionApplicationMissingTrials: left.decisionApplicationMissingTrials + right.decisionApplicationMissingTrials
+});
+
 const addOutcome = (
   counts: PairedEvalOutcomeCounts,
   outcome: PairedRepairOutcome | undefined,
@@ -178,23 +197,18 @@ const addEvidenceObservations = (
   const application = artifact.execution.decisionApplicationObservation;
   const applicationAttempted = application !== undefined && application !== "not_attempted";
 
-  return {
-    ...counts,
-    ...(capabilityConfigured ? { capabilityConfiguredTrials: counts.capabilityConfiguredTrials + 1 } : {}),
-    ...(capabilityObserved
-      ? { capabilityUseObservedTrials: counts.capabilityUseObservedTrials + 1 }
-      : capabilityConfigured
-        ? { capabilityUseMissingTrials: counts.capabilityUseMissingTrials + 1 }
-        : {}),
-    ...(applicationAttempted
-      ? { decisionApplicationAttemptedTrials: counts.decisionApplicationAttemptedTrials + 1 }
-      : {}),
-    ...(application === "observed"
-      ? { decisionApplicationObservedTrials: counts.decisionApplicationObservedTrials + 1 }
-      : applicationAttempted
-        ? { decisionApplicationMissingTrials: counts.decisionApplicationMissingTrials + 1 }
-        : {})
-  };
+  const next = { ...counts };
+  if (capabilityConfigured) {
+    next.capabilityConfiguredTrials += 1;
+    if (capabilityObserved) next.capabilityUseObservedTrials += 1;
+    else next.capabilityUseMissingTrials += 1;
+  }
+  if (applicationAttempted) {
+    next.decisionApplicationAttemptedTrials += 1;
+    if (application === "observed") next.decisionApplicationObservedTrials += 1;
+    else next.decisionApplicationMissingTrials += 1;
+  }
+  return next;
 };
 
 const isQualityArtifact = (artifact: TrackedTrialArtifact): boolean =>
@@ -295,24 +309,7 @@ export const aggregatePairedEvalArtifacts = (
     indexedInputs.filter(({ input }) => input.family === family),
     duplicateIndices
   ));
-  const overall = finalizeCounts(familyAggregates.reduce<PairedEvalOutcomeCounts>(
-    (sum, family) => ({
-      wins: sum.wins + family.wins,
-      ties: sum.ties + family.ties,
-      losses: sum.losses + family.losses,
-      qualityTrials: sum.qualityTrials + family.qualityTrials,
-      invalidTrials: sum.invalidTrials + family.invalidTrials,
-      totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null,
-      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
-      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
-      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
-      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
-      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
-      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
-    }),
-    emptyCounts()
-  ));
+  const overall = finalizeCounts(familyAggregates.reduce(sumCounts, emptyCounts()));
 
   return {
     kind: "krn.pairedEvalAggregate.v1",
@@ -371,24 +368,7 @@ export const aggregatePairedEvalArtifactDirectories = async (
     ...family,
     ...addUnreadable(family, family.family)
   }));
-  const overall = finalizeCounts(familyAggregates.reduce<PairedEvalOutcomeCounts>(
-    (sum, family) => ({
-      wins: sum.wins + family.wins,
-      ties: sum.ties + family.ties,
-      losses: sum.losses + family.losses,
-      qualityTrials: sum.qualityTrials + family.qualityTrials,
-      invalidTrials: sum.invalidTrials + family.invalidTrials,
-      totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null,
-      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
-      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
-      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
-      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
-      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
-      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
-    }),
-    emptyCounts()
-  ));
+  const overall = finalizeCounts(familyAggregates.reduce(sumCounts, emptyCounts()));
 
   return {
     ...aggregate,
@@ -440,24 +420,7 @@ const addUnreadableCounts = (
     totalInputs: family.totalInputs + (counts.get(family.family) ?? 0),
     invalidTrials: family.invalidTrials + (counts.get(family.family) ?? 0)
   }));
-  const overall = finalizeCounts(familiesWithInvalid.reduce<PairedEvalOutcomeCounts>(
-    (sum, family) => ({
-      wins: sum.wins + family.wins,
-      ties: sum.ties + family.ties,
-      losses: sum.losses + family.losses,
-      qualityTrials: sum.qualityTrials + family.qualityTrials,
-      invalidTrials: sum.invalidTrials + family.invalidTrials,
-      totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null,
-      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
-      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
-      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
-      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
-      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
-      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
-    }),
-    emptyCounts()
-  ));
+  const overall = finalizeCounts(familiesWithInvalid.reduce(sumCounts, emptyCounts()));
   return {
     ...aggregate,
     families: familiesWithInvalid,
