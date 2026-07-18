@@ -1298,7 +1298,9 @@ describe("runSourceSearchCommand", () => {
           fromSourceClaimId: rejectedClaimId,
           toSourceClaimId: currentClaimId,
           kind: "contradicts",
-          metadata: {}
+          metadata: {
+            evidenceRef: "KRN_ROADMAP.md#rejected-temporal-consensus"
+          }
         }),
         temporalDissentEdge({ validUntil: now })
       ],
@@ -1379,7 +1381,8 @@ describe("runSourceSearchCommand", () => {
           direction: "incoming",
           kind: "contradicts",
           relatedSourceClaimId: rejectedClaimId,
-          evidenceGaps: ["missing_relation_support_ref"]
+          metadataEvidenceRefs: ["KRN_ROADMAP.md#rejected-temporal-consensus"],
+          evidenceGaps: []
         }),
         expect.objectContaining({
           sourceClaimEdgeId: "579deff0-4df5-45c1-8b5b-b5d281d00189",

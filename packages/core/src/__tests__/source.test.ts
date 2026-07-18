@@ -763,7 +763,10 @@ describe("source review signals", () => {
           id: "edge-rejected-contradicts-current",
           fromSourceClaimId: rejectedClaim.id,
           toSourceClaimId: currentStandard.id,
-          kind: "contradicts"
+          kind: "contradicts",
+          metadata: {
+            evidenceRef: "source-artifact:rejected-contradiction"
+          }
         }),
         sourceClaimEdge({
           id: "edge-rejected-supersedes-current",
@@ -825,7 +828,7 @@ describe("source review signals", () => {
       evidenceRefs: ["source-artifact:frontend-template-current"],
       rawEvidenceCitationRefs: ["forum_post:frontend-template-consensus#char=12-84"],
       sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
-      dissentingSourceClaimIds: [],
+      dissentingSourceClaimIds: ["claim-rejected"],
       supersededBySourceClaimIds: [],
       supersedesSourceClaimIds: ["claim-old-standard"],
       relationEvidence: expect.arrayContaining([
