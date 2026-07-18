@@ -593,6 +593,18 @@ describe("paired live Codex repair eval", () => {
     });
   });
 
+  it("requires the KRN arm to emit a bounded obedience record", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "abc" } }
+    });
+
+    expect(prompts.baseline).not.toContain("emit one final line of JSON");
+    expect(prompts.krn).toContain("emit one final line of JSON");
+    expect(prompts.krn).toContain("decisionId");
+    expect(prompts.krn).toContain("nonProof");
+  });
+
   it("can remove packet injection when capabilities are the experiment variable", () => {
     const prompts = buildPairedRepairPrompts({
       task: "repair the boundary",
