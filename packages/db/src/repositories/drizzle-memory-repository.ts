@@ -1295,7 +1295,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               reviewer,
               reason,
               supersededAt: supersededAt.toISOString(),
-              supersededByMemoryRecordId: replacementRow.id
+              supersededByMemoryRecordId: replacementRow.id,
+              ...supersessionEvidenceMetadata(
+                replacementRow.metadata,
+                nonEmptyStringList(candidateRow.sourceClaimIds)
+              )
             }
           },
           updatedAt: now
@@ -1495,7 +1499,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
                 reviewer,
                 reason,
                 supersededAt: supersededAt.toISOString(),
-                supersededByMemoryRecordId: input.supersededByMemoryRecordId
+                supersededByMemoryRecordId: input.supersededByMemoryRecordId,
+                ...supersessionEvidenceMetadata(input.metadata)
               }
             },
             updatedAt: new Date()
@@ -2647,6 +2652,30 @@ type MemoryRecordVersionRow = typeof memoryRecordVersions.$inferSelect;
 
 const isJsonRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const nonEmptyStringList = (value: unknown): string[] => Array.isArray(value)
+  ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+  : [];
+
+const supersessionEvidenceMetadata = (
+  metadata: Record<string, unknown> | undefined,
+  fallbackSourceClaimIds: readonly string[] = []
+): Record<string, unknown> => {
+  const revision = isJsonRecord(metadata?.memoryRevision)
+    ? metadata.memoryRevision
+    : undefined;
+  const evidenceRefs = nonEmptyStringList(
+    revision?.evidenceRefs ?? metadata?.evidenceRefs
+  );
+  const sourceClaimIds = nonEmptyStringList(
+    metadata?.sourceClaimIds ?? fallbackSourceClaimIds
+  );
+
+  return {
+    ...(evidenceRefs.length === 0 ? {} : { evidenceRefs }),
+    ...(sourceClaimIds.length === 0 ? {} : { sourceClaimIds })
+  };
+};
 
 const reviewedMemoryRevision = (
   candidate: MemoryCandidate,

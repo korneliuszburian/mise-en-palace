@@ -259,7 +259,10 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       `replacement_status=${entry.replacementStatus}`,
       `reviewer=${entry.transition.reviewer}`,
       `superseded_at=${entry.transition.supersededAt}`,
-      `reason=${entry.transition.reason}`
+      `reason=${entry.transition.reason}`,
+      `evidence_status=${entry.evidence.status}`,
+      `source_claim_ids=${entry.evidence.sourceClaimIds.join(",") || "none"}`,
+      `evidence_refs=${entry.evidence.evidenceRefs.join(",") || "none"}`
     ].join(" | ")
   );
   const evidenceContract = packet.evidenceContract === undefined

@@ -7,7 +7,10 @@ import type {
   DecisionPacketTaskStandard
 } from "./decision-packet.js";
 import { memoryRecordStatuses } from "./memory.js";
-import type { MemorySupersessionTimelineReadback } from "./memory.js";
+import type {
+  MemorySupersessionTimelineEntry,
+  MemorySupersessionTimelineReadback
+} from "./memory.js";
 import type { SourceConsensusTimelineReadback } from "./source-consensus-timeline.js";
 import {
   decisionPacketAbstentionReasons,
@@ -167,7 +170,12 @@ const memorySupersessionTimelineSchema = z.strictObject({
       reviewer: z.string(),
       reason: z.string(),
       supersededAt: isoTimestampSchema
-    })
+    }),
+    evidence: z.strictObject({
+      sourceClaimIds: stringArraySchema,
+      evidenceRefs: stringArraySchema,
+      status: z.enum(["complete", "incomplete"])
+    }).optional()
   })),
   doesNotProve: z.string()
 });
@@ -176,7 +184,18 @@ export const parseMemorySupersessionTimelineReadback = (
   value: unknown
 ): MemorySupersessionTimelineReadback | undefined => {
   const parsed = memorySupersessionTimelineSchema.safeParse(value);
-  return parsed.success ? parsed.data : undefined;
+  if (!parsed.success) return undefined;
+  return {
+    ...parsed.data,
+    entries: parsed.data.entries.map(({ evidence, ...entry }): MemorySupersessionTimelineEntry => ({
+      ...entry,
+      evidence: evidence ?? {
+        sourceClaimIds: [],
+        evidenceRefs: [],
+        status: "incomplete" as const
+      }
+    }))
+  };
 };
 
 type ParsedSourceConsensusTimeline = z.infer<typeof sourceConsensusTimelineSchema>;
@@ -406,6 +425,9 @@ const normalizePacket = (
     ...packetFields
   } = packet;
   const { timeline, ...sourceConsensusFields } = sourceConsensus;
+  const normalizedMemorySupersessionTimeline = memorySupersessionTimeline === undefined
+    ? undefined
+    : parseMemorySupersessionTimelineReadback(memorySupersessionTimeline);
 
   return {
     ...packetFields,
@@ -431,7 +453,9 @@ const normalizePacket = (
       ...sourceConsensusFields,
       ...(timeline === undefined ? {} : { timeline: normalizeSourceConsensusTimeline(timeline) })
     },
-    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline })
+    ...(normalizedMemorySupersessionTimeline === undefined
+      ? {}
+      : { memorySupersessionTimeline: normalizedMemorySupersessionTimeline })
   };
 };
 

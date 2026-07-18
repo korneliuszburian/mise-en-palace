@@ -137,6 +137,9 @@ export interface BrainLoopSmokeReport {
   revisionPacketReplacementMemoryRefCount: number;
   revisionPacketSupersededMemoryRefCount: number;
   revisionPacketSupersessionExplanation: boolean;
+  revisionPacketSupersessionEvidenceStatus: string;
+  revisionPacketSupersessionEvidenceRefCount: number;
+  revisionPacketSupersessionSourceClaimCount: number;
   revisionBriefIncludesSupersession: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
@@ -1359,6 +1362,12 @@ export const runBrainLoopSmokeCheck = async (
       revisionPacketSupersessionEntry.predecessorStatus === "superseded" &&
       revisionPacketSupersessionEntry.replacementStatus === "active" &&
       revisionPacketSupersessionEntry.transition.reason.length > 0;
+    const revisionPacketSupersessionEvidenceStatus =
+      revisionPacketSupersessionEntry?.evidence.status ?? "missing";
+    const revisionPacketSupersessionEvidenceRefCount =
+      revisionPacketSupersessionEntry?.evidence.evidenceRefs.length ?? 0;
+    const revisionPacketSupersessionSourceClaimCount =
+      revisionPacketSupersessionEntry?.evidence.sourceClaimIds.length ?? 0;
     const revisionRenderedBrief = input.renderExecutionBrief(revisionDecisionPacket);
     const revisionBriefIncludesSupersession =
       revisionRenderedBrief.includes("Memory Supersession Timeline:") &&
@@ -1631,6 +1640,13 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "revision Codex brief preserves supersession explanation",
         passed: revisionBriefIncludesSupersession
+      },
+      {
+        label: "revision supersession evidence round-trips",
+        passed:
+          revisionPacketSupersessionEvidenceStatus === "complete" &&
+          revisionPacketSupersessionEvidenceRefCount === 2 &&
+          revisionPacketSupersessionSourceClaimCount === 1
       }
     ], readbackError);
 
@@ -1725,6 +1741,9 @@ export const runBrainLoopSmokeCheck = async (
       revisionPacketReplacementMemoryRefCount,
       revisionPacketSupersededMemoryRefCount,
       revisionPacketSupersessionExplanation,
+      revisionPacketSupersessionEvidenceStatus,
+      revisionPacketSupersessionEvidenceRefCount,
+      revisionPacketSupersessionSourceClaimCount,
       revisionBriefIncludesSupersession,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,

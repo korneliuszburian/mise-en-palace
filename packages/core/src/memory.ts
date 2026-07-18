@@ -132,6 +132,11 @@ export interface MemorySupersessionTimelineEntry {
     reason: string;
     supersededAt: IsoTimestamp;
   };
+  evidence: {
+    sourceClaimIds: readonly string[];
+    evidenceRefs: readonly string[];
+    status: "complete" | "incomplete";
+  };
 }
 
 export interface MemorySupersessionTimelineReadback {
@@ -308,6 +313,13 @@ const supersessionReviewFor = (
   return { reviewer, reason, supersededAt };
 };
 
+const metadataStringList = (metadata: Record<string, unknown>, key: string): string[] => {
+  const value = metadata[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+};
+
 export const buildMemorySupersessionTimelineReadback = (input: {
   records: readonly MemoryRecord[];
 }): MemorySupersessionTimelineReadback => {
@@ -331,13 +343,23 @@ export const buildMemorySupersessionTimelineReadback = (input: {
     }
     const replacementStatus: MemoryRecordStatus | "unknown" =
       recordsById.get(replacementMemoryRecordId)?.status ?? "unknown";
+    const sourceClaimIds = metadataStringList(supersessionReview, "sourceClaimIds");
+    const evidenceRefs = metadataStringList(supersessionReview, "evidenceRefs");
+    const evidenceStatus: "complete" | "incomplete" = evidenceRefs.length === 0
+      ? "incomplete"
+      : "complete";
 
     return [{
       predecessorMemoryRecordId: record.id,
       predecessorStatus: "superseded" as const,
       replacementMemoryRecordId,
       replacementStatus,
-      transition
+      transition,
+      evidence: {
+        sourceClaimIds,
+        evidenceRefs,
+        status: evidenceStatus
+      }
     }];
   }).sort((left, right) =>
     left.predecessorMemoryRecordId.localeCompare(right.predecessorMemoryRecordId)
