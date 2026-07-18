@@ -261,8 +261,12 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
       `claim=${entry.claim}`,
       `superseded_by=${entry.supersededBySourceClaimIds.join(",") || "none"}`,
       `supersedes=${entry.supersedesSourceClaimIds.join(",") || "none"}`,
+      `supporting_claims=${entry.supportingSourceClaimIds.join(",") || "none"}`,
+      `dissenting_claims=${entry.dissentingSourceClaimIds.join(",") || "none"}`,
+      `decision_edges=${entry.decisionSupportEdgeIds.join(",") || "none"}`,
       `evidence_refs=${entry.evidenceRefs.join(",") || "none"}`,
       `raw_evidence_refs=${entry.rawEvidenceCitationRefs.join(",") || "none"}`,
+      `relation_evidence_gaps=${entry.relationEvidence.flatMap((relation) => relation.evidenceGaps).join(",") || "none"}`,
       `caveats=${entry.caveats.join(";") || "none"}`
     ].join(" | ")
   );
