@@ -103,6 +103,7 @@ export type PairedTrialManifest = {
     readonly heldOut: true;
     readonly outcome: "win|tie|loss|invalid";
   };
+  readonly checkerRevision?: string;
   readonly packetContextMode?: "full" | "task-only";
 };
 
@@ -414,6 +415,7 @@ const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => 
     Array.isArray(value["requiredDecisionIds"]) &&
     value["requiredDecisionIds"].every((id) => readString(id) !== undefined) &&
     hasCompleteDecisionApplicationRules(value) &&
+    (value["checkerRevision"] === undefined || readString(value["checkerRevision"]) !== undefined) &&
     (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
     isManifestCodex(value["codex"]) &&
     isManifestContainment(value["containment"]) &&
