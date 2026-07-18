@@ -18,8 +18,19 @@ falsifiers.
 - Read `CONTEXT.md` for shared language and `CONVENTIONS.md` for skill and
   artifact rules. Read historical material only when a current authority
   surface points to it.
+- Before a repeatable workflow or live evaluation, read the relevant entry in
+  the `CONTEXT.md` Operational Gotcha Index and its linked
+  `docs/CONTEXT_GOTCHAS.md` section. These entries capture repo-local failure
+  modes that are easy to rediscover and must be treated as active instructions
+  until retired with evidence.
 - Keep source corpora outside active repo context. Derive bounded mechanisms
   and decisions instead of copying research or course material into Markdown.
+
+When the same repo-local gotcha is encountered twice, or it invalidates a gate
+or publication claim, promote it to `docs/CONTEXT_GOTCHAS.md`, add a concise
+index entry to `CONTEXT.md`, and record the falsifying evidence. Retire or
+rewrite an entry when current code and verification show that its trigger no
+longer exists; do not let the gotcha file become an unbounded incident log.
 
 ## Domain Skills
 
