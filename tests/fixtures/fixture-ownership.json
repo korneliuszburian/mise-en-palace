@@ -342,6 +342,16 @@
       "archival": null
     },
     {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/package.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
       "path": "tests/fixtures/target-repos/async-job-boundary-typescript/src/jobQueue.ts",
       "consumer": "target-repo harness and second-repo eval",
       "provenance": "repository-owned test/eval fixture",
@@ -362,6 +372,16 @@
       "archival": null
     },
     {
+      "path": "tests/fixtures/target-repos/async-job-boundary-typescript/tsconfig.json",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
       "path": "tests/fixtures/target-repos/env-config-contract-typescript/AGENTS.md",
       "consumer": "target-repo harness and second-repo eval",
       "provenance": "repository-owned test/eval fixture",
@@ -373,6 +393,16 @@
     },
     {
       "path": "tests/fixtures/target-repos/env-config-contract-typescript/docs/config-contract.md",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/package.json",
       "consumer": "target-repo harness and second-repo eval",
       "provenance": "repository-owned test/eval fixture",
       "capturedAt": "2026-07-10",
@@ -403,6 +433,16 @@
     },
     {
       "path": "tests/fixtures/target-repos/env-config-contract-typescript/tests/config.test.ts",
+      "consumer": "target-repo harness and second-repo eval",
+      "provenance": "repository-owned test/eval fixture",
+      "capturedAt": "2026-07-10",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
+      "path": "tests/fixtures/target-repos/env-config-contract-typescript/tsconfig.json",
       "consumer": "target-repo harness and second-repo eval",
       "provenance": "repository-owned test/eval fixture",
       "capturedAt": "2026-07-10",
