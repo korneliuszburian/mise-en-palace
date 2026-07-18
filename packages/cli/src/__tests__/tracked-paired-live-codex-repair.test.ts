@@ -72,9 +72,21 @@ describe("Codex capability profiles", () => {
       baseline: { mcpToolCallEvents: 1, skillEvents: 0 },
       krn: { mcpToolCallEvents: 0, skillEvents: 0 }
     })).toEqual([
-      "baseline emitted a KRN capability-use event",
-      "KRN emitted no structured capability-use event"
+      "baseline emitted a configured KRN capability-use event",
+      "KRN emitted no configured capability-use event"
     ]);
+  });
+
+  it("ignores generic host MCP discovery when configured capability names are supplied", () => {
+    expect(observeCodexCapabilityUse({ stdout: [
+      JSON.stringify({ type: "mcp_tool_call", server: "codex", tool: "list_mcp_resources" }),
+      JSON.stringify({ type: "mcp_tool_call", server: "krn_decision_packet", tool: "read" })
+    ].join("\n") }, ["krn_decision_packet"], false)).toEqual({
+      mcpToolCallEvents: 1,
+      skillEvents: 0,
+      genericMcpToolCallEvents: 1,
+      genericSkillEvents: 0
+    });
   });
 });
 

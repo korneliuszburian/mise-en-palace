@@ -57,6 +57,8 @@ export type DecisionApplicationObservation =
 export type CodexCapabilityUseObservation = {
   readonly mcpToolCallEvents: number;
   readonly skillEvents: number;
+  readonly genericMcpToolCallEvents?: number;
+  readonly genericSkillEvents?: number;
 };
 
 export type PairedDecisionApplicationRule = {
@@ -919,46 +921,91 @@ const codexCapabilityProfileConfig = (
 const capabilityProfileName = (baseName: string, arm: "baseline" | "krn"): string =>
   `${baseName}-${arm}`;
 
-const countCapabilityEvents = (value: Pick<CommandResult, "stdout">): CodexCapabilityUseObservation => {
+const walkStructuredJson = (node: unknown, visit: (record: JsonRecord) => void): void => {
+  if (Array.isArray(node)) {
+    node.forEach((child) => walkStructuredJson(child, visit));
+    return;
+  }
+  if (!isRecord(node)) return;
+  visit(node);
+  Object.values(node).forEach((child) => walkStructuredJson(child, visit));
+};
+
+const capabilityEventName = (record: JsonRecord): string | undefined =>
+  typeof record["server"] === "string"
+    ? record["server"]
+    : typeof record["name"] === "string" ? record["name"] : undefined;
+
+const classifyMcpEvent = (
+  record: JsonRecord,
+  expectedMcpServers: readonly string[] | undefined
+): "configured" | "generic" | undefined => {
+  const eventType = record["type"];
+  if (eventType !== "mcp_tool_call" && eventType !== "mcp_tool_call_completed") return undefined;
+  const name = capabilityEventName(record);
+  return expectedMcpServers === undefined ||
+    (name !== undefined && expectedMcpServers.includes(name)) ? "configured" : "generic";
+};
+
+const classifySkillEvent = (
+  record: JsonRecord,
+  expectedSkills: boolean | undefined
+): "configured" | "generic" | undefined => {
+  const eventType = record["type"];
+  if (eventType !== "skill" && eventType !== "skill_loaded") return undefined;
+  return expectedSkills === undefined || expectedSkills ? "configured" : "generic";
+};
+
+const countCapabilityEvents = (
+  value: Pick<CommandResult, "stdout">,
+  expectedMcpServers?: readonly string[],
+  expectedSkills?: boolean
+): CodexCapabilityUseObservation => {
   let mcpToolCallEvents = 0;
   let skillEvents = 0;
-  const visit = (node: unknown): void => {
-    if (Array.isArray(node)) {
-      node.forEach(visit);
-      return;
-    }
-    if (!isRecord(node)) return;
-    for (const child of Object.values(node)) {
-      if (typeof child === "string") {
-        if (child === "mcp_tool_call" || child === "mcp_tool_call_completed") mcpToolCallEvents += 1;
-        if (child === "skill" || child === "skill_loaded") skillEvents += 1;
-      }
-      visit(child);
-    }
+  let genericMcpToolCallEvents = 0;
+  let genericSkillEvents = 0;
+  const visit = (node: JsonRecord): void => {
+    const mcpEvent = classifyMcpEvent(node, expectedMcpServers);
+    if (mcpEvent === "configured") mcpToolCallEvents += 1;
+    if (mcpEvent === "generic") genericMcpToolCallEvents += 1;
+    const skillEvent = classifySkillEvent(node, expectedSkills);
+    if (skillEvent === "configured") skillEvents += 1;
+    if (skillEvent === "generic") genericSkillEvents += 1;
   };
   for (const line of value.stdout.split("\n")) {
     try {
       const parsed: unknown = JSON.parse(line);
-      visit(parsed);
+      walkStructuredJson(parsed, visit);
     } catch {
       // Capability evidence is accepted only from structured JSON events.
     }
   }
-  return { mcpToolCallEvents, skillEvents };
+  return {
+    mcpToolCallEvents,
+    skillEvents,
+    ...(expectedMcpServers === undefined && genericMcpToolCallEvents === 0
+      ? {} : { genericMcpToolCallEvents }),
+    ...(expectedSkills === undefined && genericSkillEvents === 0
+      ? {} : { genericSkillEvents })
+  };
 };
 
-export const observeCodexCapabilityUse = (result: Pick<CommandResult, "stdout">): CodexCapabilityUseObservation =>
-  countCapabilityEvents(result);
+export const observeCodexCapabilityUse = (
+  result: Pick<CommandResult, "stdout">,
+  expectedMcpServers?: readonly string[],
+  expectedSkills?: boolean
+): CodexCapabilityUseObservation => countCapabilityEvents(result, expectedMcpServers, expectedSkills);
 
 export const capabilityUseFalsifierReasons = (
   observation: { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation }
 ): readonly string[] => [
   observation.baseline.mcpToolCallEvents + observation.baseline.skillEvents === 0
     ? undefined
-    : "baseline emitted a KRN capability-use event",
+    : "baseline emitted a configured KRN capability-use event",
   observation.krn.mcpToolCallEvents + observation.krn.skillEvents > 0
     ? undefined
-    : "KRN emitted no structured capability-use event"
+    : "KRN emitted no configured capability-use event"
 ].filter((reason): reason is string => reason !== undefined);
 
 const capabilityProfileHash = (profile: CodexCapabilityProfile | undefined): string =>
@@ -1466,7 +1513,13 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
         observation["mcpToolCallEvents"] >= 0 &&
         typeof observation["skillEvents"] === "number" &&
         Number.isInteger(observation["skillEvents"]) &&
-        observation["skillEvents"] >= 0;
+        observation["skillEvents"] >= 0 &&
+        optionalValue(observation, "genericMcpToolCallEvents", (count) =>
+          typeof count === "number" && Number.isInteger(count) && count >= 0
+        ) &&
+        optionalValue(observation, "genericSkillEvents", (count) =>
+          typeof count === "number" && Number.isInteger(count) && count >= 0
+        );
     })
   ) &&
   optionalValue(value, "packetContextMode", (item) => item === "full" || item === "task-only") &&
@@ -2310,9 +2363,18 @@ const executeComparableTrial = async (input: {
     environment: input.trial.krnObservationEnvironment
   });
   await input.journal.phase("krn_executed", { result: krnResult, before: input.trial.krnBefore, after: krnAfter });
+  const capabilityProfiles = input.trial.context.manifest.capabilities;
   const capabilityUseObservation = {
-    baseline: observeCodexCapabilityUse(baselineResult),
-    krn: observeCodexCapabilityUse(krnResult)
+    baseline: observeCodexCapabilityUse(
+      baselineResult,
+      capabilityProfiles?.baseline.mcpServers.map((server) => server.name),
+      capabilityProfiles === undefined ? undefined : capabilityProfiles.baseline.skillPaths.length > 0
+    ),
+    krn: observeCodexCapabilityUse(
+      krnResult,
+      capabilityProfiles?.krn.mcpServers.map((server) => server.name),
+      capabilityProfiles === undefined ? undefined : capabilityProfiles.krn.skillPaths.length > 0
+    )
   };
   let decisionApplicationObservation: DecisionApplicationObservation | undefined;
   const execution = {
