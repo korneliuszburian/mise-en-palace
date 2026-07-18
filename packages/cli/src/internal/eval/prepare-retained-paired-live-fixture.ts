@@ -9,7 +9,10 @@ import {
   pairedLiveCheckerRevision
 } from "./paired-live-codex-repair.js";
 
-const [requestedDirectory] = process.argv.slice(2);
+const requestedArguments = process.argv.slice(2);
+const requestedDirectory = requestedArguments[0] === "--"
+  ? requestedArguments[1]
+  : requestedArguments[0];
 const repoRoot = path.basename(process.cwd()) === "cli" &&
     path.basename(path.dirname(process.cwd())) === "packages"
   ? path.resolve(process.cwd(), "../..")

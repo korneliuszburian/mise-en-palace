@@ -24,6 +24,9 @@ import {
   verifyTrackedTrialArtifact,
   type PairedTrialManifest
 } from "../internal/eval/tracked-paired-live-codex-repair.js";
+import {
+  parseRetainedFixtureReport
+} from "../internal/eval/cleanup-retained-paired-live-fixture.js";
 import type {
   CommandResult,
   HeldOutArmScore,
@@ -227,6 +230,36 @@ describe("preregistered memory treatments", () => {
       ...manifest,
       packetReadiness: "weak_context"
     }).valid).toBe(true);
+  });
+});
+
+describe("retained paired fixture identity", () => {
+  it("rejects missing or ambiguous cleanup identities", () => {
+    expect(() => parseRetainedFixtureReport({})).toThrow("missing or ambiguous");
+    expect(() => parseRetainedFixtureReport({
+      smokeId: "retained-memory-treatment-1",
+      report: {
+        workspaceSlug: "other-workspace",
+        projectId: "00000000-0000-4000-8000-000000000001",
+        executionRunId: "00000000-0000-4000-8000-000000000002",
+        retainedFixture: true
+      }
+    })).toThrow("missing or ambiguous");
+    expect(parseRetainedFixtureReport({
+      smokeId: "retained-memory-treatment-1",
+      report: {
+        workspaceSlug: "krn-decision-packet-smoke-retained-memory-treatment-1",
+        projectId: "00000000-0000-4000-8000-000000000001",
+        executionRunId: "00000000-0000-4000-8000-000000000002",
+        retainedFixture: true
+      }
+    })).toEqual({
+      smokeId: "retained-memory-treatment-1",
+      workspaceSlug: "krn-decision-packet-smoke-retained-memory-treatment-1",
+      projectId: "00000000-0000-4000-8000-000000000001",
+      runId: "00000000-0000-4000-8000-000000000002",
+      retainedFixture: true
+    });
   });
 });
 
