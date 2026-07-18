@@ -3,6 +3,9 @@ import type postgres from "postgres";
 const freshnessWindowMs = 15 * 60 * 1000;
 
 export interface ActivationRuntimeProofInput {
+  proofKind?: "activation" | "target_repo_harness";
+  scopeKey?: string;
+  projectId?: string;
   environmentFingerprintId: string;
   storeIdentity: string;
   status: "passed" | "failed";
@@ -13,6 +16,9 @@ export interface ActivationRuntimeProofInput {
 
 export interface ActivationRuntimeProofReadback {
   id: string;
+  proofKind: "activation" | "target_repo_harness";
+  scopeKey: string;
+  projectId: string | null;
   environmentFingerprintId: string;
   storeIdentity: string;
   status: "passed" | "failed";
@@ -51,6 +57,9 @@ export const persistActivationRuntimeProof = async (
 
   const [row] = await client<{ id: string }[]>`
     insert into activation_runtime_proofs (
+      proof_kind,
+      scope_key,
+      project_id,
       environment_fingerprint_id,
       store_identity,
       status,
@@ -59,6 +68,9 @@ export const persistActivationRuntimeProof = async (
       report
     )
     values (
+      ${input.proofKind ?? "activation"},
+      ${input.scopeKey ?? "activation"},
+      ${input.projectId ?? null},
       ${input.environmentFingerprintId},
       ${input.storeIdentity},
       ${input.status},
@@ -95,6 +107,9 @@ export const readCurrentActivationRuntimeProof = async (
   const [row] = await client<ActivationRuntimeProofReadback[]>`
     select
       id,
+      proof_kind as "proofKind",
+      scope_key as "scopeKey",
+      project_id as "projectId",
       environment_fingerprint_id as "environmentFingerprintId",
       store_identity as "storeIdentity",
       status,
@@ -102,7 +117,54 @@ export const readCurrentActivationRuntimeProof = async (
       cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
       report
     from activation_runtime_proofs
-    where store_identity = ${storeIdentity}
+    where proof_kind = 'activation'
+      and scope_key = 'activation'
+      and store_identity = ${storeIdentity}
+      and environment_fingerprint_id = ${fingerprintId}
+      and status = 'passed'
+      and cleanup_remaining_marker_count = 0
+      and captured_at > ${capturedAfter.toISOString()}
+      and captured_at <= ${now.toISOString()}
+    order by captured_at desc
+    limit 1
+  `;
+
+  return row;
+};
+
+export const readCurrentTargetRepoRuntimeProof = async (
+  client: postgres.Sql,
+  input: {
+    databaseUrl: string;
+    environmentFingerprintId: string | undefined;
+    scopeKey: string;
+    now?: Date;
+  }
+): Promise<ActivationRuntimeProofReadback | undefined> => {
+  const fingerprintId = input.environmentFingerprintId?.trim();
+  if (fingerprintId === undefined || fingerprintId.length === 0) {
+    return undefined;
+  }
+
+  const now = input.now ?? new Date();
+  const capturedAfter = new Date(now.getTime() - freshnessWindowMs);
+  const storeIdentity = postgresStoreIdentity(input.databaseUrl);
+  const [row] = await client<ActivationRuntimeProofReadback[]>`
+    select
+      id,
+      proof_kind as "proofKind",
+      scope_key as "scopeKey",
+      project_id as "projectId",
+      environment_fingerprint_id as "environmentFingerprintId",
+      store_identity as "storeIdentity",
+      status,
+      captured_at as "capturedAt",
+      cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
+      report
+    from activation_runtime_proofs
+    where proof_kind = 'target_repo_harness'
+      and scope_key = ${input.scopeKey}
+      and store_identity = ${storeIdentity}
       and environment_fingerprint_id = ${fingerprintId}
       and status = 'passed'
       and cleanup_remaining_marker_count = 0

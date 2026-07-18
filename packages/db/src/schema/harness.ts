@@ -391,6 +391,9 @@ export const activationRuntimeProofs = pgTable(
   "activation_runtime_proofs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    proofKind: text("proof_kind").notNull().default("activation"),
+    scopeKey: text("scope_key").notNull().default("activation"),
+    projectId: text("project_id"),
     environmentFingerprintId: text("environment_fingerprint_id").notNull(),
     storeIdentity: text("store_identity").notNull(),
     status: activationRuntimeProofStatus("status").notNull(),
@@ -401,6 +404,8 @@ export const activationRuntimeProofs = pgTable(
   },
   (table) => [
     index("activation_runtime_proofs_lookup_idx").on(
+      table.proofKind,
+      table.scopeKey,
       table.storeIdentity,
       table.environmentFingerprintId,
       table.status,
@@ -409,6 +414,10 @@ export const activationRuntimeProofs = pgTable(
     check(
       "activation_runtime_proofs_cleanup_count_nonnegative",
       sql`${table.cleanupRemainingMarkerCount} >= 0`
+    ),
+    check(
+      "activation_runtime_proofs_kind_known",
+      sql`${table.proofKind} in ('activation', 'target_repo_harness')`
     )
   ]
 );

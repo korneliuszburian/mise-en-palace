@@ -393,6 +393,13 @@
       "when": 1784368384582,
       "tag": "0055_fancy_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1784369238749,
+      "tag": "0056_complete_warstar",
+      "breakpoints": true
     }
   ]
 }

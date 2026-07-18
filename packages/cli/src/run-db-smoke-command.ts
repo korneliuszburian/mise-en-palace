@@ -1151,7 +1151,8 @@ const runTargetRepoHarnessSmokeTarget: DbSmokeTargetHandler = async (
     migrationsFolder: context.migrationsFolder,
     repoRoot: context.repoRoot,
     smokeId: runtime.createId("target-repo-harness-smoke"),
-    targetRepoPath: targetRepoFixturePath(context)
+    targetRepoPath: targetRepoFixturePath(context),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(

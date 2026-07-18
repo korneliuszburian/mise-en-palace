@@ -10,7 +10,8 @@ import {
 import {
   persistActivationRuntimeProof,
   postgresStoreIdentity,
-  readCurrentActivationRuntimeProof
+  readCurrentActivationRuntimeProof,
+  readCurrentTargetRepoRuntimeProof
 } from "../activation-runtime-proof.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
@@ -69,5 +70,42 @@ describe.skipIf(databaseUrl === undefined)("activation runtime proof", () => {
       cleanupRemainingMarkerCount: 1,
       report: { cleanedUp: false }
     })).rejects.toThrow("zero cleanup residue");
+  });
+
+  it("scopes target-repo proofs to the exact fixture path", async () => {
+    const capturedAt = new Date();
+    const environmentFingerprintId = `target-proof-${randomUUID()}`;
+    const scopeKey = "/repo/fixture/typescript-basic";
+    const id = await persistActivationRuntimeProof(client, {
+      proofKind: "target_repo_harness",
+      scopeKey,
+      projectId: "target-project",
+      environmentFingerprintId,
+      storeIdentity: postgresStoreIdentity(databaseUrl!),
+      status: "passed",
+      capturedAt,
+      cleanupRemainingMarkerCount: 0,
+      report: {
+        crossProjectLeakageProof: true,
+        consumerTargetCommandStatus: "passed",
+        consumerEvidenceBoundToPacket: true,
+        targetProjectLinked: true
+      }
+    });
+    insertedIds.push(id);
+
+    await expect(readCurrentTargetRepoRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId,
+      scopeKey,
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toMatchObject({ id, projectId: "target-project" });
+
+    await expect(readCurrentTargetRepoRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId,
+      scopeKey: "/repo/foreign",
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toBeUndefined();
   });
 });

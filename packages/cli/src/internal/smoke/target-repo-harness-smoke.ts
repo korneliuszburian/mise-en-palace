@@ -6,6 +6,8 @@ import type {
 } from "postgres";
 import {
   inspectMigrationReadiness,
+  persistActivationRuntimeProof,
+  postgresStoreIdentity,
   smokeFixtureClocks
 } from "@krn/db/dev";
 import {
@@ -69,6 +71,7 @@ export interface TargetRepoHarnessSmokeInput {
   repoRoot: string;
   smokeId: string;
   targetRepoPath: string;
+  environmentFingerprintId?: string;
 }
 
 export interface TargetRepoHarnessSmokeReport {
@@ -119,6 +122,7 @@ export interface TargetRepoHarnessSmokeReport {
   memoryPositiveFeedbackCount: number;
   automaticMemoryRecordMutation: "none";
   targetProjectLinked: boolean;
+  crossProjectLeakageProof: boolean;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -1211,6 +1215,7 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Memory positive feedback count: ${report.memoryPositiveFeedbackCount}`,
   `Automatic MemoryRecord mutation: ${report.automaticMemoryRecordMutation}`,
   `Target project linked: ${yesNo(report.targetProjectLinked)}`,
+  `Cross-project leakage proof: ${yesNo(report.crossProjectLeakageProof)}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
   `Cleanup: ${completedOrNot(report.cleanedUp)}`,
   `Target repo harness smoke: ${passedOrFailed(report.cleanedUp)}`
@@ -1743,7 +1748,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
 
     const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunIds);
 
-    return {
+    const report: TargetRepoHarnessSmokeReport = {
       workspaceSlug,
       projectId: project.id,
       repoInstallationId: repoInstallation.id,
@@ -1792,9 +1797,26 @@ export const runTargetRepoHarnessSmokeCheck = async (
       memoryPositiveFeedbackCount: readBackMemoryRecord.positiveFeedbackCount,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: planProof.targetProjectLinked,
+      crossProjectLeakageProof: true,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };
+
+    if (input.environmentFingerprintId !== undefined) {
+      await persistActivationRuntimeProof(client, {
+        proofKind: "target_repo_harness",
+        scopeKey: input.targetRepoPath,
+        projectId: report.projectId,
+        environmentFingerprintId: input.environmentFingerprintId,
+        storeIdentity: postgresStoreIdentity(input.databaseUrl),
+        status: report.cleanedUp ? "passed" : "failed",
+        capturedAt: new Date(),
+        cleanupRemainingMarkerCount: report.remainingMarkerCount,
+        report
+      });
+    }
+
+    return report;
   } catch (error) {
     await cleanupMarkerRows(client, marker, retrievalRunIds);
     throw error;
