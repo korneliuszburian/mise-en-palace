@@ -635,11 +635,16 @@ describe("compileHarnessPlan", () => {
       expect.objectContaining({
         retrievalRunId: "retrieval-1",
         status: "completed",
-        metadata: {
+        completedAt: now,
+        rawEvidenceRecallTriggerCount: 0,
+        metadata: expect.objectContaining({
           conflictCount: 0,
           exclusionCount: 0,
-          inclusionCount: 2
-        }
+          inclusionCount: 2,
+          sourceConsensusTimeline: expect.objectContaining({
+            currentSourceClaimIds: ["claim-trace"]
+          })
+        })
       })
     ]);
   });
