@@ -216,6 +216,14 @@ type TrialConditions = {
     readonly environmentProfileHash?: string;
     readonly environmentVariableNames?: readonly string[];
     readonly credentialProvided?: boolean;
+    readonly environmentAvailability?: {
+      readonly databaseConfigured: boolean;
+      readonly codexHomeConfigured: boolean;
+    };
+    readonly sourceCommands?: {
+      readonly test: boolean;
+      readonly typecheck: boolean;
+    };
     readonly checkerRuntime?: {
       readonly nodeVersion: string;
       readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
@@ -1145,6 +1153,16 @@ const isObservedTrialConditions = (value: unknown): boolean => {
     optionalValue(value, "environmentProfileHash", isPresentString) &&
     optionalValue(value, "environmentVariableNames", isStringArray) &&
     optionalValue(value, "credentialProvided", (credential) => typeof credential === "boolean") &&
+    optionalValue(value, "environmentAvailability", (availability) =>
+      isRecord(availability) &&
+      typeof availability["databaseConfigured"] === "boolean" &&
+      typeof availability["codexHomeConfigured"] === "boolean"
+    ) &&
+    optionalValue(value, "sourceCommands", (commands) =>
+      isRecord(commands) &&
+      typeof commands["test"] === "boolean" &&
+      typeof commands["typecheck"] === "boolean"
+    ) &&
     isObservedCheckerRuntime(value["checkerRuntime"]);
 };
 
@@ -1451,6 +1469,8 @@ const isObservedConditionsPhaseDetail = (detail: unknown, artifact: TrackedTrial
   isRecord(detail) &&
   sameJson(detail["containment"], artifact.execution.conditions.observed?.containment) &&
   sameJson(detail["codex"], artifact.execution.conditions.observed?.codex) &&
+  sameJson(detail["environmentAvailability"], artifact.execution.conditions.observed?.environmentAvailability) &&
+  sameJson(detail["sourceCommands"], artifact.execution.conditions.observed?.sourceCommands) &&
   sameJson(detail["checkerRuntime"], artifact.execution.conditions.observed?.checkerRuntime);
 
 const isMaterializedPhaseDetail = (detail: unknown, artifact: TrackedTrialArtifact): boolean =>
@@ -1728,12 +1748,30 @@ const hasChatGptAuthentication = (result: CommandResult): boolean =>
   result.exitCode === 0 &&
   `${result.stdout}\n${result.stderr}`.includes("Logged in using ChatGPT");
 
+export const observeSourceCommands = async (
+  sourceRoot: string
+): Promise<{ readonly test: boolean; readonly typecheck: boolean }> => {
+  try {
+    const packageJson = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8")) as unknown;
+    const scripts = isRecord(packageJson) && isRecord(packageJson["scripts"])
+      ? packageJson["scripts"]
+      : undefined;
+    return {
+      test: typeof scripts?.["test"] === "string" && scripts["test"].trim().length > 0,
+      typecheck: typeof scripts?.["typecheck"] === "string" && scripts["typecheck"].trim().length > 0
+    };
+  } catch {
+    return { test: false, typecheck: false };
+  }
+};
+
 const prepareTrackedTrial = async (input: {
   readonly context: TrialContext;
   readonly sourceRoot: string;
   readonly trialRoot: string;
   readonly sandboxRoot: string;
   readonly journal: TrialJournal;
+  readonly enforceSourceCommands?: boolean;
 }): Promise<TrialPreparation> => {
   const probeEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot);
   const [containment, codex, authentication] = await Promise.all([
@@ -1766,9 +1804,15 @@ const prepareTrackedTrial = async (input: {
       authentication,
       environmentVariableNames: Object.keys(probeEnvironment).sort(),
       credentialProvided: hasChatGptAuthentication(authentication),
+      environmentAvailability: {
+        databaseConfigured: typeof process.env.KRN_DATABASE_URL === "string" && process.env.KRN_DATABASE_URL.trim().length > 0,
+        codexHomeConfigured: typeof process.env.KRN_TRIAL_CODEX_HOME === "string" && process.env.KRN_TRIAL_CODEX_HOME.trim().length > 0
+      },
+      sourceCommands: await observeSourceCommands(input.sourceRoot),
       checkerRuntime
     }
   };
+  const sourceCommands = conditions.observed?.sourceCommands;
   const prerequisite = trialPrerequisiteFailure({
     containment,
     codex,
@@ -1779,11 +1823,16 @@ const prepareTrackedTrial = async (input: {
     containment,
     codex,
     authentication: authentication.exitCode === 0 ? "chatgpt" : "unavailable",
+    environmentAvailability: conditions.observed?.environmentAvailability,
+    sourceCommands,
     checkerRuntime,
     prerequisite: prerequisite?.reason
   });
   if (!hasChatGptAuthentication(authentication)) {
     return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
+  }
+  if (input.enforceSourceCommands === true && (sourceCommands?.test !== true || sourceCommands?.typecheck !== true)) {
+    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
   }
   if (prerequisite !== undefined) return { kind: "rejected", ...prerequisite, conditions };
 
@@ -2110,6 +2159,7 @@ const runClaimedTrackedTrial = async (input: {
   readonly containmentExecutable: string;
   readonly codexExecutable: string;
   readonly recordDecisionApplications: PairedDecisionApplicationRecorder | undefined;
+  readonly enforceSourceCommands?: boolean;
 }, checker: PairedTrialChecker): Promise<TrackedTrialArtifact> => {
   const context = { ...input.context, conditions: input.conditions };
   const preparation = await prepareComparableTrial({
@@ -2144,6 +2194,7 @@ type TrackedPairedTrialInput = {
   readonly fetchPacket?: () => Promise<{ readonly packet?: unknown; readonly failure?: string }>;
   readonly attemptDirectory?: string;
   readonly recordDecisionApplications?: PairedDecisionApplicationRecorder;
+  readonly enforceSourceCommands?: boolean;
 };
 
 const resolveTrialPacket = async (
@@ -2219,7 +2270,8 @@ export const runTrackedPairedTrial = async (
       sourceRoot: input.sourceRoot,
       trialRoot,
       sandboxRoot,
-      journal: journalResult.journal
+      journal: journalResult.journal,
+      ...(input.enforceSourceCommands === undefined ? {} : { enforceSourceCommands: input.enforceSourceCommands })
     });
     if (preparation.kind === "rejected") {
       return finalizeTrackedTrial({
@@ -2240,7 +2292,8 @@ export const runTrackedPairedTrial = async (
       trialRoot,
       sandboxRoot,
       ...preparation,
-      recordDecisionApplications: input.recordDecisionApplications
+      recordDecisionApplications: input.recordDecisionApplications,
+      ...(input.enforceSourceCommands === undefined ? {} : { enforceSourceCommands: input.enforceSourceCommands })
     }, checker);
   } catch {
     return finalizeTrackedTrial({
@@ -2358,7 +2411,8 @@ export const runTrackedTrialCommand = async (
       sourceRoot,
       checkerRoot,
       ...(packetResult.packet === undefined ? {} : { packet: packetResult.packet }),
-      ...(packetResult.failure === undefined ? {} : { packetFetchFailure: packetResult.failure })
+      ...(packetResult.failure === undefined ? {} : { packetFetchFailure: packetResult.failure }),
+      enforceSourceCommands: true
     });
   }
   return runTrackedPairedTrial({
@@ -2367,6 +2421,7 @@ export const runTrackedTrialCommand = async (
     checkerRoot,
     fetchPacket: () => fetchDecisionPacketViaMcp(checkerRoot, manifest.runId),
     attemptDirectory,
+    enforceSourceCommands: true,
     recordDecisionApplications: (input) => recordPairedDecisionApplications({
       ...input,
       databaseUrl: process.env.KRN_DATABASE_URL ?? "postgres://krn:krn@localhost:54329/krn"

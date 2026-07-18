@@ -12,6 +12,7 @@ import {
   readMcpStructuredContent,
   validateLiveCodexObedienceOutputAgainstPacket,
   parseTrackedTrialManifest,
+  observeSourceCommands,
   promptPacketForContext,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
@@ -73,6 +74,18 @@ describe("MCP packet readback", () => {
     const stdout = `\u001b[1;32m${JSON.stringify({ jsonrpc: "2.0", id: 2, result: { structuredContent: packet } })}`;
 
     expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
+  });
+});
+
+describe("trial source preflight", () => {
+  it("requires both test and typecheck scripts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-source-preflight-"));
+    try {
+      await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "pnpm test" } }), "utf8");
+      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 
