@@ -604,6 +604,18 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.delta.deltaBytes).toBe(0);
   });
 
+  it("keeps capability-tool discovery instructions identical across arms", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
+      includeDecisionPacket: false,
+      contextToolRunId: "run-123"
+    });
+    expect(prompts.krn).toBe(prompts.baseline);
+    expect(prompts.baseline).toContain("krn_decision_packet tool is available");
+    expect(prompts.baseline).toContain("run-123");
+  });
+
   it("keeps private repair mechanisms out of baseline participant inputs", async () => {
     const targetRoot = await mkdtemp(join(tmpdir(), "krn-blind-paired-target-"));
     const fixtureRoot = resolve(

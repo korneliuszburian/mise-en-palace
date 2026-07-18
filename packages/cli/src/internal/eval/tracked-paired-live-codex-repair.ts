@@ -2228,7 +2228,10 @@ const executeComparableTrial = async (input: {
   const prompts = buildPairedRepairPrompts({
     task: input.trial.context.manifest.task,
     decisionPacket: promptPacket,
-    includeDecisionPacket: input.trial.context.manifest.capabilities === undefined
+    includeDecisionPacket: input.trial.context.manifest.capabilities === undefined,
+    ...(input.trial.context.manifest.capabilities === undefined
+      ? {}
+      : { contextToolRunId: input.trial.context.manifest.runId })
   });
   const baselineResult = await runArm("baseline", input.trial.baseline, prompts.baseline, input.trial.baselineArmEnvironment);
   const baselineAfter = await captureTargetState({
