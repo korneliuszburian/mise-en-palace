@@ -2,13 +2,14 @@ import { readFileSync } from "node:fs";
 
 const ACTIVE_STATUSES = new Set(["open", "in_progress", "blocked"]);
 const STATUSES = new Set(["open", "in_progress", "blocked", "closed", "deferred"]);
+const LOCAL_DEVELOPMENT_POSTGRES_URI = "postgres://krn:krn@localhost:54329/krn";
 const SENSITIVE_PATTERNS = [
   /\bAKIA[0-9A-Z]{16}\b/u,
   /\bgh[pousr]_[A-Za-z0-9_]{20,}\b/u,
   /-----BEGIN (?:RSA|EC|OPENSSH|PGP) PRIVATE KEY-----/u,
-  /postgres(?:ql)?:\/\/[^/\s:@]+:[^@\s]+@/iu,
   /(?:password|secret|token)\s*[:=]\s*\\?["'`]([A-Za-z0-9+/=_-]{20,})\\?["'`]/iu,
 ];
+const POSTGRES_CREDENTIAL_PATTERN = /postgres(?:ql)?:\/\/[^/\s:@]+:[^@\s]+@/iu;
 
 function optionValue(argv, option) {
   const index = argv.indexOf(option);
@@ -120,9 +121,15 @@ function validateIssue(value, lineNumber, ids) {
 }
 
 function validateSensitive(value, source, errors) {
-  const serialized = JSON.stringify(value);
+  const serialized = JSON.stringify(value).replaceAll(
+    LOCAL_DEVELOPMENT_POSTGRES_URI,
+    "postgres://localhost:54329/krn",
+  );
 
-  if (SENSITIVE_PATTERNS.some((pattern) => pattern.test(serialized))) {
+  if (
+    POSTGRES_CREDENTIAL_PATTERN.test(serialized) ||
+    SENSITIVE_PATTERNS.some((pattern) => pattern.test(serialized))
+  ) {
     errors.push(`${source}: sensitive value pattern detected`);
   }
 }
