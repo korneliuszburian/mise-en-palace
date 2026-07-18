@@ -896,6 +896,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Unresolved source dissent packet source claims: ${report.sourceDissentPacketSourceClaimIds.join(", ")}`,
   `Unresolved source dissent conflicting claims: ${report.sourceDissentPacketConflictingSourceClaimIds.join(", ")}`,
   `Unresolved source dissent decision-linked claims: ${report.sourceDissentPacketDecisionLinkedSourceClaimIds.join(", ")}`,
+  `Unresolved source dissent packet memory refs: ${report.sourceDissentPacketMemoryRefs.join(", ")}`,
   `Unresolved source dissent governing decisions: ${report.sourceDissentPacketGoverningDecisionIds.join(", ")}`,
   `Unresolved source dissent source decision edges: ${report.sourceDissentPacketSourceDecisionEdgeIds.join(", ")}`,
   `Unresolved source dissent packet status: ${report.sourceDissentPacketStatus}`,

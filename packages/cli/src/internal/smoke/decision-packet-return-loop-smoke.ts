@@ -224,6 +224,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceDissentPacketSourceClaimIds: readonly string[];
   sourceDissentPacketConflictingSourceClaimIds: readonly string[];
   sourceDissentPacketDecisionLinkedSourceClaimIds: readonly string[];
+  sourceDissentPacketMemoryRefs: readonly string[];
   sourceDissentPacketGoverningDecisionIds: readonly string[];
   sourceDissentPacketSourceDecisionEdgeIds: readonly string[];
   sourceDissentPacketStatus: string;
@@ -613,6 +614,10 @@ const createReturnLoopTargetRepo = async (): Promise<string> => {
 
 interface SourceDissentProofInput extends SourcePacketProofInput {
   readonly client: Sql;
+  readonly memoryRecordId: string;
+  readonly repositories: SourcePacketProofRepositories & {
+    readonly memoryRepository: MemoryRepository;
+  };
 }
 
 interface SourceDissentProofResult {
@@ -624,6 +629,7 @@ interface SourceDissentProofResult {
   packetSourceClaimIds: readonly string[];
   packetConflictingSourceClaimIds: readonly string[];
   packetDecisionLinkedSourceClaimIds: readonly string[];
+  packetMemoryRefs: readonly string[];
   packetGoverningDecisionIds: readonly string[];
   packetSourceDecisionEdgeIds: readonly string[];
   packetStatus: string;
@@ -2273,9 +2279,14 @@ const runUnresolvedAcceptedSourceDissentProof = async (
 ): Promise<SourceDissentProofResult> => {
   const {
     harnessRunRepository,
+    memoryRepository,
     retrievalRepository,
     sourceRepository
   } = input.repositories;
+  const memoryRecord = await memoryRepository.getMemoryRecordById(input.memoryRecordId);
+  if (memoryRecord === undefined) {
+    throw new Error("DecisionPacket source dissent proof lost its selected memory record");
+  }
   const evidenceMetadata = capturedCurrentEvidenceMetadata(
     input.marker,
     "unresolved-source-dissent"
@@ -2490,17 +2501,50 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       reason: "Persisted packet readback includes the accepted contradictory peer.",
       expectedUse: "Expose unresolved accepted dissent before execution.",
       sourceAuthority: "project-decision"
+    }, {
+      subjectType: "memory_record",
+      subjectId: input.memoryRecordId,
+      reason: "Retain selected memory context while its supporting source authority is unresolved.",
+      expectedUse: "Prove memory guidance cannot bypass contradictory source review.",
+      sourceAuthority: "project-decision"
     }],
     exclusions: [],
     metadata: {
       ...smokeMetadata,
       retrievalRunId: retrievalRun.id,
-      canonicalRevisionTokens: [currentGoverningClaim, currentDissentingClaim].map((claim) => ({
-        subjectType: "source_claim",
-        subjectId: claim.id,
-        updatedAt: claim.updatedAt,
-        status: claim.status
-      }))
+      canonicalRevisionTokens: [
+        ...[currentGoverningClaim, currentDissentingClaim].map((claim) => ({
+          subjectType: "source_claim",
+          subjectId: claim.id,
+          updatedAt: claim.updatedAt,
+          status: claim.status
+        })),
+        {
+          subjectType: "memory_record",
+          subjectId: memoryRecord.id,
+          updatedAt: memoryRecord.updatedAt,
+          status: memoryRecord.status,
+          currentVersionId: memoryRecord.currentVersionId
+        }
+      ]
+    }
+  });
+  await retrievalRepository.addCandidate({
+    retrievalRunId: retrievalRun.id,
+    kind: "memory",
+    subjectType: "memory_record",
+    subjectId: input.memoryRecordId,
+    sourceAuthority: "project-decision",
+    lexicalScore: 98,
+    totalScore: 98,
+    score: 98,
+    status: "included",
+    reason: "Persisted memory guidance is selected alongside unresolved contradictory source authority.",
+    metadata: {
+      ...smokeMetadata,
+      memorySourceConflictProof: true,
+      doesNotProve:
+        "Memory selection does not override unresolved source conflict or prove source truth."
     }
   });
   await retrievalRepository.addCandidate({
@@ -2602,6 +2646,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   const mcpPreservesDissentAndGap = [
     mcpPacket.sourceClaimIds.includes(governingClaim.id),
     mcpPacket.sourceClaimIds.includes(dissentingClaim.id),
+    mcpPacket.memoryRefs.includes(input.memoryRecordId),
     mcpPacket.sourceConsensus.conflictingSourceClaimIds.includes(governingClaim.id),
     mcpPacket.sourceConsensus.evidenceGapIds.includes(unresolvedAcceptedDissentEvidenceGapId),
     mcpPacket.abstentionScore.status === "abstain",
@@ -2622,6 +2667,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     packetConflictingSourceClaimIds: packet.packet.sourceConsensus.conflictingSourceClaimIds,
     packetDecisionLinkedSourceClaimIds:
       packet.packet.sourceConsensus.decisionLinkedSourceClaimIds,
+    packetMemoryRefs: packet.packet.memoryRefs,
     packetGoverningDecisionIds: packet.packet.governingDecisionIds,
     packetSourceDecisionEdgeIds: packet.packet.sourceDecisionEdgeIds,
     packetStatus: packet.packet.abstentionScore.status,
@@ -3677,9 +3723,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       commandRuntime,
       executionRunId: executionRun.id,
       marker,
+      memoryRecordId: selectorProof.retainedMemoryRecordId,
       projectId: project.id,
       repositories: {
         harnessRunRepository,
+        memoryRepository,
         sourceRepository,
         retrievalRepository
       },
@@ -3857,13 +3905,14 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `visibleAsGap=${sourceConsensusProof.unsupportedRelationVisibleAsGap}`
       },
       {
-        label: "unresolved accepted source dissent abstains without governing guidance",
+        label: "selected memory plus unresolved source dissent abstains without governing guidance",
         passed:
           sourceDissentProof.packetStatus === "abstain" &&
           sourceDissentProof.packetReasons.includes("conflicting_authority") &&
           sourceDissentProof.packetReasons.includes("unresolved_accepted_source_dissent") &&
           sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.candidateClaimId) &&
           sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.dissentingClaimId) &&
+          sourceDissentProof.packetMemoryRefs.includes(selectorProof.retainedMemoryRecordId) &&
           sourceDissentProof.packetConflictingSourceClaimIds.includes(
             sourceDissentProof.candidateClaimId
           ) &&
@@ -3878,6 +3927,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `candidateClaimId=${sourceDissentProof.candidateClaimId}; ` +
           `dissentingClaimId=${sourceDissentProof.dissentingClaimId}; ` +
           `sourceClaimIds=${sourceDissentProof.packetSourceClaimIds.join(",")}; ` +
+          `memoryRefs=${sourceDissentProof.packetMemoryRefs.join(",")}; ` +
           `conflictingSourceClaimIds=${sourceDissentProof.packetConflictingSourceClaimIds.join(",")}; ` +
           `decisionLinkedSourceClaimIds=${sourceDissentProof.packetDecisionLinkedSourceClaimIds.join(",")}; ` +
           `governingDecisionIds=${sourceDissentProof.packetGoverningDecisionIds.join(",")}; ` +
@@ -4006,6 +4056,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceDissentProof.packetConflictingSourceClaimIds,
       sourceDissentPacketDecisionLinkedSourceClaimIds:
         sourceDissentProof.packetDecisionLinkedSourceClaimIds,
+      sourceDissentPacketMemoryRefs: sourceDissentProof.packetMemoryRefs,
       sourceDissentPacketGoverningDecisionIds:
         sourceDissentProof.packetGoverningDecisionIds,
       sourceDissentPacketSourceDecisionEdgeIds:
