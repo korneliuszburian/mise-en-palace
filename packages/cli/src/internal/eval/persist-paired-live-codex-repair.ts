@@ -316,6 +316,9 @@ const observationCandidate = (input: {
         ...(input.artifact.execution.liveOutput === undefined
           ? {}
           : { liveOutput: input.artifact.execution.liveOutput }),
+        ...(input.artifact.execution.liveOutputValidation === undefined
+          ? {}
+          : { liveOutputValidation: input.artifact.execution.liveOutputValidation }),
         doesNotProve: [
           "An incomplete paired trial does not prove memory usefulness.",
           "The candidate is an observation and does not mutate MemoryRecord or SourceClaim truth."
@@ -332,7 +335,10 @@ const observationCandidate = (input: {
       createdAt: input.createdAt,
       ...(input.artifact.execution.liveOutput === undefined
         ? {}
-        : { liveOutput: input.artifact.execution.liveOutput })
+        : { liveOutput: input.artifact.execution.liveOutput }),
+      ...(input.artifact.execution.liveOutputValidation === undefined
+        ? {}
+        : { liveOutputValidation: input.artifact.execution.liveOutputValidation })
     });
 
 const scoreCommandRows = (artifact: TrackedTrialArtifact) => {

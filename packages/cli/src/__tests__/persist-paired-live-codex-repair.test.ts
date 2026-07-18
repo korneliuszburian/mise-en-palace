@@ -32,7 +32,7 @@ const manifest: PairedTrialManifest = {
   sourcePath: "fixture",
   projectId: "project-1",
   taskId: "task-1",
-  task: "Repair the controlled target.",
+  task: "Repair the weak-json-boundary controlled target.",
   requiredDecisionIds: ["decision-1"],
   decisionApplications: [{
     governingDecisionId: "decision-1",
@@ -182,7 +182,12 @@ const packetReadback = (overrides: Record<string, unknown> = {}) => ({
   request: { runId: manifest.runId },
   packetIdentity: { checksum },
   packet: {
-    task: { id: manifest.taskId, projectId: manifest.projectId },
+    task: {
+      id: manifest.taskId,
+      projectId: manifest.projectId,
+      title: manifest.task,
+      objective: manifest.task
+    },
     governingDecisionIds: manifest.requiredDecisionIds,
     sourceDecisionIds: manifest.decisionApplications.map((rule) => rule.sourceDecisionId),
     abstentionScore: { status: "ready" }

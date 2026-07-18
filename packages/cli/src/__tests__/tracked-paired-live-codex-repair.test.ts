@@ -217,6 +217,9 @@ const packet = {
     },
     governingDecisionIds: ["decision-1", "decision-2"],
     sourceDecisionIds: ["source-decision-1", "source-decision-2"],
+    rejectedPathIds: ["rejected-path-1"],
+    staleDecisionIds: [],
+    doesNotProve: ["live execution"],
     abstentionScore: { status: "ready" }
   }
 };
@@ -720,6 +723,7 @@ describe("tracked paired live Codex repair", () => {
     await mkdir(binRoot, { recursive: true });
     await makeFakeCodex(join(binRoot, "codex"), [
       `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; fi`,
+      "printf '%s\\n' '{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
       "exit 0"
     ].join("\n"));
     await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");

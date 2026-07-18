@@ -291,6 +291,7 @@ export type TrackedTrialArtifact = {
       readonly packetOnlyByConstruction: true;
     };
     readonly liveOutput?: LiveCodexObedienceOutput;
+    readonly liveOutputValidation?: LiveCodexObedienceValidation;
     readonly decisionApplicationObservation?: DecisionApplicationObservation;
     readonly capabilityUseObservation?: {
       readonly baseline: CodexCapabilityUseObservation;
@@ -1500,6 +1501,9 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "invalidReasons", isStringArray) &&
   optionalValue(value, "promptDelta", isTrialPromptDelta) &&
   optionalValue(value, "liveOutput", isLiveCodexObedienceOutput) &&
+  optionalValue(value, "liveOutputValidation", (item) =>
+    isRecord(item) && typeof item["valid"] === "boolean" && isStringArray(item["reasons"])
+  ) &&
   optionalValue(value, "decisionApplicationObservation", (item) =>
     item === "not_attempted" || item === "none_observed" || item === "observed" || item === "persistence_failed"
   ) &&
@@ -2389,14 +2393,20 @@ const executeComparableTrial = async (input: {
     targets: {
       baseline: { before: input.trial.baselineBefore, after: baselineAfter },
       krn: { before: input.trial.krnBefore, after: krnAfter }
-    }
+    },
+    ...optionalField("liveOutput", extractLiveCodexObedienceOutput(krnResult.stdout))
   };
+  const liveOutputValidation = execution.liveOutput === undefined
+    ? { valid: false, reasons: ["KRN arm did not emit the bounded live obedience JSON"] }
+    : validateLiveCodexObedienceOutputAgainstPacket(execution.liveOutput, input.packet);
+  const executionWithLiveValidation = { ...execution, liveOutputValidation };
   const armReasons = [
     armFailureReason("baseline", baselineResult),
     armFailureReason("krn", krnResult),
     targetStateReason("baseline", "after", baselineAfter),
     targetStateReason("krn", "after", krnAfter)
   ].filter((reason): reason is string => reason !== undefined);
+  if (krnResult.exitCode === 0) armReasons.push(...liveOutputValidation.reasons);
   if (input.trial.context.manifest.capabilities !== undefined) {
     armReasons.push(...capabilityUseFalsifierReasons(capabilityUseObservation));
   }
@@ -2406,7 +2416,7 @@ const executeComparableTrial = async (input: {
       invalidReasons: armReasons,
       baselineTreeHash: input.trial.baseline.treeHash,
       krnTreeHash: input.trial.krn.treeHash,
-      execution
+      execution: executionWithLiveValidation
     };
   }
   const score = await checker({
@@ -2434,7 +2444,7 @@ const executeComparableTrial = async (input: {
           invalidReasons: ["decision application persistence produced no observed applications"],
           baselineTreeHash: input.trial.baseline.treeHash,
           krnTreeHash: input.trial.krn.treeHash,
-          execution: { ...execution, decisionApplicationObservation }
+          execution: { ...executionWithLiveValidation, decisionApplicationObservation }
         };
       }
     } catch (error) {
@@ -2447,7 +2457,7 @@ const executeComparableTrial = async (input: {
         invalidReasons: [persistenceReason],
         baselineTreeHash: input.trial.baseline.treeHash,
         krnTreeHash: input.trial.krn.treeHash,
-        execution: { ...execution, decisionApplicationObservation },
+        execution: { ...executionWithLiveValidation, decisionApplicationObservation },
         score
       };
     }
@@ -2457,7 +2467,7 @@ const executeComparableTrial = async (input: {
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
     baselineTreeHash: input.trial.baseline.treeHash,
     krnTreeHash: input.trial.krn.treeHash,
-    execution: { ...execution, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
+    execution: { ...executionWithLiveValidation, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
     score
   };
 };
