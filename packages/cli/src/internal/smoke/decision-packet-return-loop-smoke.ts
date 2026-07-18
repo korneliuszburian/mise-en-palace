@@ -213,6 +213,10 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
   sourceConsensusTemporalExplanationPresent: boolean;
   sourceConsensusTemporalExplanationHasEvidence: boolean;
+  sourceConsensusUnsupportedRelationClaimId: string;
+  sourceConsensusUnsupportedRelationEdgeId: string;
+  sourceConsensusUnsupportedRelationStayedCurrent: boolean;
+  sourceConsensusUnsupportedRelationVisibleAsGap: boolean;
   sourceDissentProofRunId: string;
   sourceDissentCandidateClaimId: string;
   sourceDissentDissentingClaimId: string;
@@ -440,7 +444,37 @@ interface SourceConsensusProofResult {
   rejectedClaimHasFormalRejection: boolean;
   temporalExplanationPresent: boolean;
   temporalExplanationHasEvidence: boolean;
+  unsupportedRelationClaimId: string;
+  unsupportedRelationEdgeId: string;
+  unsupportedRelationStayedCurrent: boolean;
+  unsupportedRelationVisibleAsGap: boolean;
 }
+
+const unsupportedRelationReadbackFor = (input: {
+  readonly timelineEntries: readonly Record<string, unknown>[];
+  readonly claimId: string;
+  readonly edgeId: string;
+}): Pick<
+  SourceConsensusProofResult,
+  "unsupportedRelationStayedCurrent" | "unsupportedRelationVisibleAsGap"
+> => {
+  const entry = input.timelineEntries.find((candidate) =>
+    readString(candidate, "sourceClaimId") === input.claimId
+  );
+  const relationEvidence = entry === undefined
+    ? []
+    : readRecordArray(entry, "relationEvidence");
+
+  return {
+    unsupportedRelationStayedCurrent: entry !== undefined &&
+      readString(entry, "state") === "current_authority" &&
+      readStringArray(entry, "supersededBySourceClaimIds").length === 0,
+    unsupportedRelationVisibleAsGap: relationEvidence.some((evidence) =>
+      readString(evidence, "sourceClaimEdgeId") === input.edgeId &&
+      readStringArray(evidence, "evidenceGaps").includes("missing_relation_support_ref")
+    )
+  };
+};
 
 interface SourcePacketProofRepositories {
   readonly harnessRunRepository: HarnessRunRepository;
@@ -1862,6 +1896,28 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  const unsupportedRelationClaim = await sourceRepository.createSourceClaim({
+    sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
+    executionRunId: input.executionRunId,
+    claim: "DecisionPacket source consensus relation evidence must be present before supersession.",
+    mechanism:
+      "This decision-supported claim is linked by an intentionally unsupported graph relation.",
+    krnImplication:
+      "KRN must retain the claim as current while exposing the unsupported relation as a gap.",
+    doesNotProve:
+      "This smoke does not prove repository-wide relation evidence completeness.",
+    sourceAuthority: "project-decision",
+    supportType: "decision",
+    consumer: "DecisionPacket source consensus smoke",
+    falsifier:
+      "An unsupported current relation demotes or supersedes this decision-supported claim.",
+    status: "proposed",
+    metadata: {
+      ...evidenceMetadata,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
   const rejectedClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
     executionRunId: input.executionRunId,
@@ -1913,6 +1969,21 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  const unsupportedRelationDecision = await sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: unsupportedRelationClaim.id,
+    status: "adopt",
+    decision: "Adopt the unsupported-relation target as independently decision-supported.",
+    rationale:
+      "The target remains supported even when a relation lacks inspectable support metadata.",
+    falsifier:
+      "The target becomes historical solely because of the unsupported relation.",
+    consumer: "DecisionPacket source consensus smoke",
+    metadata: {
+      smokeId: input.marker,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
   await sourceRepository.createSourceDecision({
     projectId: input.projectId,
     sourceClaimId: rejectedClaim.id,
@@ -1956,6 +2027,19 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  await sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: unsupportedRelationClaim.id,
+    sourceDecisionId: unsupportedRelationDecision.id,
+    targetType: "architecture_decision",
+    targetId: `architecture-decision:source-consensus:${input.marker}:unsupported-relation-target`,
+    supportType: "decision",
+    confidence: "high",
+    notes: "DecisionPacket source consensus smoke unsupported relation target support.",
+    metadata: {
+      smokeId: input.marker,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
 
   await sourceRepository.createSourceClaimEdge({
     fromSourceClaimId: currentClaim.id,
@@ -1967,6 +2051,17 @@ const runSourceConsensusProof = async (
       sourceDecisionRef: currentDecision.id,
       doesNotProve:
         "This source graph edge does not prove broad consensus quality or all temporal source graph behavior."
+    }
+  });
+  const unsupportedRelationEdge = await sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: currentClaim.id,
+    toSourceClaimId: unsupportedRelationClaim.id,
+    kind: "narrows",
+    metadata: {
+      smokeId: input.marker,
+      consumer: "DecisionPacket source consensus smoke",
+      doesNotProve:
+        "This intentionally unsupported relation does not prove supersession."
     }
   });
 
@@ -2125,6 +2220,11 @@ const runSourceConsensusProof = async (
   const currentTimelineEntry = timelineEntries.find((entry) =>
     readString(entry, "sourceClaimId") === currentClaim.id
   );
+  const unsupportedRelationReadback = unsupportedRelationReadbackFor({
+    timelineEntries,
+    claimId: unsupportedRelationClaim.id,
+    edgeId: unsupportedRelationEdge.id
+  });
   const temporalExplanationPresent = currentTimelineEntry !== undefined &&
     readString(currentTimelineEntry, "createdAt") !== undefined &&
     readStringArray(currentTimelineEntry, "supersedesSourceClaimIds").includes(supersededClaim.id);
@@ -2161,7 +2261,10 @@ const runSourceConsensusProof = async (
     supersededClaimIsNonGoverning,
     rejectedClaimHasFormalRejection,
     temporalExplanationPresent,
-    temporalExplanationHasEvidence
+    temporalExplanationHasEvidence,
+    unsupportedRelationClaimId: unsupportedRelationClaim.id,
+    unsupportedRelationEdgeId: unsupportedRelationEdge.id,
+    ...unsupportedRelationReadback
   };
 };
 
@@ -3743,6 +3846,17 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `hasEvidence=${sourceConsensusProof.temporalExplanationHasEvidence}`
       },
       {
+        label: "unsupported source relation stays non-governing in DB activation",
+        passed:
+          sourceConsensusProof.unsupportedRelationStayedCurrent &&
+          sourceConsensusProof.unsupportedRelationVisibleAsGap,
+        detail:
+          `claimId=${sourceConsensusProof.unsupportedRelationClaimId}; ` +
+          `edgeId=${sourceConsensusProof.unsupportedRelationEdgeId}; ` +
+          `stayedCurrent=${sourceConsensusProof.unsupportedRelationStayedCurrent}; ` +
+          `visibleAsGap=${sourceConsensusProof.unsupportedRelationVisibleAsGap}`
+      },
+      {
         label: "unresolved accepted source dissent abstains without governing guidance",
         passed:
           sourceDissentProof.packetStatus === "abstain" &&
@@ -3875,6 +3989,14 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceConsensusProof.temporalExplanationPresent,
       sourceConsensusTemporalExplanationHasEvidence:
         sourceConsensusProof.temporalExplanationHasEvidence,
+      sourceConsensusUnsupportedRelationClaimId:
+        sourceConsensusProof.unsupportedRelationClaimId,
+      sourceConsensusUnsupportedRelationEdgeId:
+        sourceConsensusProof.unsupportedRelationEdgeId,
+      sourceConsensusUnsupportedRelationStayedCurrent:
+        sourceConsensusProof.unsupportedRelationStayedCurrent,
+      sourceConsensusUnsupportedRelationVisibleAsGap:
+        sourceConsensusProof.unsupportedRelationVisibleAsGap,
       sourceDissentProofRunId: sourceDissentProof.proofRunId,
       sourceDissentCandidateClaimId: sourceDissentProof.candidateClaimId,
       sourceDissentDissentingClaimId: sourceDissentProof.dissentingClaimId,

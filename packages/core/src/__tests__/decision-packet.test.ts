@@ -227,7 +227,8 @@ const readModel = {
 } satisfies DecisionPacketReadModelInput;
 
 const relationReadModel = (
-  missingRelationSupportEdgeIds: readonly string[]
+  missingRelationSupportEdgeIds: readonly string[],
+  includeRelationEvidenceGap = false
 ): DecisionPacketReadModelInput => ({
   run: {
     id: "run-relation-consensus",
@@ -304,7 +305,16 @@ const relationReadModel = (
           evidenceRefs: ["evidence:relation-current"],
           rawEvidenceCitationRefs: ["citation:relation-current"],
           sourceRanges: [],
-          relationEvidence: [],
+          relationEvidence: includeRelationEvidenceGap ? [{
+            sourceClaimEdgeId: "edge-relation-missing-support",
+            direction: "incoming",
+            kind: "narrows",
+            relatedSourceClaimId: "claim-relation-old",
+            metadataEvidenceRefs: [],
+            sourceRanges: [],
+            evidenceGaps: ["missing_relation_support_ref"],
+            temporalValidity: { status: "current" }
+          }] : [],
           supportingSourceClaimIds: [],
           dissentingSourceClaimIds: [],
           supersededBySourceClaimIds: [],
@@ -1198,6 +1208,17 @@ describe("DecisionPacket builder", () => {
       status: "ready",
       reasons: []
     });
+  });
+
+  it("preserves relation evidence gaps in the bounded DecisionPacket timeline", () => {
+    const packet = buildDecisionPacketFromReadModel(relationReadModel([], true));
+
+    expect(packet.sourceConsensus.timeline?.entries[0]?.relationEvidence).toEqual([
+      expect.objectContaining({
+        sourceClaimEdgeId: "edge-relation-missing-support",
+        evidenceGaps: ["missing_relation_support_ref"]
+      })
+    ]);
   });
 
   it("carries the authoritative temporal consensus explanation into the packet", () => {

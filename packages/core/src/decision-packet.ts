@@ -266,7 +266,7 @@ const boundedSourceConsensusTimeline = (
       relationEvidence: entry.relationEvidence.slice(0, 4).map((relation) => ({
         ...relation,
         sourceRanges: [],
-        evidenceGaps: []
+        evidenceGaps: relation.evidenceGaps
       })),
       supportingSourceClaimIds: [],
       dissentingSourceClaimIds: [],
