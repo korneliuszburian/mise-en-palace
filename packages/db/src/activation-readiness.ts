@@ -28,6 +28,7 @@ export interface ActivationReadinessReport {
 }
 
 const requiredActivationTables = [
+  "activation_runtime_proofs",
   "search_documents",
   "retrieval_runs",
   "retrieval_candidates",
