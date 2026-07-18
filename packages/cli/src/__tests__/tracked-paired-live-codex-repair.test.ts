@@ -212,6 +212,22 @@ describe("preregistered memory treatments", () => {
     expect(() => parseTrackedTrialManifest({ ...manifest, treatment: "opaque_memory" }))
       .toThrow("Invalid tracked paired-trial manifest");
   });
+
+  it("requires explicit manifest opt-in for weak-context packet trials", () => {
+    const weakPacket = {
+      ...packet,
+      packet: {
+        ...packet.packet,
+        abstentionScore: { status: "weak_context" }
+      }
+    };
+
+    expect(validateTrialPacket(weakPacket, manifest).valid).toBe(false);
+    expect(validateTrialPacket(weakPacket, {
+      ...manifest,
+      packetReadiness: "weak_context"
+    }).valid).toBe(true);
+  });
 });
 
 const packet = {
@@ -551,7 +567,7 @@ describe("tracked paired live Codex repair", () => {
       reasons: expect.arrayContaining([
         "packet runId does not match the trial manifest",
         "packet task is not bound to the manifest project",
-        "packet abstains or is not ready for the trial"
+        "packet readiness abstain does not match manifest expectation ready"
       ])
     });
 

@@ -870,6 +870,9 @@ const formatDecisionPacketReturnLoopSmokeLines = (
 ): string[] => [
   `Workspace smoke row: ${report.workspaceSlug}`,
   `Project smoke row: ${report.projectSlug}`,
+  `Project id: ${report.projectId}`,
+  `Task id: ${report.taskId}`,
+  `Task: ${report.task}`,
   `Execution run: ${report.executionRunId}`,
   `Packet checksum: ${report.packetChecksum}`,
   `Packet evidence ref: ${report.packetEvidenceRef}`,
@@ -956,6 +959,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Feedback maintenance exact replay idempotent: ${yesNo(report.feedbackMaintenanceExactReplayIdempotent)}`,
   `Feedback maintenance direct mutation delta: ${report.feedbackMaintenanceDirectMutationDelta}`,
   `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
+  `Retained fixture: ${yesNo(report.retainedFixture)}`,
   ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
 ];
 

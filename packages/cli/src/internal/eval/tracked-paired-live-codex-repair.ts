@@ -138,6 +138,7 @@ export type PairedTrialManifest = {
   };
   readonly checkerRevision?: string;
   readonly packetContextMode?: "full" | "task-only";
+  readonly packetReadiness?: "ready" | "weak_context" | "abstain";
   readonly treatment?: PairedMemoryTreatment;
 };
 
@@ -492,6 +493,7 @@ const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => 
     hasCompleteDecisionApplicationRules(value) &&
     (value["checkerRevision"] === undefined || readString(value["checkerRevision"]) !== undefined) &&
     (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
+    (value["packetReadiness"] === undefined || value["packetReadiness"] === "ready" || value["packetReadiness"] === "weak_context" || value["packetReadiness"] === "abstain") &&
     (value["treatment"] === undefined || isPairedMemoryTreatment(value["treatment"])) &&
     (value["capabilities"] === undefined || isManifestCapabilities(value["capabilities"])) &&
     isManifestCodex(value["codex"]) &&
@@ -688,7 +690,7 @@ const packetShapeReasons = (
 
 const packetAuthorityReasons = (
   body: JsonRecord | undefined,
-  manifest: Pick<PairedTrialManifest, "requiredDecisionIds" | "decisionApplications">
+  manifest: Pick<PairedTrialManifest, "requiredDecisionIds" | "decisionApplications" | "packetReadiness">
 ): readonly string[] => {
   const governingDecisionIds = readStringArray(body?.["governingDecisionIds"]);
   const sourceDecisionIds = readStringArray(body?.["sourceDecisionIds"]);
@@ -699,12 +701,16 @@ const packetAuthorityReasons = (
     .map((rule) => rule.sourceDecisionId)
     .filter((id) => !sourceDecisionIds.includes(id));
   const abstention = nestedRecord(body, "abstentionScore");
+  const packetStatus = readString(abstention?.["status"]);
+  const expectedStatus = manifest.packetReadiness ?? "ready";
   return [
     ...(missingRequired.length === 0 ? [] : [`packet lacks task-relevant governing decisions: ${missingRequired.join(", ")}`]),
     ...(missingSourceDecisions.length === 0 ? [] : [
       `packet lacks exact SourceDecision subjects: ${missingSourceDecisions.join(", ")}`
     ]),
-    ...(abstention?.["status"] === "ready" ? [] : ["packet abstains or is not ready for the trial"])
+    ...(packetStatus === expectedStatus ? [] : [
+      `packet readiness ${packetStatus ?? "missing"} does not match manifest expectation ${expectedStatus}`
+    ])
   ];
 };
 
@@ -713,6 +719,7 @@ export const validateTrialPacket = (
   manifest: Pick<
     PairedTrialManifest,
     "runId" | "projectId" | "taskId" | "scenario" | "requiredDecisionIds" | "decisionApplications"
+    | "packetReadiness"
   >
 ): TrialPacketValidation => {
   const root = isRecord(packet) ? packet : undefined;

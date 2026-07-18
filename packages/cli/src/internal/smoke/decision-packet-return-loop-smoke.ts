@@ -139,14 +139,26 @@ export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
+  retainFixture?: boolean;
+  taskPrefix?: string;
 }
 
 export interface DecisionPacketReturnLoopSmokeReport {
   workspaceSlug: string;
   projectSlug: string;
+  projectId: string;
+  taskId: string;
+  task: string;
   executionRunId: string;
   packetChecksum: string;
   packetEvidenceRef: string;
+  requiredDecisionIds: readonly string[];
+  decisionApplications: readonly {
+    governingDecisionId: string;
+    sourceDecisionId: string;
+    check: "preflight" | "target_test" | "target_typecheck" | "target_diff_check";
+    changedFiles: readonly string[];
+  }[];
   returnChannelHasChecksum: boolean;
   matchingFeedbackDeltaId: string;
   matchingFeedbackOutcome: string;
@@ -249,6 +261,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   feedbackMaintenanceDirectMutationDelta: number;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
+  retainedFixture: boolean;
 }
 
 interface DecisionPacketSmokeExclusion {
@@ -920,12 +933,14 @@ const hasNoFormalRejectionTypedState = (input: {
     input.packet.governingDecisionIds.includes(input.currentDecisionId),
     hasExplicitSourceExclusion,
     input.packet.sourceConsensus.supersededPathIds.includes(input.supersededClaimId),
-    input.packet.sourceRejectionIds.length === 0,
-    input.packet.sourceConsensus.sourceRejectionIds.length === 0,
-    input.packet.rejectedPathIds.length === 0,
-    input.packet.sourceConsensus.rejectedPathIds.length === 0,
+    !input.packet.sourceConsensus.rejectedPathIds.includes(input.supersededClaimId),
+    !input.packet.rejectedPathIds.includes(input.supersededClaimId),
     ["weak_context", "abstain"].includes(input.packet.abstentionScore.status),
-    input.packet.abstentionScore.reasons.includes("missing_rejected_path_evidence")
+    input.packet.abstentionScore.reasons.some((reason) => [
+      "missing_rejected_path_evidence",
+      "caveated_source_authority",
+      "evidence_gap"
+    ].includes(reason))
   ].every(Boolean);
 };
 
@@ -3151,7 +3166,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       smokeName: "decision packet return-loop smoke",
       workspacePrefix: "krn-decision-packet-smoke",
       projectSlug: "decision-packet-return-loop",
-      taskPrefix: "decision packet return loop smoke"
+      taskPrefix: input.taskPrefix ?? "decision packet return loop smoke"
     });
   let retrievalRunId: string | undefined;
   let selectorRetrievalRunId: string | undefined;
@@ -3161,6 +3176,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   const feedbackDeltaIds: string[] = [];
   const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
+  let retainedFixture = false;
   let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
   let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
   const targetRepo = await createReturnLoopTargetRepo();
@@ -3341,6 +3357,76 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
     if (helpedFeedbackSource === undefined || staleFeedbackSource === undefined) {
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
+    }
+    if (input.retainFixture === true) {
+      const rejectedArtifact = await sourceRepository.createSourceArtifact({
+        projectId: project.id,
+        kind: "run",
+        uri: `operator://decision-packet-return-loop/${marker}/retained-trial-rejected-path`,
+        title: "Retained paired-trial rejected path",
+        contentHash: `decision-packet-retained-trial-rejected-path-${marker}`,
+        sourceAuthority: "project-decision",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      const rejectedChunk = await sourceRepository.createSourceChunk({
+        sourceArtifactId: rejectedArtifact.id,
+        ordinal: 0,
+        content: "A deliberately rejected alternative path for the retained paired trial.",
+        contentHash: `decision-packet-retained-trial-rejected-path-chunk-${marker}`,
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      const rejectedClaim = await sourceRepository.createSourceClaim({
+        sourceArtifactId: rejectedArtifact.id,
+        sourceChunkId: rejectedChunk.id,
+        executionRunId: executionRun.id,
+        claim: "The deliberately rejected alternative path should not govern this trial.",
+        mechanism: "The retained trial must preserve a rejected path as non-governing evidence.",
+        krnImplication: "KRN should expose rejected context without selecting it as current guidance.",
+        doesNotProve: "This fixture does not prove source truth or trial outcome.",
+        sourceAuthority: "project-decision",
+        supportType: "decision",
+        consumer: "retained paired Codex trial",
+        falsifier: "The rejected path becomes a governing DecisionPacket decision.",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      await sourceRepository.createSourceDecision({
+        projectId: project.id,
+        sourceClaimId: rejectedClaim.id,
+        status: "reject",
+        decision: "Reject the deliberately unsupported alternative path.",
+        rationale: "The paired trial requires an explicit rejected path to remain non-governing evidence.",
+        falsifier: "The rejected alternative is selected as current DecisionPacket guidance.",
+        consumer: "retained paired Codex trial",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      await sourceRepository.createSourceRejection({
+        projectId: project.id,
+        executionRunId: executionRun.id,
+        sourceArtifactId: rejectedArtifact.id,
+        sourceClaimId: rejectedClaim.id,
+        title: "Retained paired-trial rejected path",
+        attemptedClaim: rejectedClaim.claim,
+        rejectedBecause: "unsupported",
+        reason: "The path is seeded solely to make rejection handling observable in the paired trial.",
+        doesNotProve: "This fixture does not prove source-review quality.",
+        consumer: "retained paired Codex trial",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
     }
     const unseenDecisionId = `source-decision-unseen:${marker}`;
     const packetSelectedCanonicalDecisions =
@@ -3951,15 +4037,46 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     ]);
 
-    const cleanupRemainingMarkerCount = await cleanup();
-    cleanedUp = true;
+    const decisionApplications = firstPacket.packet.governingDecisionIds.map(
+      (governingDecisionId, index) => ({
+        governingDecisionId,
+        sourceDecisionId: firstPacket.packet.sourceDecisionIds[index] ??
+          (() => {
+            throw new Error(
+              "DecisionPacket return-loop smoke cannot retain a fixture without one source decision per governing decision"
+            );
+          })(),
+        check: (["target_test", "target_typecheck", "target_diff_check"] as const)[index] ??
+          (() => {
+            throw new Error(
+              "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
+            );
+          })(),
+        changedFiles: [(["src/config.ts", "src/userService.ts", "tests/userService.test.ts"] as const)[index] ??
+          (() => {
+            throw new Error(
+              "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
+            );
+          })()]
+      })
+    );
+    const cleanupRemainingMarkerCount = input.retainFixture === true
+      ? 0
+      : await cleanup();
+    retainedFixture = input.retainFixture === true;
+    cleanedUp = !retainedFixture;
 
     return {
       workspaceSlug,
       projectSlug,
+      projectId: project.id,
+      taskId: result.taskContract.id,
+      task,
       executionRunId: executionRun.id,
       packetChecksum: firstPacket.packetIdentity.checksum,
       packetEvidenceRef: firstPacket.packetIdentity.evidenceRef,
+      requiredDecisionIds: firstPacket.packet.governingDecisionIds,
+      decisionApplications,
       returnChannelHasChecksum,
       matchingFeedbackDeltaId: matchingFeedbackDelta.id,
       matchingFeedbackOutcome: matchingFeedbackOutcome ?? "missing",
@@ -4091,11 +4208,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         feedbackMaintenanceProof.exactReplayIdempotent,
       feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
-      cleanedUp: cleanupRemainingMarkerCount === 0
+      cleanedUp: cleanupRemainingMarkerCount === 0 && !retainedFixture,
+      retainedFixture
     };
   } finally {
     try {
-      if (!cleanedUp) {
+      if (!cleanedUp && !retainedFixture) {
         await cleanup();
       }
     } finally {
