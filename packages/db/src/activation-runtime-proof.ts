@@ -8,7 +8,7 @@ export interface ActivationRuntimeProofInput {
   status: "passed" | "failed";
   capturedAt: Date;
   cleanupRemainingMarkerCount: number;
-  report: Record<string, unknown>;
+  report: unknown;
 }
 
 export interface ActivationRuntimeProofReadback {

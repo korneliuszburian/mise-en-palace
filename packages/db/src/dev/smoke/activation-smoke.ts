@@ -1593,7 +1593,7 @@ export const runActivationSmokeCheck = async (
         status: report.cleanedUp ? "passed" : "failed",
         capturedAt: new Date(),
         cleanupRemainingMarkerCount: report.remainingMarkerCount,
-        report: report as unknown as Record<string, unknown>
+        report
       });
     }
 
