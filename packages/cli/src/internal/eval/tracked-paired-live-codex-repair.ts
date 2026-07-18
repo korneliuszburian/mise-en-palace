@@ -936,7 +936,8 @@ const countCapabilityEvents = (value: Pick<CommandResult, "stdout">): CodexCapab
   };
   for (const line of value.stdout.split("\n")) {
     try {
-      visit(JSON.parse(line));
+      const parsed: unknown = JSON.parse(line);
+      visit(parsed);
     } catch {
       // Capability evidence is accepted only from structured JSON events.
     }
