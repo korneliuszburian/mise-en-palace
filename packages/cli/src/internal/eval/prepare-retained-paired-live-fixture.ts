@@ -8,15 +8,15 @@ import {
 import {
   pairedLiveCheckerRevision
 } from "./paired-live-codex-repair.js";
+import {
+  resolvePairedLiveRepoRoot
+} from "./paired-live-repo-root.js";
 
 const requestedArguments = process.argv.slice(2);
 const requestedDirectory = requestedArguments[0] === "--"
   ? requestedArguments[1]
   : requestedArguments[0];
-const repoRoot = path.basename(process.cwd()) === "cli" &&
-    path.basename(path.dirname(process.cwd())) === "packages"
-  ? path.resolve(process.cwd(), "../..")
-  : path.resolve(process.cwd());
+const repoRoot = resolvePairedLiveRepoRoot();
 const outputDirectory = path.resolve(
   repoRoot,
   requestedDirectory ?? `.local-lab/paired-live/retained-memory-treatment-${Date.now()}`

@@ -5,6 +5,9 @@ import { pathToFileURL } from "node:url";
 import {
   createSmokeRuntime
 } from "@krn/db/dev";
+import {
+  resolvePairedLiveRepoRoot
+} from "./paired-live-repo-root.js";
 
 type RetainedFixtureReport = {
   readonly smokeId: string;
@@ -141,10 +144,7 @@ export const main = async (): Promise<void> => {
     throw new Error("Usage: cleanup-retained-paired-live-fixture <fixture-report.json>");
   }
 
-  const repoRoot = path.basename(process.cwd()) === "cli" &&
-      path.basename(path.dirname(process.cwd())) === "packages"
-    ? path.resolve(process.cwd(), "../..")
-    : path.resolve(process.cwd());
+  const repoRoot = resolvePairedLiveRepoRoot();
   const report = parseRetainedFixtureReport(
     JSON.parse(await readFile(path.resolve(repoRoot, reportPath), "utf8"))
   );
