@@ -68,6 +68,13 @@ describe("doctorDbChecks", () => {
     expect(checkCodexAdapterRuntimeProof).toEqual(expect.any(Function));
   });
 
+  it("recognizes the checked-in activation engine module exports", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const checks = await checkActivation(repoRoot, undefined, []);
+
+    expect(statusFor(checks, "Activation engine surface")).toBe("present");
+  });
+
   it("keeps DB-backed checks read-only at the CLI adapter layer", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const source = await readFile(

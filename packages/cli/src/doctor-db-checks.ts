@@ -740,9 +740,9 @@ export const checkActivation = async (
   const activationEnginePresent =
     activationEngineText.includes("retrieveActivationCandidates") &&
     activationEngineText.includes("persistActivationTrace") &&
-    activationIndexText.includes("./conflictFilter") &&
-    activationIndexText.includes("./contextRoi") &&
-    activationIndexText.includes("./assembleContext");
+    activationIndexText.includes("./conflict-filter") &&
+    activationIndexText.includes("./context-roi") &&
+    activationIndexText.includes("./assemble-context");
   const broadContextDumpPresent =
     cliText.includes("rag-dump") ||
     cliText.includes("rag dump") ||
