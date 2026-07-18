@@ -199,6 +199,7 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
             ` relatedSourceClaim:${relation.relatedSourceClaimId}`,
             relation.consumer === undefined ? "" : ` consumer:${relation.consumer}`,
             relation.doesNotProve === undefined ? "" : ` doesNotProve:${relation.doesNotProve}`,
+            relation.evidenceRefs === undefined ? "" : ` evidenceRefs:${relation.evidenceRefs.join(",")}`,
             relation.validFrom === undefined ? "" : ` validFrom:${relation.validFrom}`,
             relation.validUntil === undefined ? "" : ` validUntil:${relation.validUntil}`,
             relation.invalidatedAt === undefined ? "" : ` invalidatedAt:${relation.invalidatedAt}`

@@ -34,6 +34,7 @@ export interface SourceSearchRelationSupport {
   consumer?: string;
   doesNotProve?: string;
   evidenceRef?: string;
+  evidenceRefs?: readonly string[];
   sourceDecisionRef?: string;
   sourceRanges?: readonly string[];
   validFrom?: string;
@@ -214,6 +215,7 @@ const relationMetadataEntries = (
   ["consumer", metadata.consumer],
   ["doesNotProve", metadata.doesNotProve],
   ["evidenceRef", metadata.evidenceRef],
+  ["evidenceRefs", metadata.evidenceRefs.length === 0 ? undefined : metadata.evidenceRefs],
   ["sourceDecisionRef", metadata.sourceDecisionRef],
   ["sourceRanges", metadata.sourceRanges.length === 0 ? undefined : metadata.sourceRanges],
   ["validFrom", metadata.validFrom],

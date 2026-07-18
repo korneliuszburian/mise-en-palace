@@ -830,6 +830,9 @@ describe("runSourceSearchCommand", () => {
     expect(relation.consumer).toBe("graph mini Brain-QA");
     expect(relation.doesNotProve).toBe("This edge does not prove graph retrieval quality.");
     expect(relation.evidenceRef).toBe("KRN_ROADMAP.md");
+    expect(arrayValue(relation.evidenceRefs, "relation evidenceRefs")).toEqual([
+      "KRN_ROADMAP.md"
+    ]);
     expect(relation.sourceDecisionRef).toBe("source-decision:temporal-claim-graph");
     expect(relation.validFrom).toBe("2026-06-01T00:00:00.000Z");
     expect(relation.validUntil).toBe("2026-12-31T00:00:00.000Z");
@@ -896,6 +899,44 @@ describe("runSourceSearchCommand", () => {
     expect(relation.invalidatedAt).toBe("2026-06-30T00:00:00.000Z");
     expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
       "docs/example.md:1-2"
+    ]);
+  });
+
+  it("preserves plural SourceClaimEdge evidence refs in JSON readback", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "temporal claim graph",
+        limit: 10,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        edges: [sourceClaimEdge({
+          metadata: {
+            consumer: "graph mini Brain-QA",
+            doesNotProve: "This edge does not prove graph retrieval quality.",
+            evidenceRefs: ["evidence:one", " evidence:two "]
+          }
+        })]
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const relationSupport = arrayValue(answerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+
+    expect(relation.evidenceRef).toBeUndefined();
+    expect(arrayValue(relation.evidenceRefs, "relation evidenceRefs")).toEqual([
+      "evidence:one",
+      "evidence:two"
     ]);
   });
 
