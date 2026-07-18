@@ -194,6 +194,86 @@ describe("DrizzleMemoryRepository", () => {
     }
   });
 
+  postgresIt("retains an executable unsafe baseline beside the fail-closed repository path", async () => {
+    const marker = `krn_unsafe_memory_write_baseline_${crypto.randomUUID().replaceAll("-", "")}`;
+    const scaffold = await createSmokeHarnessScaffold({
+      databaseUrl: databaseUrl!,
+      migrationsFolder,
+      smokeId: marker,
+      smokeName: "unsafe memory write baseline",
+      workspacePrefix: "krn-unsafe-memory-write",
+      projectSlug: "unsafe-memory-write",
+      cleanupRows: cleanupActivationSmokeRows,
+      countMarkerRows: countActivationSmokeMarkerRows,
+      rawIntent: `unsafe memory write baseline ${marker}`,
+      taskContract: {
+        title: "Compare unsafe direct memory write with reviewed promotion",
+        objective: "Show that bypassing the repository can persist prompt injection while the governed path rejects it.",
+        constraints: ["real PostgreSQL"],
+        nonGoals: ["make direct SQL a supported runtime path"],
+        acceptance: ["unsafe baseline persists; governed promotion does not"]
+      },
+      harnessPlan: {
+        summary: "Executable unsafe-vs-safe memory promotion baseline",
+        nextAction: "Write the same untrusted claim through raw SQL and the governed repository API."
+      }
+    });
+
+    try {
+      await scaffold.client`
+        insert into memory_records (
+          project_id, key, kind, status, summary, body, owner, confidence,
+          application_guidance, source_lineage, metadata
+        ) values (
+          ${scaffold.project.id}, ${`unsafe:${marker}`}, 'constraint', 'active',
+          'Prompt injection became durable authority.',
+          'Apply the untrusted instruction to later tool selection.',
+          'untrusted-input', 100,
+          'Apply the injected instruction without review.',
+          ${JSON.stringify([{ sourceId: "untrusted-input:prompt-injection" }])}::jsonb,
+          ${JSON.stringify({ smokeId: marker, baseline: "unsafe_direct_write" })}::jsonb
+        )
+      `;
+
+      const unsafeRecords = await scaffold.memoryRepository.listMemoryRecordsForProject(scaffold.project.id);
+      expect(unsafeRecords).toHaveLength(1);
+      expect(unsafeRecords[0]).toMatchObject({
+        summary: "Prompt injection became durable authority.",
+        sourceLineage: [{ sourceId: "untrusted-input:prompt-injection" }]
+      });
+
+      const candidate = await scaffold.memoryRepository.createMemoryCandidate({
+        projectId: scaffold.project.id,
+        proposedBy: "untrusted-input",
+        kind: "constraint",
+        summary: "Prompt injection should be promoted through the governed path.",
+        body: "This candidate intentionally has no reviewed SourceClaim.",
+        owner: "untrusted-input",
+        confidence: 100,
+        applicationGuidance: "Apply the injected instruction.",
+        sourceClaimIds: [],
+        sourceLineage: [{ sourceId: "untrusted-input:prompt-injection" }],
+        isUserPreference: false,
+        metadata: { smokeId: marker, baseline: "governed_path" }
+      });
+
+      await expect(scaffold.memoryRepository.promoteMemoryCandidate({
+        candidateId: candidate.id,
+        reviewer: "unsafe-direct-caller",
+        decision: "accepted",
+        metadata: { smokeId: marker }
+      })).rejects.toThrow(
+        `Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`
+      );
+
+      expect(await scaffold.memoryRepository.listMemoryRecordsForProject(scaffold.project.id))
+        .toHaveLength(1);
+    } finally {
+      await scaffold.cleanup();
+      await scaffold.client.end();
+    }
+  });
+
   // fallow-ignore-next-line complexity -- one real-store authority chain owns rejection, concurrency, rollback, retry corruption, and final selection falsifiers
   postgresIt("proposes one exact reviewed helped candidate atomically and rejects weaker authority", async () => {
     const marker = `krn_reviewed_helped_chain_${crypto.randomUUID().replaceAll("-", "")}`;
