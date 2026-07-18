@@ -861,7 +861,7 @@ describe("tracked paired live Codex repair", () => {
       expect(failedPersistence).toMatchObject({
         status: "unverified",
         execution: {
-          invalidReasons: ["decision application persistence could not be verified"]
+          invalidReasons: ["decision application persistence failed: simulated persistence failure"]
         },
         score: { outcome: "tie" }
       });

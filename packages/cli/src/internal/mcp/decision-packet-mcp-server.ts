@@ -437,7 +437,10 @@ const runToolCall = async (
     };
   }
 
-  if (Object.keys(params).some((key) => key !== "name" && key !== "arguments")) {
+  if (
+    Object.keys(params).some((key) => key !== "name" && key !== "arguments" && key !== "_meta") ||
+    (params["_meta"] !== undefined && !isRecord(params["_meta"]))
+  ) {
     return {
       kind: "protocol_error",
       error: {

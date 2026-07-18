@@ -1430,6 +1430,33 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
+  it("accepts standard tools-call metadata without widening tool arguments", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-with-meta",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1"
+        },
+        _meta: {
+          progressToken: "codex-progress-1"
+        }
+      }
+    }, runtime(async () => ({ stdout: `${JSON.stringify(packetJson)}\n` })));
+
+    expect(reply).toMatchObject({
+      id: "call-with-meta",
+      result: {
+        isError: false,
+        structuredContent: {
+          kind: "krn.decisionPacketReadback.v1"
+        }
+      }
+    });
+  });
+
   it("serves newline-delimited JSON-RPC over stdio without non-MCP stdout", async () => {
     async function* input(): AsyncIterable<string> {
       yield "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}\n";

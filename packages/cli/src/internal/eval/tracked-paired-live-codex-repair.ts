@@ -2251,13 +2251,19 @@ const executeComparableTrial = async (input: {
     const profileName = capabilityProfile === undefined
       ? input.trial.context.manifest.codex.profile.name
       : capabilityProfileName(input.trial.context.manifest.codex.profile.name, arm);
-    const baseArgs = input.trial.context.manifest.codex.args.map((argument) =>
+    const configuredArgs = input.trial.context.manifest.codex.args.map((argument) =>
       replaceArgument(argument, {
         "{prompt}": prompt,
         "{targetRoot}": target.root,
         [input.trial.context.manifest.codex.profile.name]: profileName
       })
     );
+    // `--ignore-user-config` also suppresses the isolated CODEX_HOME profile;
+    // capability trials have no host config to protect because the sandbox
+    // home contains only the materialized auth/profile files.
+    const baseArgs = capabilityProfile === undefined
+      ? configuredArgs
+      : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
     const capabilityArgs: readonly string[] = [];
     const promptIndex = baseArgs.indexOf(prompt);
     const args = promptIndex < 0
@@ -2365,11 +2371,14 @@ const executeComparableTrial = async (input: {
           execution: { ...execution, decisionApplicationObservation }
         };
       }
-    } catch {
+    } catch (error) {
       decisionApplicationObservation = "persistence_failed";
+      const persistenceReason = error instanceof Error && error.message.trim().length > 0
+        ? `decision application persistence failed: ${error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/giu, "postgres://<redacted>")}`
+        : "decision application persistence failed";
       return {
         status: "unverified",
-        invalidReasons: ["decision application persistence could not be verified"],
+        invalidReasons: [persistenceReason],
         baselineTreeHash: input.trial.baseline.treeHash,
         krnTreeHash: input.trial.krn.treeHash,
         execution: { ...execution, decisionApplicationObservation },
