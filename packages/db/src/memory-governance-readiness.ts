@@ -91,7 +91,7 @@ const assertMemoryGovernanceConstraintViolation = async (
         'db-readiness',
         101,
         'invalid readiness probe',
-        ${client.json(["invalid-readiness-probe"])}
+        ${JSON.stringify(["invalid-readiness-probe"])}
       )
     `;
   } catch {
@@ -116,7 +116,7 @@ const runMemoryGovernanceReadinessProbe = async (
   try {
     const [workspace] = await client<{ id: string }[]>`
       insert into workspaces (slug, display_name, metadata)
-      values (${marker}, 'Memory governance readiness probe', ${client.json({ marker })})
+      values (${marker}, 'Memory governance readiness probe', ${JSON.stringify({ marker })})
       returning id
     `;
 
@@ -126,7 +126,7 @@ const runMemoryGovernanceReadinessProbe = async (
 
     const [project] = await client<{ id: string }[]>`
       insert into projects (workspace_id, slug, display_name, metadata)
-      values (${workspace.id}, ${marker}, 'Memory governance readiness probe', ${client.json({ marker })})
+      values (${workspace.id}, ${marker}, 'Memory governance readiness probe', ${JSON.stringify({ marker })})
       returning id
     `;
 
@@ -156,8 +156,8 @@ const runMemoryGovernanceReadinessProbe = async (
         'db-readiness',
         80,
         'Use as structural DB readiness proof only.',
-        ${client.json([marker])},
-        ${client.json({ marker })}
+        ${JSON.stringify([marker])},
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -186,8 +186,8 @@ const runMemoryGovernanceReadinessProbe = async (
         'db-readiness',
         80,
         'Use as structural DB readiness proof only.',
-        ${client.json([marker])},
-        ${client.json({ marker })}
+        ${JSON.stringify([marker])},
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -213,8 +213,8 @@ const runMemoryGovernanceReadinessProbe = async (
         'db-readiness',
         80,
         'Use as structural DB readiness proof only.',
-        ${client.json([marker])},
-        ${client.json({ marker })}
+        ${JSON.stringify([marker])},
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -231,7 +231,7 @@ const runMemoryGovernanceReadinessProbe = async (
         'prove memory application writes are structurally usable',
         'neutral',
         'memory governance readiness probe',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -250,7 +250,7 @@ const runMemoryGovernanceReadinessProbe = async (
         'memory governance readiness probe',
         'structural readiness',
         ${marker},
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -280,8 +280,8 @@ const runMemoryGovernanceReadinessProbe = async (
         'The probe writes an anti-memory record.',
         'db-readiness',
         80,
-        ${client.json([marker])},
-        ${client.json({ marker })}
+        ${JSON.stringify([marker])},
+        ${JSON.stringify({ marker })}
       )
     `;
 
