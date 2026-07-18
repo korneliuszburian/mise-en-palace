@@ -63,6 +63,48 @@ describe("paired live eval aggregation", () => {
     });
   });
 
+  it("stratifies configured capability and application observations without changing outcomes", () => {
+    const observed: TrackedTrialArtifact = {
+      ...artifact("observed", "passed", "win"),
+      execution: {
+        conditions: { requested: {} as never },
+        capabilityUseObservation: {
+          baseline: { mcpToolCallEvents: 0, skillEvents: 0, genericMcpToolCallEvents: 0, genericSkillEvents: 0 },
+          krn: { mcpToolCallEvents: 2, skillEvents: 1, genericMcpToolCallEvents: 0, genericSkillEvents: 0 }
+        },
+        decisionApplicationObservation: "observed"
+      }
+    };
+    const missing: TrackedTrialArtifact = {
+      ...artifact("missing", "passed", "tie"),
+      execution: {
+        conditions: { requested: {} as never },
+        capabilityUseObservation: {
+          baseline: { mcpToolCallEvents: 0, skillEvents: 0, genericMcpToolCallEvents: 0, genericSkillEvents: 0 },
+          krn: { mcpToolCallEvents: 0, skillEvents: 0, genericMcpToolCallEvents: 0, genericSkillEvents: 0 }
+        },
+        decisionApplicationObservation: "none_observed"
+      }
+    };
+
+    const report = aggregatePairedEvalArtifacts([
+      { family: "weak-json", artifact: observed },
+      { family: "weak-json", artifact: missing }
+    ]);
+
+    expect(report.overall).toMatchObject({
+      wins: 1,
+      ties: 1,
+      qualityTrials: 2,
+      capabilityConfiguredTrials: 2,
+      capabilityUseObservedTrials: 1,
+      capabilityUseMissingTrials: 1,
+      decisionApplicationAttemptedTrials: 2,
+      decisionApplicationObservedTrials: 1,
+      decisionApplicationMissingTrials: 1
+    });
+  });
+
   it("excludes invalid and duplicate runs from quality counts", () => {
     const report = aggregatePairedEvalArtifacts([
       { family: "weak-json", artifact: artifact("same", "passed", "win") },

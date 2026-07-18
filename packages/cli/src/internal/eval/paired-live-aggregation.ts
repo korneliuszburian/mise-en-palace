@@ -21,6 +21,12 @@ export type PairedEvalOutcomeCounts = {
   readonly invalidTrials: number;
   readonly totalInputs: number;
   readonly winRateAmongQuality: number | null;
+  readonly capabilityConfiguredTrials: number;
+  readonly capabilityUseObservedTrials: number;
+  readonly capabilityUseMissingTrials: number;
+  readonly decisionApplicationAttemptedTrials: number;
+  readonly decisionApplicationObservedTrials: number;
+  readonly decisionApplicationMissingTrials: number;
 };
 
 export type PairedEvalInvalidReason = {
@@ -126,7 +132,13 @@ const emptyCounts = (): PairedEvalOutcomeCounts => ({
   qualityTrials: 0,
   invalidTrials: 0,
   totalInputs: 0,
-  winRateAmongQuality: null
+  winRateAmongQuality: null,
+  capabilityConfiguredTrials: 0,
+  capabilityUseObservedTrials: 0,
+  capabilityUseMissingTrials: 0,
+  decisionApplicationAttemptedTrials: 0,
+  decisionApplicationObservedTrials: 0,
+  decisionApplicationMissingTrials: 0
 });
 
 const finalizeCounts = (counts: PairedEvalOutcomeCounts): PairedEvalOutcomeCounts => ({
@@ -154,6 +166,37 @@ const addOutcome = (
   };
 };
 
+const addEvidenceObservations = (
+  counts: PairedEvalOutcomeCounts,
+  artifact: TrackedTrialArtifact
+): PairedEvalOutcomeCounts => {
+  const capability = artifact.execution.capabilityUseObservation;
+  const capabilityConfigured = capability !== undefined;
+  const capabilityObserved = capabilityConfigured && (
+    capability.krn.mcpToolCallEvents > 0 || capability.krn.skillEvents > 0
+  );
+  const application = artifact.execution.decisionApplicationObservation;
+  const applicationAttempted = application !== undefined && application !== "not_attempted";
+
+  return {
+    ...counts,
+    ...(capabilityConfigured ? { capabilityConfiguredTrials: counts.capabilityConfiguredTrials + 1 } : {}),
+    ...(capabilityObserved
+      ? { capabilityUseObservedTrials: counts.capabilityUseObservedTrials + 1 }
+      : capabilityConfigured
+        ? { capabilityUseMissingTrials: counts.capabilityUseMissingTrials + 1 }
+        : {}),
+    ...(applicationAttempted
+      ? { decisionApplicationAttemptedTrials: counts.decisionApplicationAttemptedTrials + 1 }
+      : {}),
+    ...(application === "observed"
+      ? { decisionApplicationObservedTrials: counts.decisionApplicationObservedTrials + 1 }
+      : applicationAttempted
+        ? { decisionApplicationMissingTrials: counts.decisionApplicationMissingTrials + 1 }
+        : {})
+  };
+};
+
 const isQualityArtifact = (artifact: TrackedTrialArtifact): boolean =>
   artifact.status === "passed" &&
   artifact.score !== undefined &&
@@ -177,11 +220,14 @@ const aggregateFamily = (
       continue;
     }
     if (!isQualityArtifact(input.artifact)) invalidReasons.push(...invalidReasonsForArtifact(input.artifact));
-    counts = addOutcome(
+    const nextCounts = addOutcome(
       counts,
       input.artifact.score?.outcome,
       !isQualityArtifact(input.artifact)
     );
+    counts = isQualityArtifact(input.artifact)
+      ? addEvidenceObservations(nextCounts, input.artifact)
+      : nextCounts;
   }
 
   return {
@@ -257,7 +303,13 @@ export const aggregatePairedEvalArtifacts = (
       qualityTrials: sum.qualityTrials + family.qualityTrials,
       invalidTrials: sum.invalidTrials + family.invalidTrials,
       totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null
+      winRateAmongQuality: null,
+      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
+      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
+      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
+      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
+      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
+      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
     }),
     emptyCounts()
   ));
@@ -274,12 +326,14 @@ export const aggregatePairedEvalArtifacts = (
     checkerBoundary: checkerBoundaryFor(inputs),
     proves: [
       "quality outcome counts are deterministic for unique validated run ids",
-      "invalid, blocked, unverified, and duplicate inputs are excluded from quality outcomes"
+      "invalid, blocked, unverified, and duplicate inputs are excluded from quality outcomes",
+      "configured capability-use and decision-application observations are stratified without changing family-local outcomes"
     ],
     doesNotProve: [
       "causal KRN advantage or arbitrary-repository portability",
       "comparability of differently designed evaluation families",
-      "Codex obedience outside the observed bounded trials"
+      "Codex obedience outside the observed bounded trials",
+      "that observed capability use caused a win or that an observed application was useful"
     ],
     invalidReasons: reasonCounts(familyAggregates.flatMap((family) => expandReasonCounts(family.invalidReasons)))
   };
@@ -325,7 +379,13 @@ export const aggregatePairedEvalArtifactDirectories = async (
       qualityTrials: sum.qualityTrials + family.qualityTrials,
       invalidTrials: sum.invalidTrials + family.invalidTrials,
       totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null
+      winRateAmongQuality: null,
+      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
+      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
+      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
+      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
+      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
+      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
     }),
     emptyCounts()
   ));
@@ -388,7 +448,13 @@ const addUnreadableCounts = (
       qualityTrials: sum.qualityTrials + family.qualityTrials,
       invalidTrials: sum.invalidTrials + family.invalidTrials,
       totalInputs: sum.totalInputs + family.totalInputs,
-      winRateAmongQuality: null
+      winRateAmongQuality: null,
+      capabilityConfiguredTrials: sum.capabilityConfiguredTrials + family.capabilityConfiguredTrials,
+      capabilityUseObservedTrials: sum.capabilityUseObservedTrials + family.capabilityUseObservedTrials,
+      capabilityUseMissingTrials: sum.capabilityUseMissingTrials + family.capabilityUseMissingTrials,
+      decisionApplicationAttemptedTrials: sum.decisionApplicationAttemptedTrials + family.decisionApplicationAttemptedTrials,
+      decisionApplicationObservedTrials: sum.decisionApplicationObservedTrials + family.decisionApplicationObservedTrials,
+      decisionApplicationMissingTrials: sum.decisionApplicationMissingTrials + family.decisionApplicationMissingTrials
     }),
     emptyCounts()
   ));
