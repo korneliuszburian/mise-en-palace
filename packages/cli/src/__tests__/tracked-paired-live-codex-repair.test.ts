@@ -6,6 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildTrackedTrialArtifact,
+  codexCapabilityConfigArgs,
+  capabilityUseFalsifierReasons,
+  observeCodexCapabilityUse,
   hashTree,
   extractLiveCodexObedienceOutput,
   parseLiveCodexObedienceOutputJson,
@@ -30,6 +33,48 @@ import type {
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 const profileConfig = "model = \"gpt-5.6-sol\"\n";
+
+describe("Codex capability profiles", () => {
+  it("keeps the baseline empty and emits only declared KRN config overrides", () => {
+    expect(codexCapabilityConfigArgs({ mode: "baseline", mcpServers: [], skillPaths: [] })).toEqual([
+      "--config",
+      "skills.config=[]"
+    ]);
+    expect(codexCapabilityConfigArgs({
+      mode: "krn",
+      mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio", "--read-only"] }],
+      skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+    })).toEqual([
+      "--config",
+      "mcp_servers.krn_decision_packet.command=\"/bin/krn-mcp\"",
+      "--config",
+      "mcp_servers.krn_decision_packet.args=[\"stdio\",\"--read-only\"]",
+      "--config",
+      "mcp_servers.krn_decision_packet.enabled=true",
+      "--config",
+      "skills.config=[{path=\"/home/krn/skills/krn-memory-core/SKILL.md\",enabled=true}]"
+    ]);
+  });
+
+  it("counts only structured capability events, never prose mentions", () => {
+    expect(observeCodexCapabilityUse({ stdout: [
+      "I used the mcp_tool_call skill.",
+      JSON.stringify({ type: "mcp_tool_call", name: "krn_decision_packet" }),
+      JSON.stringify({ item: { type: "skill_loaded", path: "SKILL.md" } })
+    ].join("\n") })).toEqual({ mcpToolCallEvents: 1, skillEvents: 1 });
+    expect(capabilityUseFalsifierReasons({
+      baseline: { mcpToolCallEvents: 0, skillEvents: 0 },
+      krn: { mcpToolCallEvents: 1, skillEvents: 0 }
+    })).toEqual([]);
+    expect(capabilityUseFalsifierReasons({
+      baseline: { mcpToolCallEvents: 1, skillEvents: 0 },
+      krn: { mcpToolCallEvents: 0, skillEvents: 0 }
+    })).toEqual([
+      "baseline emitted a KRN capability-use event",
+      "KRN emitted no structured capability-use event"
+    ]);
+  });
+});
 
 describe("packet context ablation", () => {
   it("keeps packet identity and task while removing decision context", () => {
@@ -497,6 +542,19 @@ describe("tracked paired live Codex repair", () => {
   });
 
   it("rejects malformed and escaped command manifests before starting MCP", async () => {
+    const capabilities = {
+      baseline: { mode: "baseline" as const, mcpServers: [], skillPaths: [] },
+      krn: {
+        mode: "krn" as const,
+        mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio"] }],
+        skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+      }
+    };
+    expect(parseTrackedTrialManifest({ ...manifest, capabilities })).toMatchObject({ capabilities });
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      capabilities: { ...capabilities, baseline: { ...capabilities.baseline, skillPaths: ["/tmp/leak"] } }
+    })).toThrow("Invalid tracked paired-trial manifest");
     expect(() => parseTrackedTrialManifest({ kind: manifest.kind, codex: {} })).toThrow(
       "Invalid tracked paired-trial manifest"
     );
