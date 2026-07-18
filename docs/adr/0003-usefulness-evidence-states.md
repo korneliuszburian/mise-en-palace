@@ -15,6 +15,16 @@ exact packet, subject, run, task, `appliedAt`, and subject-owned target state. A
 later FeedbackDelta owns the usefulness outcome and may derive counters or
 review effects exactly once from that application.
 
+These are separate lifecycles. `FeedbackDelta.status` describes the reviewable
+proposal (`candidate`, `accepted`, `rejected`, or `applied`) and is not itself
+proof that a packet subject was applied. `usefulness_applications` owns that
+packet-bound application fact through its application id and `appliedAt`.
+Therefore an accepted or applied FeedbackDelta without admitted current
+DecisionPacket authority remains historical/unbound readback; it must not
+become a packet caveat or current counter. Conversely, a valid application
+does not implicitly promote the FeedbackDelta status; the later outcome
+admission owns that transition and must retain the exact application identity.
+
 The canonical persisted DecisionPacket issuance owns `packetGeneratedAt` and
 its checksum. A return caller may present that identity but cannot define its
 timestamp. Application admission loads the current issuance for the run and
