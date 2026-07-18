@@ -9,6 +9,7 @@ import {
   hashTree,
   extractLiveCodexObedienceOutput,
   parseLiveCodexObedienceOutputJson,
+  readMcpStructuredContent,
   validateLiveCodexObedienceOutputAgainstPacket,
   parseTrackedTrialManifest,
   promptPacketForContext,
@@ -53,6 +54,25 @@ describe("packet context ablation", () => {
       packetIdentity: packet.packetIdentity,
       packet: { task: packet.packet.task }
     });
+  });
+});
+
+describe("MCP packet readback", () => {
+  it("accepts a JSON packet carried in text content when structuredContent is absent", () => {
+    const packet = { kind: "krn.decisionPacketReadback.v1", packet: { task: { id: "task-1" } } };
+    const stdout = [
+      "pnpm warning",
+      JSON.stringify({ jsonrpc: "2.0", id: 2, result: { content: [{ type: "text", text: JSON.stringify(packet) }] } })
+    ].join("\n");
+
+    expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
+  });
+
+  it("ignores terminal prefixes before the JSON-RPC response", () => {
+    const packet = { kind: "krn.decisionPacketReadback.v1" };
+    const stdout = `\u001b[1;32m${JSON.stringify({ jsonrpc: "2.0", id: 2, result: { structuredContent: packet } })}`;
+
+    expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
   });
 });
 

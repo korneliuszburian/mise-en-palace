@@ -2290,14 +2290,27 @@ const resolveTrustedRelativeRepositoryPath = async (path: string, label: string)
   return resolveTrustedRepositoryPath(path, label);
 };
 
-const readMcpStructuredContent = (stdout: string, requestId: number): unknown => {
+export const readMcpStructuredContent = (stdout: string, requestId: number): unknown => {
   for (const line of stdout.split("\n").reverse()) {
     if (line.trim().length === 0) continue;
     try {
-      const message: unknown = JSON.parse(line);
+      const normalizedLine = line.replace(/\u001b\[[0-?]*[ -\/]*[@-~]/gu, "");
+      const jsonStart = normalizedLine.indexOf("{");
+      if (jsonStart < 0) continue;
+      const message: unknown = JSON.parse(normalizedLine.slice(jsonStart));
       if (!isRecord(message) || message["id"] !== requestId || !isRecord(message["result"])) continue;
       const result = message["result"];
       if (isRecord(result) && result["structuredContent"] !== undefined) return result["structuredContent"];
+      if (!isRecord(result) || !Array.isArray(result["content"])) continue;
+      const textContent = result["content"].find((item): item is JsonRecord =>
+        isRecord(item) && item["type"] === "text" && typeof item["text"] === "string"
+      );
+      if (textContent === undefined) continue;
+      try {
+        return JSON.parse(textContent["text"] as string);
+      } catch {
+        continue;
+      }
     } catch {
       continue;
     }
