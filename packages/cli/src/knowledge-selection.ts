@@ -477,6 +477,10 @@ export const formatKnowledgeSelectionLines = (
         `nextAction=${knowledge.nextAction}`
       ].join(" | ")
     ),
+    ...(selection.reviewOnlyUsefulnessCaveats ?? []).flatMap((caveat) => [
+      `Selected KRN context review-only caveat: subject=${caveat.subjectType}:${caveat.subjectId} | status=${caveat.feedbackStatus} | outcome=${caveat.outcome} | reason=${caveat.reason}`,
+      `Selected KRN context caveat action: review before use; do not promote or mutate Memory Core. Does not prove: ${caveat.doesNotProve}`
+    ]),
     `Selected KRN context reason: ${selection.reason}`,
     `Selected KRN context does not prove: ${selection.doesNotProve}`
   ];

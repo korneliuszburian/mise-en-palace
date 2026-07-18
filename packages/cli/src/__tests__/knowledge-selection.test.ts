@@ -93,6 +93,27 @@ describe("knowledgeSelection", () => {
     expect(result.proof.proves).toContain("memory store selected a knowledge read model");
   });
 
+  it("renders review-only usefulness caveats as a bounded abstention", () => {
+    const selection = knowledgeSelectionFromMetadata({
+      knowledgeSelection: {
+        ...validSelectionMetadata,
+        reviewOnlyUsefulnessCaveats: [{
+          subjectType: "knowledge",
+          subjectId: "ts-boundary-knowledge-parser-exemplar",
+          feedbackStatus: "candidate",
+          outcome: "stale",
+          reason: "Selected memory was stale for this task boundary.",
+          doesNotProve: "Feedback does not prove source truth or authorize promotion."
+        }]
+      }
+    });
+
+    expect(selection).toBeDefined();
+    expect(formatKnowledgeSelectionLines(selection)).toContain(
+      "Selected KRN context caveat action: review before use; do not promote or mutate Memory Core. Does not prove: Feedback does not prove source truth or authorize promotion."
+    );
+  });
+
   it("rejects knowledge read models with prose next actions", () => {
     const result = knowledgeSelectionFromReadbackJson(
       "unknown-first parser exemplar",
