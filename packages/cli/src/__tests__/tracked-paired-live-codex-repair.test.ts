@@ -205,6 +205,15 @@ const manifest: PairedTrialManifest = {
   checker: { heldOut: true, outcome: "win|tie|loss|invalid" }
 };
 
+describe("preregistered memory treatments", () => {
+  it("accepts named treatment labels and rejects unregistered labels", () => {
+    expect(parseTrackedTrialManifest({ ...manifest, treatment: "semantic_governed" }).treatment)
+      .toBe("semantic_governed");
+    expect(() => parseTrackedTrialManifest({ ...manifest, treatment: "opaque_memory" }))
+      .toThrow("Invalid tracked paired-trial manifest");
+  });
+});
+
 const packet = {
   kind: "krn.decisionPacketReadback.v1",
   request: { runId: "run-1" },

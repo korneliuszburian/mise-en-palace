@@ -84,6 +84,14 @@ export type CodexCapabilityProfile = {
 type HeldOutCheckName = NonNullable<PairedRepairScore["krn"]["checks"]>[number]["name"];
 type DecisionApplicationCheckName = Exclude<HeldOutCheckName, "focused_test_control">;
 
+/** Preregistered memory treatment labels for paired Codex trials. */
+export type PairedMemoryTreatment =
+  | "plain"
+  | "semantic_governed"
+  | "episodic_examples"
+  | "procedural_skills"
+  | "observational_summary";
+
 export type PairedTrialManifest = {
   readonly kind: "krn.pairedLiveCodexRepairManifest.v1";
   readonly scenario: string;
@@ -130,6 +138,7 @@ export type PairedTrialManifest = {
   };
   readonly checkerRevision?: string;
   readonly packetContextMode?: "full" | "task-only";
+  readonly treatment?: PairedMemoryTreatment;
 };
 
 export type TrialPacketValidation = {
@@ -298,6 +307,7 @@ export type TrackedTrialArtifact = {
       readonly krn: CodexCapabilityUseObservation;
     };
     readonly packetContextMode?: "full" | "task-only";
+    readonly treatment?: PairedMemoryTreatment;
     readonly baseline?: CommandResult;
     readonly krn?: CommandResult;
     readonly targets?: {
@@ -467,6 +477,13 @@ const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
     );
 };
 
+const isPairedMemoryTreatment = (value: unknown): value is PairedMemoryTreatment =>
+  value === "plain" ||
+  value === "semantic_governed" ||
+  value === "episodic_examples" ||
+  value === "procedural_skills" ||
+  value === "observational_summary";
+
 const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => {
   if (!isRecord(value) || value["kind"] !== "krn.pairedLiveCodexRepairManifest.v1") return false;
   return hasRequiredStrings(value, ["scenario", "sourcePath", "projectId", "taskId", "task", "runId"]) &&
@@ -475,6 +492,7 @@ const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => 
     hasCompleteDecisionApplicationRules(value) &&
     (value["checkerRevision"] === undefined || readString(value["checkerRevision"]) !== undefined) &&
     (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
+    (value["treatment"] === undefined || isPairedMemoryTreatment(value["treatment"])) &&
     (value["capabilities"] === undefined || isManifestCapabilities(value["capabilities"])) &&
     isManifestCodex(value["codex"]) &&
     isManifestContainment(value["containment"]) &&
@@ -1541,6 +1559,7 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
     })
   ) &&
   optionalValue(value, "packetContextMode", (item) => item === "full" || item === "task-only") &&
+  optionalValue(value, "treatment", isPairedMemoryTreatment) &&
   optionalValue(value, "baseline", isCommandResult) &&
   optionalValue(value, "krn", isCommandResult);
 
@@ -1876,6 +1895,7 @@ const trialExecution = (
   ),
   ...(input.execution ?? {}),
   packetContextMode: context.manifest.packetContextMode ?? "full",
+  ...optionalField("treatment", context.manifest.treatment),
   ...optionalField("attempt", input.attempt),
   ...optionalField(
     "liveOutput",
