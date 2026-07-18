@@ -593,6 +593,17 @@ describe("paired live Codex repair eval", () => {
     });
   });
 
+  it("can remove packet injection when capabilities are the experiment variable", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
+      includeDecisionPacket: false
+    });
+    expect(prompts.krn).toBe(prompts.baseline);
+    expect(prompts.krn).not.toContain("private-packet-marker");
+    expect(prompts.delta.deltaBytes).toBe(0);
+  });
+
   it("keeps private repair mechanisms out of baseline participant inputs", async () => {
     const targetRoot = await mkdtemp(join(tmpdir(), "krn-blind-paired-target-"));
     const fixtureRoot = resolve(
