@@ -117,11 +117,16 @@ const sourceClaimEdgesBySource = (
 };
 
 const sourceDecisionEdgesByClaim = (
-  edges: readonly SourceDecisionEdge[]
+  edges: readonly SourceDecisionEdge[],
+  now: IsoTimestamp
 ): ReadonlyMap<SourceClaim["id"], readonly SourceDecisionEdge[]> => {
   const byClaim = new Map<SourceClaim["id"], SourceDecisionEdge[]>();
 
   for (const edge of edges) {
+    if (assessSourceMetadataTemporalValidity(edge.metadata, now).status !== "current") {
+      continue;
+    }
+
     addGroupedValue(byClaim, edge.sourceClaimId, edge);
   }
 
@@ -513,7 +518,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
 }): SourceConsensusTimelineReadback => {
   const incomingEdgesByClaim = sourceClaimEdgesByTarget(input.sourceClaimEdges);
   const outgoingEdgesByClaim = sourceClaimEdgesBySource(input.sourceClaimEdges);
-  const decisionEdgesByClaim = sourceDecisionEdgesByClaim(input.sourceDecisionEdges);
+  const decisionEdgesByClaim = sourceDecisionEdgesByClaim(input.sourceDecisionEdges, input.now);
   const rejectionsByClaim = sourceRejectionsByClaim(input.sourceRejections ?? []);
   const sourceClaimStatusById = new Map(input.sourceClaims.map((claim) => [
     claim.id,

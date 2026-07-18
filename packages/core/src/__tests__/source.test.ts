@@ -364,6 +364,34 @@ describe("source review signals", () => {
   );
 
   test.each(nonCurrentTemporalCases)(
+    "does not let %s SourceDecisionEdges support current source authority",
+    (_description, metadata, temporalValidity) => {
+      const claim = sourceClaim({
+        id: "source-claim-decision-edge-temporal-boundary"
+      });
+      const timeline = buildSourceConsensusTimelineReadback({
+        sourceClaims: [claim],
+        sourceClaimEdges: [],
+        sourceDecisionEdges: [sourceDecisionEdge({
+          id: "source-decision-edge-non-current",
+          sourceClaimId: claim.id,
+          metadata
+        })],
+        now
+      });
+      const entry = timeline.entries[0];
+
+      expect(entry).toMatchObject({
+        state: "caveated_authority",
+        authorityState: "unsupported",
+        decisionSupportEdgeIds: []
+      });
+      expect(entry.temporalValidity).toEqual({ status: "current" });
+      expect(temporalValidity.status).not.toBe("current");
+    }
+  );
+
+  test.each(nonCurrentTemporalCases)(
     "keeps %s dissent relations out of current semantic endpoint summaries",
     (_description, metadata, temporalValidity) => {
       const dissentingClaim = sourceClaim({
