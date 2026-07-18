@@ -3,7 +3,8 @@ import crypto from "node:crypto";
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 import { compileHarnessPlan } from "@krn/harness";
-import type { HarnessRunRepository, SourceClaim } from "@krn/core/repositories/internal";
+import type { HarnessRunRepository } from "@krn/core/repositories/internal";
+import type { SourceClaim } from "@krn/core";
 
 import { createDatabaseRuntime } from "../database-runtime.js";
 
@@ -33,8 +34,26 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
         ) {
           throw new Error("Temporal authority roundtrip requires persisted source chunk and rejection seams");
         }
+        const createSourceChunk = sourceRepository.createSourceChunk;
+        const createSourceRejection = sourceRepository.createSourceRejection;
+        const deprecateSourceClaim = sourceRepository.deprecateSourceClaim;
+        const createSourceDecision = sourceRepository.createSourceDecision;
+        const createSourceDecisionEdge = sourceRepository.createSourceDecisionEdge;
+        const createSourceClaimEdge = sourceRepository.createSourceClaimEdge;
+        const issueDecisionPacketForExecutionRun = runtime.harnessRunRepository.issueDecisionPacketForExecutionRun;
+        if (
+          createSourceChunk === undefined ||
+          createSourceRejection === undefined ||
+          deprecateSourceClaim === undefined ||
+          createSourceDecision === undefined ||
+          createSourceDecisionEdge === undefined ||
+          createSourceClaimEdge === undefined ||
+          issueDecisionPacketForExecutionRun === undefined
+        ) {
+          throw new Error("Temporal authority roundtrip requires persisted source chunk and rejection seams");
+        }
         const claimFor = async (label: string, input: {
-          readonly status?: "proposed" | "accepted" | "rejected";
+          readonly status?: "proposed";
           readonly revisitWhen?: string;
         } = {}): Promise<SourceClaim> => {
           const metadata = {
@@ -52,7 +71,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
             contentHash: `temporal-authority-${marker}-${label}`,
             metadata
           });
-          const chunk = await sourceRepository.createSourceChunk({
+          const chunk = await createSourceChunk({
             sourceArtifactId: artifact.id,
             ordinal: 0,
             content: `Temporal authority fixture ${label}.`,
@@ -84,9 +103,9 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           revisitWhen: "2026-07-01T00:00:00.000Z"
         });
         const unsupported = await claimFor("unsupported");
-        const rejected = await claimFor("rejected", { status: "rejected" });
+        const rejected = await claimFor("rejected");
 
-        const adopt = await sourceRepository.createSourceDecision({
+        const adopt = await createSourceDecision({
           projectId: runtime.projectId,
           sourceClaimId: current.id,
           status: "adopt",
@@ -96,7 +115,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           consumer: "temporal authority roundtrip test",
           metadata: { smokeId: marker }
         });
-        await sourceRepository.createSourceDecision({
+        await createSourceDecision({
           projectId: runtime.projectId,
           sourceClaimId: superseded.id,
           status: "adopt",
@@ -106,7 +125,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           consumer: "temporal authority roundtrip test",
           metadata: { smokeId: marker }
         });
-        await sourceRepository.createSourceDecisionEdge({
+        await createSourceDecisionEdge({
           sourceClaimId: current.id,
           sourceDecisionId: adopt.id,
           targetType: "architecture_decision",
@@ -121,7 +140,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
             doesNotProve: "Decision support does not prove source truth."
           }
         });
-        await sourceRepository.createSourceClaimEdge({
+        await createSourceClaimEdge({
           fromSourceClaimId: current.id,
           toSourceClaimId: superseded.id,
           kind: "supersedes",
@@ -132,7 +151,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
             doesNotProve: "Supersession does not erase historical context."
           }
         });
-        await sourceRepository.createSourceDecision({
+        await createSourceDecision({
           projectId: runtime.projectId,
           sourceClaimId: stale.id,
           status: "adopt",
@@ -142,7 +161,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           consumer: "temporal authority roundtrip test",
           metadata: { smokeId: marker }
         });
-        await sourceRepository.createSourceRejection({
+        await createSourceRejection({
           projectId: runtime.projectId,
           sourceClaimId: rejected.id,
           title: "Rejected temporal authority fixture",
@@ -179,17 +198,18 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           adapter: "codex",
           metadata: { smokeId: marker }
         });
-        const issued = await (runtime.harnessRunRepository as HarnessRunRepository)
-          .issueDecisionPacketForExecutionRun(executionRun.id);
+        const issued = await issueDecisionPacketForExecutionRun(executionRun.id);
         const readback = issued.packet;
         const timeline = readback.sourceConsensus.timeline;
 
-        expect(timeline).toBeDefined();
-        expect(timeline?.currentSourceClaimIds).toContain(current.id);
-        expect(timeline?.supersededSourceClaimIds).toContain(superseded.id);
-        expect(timeline?.staleSourceClaimIds).toContain(stale.id);
-        expect(timeline?.rejectedSourceClaimIds).toContain(rejected.id);
-        expect(timeline?.unknownSourceClaimIds).toContain(unsupported.id);
+        if (timeline === undefined) {
+          throw new Error("Temporal authority roundtrip did not return a source consensus timeline");
+        }
+        expect(timeline.currentSourceClaimIds).toContain(current.id);
+        expect(timeline.supersededSourceClaimIds).toContain(superseded.id);
+        expect(timeline.staleSourceClaimIds).toContain(stale.id);
+        expect(timeline.rejectedSourceClaimIds).toContain(rejected.id);
+        expect(timeline.unknownSourceClaimIds).toContain(unsupported.id);
         expect(readback.sourceClaimIds).toContain(current.id);
         expect(readback.sourceClaimIds).not.toContain(superseded.id);
         expect(readback.sourceClaimIds).not.toContain(stale.id);
@@ -201,7 +221,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
           expect.objectContaining({ subjectType: "source_claim", subjectId: rejected.id })
         ]));
 
-        await sourceRepository.deprecateSourceClaim({
+        await deprecateSourceClaim({
           sourceClaimId: current.id,
           revisitWhen: "2026-07-01T00:00:00.000Z",
           metadata: { smokeId: marker }
@@ -232,8 +252,7 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
             adapter: "codex",
             metadata: { smokeId: marker, phase: "abstention" }
           });
-        const abstainedPacket = await (runtime.harnessRunRepository as HarnessRunRepository)
-          .issueDecisionPacketForExecutionRun(abstainedRun.id);
+        const abstainedPacket = await issueDecisionPacketForExecutionRun(abstainedRun.id);
 
         expect(abstainedPacket.packet.abstentionScore.status).toBe("abstain");
         expect(abstainedPacket.packet.sourceClaimIds).toEqual([]);
