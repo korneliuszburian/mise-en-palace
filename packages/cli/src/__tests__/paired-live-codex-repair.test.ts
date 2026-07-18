@@ -603,6 +603,7 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.krn).toContain("emit one final line of JSON");
     expect(prompts.krn).toContain("decisionId");
     expect(prompts.krn).toContain("nonProof");
+    expect(prompts.krn).toContain("Treat packet.rejectedPathIds as the complete rejected-path authority");
   });
 
   it("can remove packet injection when capabilities are the experiment variable", () => {
