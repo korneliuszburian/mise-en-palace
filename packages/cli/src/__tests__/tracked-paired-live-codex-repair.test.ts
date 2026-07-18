@@ -442,6 +442,24 @@ describe("tracked paired live Codex repair", () => {
     }).valid).toBe(false);
   });
 
+  it("requires an explicit no-rejected-path statement when the packet has none", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "no rejected paths in this packet",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: [],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+  });
+
   it("extracts the final bounded JSON message from Codex logs", () => {
     expect(extractLiveCodexObedienceOutput([
       "codex startup log",

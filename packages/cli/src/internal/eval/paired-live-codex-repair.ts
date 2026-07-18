@@ -300,7 +300,7 @@ export const buildPairedRepairPrompts = (input: {
       "BEGIN KRN DECISION PACKET",
       JSON.stringify(input.decisionPacket),
       "END KRN DECISION PACKET",
-      "After the repair report, emit one final line of JSON and no markdown wrapper with exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit rejected-path statement), staleBoundary (the packet stale boundary or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not invent ids or claims outside the packet."
+      "After the repair report, emit one final line of JSON and no markdown wrapper with exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (the packet stale boundary or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not invent ids or claims outside the packet."
     ].join("\n")
     : baseline;
 

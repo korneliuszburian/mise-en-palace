@@ -541,7 +541,12 @@ const rejectedPathValidationReasons = (
   output: LiveCodexObedienceOutput,
   rejected: readonly string[] | undefined
 ): readonly string[] => {
-  if (rejected === undefined || rejected.length === 0) return ["packet rejected-path ids are unavailable"];
+  if (rejected === undefined) return ["packet rejected-path ids are unavailable"];
+  if (rejected.length === 0) {
+    return /no rejected|none rejected|no rejected path/i.test(output.rejectedPath)
+      ? []
+      : ["live output does not preserve the packet's explicit no-rejected-path boundary"];
+  }
   return rejected.some((id) => output.rejectedPath.includes(id))
     ? []
     : ["live output does not identify a packet rejected path"];
