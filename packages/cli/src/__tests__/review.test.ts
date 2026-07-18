@@ -279,7 +279,10 @@ describe("runCli", () => {
   });
 
   it("persists accepted review feedback as accepted lifecycle state", async () => {
-    const dependencies = createNoStoreCompilerDependencies({ now: () => now });
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
     let capturedInput: CreateReviewFeedbackOnceInput | undefined;
     const harnessRunRepository = {
       ...dependencies.harnessRunRepository,
