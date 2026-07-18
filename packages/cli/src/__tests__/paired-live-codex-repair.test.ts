@@ -177,6 +177,28 @@ describe("paired live Codex repair eval", () => {
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
   });
 
+  it("does not require a ceremonial result type name for user-create", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "type UserCreationOutcome = { state: 'created' | 'rejected'; user?: { role: 'admin' | 'member' } }; export function createUserFromJson(): UserCreationOutcome { return { state: 'created' }; }",
+        "tests/userService.test.ts": "rejected"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: true
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+  });
+
   it("fails a family contract when an env boundary leaks the guarded behavior", () => {
     const score = scoreTargetRepair({
       family: "env-config",

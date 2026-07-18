@@ -352,10 +352,10 @@ const checkFamilyContract = (
         /dead_lettered/.test(job) &&
         (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job))
       : family === "user-create"
-        ? /CreateUserResult/.test(source(files, "src/userService.ts")) &&
-          /(?:status|state|kind)\s*[:?]/.test(source(files, "src/userService.ts")) &&
+        ? /(?:status|state|kind)\s*[:?]/.test(source(files, "src/userService.ts")) &&
           !/CreatedUser\s*\|\s*null/.test(source(files, "src/userService.ts")) &&
-          /admin/.test(tests) && /member/.test(tests)
+          /admin/.test(source(files, "src/userService.ts")) &&
+          /member/.test(source(files, "src/userService.ts"))
         : false;
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
   const passed = passedContract && passedCommands && runtimeAvailable && runtimeObservationPassed(family, observations);
