@@ -557,9 +557,15 @@ const staleBoundaryValidationReasons = (
   stale: readonly string[] | undefined
 ): readonly string[] => {
   if (stale === undefined) return ["packet stale-boundary ids are unavailable"];
-  return stale.some((id) => !output.staleBoundary.includes(id))
-    ? ["live output omits a packet stale boundary"]
-    : [];
+  const reasons: string[] = [];
+  if (stale.some((id) => !output.staleBoundary.includes(id))) {
+    reasons.push("live output omits a packet stale boundary");
+  }
+  const uuidTokens = output.staleBoundary.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi) ?? [];
+  if (uuidTokens.some((id) => !stale.includes(id))) {
+    reasons.push("live output invents a stale boundary id outside packet authority");
+  }
+  return reasons;
 };
 
 const nonProofValidationReasons = (

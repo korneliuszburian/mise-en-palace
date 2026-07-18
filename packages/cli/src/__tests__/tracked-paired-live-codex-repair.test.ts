@@ -442,6 +442,27 @@ describe("tracked paired live Codex repair", () => {
     }).valid).toBe(false);
   });
 
+  it("rejects an invented UUID in the stale boundary", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: "stale decision 00000000-0000-4000-8000-000000000000",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({
+      valid: false,
+      reasons: ["live output invents a stale boundary id outside packet authority"]
+    });
+  });
+
   it("requires an explicit no-rejected-path statement when the packet has none", () => {
     const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
       decisionId: "decision-a",
