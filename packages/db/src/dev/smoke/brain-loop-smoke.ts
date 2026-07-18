@@ -134,6 +134,9 @@ export interface BrainLoopSmokeReport {
   revisionRunIncludedReplacementDecisionCount: number;
   revisionRunSourceMemoryInclusionCount: number;
   revisionRunSupersededSourceExcluded: boolean;
+  revisionPacketReplacementMemoryRefCount: number;
+  revisionPacketSupersededMemoryRefCount: number;
+  revisionPacketSupersessionExplanation: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -1340,6 +1343,16 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === revisionReplacementMemory.id
     ).length;
+    const revisionDecisionPacket = decisionPacketForCompiledPlan(revisionCompile);
+    const revisionPacketReplacementMemoryRefCount = revisionDecisionPacket.memoryRefs.filter(
+      (memoryRef) => memoryRef === revisionReplacementMemory.id
+    ).length;
+    const revisionPacketSupersededMemoryRefCount = revisionDecisionPacket.memoryRefs.filter(
+      (memoryRef) => memoryRef === memoryRecord.id
+    ).length;
+    const revisionPacketSupersessionExplanation =
+      revisionDecisionPacket.rejectedPathIds.includes(memoryRecord.id) ||
+      revisionDecisionPacket.supersededPathIds.includes(memoryRecord.id);
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
@@ -1591,6 +1604,14 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "revision run activation decision",
         passed: revisionRunIncludedReplacementDecisionCount === 1
+      },
+      {
+        label: "revision DecisionPacket selects replacement memory",
+        passed: revisionPacketReplacementMemoryRefCount === 1
+      },
+      {
+        label: "revision DecisionPacket excludes superseded memory",
+        passed: revisionPacketSupersededMemoryRefCount === 0
       }
     ], readbackError);
 
@@ -1682,6 +1703,9 @@ export const runBrainLoopSmokeCheck = async (
       revisionRunIncludedReplacementDecisionCount,
       revisionRunSourceMemoryInclusionCount: revisionRunSourceMemoryInclusions.length,
       revisionRunSupersededSourceExcluded: revisionRunSourceMemoryInclusions.length === 0,
+      revisionPacketReplacementMemoryRefCount,
+      revisionPacketSupersededMemoryRefCount,
+      revisionPacketSupersessionExplanation,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
