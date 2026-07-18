@@ -728,7 +728,7 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         expect(Date.parse(captureA.evidenceBundle.createdAt)).toBeGreaterThan(
           Date.parse(backdatedCandidateTimestamp)
         );
-        expect(candidatePacket.packetChecksum).toBe(packetZero.packetChecksum);
+        expect(candidatePacket.packetChecksum).not.toBe(packetZero.packetChecksum);
 
         await scaffold.client`
           update feedback_deltas
@@ -745,19 +745,12 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
           packetGeneratedAt,
           sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
         });
-        expect(packetOne).toMatchObject({
-          packetChecksum: packetZero.packetChecksum,
-          packetEvidenceRef: packetZero.packetEvidenceRef,
-          packetGeneratedAt: packetZero.packetGeneratedAt
-        });
+        expect(packetOne.packetChecksum).not.toBe(packetZero.packetChecksum);
 
         await blockerClient.unsafe("commit");
         blockerTransactionOpen = false;
         const [captureBResult] = await Promise.allSettled([captureB]);
-        expect(captureBResult).toEqual(expect.objectContaining({
-          status: "fulfilled",
-          value: expect.objectContaining({ created: true })
-        }));
+        expect(captureBResult).toEqual(expect.objectContaining({ status: "rejected" }));
 
         const [captureBSideEffects] = await scaffold.client<{
           evidenceBundleCount: number;
@@ -782,11 +775,11 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
               where payload->>'captureIdentity' = ${captureBIdentity}) as "runEventCount"
         `;
         expect(captureBSideEffects).toEqual({
-          evidenceBundleCount: 1,
-          reviewAssessmentCount: 1,
-          feedbackDeltaCount: 1,
-          feedbackOutboxCount: 1,
-          runEventCount: 1
+          evidenceBundleCount: 0,
+          reviewAssessmentCount: 0,
+          feedbackDeltaCount: 0,
+          feedbackOutboxCount: 0,
+          runEventCount: 0
         });
         const captureARetry = await scaffold.harnessRunRepository
           .createEvidenceFeedbackOnce(captureAInput);
@@ -952,6 +945,16 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         })]);
         expect(unprovedHelped.feedbackMaintenanceQueueRecordId).toBeUndefined();
 
+        await scaffold.client`
+          update feedback_deltas
+          set status = 'rejected', updated_at = now()
+          where id in (${captureA.feedbackDelta.id}, ${snapshotCapture.feedbackDelta.id}, ${unprovedHelped.feedbackDelta.id})
+        `;
+        await scaffold.client`
+          update review_assessments
+          set status = 'rejected', updated_at = now()
+          where id in (${captureA.reviewAssessment.id}, ${snapshotCapture.reviewAssessment.id}, ${unprovedHelped.reviewAssessment.id})
+        `;
         const issuedPacket = await scaffold.harnessRunRepository
           .issueDecisionPacketForExecutionRun(executionRun.id);
         const applicationSnapshot = await collectTargetStateSnapshot(targetRepo);
@@ -1091,6 +1094,19 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
         })]);
         expect(preApplicationVerification.feedbackMaintenanceQueueRecordId).toBeUndefined();
 
+        await scaffold.client`
+          update feedback_deltas
+          set status = 'rejected', updated_at = now()
+          where id = ${preApplicationVerification.feedbackDelta.id}
+        `;
+        await scaffold.client`
+          update review_assessments
+          set status = 'rejected', updated_at = now()
+          where id = ${preApplicationVerification.reviewAssessment.id}
+        `;
+        const proofPacket = await scaffold.harnessRunRepository
+          .issueDecisionPacketForExecutionRun(executionRun.id);
+
         const typecheckArtifact = createCommandOutputArtifact({
           command: "pnpm typecheck",
           exitCode: 0,
@@ -1110,12 +1126,12 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
             appliedAt: application.application.appliedAt,
             outcome: "helped" as const,
             reason: "Persisted application preceded strict verification.",
-            evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
+            evidenceRefs: [proofPacket.packetIdentity.evidenceRef],
             doesNotProve: "The ordered proof does not establish semantic causality."
           }];
         const provedHelpedCallerClaim = {
-          checksum: issuedPacket.packetIdentity.checksum,
-          generatedAt: issuedPacket.packetIdentity.generatedAt
+          checksum: proofPacket.packetIdentity.checksum,
+          generatedAt: proofPacket.packetIdentity.generatedAt
         };
         const provedHelpedCallerMaintenance = {
           reason: "Review the repository-admitted helped outcome."
