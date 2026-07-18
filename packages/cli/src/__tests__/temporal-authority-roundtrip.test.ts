@@ -28,7 +28,8 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
         const sourceRepository = runtime.sourceRepository;
         if (
           sourceRepository.createSourceChunk === undefined ||
-          sourceRepository.createSourceRejection === undefined
+          sourceRepository.createSourceRejection === undefined ||
+          sourceRepository.deprecateSourceClaim === undefined
         ) {
           throw new Error("Temporal authority roundtrip requires persisted source chunk and rejection seams");
         }
@@ -199,6 +200,43 @@ describe.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
         expect(readback.contextExclusions).toEqual(expect.arrayContaining([
           expect.objectContaining({ subjectType: "source_claim", subjectId: rejected.id })
         ]));
+
+        await sourceRepository.deprecateSourceClaim({
+          sourceClaimId: current.id,
+          revisitWhen: "2026-07-01T00:00:00.000Z",
+          metadata: { smokeId: marker }
+        });
+        const abstained = await compileHarnessPlan({
+          workspaceId: runtime.workspaceId,
+          projectId: runtime.projectId,
+          operatorIntent: {
+            source: "cli",
+            rawIntent: "Use the current temporal authority roundtrip guidance after invalidation."
+          },
+          taskContract: {
+            title: "Abstain without current temporal authority",
+            objective: "Use the current temporal authority roundtrip guidance after invalidation.",
+            constraints: ["do not activate historical source claims"],
+            nonGoals: ["do not infer a replacement authority"],
+            acceptance: ["the packet abstains when no safe authority remains"],
+            metadata: { smokeId: marker, phase: "abstention" }
+          },
+          metadata: { smokeId: marker, phase: "abstention" }
+        }, {
+          ...runtime.compilerDependencies,
+          now: () => now
+        });
+        const abstainedRun = await (runtime.harnessRunRepository as HarnessRunRepository)
+          .createExecutionRun({
+            harnessPlanId: abstained.harnessPlan.id,
+            adapter: "codex",
+            metadata: { smokeId: marker, phase: "abstention" }
+          });
+        const abstainedPacket = await (runtime.harnessRunRepository as HarnessRunRepository)
+          .issueDecisionPacketForExecutionRun(abstainedRun.id);
+
+        expect(abstainedPacket.packet.abstentionScore.status).toBe("abstain");
+        expect(abstainedPacket.packet.sourceClaimIds).toEqual([]);
       } finally {
         await runtime.close();
         await client`delete from outbox_events where payload->>'smokeId' = ${marker}`;
