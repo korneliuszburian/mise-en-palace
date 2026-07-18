@@ -124,6 +124,10 @@ describe("paired live eval aggregation", () => {
       scoreLevel: "family-local-only",
       reason: expect.stringContaining("must not be compared across families")
     });
+    expect(report.checkerBoundary).toMatchObject({
+      status: "unknown",
+      reason: expect.stringContaining("do not currently carry a checker revision")
+    });
     expect(report.families.find((family) => family.family === "user-create")).toMatchObject({
       qualityTrials: 0,
       invalidTrials: 0,

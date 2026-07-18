@@ -43,6 +43,11 @@ export type PairedEvalAggregate = {
     readonly scoreLevel: "family-local-only";
     readonly reason: string;
   };
+  readonly checkerBoundary: {
+    readonly status: "unknown" | "single-revision" | "mixed-revisions";
+    readonly revision?: string;
+    readonly reason: string;
+  };
   readonly proves: readonly string[];
   readonly doesNotProve: readonly string[];
   readonly invalidReasons: readonly PairedEvalInvalidReason[];
@@ -222,6 +227,10 @@ export const aggregatePairedEvalArtifacts = (
       outcomeLevel: "cross-family",
       scoreLevel: "family-local-only",
       reason: "win/tie/loss outcomes share a bounded contract gate; numeric arm scores count family-specific checks and must not be compared across families."
+    },
+    checkerBoundary: {
+      status: "unknown",
+      reason: "Tracked artifacts do not currently carry a checker revision; callers must not interpret the aggregate as a single-version estimate without an explicit partition."
     },
     proves: [
       "quality outcome counts are deterministic for unique validated run ids",
