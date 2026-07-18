@@ -197,7 +197,7 @@ const sourceClaimEndpointIdsByKindAndStatus = (
   now: IsoTimestamp
 ): readonly SourceClaim["id"][] =>
   sourceClaimEndpointIdsByKind(
-    edges.filter((edge) => sourceClaimEdgeIsCurrent(edge, now)),
+    edges.filter((edge) => sourceClaimEdgeCanAffectConsensus(edge, now)),
     kinds,
     endpoint
   ).filter((sourceClaimId) =>
@@ -292,6 +292,12 @@ const sourceConsensusRelationEvidenceForEdge = (
   };
 };
 
+const sourceClaimEdgeHasSupportRef = (edge: SourceClaimEdge): boolean => {
+  const metadata = readSourceRelationMetadataReadback(edge.metadata);
+
+  return metadata.evidenceRefs.length > 0 || metadata.sourceDecisionRef !== undefined;
+};
+
 const sourceConsensusRelationEvidence = (input: {
   readonly incomingEdges: readonly SourceClaimEdge[];
   readonly outgoingEdges: readonly SourceClaimEdge[];
@@ -309,6 +315,11 @@ const sourceClaimEdgeIsCurrent = (
   edge: SourceClaimEdge,
   now: IsoTimestamp
 ): boolean => assessSourceMetadataTemporalValidity(edge.metadata, now).status === "current";
+
+const sourceClaimEdgeCanAffectConsensus = (
+  edge: SourceClaimEdge,
+  now: IsoTimestamp
+): boolean => sourceClaimEdgeIsCurrent(edge, now) && sourceClaimEdgeHasSupportRef(edge);
 
 const isUnknownSourceConsensusEntry = (
   entry: SourceConsensusTimelineEntry
@@ -412,7 +423,7 @@ const sourceClaimEndpointIdsByKindAndRankDownAuthority = (
   sourceClaimEndpointIdsByKind(
     edges.filter((edge) =>
       rankDownAuthoritySourceClaimIds.has(edge.fromSourceClaimId) &&
-      sourceClaimEdgeIsCurrent(edge, now)
+      sourceClaimEdgeCanAffectConsensus(edge, now)
     ),
     kinds,
     endpoint,
@@ -432,10 +443,10 @@ const sourceConsensusTimelineEntryForClaim = (input: {
   readonly now: IsoTimestamp;
 }): SourceConsensusTimelineEntry => {
   const currentIncomingEdges = input.incomingEdges.filter((edge) =>
-    sourceClaimEdgeIsCurrent(edge, input.now)
+    sourceClaimEdgeCanAffectConsensus(edge, input.now)
   );
   const currentOutgoingEdges = input.outgoingEdges.filter((edge) =>
-    sourceClaimEdgeIsCurrent(edge, input.now)
+    sourceClaimEdgeCanAffectConsensus(edge, input.now)
   );
   const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
   const supersededBySourceClaimIds = sourceClaimEndpointIdsByKindAndRankDownAuthority(

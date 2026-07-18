@@ -417,6 +417,35 @@ describe("source review signals", () => {
       .toBe("source-claim-missing-endpoint");
   });
 
+  test("does not let an unsupported current supersession edge demote history", () => {
+    const currentClaim = sourceClaim({ id: "source-claim-unsupported-current" });
+    const historicalClaim = sourceClaim({ id: "source-claim-unsupported-history" });
+    const timeline = buildSourceConsensusTimelineReadback({
+      sourceClaims: [currentClaim, historicalClaim],
+      sourceClaimEdges: [sourceClaimEdge({
+        id: "source-claim-edge-unsupported-supersession",
+        fromSourceClaimId: currentClaim.id,
+        toSourceClaimId: historicalClaim.id,
+        kind: "supersedes"
+      })],
+      sourceDecisionEdges: [sourceDecisionEdge({
+        sourceClaimId: currentClaim.id
+      }), sourceDecisionEdge({
+        sourceClaimId: historicalClaim.id
+      })],
+      now
+    });
+
+    expect(timeline.supersededSourceClaimIds).toEqual([]);
+    expect(timeline.entries.find((entry) => entry.sourceClaimId === historicalClaim.id))
+      .toMatchObject({
+        state: "current_authority",
+        supersededBySourceClaimIds: []
+      });
+    expect(timeline.entries.find((entry) => entry.sourceClaimId === historicalClaim.id)
+      ?.relationEvidence[0]?.evidenceGaps).toEqual(["missing_relation_support_ref"]);
+  });
+
   test.each(nonCurrentTemporalCases)(
     "keeps %s dissent relations out of current semantic endpoint summaries",
     (_description, metadata, temporalValidity) => {
@@ -796,7 +825,7 @@ describe("source review signals", () => {
       evidenceRefs: ["source-artifact:frontend-template-current"],
       rawEvidenceCitationRefs: ["forum_post:frontend-template-consensus#char=12-84"],
       sourceRanges: ["forum_post:frontend-template-consensus#char=12-84"],
-      dissentingSourceClaimIds: ["claim-rejected"],
+      dissentingSourceClaimIds: [],
       supersededBySourceClaimIds: [],
       supersedesSourceClaimIds: ["claim-old-standard"],
       relationEvidence: expect.arrayContaining([
@@ -914,7 +943,10 @@ describe("source review signals", () => {
           id: "edge-dissenting-contradicts-current",
           fromSourceClaimId: dissentingClaim.id,
           toSourceClaimId: currentStandard.id,
-          kind: "contradicts"
+          kind: "contradicts",
+          metadata: {
+            evidenceRef: "source-artifact:dissenting-contradiction"
+          }
         })
       ],
       sourceDecisionEdges: [
