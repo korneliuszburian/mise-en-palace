@@ -212,7 +212,8 @@ describe("evidence bundle completeness", () => {
         status: "passed",
         provenance: "captured_output_file",
         exitCode: 0,
-        outputRef: "missing-output.txt"
+        outputRef: "missing-output.txt",
+        capturedAt: now
       },
       reason: "unresolved_output_reference"
     }] as const satisfies readonly {
@@ -451,6 +452,25 @@ describe("evidence bundle completeness", () => {
       status: "ineligible",
       reason: "command_output_artifact_started_before_packet_issuance"
     });
+  });
+
+  test("accepts captured output files as execution-backed command proof", () => {
+    const artifact = commandOutputArtifact();
+    const command = toEvidenceCommandReadback({
+      command: artifact.command,
+      status: "passed",
+      provenance: "captured_output_file",
+      exitCode: artifact.exitCode,
+      capturedAt: artifact.completedAt,
+      outputRef: artifact.outputRef
+    });
+
+    expect(assessEvidenceCommandHelpedProof({
+      command,
+      packetGeneratedAt,
+      resolveCommandOutputArtifact: () => artifact,
+      sha256Hex
+    })).toEqual({ status: "eligible" });
   });
 
   test("requires every distinct required command while optional rows remain informative", () => {

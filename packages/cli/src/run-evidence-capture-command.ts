@@ -1119,7 +1119,8 @@ const usefulnessEvidenceClassFor = (input: {
       input.commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
     ),
     verificationCommands: input.commands.filter((command) =>
-      command.kind === "command_runner" && target?.commands.includes(command.command) === true
+      (command.kind === "command_runner" || command.kind === "captured_output_file") &&
+      target?.commands.includes(command.command) === true
     )
   };
 };
@@ -1136,8 +1137,9 @@ const verificationFollowsApplication = (input: {
     input.evidenceClass.requiredVerificationCommands.every((requiredCommand) =>
       input.evidenceClass.verificationCommands.some((command) =>
         command.command === requiredCommand &&
-        command.kind === "command_runner" &&
+        (command.kind === "command_runner" || command.kind === "captured_output_file") &&
         command.outputRef !== undefined &&
+        command.capturedAt !== undefined &&
         Date.parse(
           input.evidenceClass.verificationArtifactsByRef.get(command.outputRef)?.startedAt ?? ""
         ) > Date.parse(appliedAt) &&

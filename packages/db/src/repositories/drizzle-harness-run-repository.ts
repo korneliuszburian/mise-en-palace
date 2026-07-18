@@ -1386,10 +1386,12 @@ const verificationFollowsApplication = (input: {
 
   return input.evidence.commands
   .map(toEvidenceCommandReadback)
-  .filter((command): command is Extract<EvidenceCommandReadback, { kind: "command_runner" }> =>
-    command.kind === "command_runner" && input.requiredCommands.has(command.command)
+  .filter((command): command is Extract<EvidenceCommandReadback, { kind: "command_runner" | "captured_output_file" }> =>
+    (command.kind === "command_runner" || command.kind === "captured_output_file") &&
+    input.requiredCommands.has(command.command)
   )
   .every((command) => command.outputRef !== undefined &&
+    command.capturedAt !== undefined &&
     Date.parse(artifactsByRef.get(command.outputRef)?.startedAt ?? "") >
       Date.parse(input.appliedAt) &&
     Date.parse(command.capturedAt) > Date.parse(input.appliedAt));
