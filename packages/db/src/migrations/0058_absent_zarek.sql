@@ -1,0 +1,2 @@
+ALTER TABLE "activation_runtime_proofs" DROP CONSTRAINT "activation_runtime_proofs_kind_known";--> statement-breakpoint
+ALTER TABLE "activation_runtime_proofs" ADD CONSTRAINT "activation_runtime_proofs_kind_known" CHECK ("activation_runtime_proofs"."proof_kind" in ('activation', 'target_repo_harness', 'init_connect', 'codex_adapter'));

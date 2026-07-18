@@ -1055,7 +1055,8 @@ const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runCodexAdapterSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("codex-adapter-smoke")
+    smokeId: runtime.createId("codex-adapter-smoke"),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(

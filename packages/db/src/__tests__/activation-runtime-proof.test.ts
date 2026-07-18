@@ -10,6 +10,7 @@ import {
 import {
   persistActivationRuntimeProof,
   postgresStoreIdentity,
+  readCurrentCodexAdapterRuntimeProof,
   readCurrentActivationRuntimeProof,
   readCurrentInitConnectRuntimeProof,
   readCurrentTargetRepoRuntimeProof
@@ -144,6 +145,48 @@ describe.skipIf(databaseUrl === undefined)("activation runtime proof", () => {
       databaseUrl: databaseUrl!,
       environmentFingerprintId: "foreign-init-connect-proof",
       scopeKey,
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toBeUndefined();
+  });
+
+  it("rejects a foreign fingerprint for the codex adapter proof", async () => {
+    const capturedAt = new Date();
+    const environmentFingerprintId = `codex-adapter-proof-${randomUUID()}`;
+    const id = await persistActivationRuntimeProof(client, {
+      proofKind: "codex_adapter",
+      scopeKey: "codex_adapter",
+      environmentFingerprintId,
+      storeIdentity: postgresStoreIdentity(databaseUrl!),
+      status: "passed",
+      capturedAt,
+      cleanupRemainingMarkerCount: 0,
+      report: {
+        commandStatus: "passed",
+        observationOnly: true,
+        sourceReadback: true,
+        memoryReadback: true,
+        nonMutatingBoundary: true,
+        codexInvocationCount: 0,
+        boundaryChecks: [
+          "persisted-readback",
+          "rendered-contract",
+          "bounded-selected-context",
+          "stale-memory-exclusion",
+          "no-codex-invocation"
+        ]
+      }
+    });
+    insertedIds.push(id);
+
+    await expect(readCurrentCodexAdapterRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId,
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toMatchObject({ id, proofKind: "codex_adapter" });
+
+    await expect(readCurrentCodexAdapterRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId: "foreign-codex-adapter-proof",
       now: new Date(capturedAt.getTime() + 60_000)
     })).resolves.toBeUndefined();
   });
