@@ -169,15 +169,18 @@ const supersedingEdgeKinds = new Set<SourceClaimEdgeKind>([
 const sourceClaimEndpointIdsByKind = (
   edges: readonly SourceClaimEdge[],
   kinds: ReadonlySet<SourceClaimEdgeKind>,
-  endpoint: "from" | "to"
+  endpoint: "from" | "to",
+  knownSourceClaimIds?: ReadonlySet<SourceClaim["id"]>
 ): readonly SourceClaim["id"][] => {
   const sourceClaimIds: SourceClaim["id"][] = [];
 
   for (const edge of edges) {
     if (kinds.has(edge.kind)) {
-      sourceClaimIds.push(
-        endpoint === "from" ? edge.fromSourceClaimId : edge.toSourceClaimId
-      );
+      const sourceClaimId = endpoint === "from" ? edge.fromSourceClaimId : edge.toSourceClaimId;
+
+      if (knownSourceClaimIds === undefined || knownSourceClaimIds.has(sourceClaimId)) {
+        sourceClaimIds.push(sourceClaimId);
+      }
     }
   }
 
@@ -403,6 +406,7 @@ const sourceClaimEndpointIdsByKindAndRankDownAuthority = (
   kinds: ReadonlySet<SourceClaimEdgeKind>,
   endpoint: "from" | "to",
   rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>,
+  knownSourceClaimIds: ReadonlySet<SourceClaim["id"]>,
   now: IsoTimestamp
 ): readonly SourceClaim["id"][] =>
   sourceClaimEndpointIdsByKind(
@@ -411,7 +415,8 @@ const sourceClaimEndpointIdsByKindAndRankDownAuthority = (
       sourceClaimEdgeIsCurrent(edge, now)
     ),
     kinds,
-    endpoint
+    endpoint,
+    knownSourceClaimIds
   );
 
 const sourceConsensusTimelineEntryForClaim = (input: {
@@ -438,6 +443,7 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     supersedingEdgeKinds,
     "from",
     input.rankDownAuthoritySourceClaimIds,
+    new Set(input.sourceClaims.map((claim) => claim.id)),
     input.now
   );
   const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
@@ -491,18 +497,21 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentIncomingEdges,
       supportEdgeKinds,
-      "from"
+      "from",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     dissentingSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentIncomingEdges,
       dissentEdgeKinds,
-      "from"
+      "from",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     supersededBySourceClaimIds,
     supersedesSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentOutgoingEdges,
       supersedingEdgeKinds,
-      "to"
+      "to",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     rejectionIds: input.rejectionIds,
     caveats: authorityAssessment.caveats

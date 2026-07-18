@@ -391,6 +391,32 @@ describe("source review signals", () => {
     }
   );
 
+  test("does not expose missing relation endpoints as semantic source claims", () => {
+    const currentClaim = sourceClaim({ id: "source-claim-known-endpoint" });
+    const timeline = buildSourceConsensusTimelineReadback({
+      sourceClaims: [currentClaim],
+      sourceClaimEdges: [sourceClaimEdge({
+        id: "source-claim-edge-missing-endpoint",
+        fromSourceClaimId: "source-claim-missing-endpoint",
+        toSourceClaimId: currentClaim.id,
+        kind: "supports",
+        metadata: {
+          consumer: "source consensus endpoint boundary",
+          doesNotProve: "A missing endpoint does not prove source support.",
+          evidenceRef: "source-artifact:missing-endpoint"
+        }
+      })],
+      sourceDecisionEdges: [sourceDecisionEdge({
+        sourceClaimId: currentClaim.id
+      })],
+      now
+    });
+
+    expect(timeline.entries[0]?.supportingSourceClaimIds).toEqual([]);
+    expect(timeline.entries[0]?.relationEvidence[0]?.relatedSourceClaimId)
+      .toBe("source-claim-missing-endpoint");
+  });
+
   test.each(nonCurrentTemporalCases)(
     "keeps %s dissent relations out of current semantic endpoint summaries",
     (_description, metadata, temporalValidity) => {
