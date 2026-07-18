@@ -1,7 +1,11 @@
-import { strict as assert } from "node:assert";
-
 import { parseRuntimeConfig } from "../src/config.js";
 import { redactConfigReadback } from "../src/configReadback.js";
+
+const assertEqual = (actual: unknown, expected: unknown): void => {
+  if (actual !== expected) {
+    throw new Error(`Expected ${String(expected)}, received ${String(actual)}`);
+  }
+};
 
 const parsed = parseRuntimeConfig({
   MODE: "production",
@@ -9,7 +13,7 @@ const parsed = parseRuntimeConfig({
   FEATURE_ENABLED: "true"
 });
 
-assert.equal(parsed.kind, "valid");
-assert.equal(parseRuntimeConfig({ MODE: "local", PORT: "3000" }).kind, "invalid_config");
-assert.equal(parseRuntimeConfig({ MODE: "production", PORT: "abc" }).kind, "invalid_config");
-assert.equal(redactConfigReadback({ API_TOKEN: "secret" }).API_TOKEN, "[redacted]");
+assertEqual(parsed.kind, "valid");
+assertEqual(parseRuntimeConfig({ MODE: "local", PORT: "3000" }).kind, "invalid_config");
+assertEqual(parseRuntimeConfig({ MODE: "production", PORT: "abc" }).kind, "invalid_config");
+assertEqual(redactConfigReadback({ API_TOKEN: "secret" }).API_TOKEN, "[redacted]");
