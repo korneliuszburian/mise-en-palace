@@ -740,6 +740,9 @@ const sourceClaimEdgeKindsRequiringSupportRef = new Set<SourceClaimEdgeKind>([
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
 
+const hasTextList = (value: unknown): boolean =>
+  Array.isArray(value) && value.some((item) => typeof item === "string" && item.trim().length > 0);
+
 const canSourceDecisionSeedKnowledge = (
   projectId: ProjectId,
   source: SourceDecisionKnowledgeSource
@@ -882,7 +885,8 @@ export const assertSourceClaimEdgeGovernance = (
   if (
     sourceClaimEdgeKindsRequiringSupportRef.has(input.kind) &&
     !hasText(input.metadata.evidenceRef) &&
-    !hasText(input.metadata.sourceDecisionRef)
+    !hasText(input.metadata.sourceDecisionRef) &&
+    !hasTextList(input.metadata.evidenceRefs)
   ) {
     throw new Error(
       `SourceClaimEdge ${input.kind} requires metadata.evidenceRef or metadata.sourceDecisionRef`
