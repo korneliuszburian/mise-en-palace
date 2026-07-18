@@ -14,7 +14,8 @@ import {
   capabilityPlanToolBoundariesMetadataKey,
   decisionPacketFormatVersion,
   decisionPacketNegativePathsForContext,
-  parseMemorySupersessionTimelineReadback
+  parseMemorySupersessionTimelineReadback,
+  parseSourceConsensusTimelineReadback
 } from "@krn/core";
 import {
   applyContextROI,
@@ -152,6 +153,9 @@ export const decisionPacketForCompiledPlan = (
   const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
     result.contextAssembly.metadata["memorySupersessionTimeline"]
   );
+  const sourceConsensusTimeline = parseSourceConsensusTimelineReadback(
+    result.contextAssembly.metadata["sourceConsensusTimeline"]
+  );
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -203,6 +207,7 @@ export const decisionPacketForCompiledPlan = (
       sourceRejectionIds: [],
       conflictedDecisionIds: [],
       evidenceGapIds: [],
+      ...(sourceConsensusTimeline === undefined ? {} : { timeline: sourceConsensusTimeline }),
       doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
     },
     ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
@@ -333,6 +338,7 @@ const startCompilerRetrievalRun = (
   metadata: {
     sourceQuery: retrieved.sourceQuery.text,
     activationRetrievalDiagnostics: retrieved.diagnostics,
+    sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
     memorySupersessionTimeline: retrieved.memorySupersessionTimeline,
     ...targetReadModelMetadata(input, targetOwnerFileRecall)
   }
@@ -397,6 +403,7 @@ const createPersistedContextAssembly = async (
       retrievalRunId,
       conflictSets: conflictResult.conflictSets,
       activationRetrievalDiagnostics: retrieved.diagnostics,
+      sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
       memorySupersessionTimeline: retrieved.memorySupersessionTimeline
     }
   });

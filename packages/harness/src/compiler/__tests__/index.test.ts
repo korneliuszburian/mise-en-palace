@@ -601,8 +601,15 @@ describe("compileHarnessPlan", () => {
     });
 
     expect(result.contextAssembly.metadata).toMatchObject({
-      retrievalRunId: "retrieval-1"
+      retrievalRunId: "retrieval-1",
+      sourceConsensusTimeline: expect.objectContaining({
+        currentSourceClaimIds: ["claim-trace"]
+      })
     });
+    const compiledPacket = decisionPacketForCompiledPlan(result);
+    expect(compiledPacket.sourceConsensus.timeline).toEqual(
+      result.contextAssembly.metadata.sourceConsensusTimeline
+    );
     expect(harnessRunRepository.contexts[0]?.id).toBe(result.contextAssembly.id);
     expect(retrievalRepository.storedSelection).toMatchObject({
       id: result.contextAssembly.id,
