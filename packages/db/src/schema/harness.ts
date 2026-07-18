@@ -49,6 +49,11 @@ export const executionRunStatus = pgEnum("execution_run_status", executionRunSta
 
 export const evidenceBundleStatus = pgEnum("evidence_bundle_status", evidenceBundleStatuses);
 
+export const activationRuntimeProofStatus = pgEnum(
+  "activation_runtime_proof_status",
+  ["passed", "failed"] as const
+);
+
 export const reviewAssessmentStatus = pgEnum("review_assessment_status", reviewAssessmentStatuses);
 
 export const feedbackDeltaStatus = pgEnum("feedback_delta_status", feedbackDeltaStatuses);
@@ -379,6 +384,32 @@ export const evidenceBundles = pgTable(
       sql`${table.captureChannel} is null or ${table.captureChannel} in ('evidence_feedback_v1', 'eval_feedback_v1')`
     ),
     index("evidence_bundles_status_idx").on(table.status)
+  ]
+);
+
+export const activationRuntimeProofs = pgTable(
+  "activation_runtime_proofs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    environmentFingerprintId: text("environment_fingerprint_id").notNull(),
+    storeIdentity: text("store_identity").notNull(),
+    status: activationRuntimeProofStatus("status").notNull(),
+    capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+    cleanupRemainingMarkerCount: integer("cleanup_remaining_marker_count").notNull(),
+    report: jsonb("report").notNull(),
+    createdAt: createdAtColumn()
+  },
+  (table) => [
+    index("activation_runtime_proofs_lookup_idx").on(
+      table.storeIdentity,
+      table.environmentFingerprintId,
+      table.status,
+      table.capturedAt
+    ),
+    check(
+      "activation_runtime_proofs_cleanup_count_nonnegative",
+      sql`${table.cleanupRemainingMarkerCount} >= 0`
+    )
   ]
 );
 

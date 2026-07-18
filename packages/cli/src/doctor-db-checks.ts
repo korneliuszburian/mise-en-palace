@@ -697,7 +697,8 @@ export const checkRetrievalSubstrate = async (
 export const checkActivation = async (
   repoRoot: string,
   databaseUrl: string | undefined,
-  postgresChecks: readonly DoctorCheck[]
+  postgresChecks: readonly DoctorCheck[],
+  environmentFingerprintId?: string
 ): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const smokeCheck = {
@@ -784,7 +785,8 @@ export const checkActivation = async (
 
   try {
     const report = await inspectActivationReadiness({
-      databaseUrl: gate.databaseUrl
+      databaseUrl: gate.databaseUrl,
+      ...(environmentFingerprintId === undefined ? {} : { environmentFingerprintId })
     });
 
     return [

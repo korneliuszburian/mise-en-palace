@@ -1,4 +1,5 @@
 export * from "../activation-readiness.js";
+export * from "../activation-runtime-proof.js";
 export * from "./smoke/activation-smoke.js";
 export * from "./smoke/brain-loop-smoke.js";
 export {

@@ -1,9 +1,11 @@
 import postgres from "postgres";
 
+import { readCurrentActivationRuntimeProof } from "./activation-runtime-proof.js";
 import { inspectDatabaseRequiredTables } from "./readiness-support.js";
 
 export interface ActivationReadinessInput {
   databaseUrl: string;
+  environmentFingerprintId?: string;
 }
 
 export interface ActivationReadinessReport {
@@ -79,6 +81,7 @@ export const inspectActivationReadiness = async (
     const tableInspection = await inspectDatabaseRequiredTables(client, requiredActivationTables);
     const { presentTables, missingTables, schemaReady } = tableInspection;
     let counts = emptyCounts;
+    let runtimeProofReady = false;
 
     if (schemaReady) {
       const countRows = await client<ActivationCounts[]>`
@@ -95,6 +98,10 @@ export const inspectActivationReadiness = async (
       `;
 
       counts = countRows[0] ?? emptyCounts;
+      runtimeProofReady = (await readCurrentActivationRuntimeProof(client, {
+        databaseUrl,
+        environmentFingerprintId: input.environmentFingerprintId
+      })) !== undefined;
     }
 
     return {
@@ -113,10 +120,7 @@ export const inspectActivationReadiness = async (
       staleDecisionCount: counts.staleDecisionCount,
       contextItemCount: counts.contextItemCount,
       contextExclusionCount: counts.contextExclusionCount,
-      // Historical rows are a readback, not proof that the current activation
-      // engine executed successfully. The bounded activation smoke owns that
-      // proof; doctor must remain unverified until it has run.
-      runtimeProofReady: false
+      runtimeProofReady
     };
   } finally {
     await client.end();

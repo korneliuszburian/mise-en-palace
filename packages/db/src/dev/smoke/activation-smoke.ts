@@ -28,6 +28,10 @@ import {
   requireSmokeReadbackValue
 } from "./db-smoke-support.js";
 import {
+  persistActivationRuntimeProof,
+  postgresStoreIdentity
+} from "../../activation-runtime-proof.js";
+import {
   contextAssemblies,
   contextExclusions,
   contextItems,
@@ -52,6 +56,7 @@ export interface ActivationSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
+  environmentFingerprintId?: string;
 }
 
 export interface ActivationSmokeReport {
@@ -1504,7 +1509,7 @@ export const runActivationSmokeCheck = async (
 
     const remainingMarkerCount = await cleanup();
 
-    return {
+    const report: ActivationSmokeReport = {
       workspaceSlug,
       projectSlug,
       executionRunId: executionRun.id,
@@ -1580,6 +1585,19 @@ export const runActivationSmokeCheck = async (
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };
+
+    if (input.environmentFingerprintId !== undefined) {
+      await persistActivationRuntimeProof(client, {
+        environmentFingerprintId: input.environmentFingerprintId,
+        storeIdentity: postgresStoreIdentity(input.databaseUrl),
+        status: report.cleanedUp ? "passed" : "failed",
+        capturedAt: new Date(),
+        cleanupRemainingMarkerCount: report.remainingMarkerCount,
+        report: report as unknown as Record<string, unknown>
+      });
+    }
+
+    return report;
   } finally {
     await client.end();
   }

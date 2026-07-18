@@ -101,6 +101,7 @@ interface DbSmokeCommandContext {
   migrationsFolder: string;
   relativeMigrationsFolder: string;
   databaseUrl: string;
+  environmentFingerprintId: string;
 }
 
 type DbSmokeTarget = DbSmokeRuntime["target"];
@@ -512,7 +513,8 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runActivationSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("activation-smoke")
+    smokeId: runtime.createId("activation-smoke"),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -1228,7 +1230,8 @@ export const runDbSmokeCommand = async (
     repoRoot,
     migrationsFolder,
     relativeMigrationsFolder,
-    databaseUrl
+    databaseUrl,
+    environmentFingerprintId: environmentFingerprint.id
   };
 
   try {
