@@ -50,6 +50,7 @@ describe("Codex adapter contracts", () => {
       ],
       sourceClaimsSelected: ["claim-strong"],
       sourceDecisionIds: ["source-decision-1"],
+      sourceConsensusTimeline: [],
       memoryRecordsSelected: ["memory-1"],
       memorySupersessionTimeline: [],
       antiMemoryWarnings: ["do not promote memory automatically"],
@@ -94,7 +95,7 @@ describe("Codex adapter contracts", () => {
         emptyBehavior: "render_none"
       }],
       budget: {
-        maxRenderedSections: 22,
+        maxRenderedSections: 23,
         maxRenderedItems: 80,
         renderedSections: 12,
         renderedItems: 20,

@@ -36,6 +36,7 @@ export const executionBriefSectionProfiles = [
   { id: "explicit_exclusions", kind: "required", emptyBehavior: "render_none" },
   { id: "source_claims_selected", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "source_decision_ids", kind: "optional", emptyBehavior: "omit_when_empty" },
+  { id: "source_consensus_timeline", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "memory_records_selected", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "memory_supersession_timeline", kind: "optional", emptyBehavior: "omit_when_empty" },
   { id: "anti_memory_warnings", kind: "optional", emptyBehavior: "omit_when_empty" },
@@ -154,6 +155,7 @@ export interface ExecutionBrief {
   explicitExclusions: ExecutionBriefContextExclusion[];
   sourceClaimsSelected: string[];
   sourceDecisionIds: string[];
+  sourceConsensusTimeline: string[];
   memoryRecordsSelected: string[];
   memorySupersessionTimeline: string[];
   antiMemoryWarnings: string[];

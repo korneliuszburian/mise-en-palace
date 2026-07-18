@@ -108,6 +108,7 @@ const executionBriefSectionCounters = {
   explicit_exclusions: (brief) => brief.explicitExclusions.length,
   source_claims_selected: (brief) => brief.sourceClaimsSelected.length,
   source_decision_ids: (brief) => brief.sourceDecisionIds.length,
+  source_consensus_timeline: (brief) => brief.sourceConsensusTimeline.length,
   memory_records_selected: (brief) => brief.memoryRecordsSelected.length,
   memory_supersession_timeline: (brief) => brief.memorySupersessionTimeline.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
@@ -252,6 +253,19 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const memoryRecordsSelected = includedContext
     .filter((inclusion) => inclusion.subjectType === "memory_record")
     .map((inclusion) => inclusion.subjectId);
+  const sourceConsensusTimeline = (packet.sourceConsensus.timeline?.entries ?? []).map((entry) =>
+    [
+      `- ${entry.sourceClaimId}`,
+      `state=${entry.state}`,
+      `authority_state=${entry.authorityState}`,
+      `claim=${entry.claim}`,
+      `superseded_by=${entry.supersededBySourceClaimIds.join(",") || "none"}`,
+      `supersedes=${entry.supersedesSourceClaimIds.join(",") || "none"}`,
+      `evidence_refs=${entry.evidenceRefs.join(",") || "none"}`,
+      `raw_evidence_refs=${entry.rawEvidenceCitationRefs.join(",") || "none"}`,
+      `caveats=${entry.caveats.join(";") || "none"}`
+    ].join(" | ")
+  );
   const memorySupersessionTimeline = (packet.memorySupersessionTimeline?.entries ?? []).map((entry) =>
     [
       `- ${entry.predecessorMemoryRecordId} -> ${entry.replacementMemoryRecordId}`,
@@ -293,6 +307,9 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const doesNotProve = [...new Set([
     ...packet.doesNotProve,
     ...packet.nonProofs,
+    ...(packet.sourceConsensus.timeline === undefined
+      ? []
+      : [packet.sourceConsensus.timeline.doesNotProve]),
     ...(packet.memorySupersessionTimeline === undefined
       ? []
       : [packet.memorySupersessionTimeline.doesNotProve]),
@@ -322,6 +339,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     explicitExclusions,
     sourceClaimsSelected,
     sourceDecisionIds: [...packet.sourceDecisionIds],
+    sourceConsensusTimeline,
     memoryRecordsSelected,
     memorySupersessionTimeline,
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
@@ -380,6 +398,7 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "",
     ...renderOptionalSection("Source Claims Selected:", brief.sourceClaimsSelected.map((claim) => `- ${claim}`)),
     ...renderOptionalSection("Canonical SourceDecision IDs:", brief.sourceDecisionIds.map((id) => `- ${id}`)),
+    ...renderOptionalSection("Source Consensus Timeline:", brief.sourceConsensusTimeline),
     ...renderOptionalSection("Memory Records Selected:", brief.memoryRecordsSelected.map((record) => `- ${record}`)),
     ...renderOptionalSection("Memory Supersession Timeline:", brief.memorySupersessionTimeline),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
