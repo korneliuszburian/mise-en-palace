@@ -937,11 +937,13 @@ import { writeSync } from "node:fs";
 
 const marker = "KRN_HELD_OUT_RUNTIME:";
 const isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
-const observeInput = (createUser, listUsers, raw) => {
+const observeInput = (createUser, listUsers, raw, idClock) => {
   const before = listUsers();
   const beforeCount = Array.isArray(before) ? before.length : 0;
   try {
-    const result = createUser(raw, {});
+    const result = idClock === undefined
+      ? createUser(raw, {})
+      : createUser(raw, {}, idClock);
     const after = listUsers();
     const afterCount = Array.isArray(after) ? after.length : beforeCount;
     const resultRecord = isRecord(result) ? result : undefined;
@@ -1012,16 +1014,17 @@ try {
   if (typeof createUser !== "function" || typeof listUsers !== "function") {
     throw new Error("held-out target exports are unavailable");
   }
+  const idClock = family === "user-create" ? () => 123 : undefined;
   const observations = {
-    invalidJson: observeInput(createUser, listUsers, "{"),
-    missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" })),
-    invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }))
+    invalidJson: observeInput(createUser, listUsers, "{", idClock),
+    missingEmail: observeInput(createUser, listUsers, JSON.stringify({ role: "admin" }), idClock),
+    invalidRole: observeInput(createUser, listUsers, JSON.stringify({ email: "held-out@example.com", role: "owner" }), idClock)
   };
   let validCreation = false;
   if (family === "user-create") {
     try {
-      const explicit = createUser(JSON.stringify({ email: "held-out@example.com", role: "member" }), { DEFAULT_ROLE: "admin" });
-      const configured = createUser(JSON.stringify({ email: "held-out-default@example.com" }), { DEFAULT_ROLE: "admin" });
+      const explicit = createUser(JSON.stringify({ email: "held-out@example.com", role: "member" }), { DEFAULT_ROLE: "admin" }, idClock);
+      const configured = createUser(JSON.stringify({ email: "held-out-default@example.com" }), { DEFAULT_ROLE: "admin" }, idClock);
       const explicitRecord = isRecord(explicit) ? explicit : undefined;
       const configuredRecord = isRecord(configured) ? configured : undefined;
       const explicitUser = explicitRecord && isRecord(explicitRecord.user) ? explicitRecord.user : explicitRecord;

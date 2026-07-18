@@ -1193,6 +1193,41 @@ describe("paired live Codex repair eval", () => {
     }
   });
 
+  it("passes the deterministic clock to the user-create held-out contract", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-live-user-create-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/userService.js"), [
+      "const users = [];",
+      "export const listSavedUsers = () => users;",
+      "export const createUserFromJson = (raw, env, idClock) => {",
+      "  let input; try { input = JSON.parse(raw); } catch { return { kind: 'invalid_input' }; }",
+      "  if (typeof input.email !== 'string' || input.email.length === 0) return { kind: 'invalid_input' };",
+      "  if (input.role !== undefined && input.role !== 'admin' && input.role !== 'member') return { kind: 'invalid_input' };",
+      "  if (typeof idClock !== 'function') throw new Error('clock required');",
+      "  const user = { id: String(idClock()), email: input.email, role: input.role ?? env.DEFAULT_ROLE };",
+      "  users.push(user);",
+      "  return { kind: 'created', user };",
+      "};"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "user-create");
+      expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
+      expect(result.observations).toMatchObject({
+        invalidJson: { threw: false, resultState: "kind:invalid_input" },
+        missingEmail: { threw: false, resultState: "kind:invalid_input" },
+        invalidRole: { threw: false, resultState: "kind:invalid_input" },
+        validCreation: true
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it.each([
     ["env-config", "src/configReadback.js", "export const redactConfigReadback = (env) => Object.fromEntries(Object.entries(env));"],
     ["async-job", "src/jobQueue.js", "export const unrelated = true;"],
