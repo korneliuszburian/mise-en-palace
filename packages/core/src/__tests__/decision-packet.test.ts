@@ -716,6 +716,21 @@ describe("DecisionPacket builder", () => {
       subjectId: "memory-stale-boundary",
       reason: "stale"
     }));
+
+    const invalidatedPacket = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        exclusions: readModel.context.exclusions + 1,
+        exclusionDetails: [...(readModel.context.exclusionDetails ?? []), {
+          subjectType: "memory_record",
+          subjectId: "memory-invalidated-boundary",
+          reason: "invalidated"
+        }]
+      }
+    });
+
+    expect(invalidatedPacket.staleKnowledgeIds).toContain("memory-invalidated-boundary");
   });
 
   it("exposes canonical selected SourceDecision ids", () => {

@@ -604,6 +604,8 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.krn).toContain("decisionId");
     expect(prompts.krn).toContain("nonProof");
     expect(prompts.krn).toContain("Treat packet.rejectedPathIds as the complete rejected-path authority");
+    expect(prompts.krn).toContain("packet.staleDecisionIds and packet.staleKnowledgeIds");
+    expect(prompts.krn).toContain("Do not emit an array for staleBoundary");
   });
 
   it("can remove packet injection when capabilities are the experiment variable", () => {

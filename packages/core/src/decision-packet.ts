@@ -215,7 +215,8 @@ export const staleKnowledgeIdsForContext = (
     readonly reason: string;
   }[]
 ): readonly string[] => unique(contextExclusions
-  .filter((item) => item.subjectType === "memory_record" && item.reason === "stale")
+  .filter((item) => item.subjectType === "memory_record" &&
+    (item.reason === "stale" || item.reason === "invalidated"))
   .map((item) => item.subjectId));
 
 const decisionLinkedSourceClaimIdsFor = (input: {
