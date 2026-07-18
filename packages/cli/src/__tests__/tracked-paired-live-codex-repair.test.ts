@@ -11,6 +11,7 @@ import {
   observeCodexCapabilityUse,
   hashTree,
   extractLiveCodexObedienceOutput,
+  inspectLiveCodexObedienceOutput,
   parseLiveCodexObedienceOutputJson,
   readMcpStructuredContent,
   validateLiveCodexObedienceOutputAgainstPacket,
@@ -580,6 +581,24 @@ describe("tracked paired live Codex repair", () => {
     });
   });
 
+  it("classifies the explicit machine envelope separately from missing output", () => {
+    expect(inspectLiveCodexObedienceOutput("repair report only")).toEqual({ status: "missing" });
+    expect(inspectLiveCodexObedienceOutput("KRN_OBEDIENCE_JSON:{not-json")).toEqual({ status: "malformed" });
+    expect(inspectLiveCodexObedienceOutput([
+      "repair report",
+      "KRN_OBEDIENCE_JSON:{\"decisionId\":\"d\",\"rejectedPath\":\"r\",\"staleBoundary\":\"s\",\"nonProof\":\"n\",\"action\":\"a\"}"
+    ].join("\n"))).toEqual({
+      status: "valid",
+      output: {
+        decisionId: "d",
+        rejectedPath: "r",
+        staleBoundary: "s",
+        nonProof: "n",
+        action: "a"
+      }
+    });
+  });
+
   it("accepts only a run-, project-, task-, and authority-bound packet", () => {
     expect(validateTrialPacket(packet, manifest)).toEqual({
       valid: true,
@@ -841,7 +860,7 @@ describe("tracked paired live Codex repair", () => {
     await mkdir(binRoot, { recursive: true });
     await makeFakeCodex(join(binRoot, "codex"), [
       `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; fi`,
-      "printf '%s\\n' '{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
       "exit 0"
     ].join("\n"));
     await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
@@ -883,6 +902,7 @@ describe("tracked paired live Codex repair", () => {
       expect(result.status).toBe("passed");
       expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
+      expect(result.execution.liveObedienceStatus).toBe("valid");
       expect(result.execution.decisionApplicationObservation).toBe("observed");
       expect(result.execution.treatment).toBe("semantic_governed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([

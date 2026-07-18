@@ -28,6 +28,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   buildPairedRepairPrompts,
+  liveCodexObedienceMarker,
   pairedLiveCheckerRevision,
   runCommand,
   runPairedRepairChecker,
@@ -301,6 +302,7 @@ export type TrackedTrialArtifact = {
       readonly packetOnlyByConstruction: true;
     };
     readonly liveOutput?: LiveCodexObedienceOutput;
+    readonly liveObedienceStatus?: LiveCodexObedienceStatus;
     readonly liveOutputValidation?: LiveCodexObedienceValidation;
     readonly decisionApplicationObservation?: DecisionApplicationObservation;
     readonly capabilityUseObservation?: {
@@ -514,6 +516,17 @@ export type LiveCodexObedienceOutput = {
   readonly action: string;
 };
 
+export type LiveCodexObedienceStatus =
+  | "valid"
+  | "missing"
+  | "malformed"
+  | "packet_mismatch";
+
+export type LiveCodexObedienceCapture = {
+  readonly status: LiveCodexObedienceStatus;
+  readonly output?: LiveCodexObedienceOutput;
+};
+
 /** Parse the bounded JSON contract emitted by a live Codex obedience pilot. */
 const parseLiveCodexObedienceOutput = (value: unknown): LiveCodexObedienceOutput => {
   const root = isRecord(value) ? value : undefined;
@@ -645,6 +658,29 @@ export const extractLiveCodexObedienceOutput = (
     }
   }
   return undefined;
+};
+
+/** Classify only the explicit machine line; ordinary Codex prose is not an envelope. */
+export const inspectLiveCodexObedienceOutput = (
+  stdout: string
+): LiveCodexObedienceCapture => {
+  const markerLines = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(liveCodexObedienceMarker));
+  if (markerLines.length === 0) return { status: "missing" };
+  const markerLine = markerLines.at(-1);
+  if (markerLine === undefined) return { status: "missing" };
+  try {
+    return {
+      status: "valid",
+      output: parseLiveCodexObedienceOutputJson(
+        markerLine.slice(liveCodexObedienceMarker.length).trim()
+      )
+    };
+  } catch {
+    return { status: "malformed" };
+  }
 };
 
 const isLiveCodexObedienceOutput = (value: unknown): value is LiveCodexObedienceOutput => {
@@ -1540,6 +1576,9 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "invalidReasons", isStringArray) &&
   optionalValue(value, "promptDelta", isTrialPromptDelta) &&
   optionalValue(value, "liveOutput", isLiveCodexObedienceOutput) &&
+  optionalValue(value, "liveObedienceStatus", (item) =>
+    item === "valid" || item === "missing" || item === "malformed" || item === "packet_mismatch"
+  ) &&
   optionalValue(value, "liveOutputValidation", (item) =>
     isRecord(item) && typeof item["valid"] === "boolean" && isStringArray(item["reasons"])
   ) &&
@@ -2408,6 +2447,7 @@ const executeComparableTrial = async (input: {
     environment: input.trial.krnObservationEnvironment
   });
   await input.journal.phase("krn_executed", { result: krnResult, before: input.trial.krnBefore, after: krnAfter });
+  const liveOutputCapture = inspectLiveCodexObedienceOutput(krnResult.stdout);
   const capabilityProfiles = input.trial.context.manifest.capabilities;
   const capabilityUseObservation = {
     baseline: observeCodexCapabilityUse(
@@ -2435,12 +2475,23 @@ const executeComparableTrial = async (input: {
       baseline: { before: input.trial.baselineBefore, after: baselineAfter },
       krn: { before: input.trial.krnBefore, after: krnAfter }
     },
-    ...optionalField("liveOutput", extractLiveCodexObedienceOutput(krnResult.stdout))
+    liveObedienceStatus: liveOutputCapture.status,
+    ...optionalField("liveOutput", liveOutputCapture.output)
   };
   const liveOutputValidation = execution.liveOutput === undefined
-    ? { valid: false, reasons: ["KRN arm did not emit the bounded live obedience JSON"] }
+    ? {
+        valid: false,
+        reasons: [liveOutputCapture.status === "malformed"
+          ? "KRN arm emitted a malformed bounded live obedience JSON"
+          : "KRN arm did not emit the bounded live obedience JSON"]
+      }
     : validateLiveCodexObedienceOutputAgainstPacket(execution.liveOutput, input.packet);
+  const liveObedienceStatus: LiveCodexObedienceStatus =
+    liveOutputCapture.output === undefined
+      ? liveOutputCapture.status
+      : liveOutputValidation.valid ? "valid" : "packet_mismatch";
   const executionWithLiveValidation = { ...execution, liveOutputValidation };
+  const executionWithStatus = { ...executionWithLiveValidation, liveObedienceStatus };
   const armReasons = [
     armFailureReason("baseline", baselineResult),
     armFailureReason("krn", krnResult),
@@ -2457,7 +2508,7 @@ const executeComparableTrial = async (input: {
       invalidReasons: armReasons,
       baselineTreeHash: input.trial.baseline.treeHash,
       krnTreeHash: input.trial.krn.treeHash,
-      execution: executionWithLiveValidation
+      execution: executionWithStatus
     };
   }
   const score = await checker({
@@ -2485,7 +2536,7 @@ const executeComparableTrial = async (input: {
           invalidReasons: ["decision application persistence produced no observed applications"],
           baselineTreeHash: input.trial.baseline.treeHash,
           krnTreeHash: input.trial.krn.treeHash,
-          execution: { ...executionWithLiveValidation, decisionApplicationObservation }
+          execution: { ...executionWithStatus, decisionApplicationObservation }
         };
       }
     } catch (error) {
@@ -2498,7 +2549,7 @@ const executeComparableTrial = async (input: {
         invalidReasons: [persistenceReason],
         baselineTreeHash: input.trial.baseline.treeHash,
         krnTreeHash: input.trial.krn.treeHash,
-        execution: { ...executionWithLiveValidation, decisionApplicationObservation },
+        execution: { ...executionWithStatus, decisionApplicationObservation },
         score
       };
     }
@@ -2508,7 +2559,7 @@ const executeComparableTrial = async (input: {
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
     baselineTreeHash: input.trial.baseline.treeHash,
     krnTreeHash: input.trial.krn.treeHash,
-    execution: { ...executionWithLiveValidation, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
+    execution: { ...executionWithStatus, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
     score
   };
 };

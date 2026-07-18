@@ -240,6 +240,9 @@ export type PairedRepairPrompts = {
   };
 };
 
+/** Machine-visible prefix for the live obedience envelope. */
+export const liveCodexObedienceMarker = "KRN_OBEDIENCE_JSON:" as const;
+
 type TargetSourceFiles = Readonly<Record<string, string | undefined>>;
 
 export type TargetRepairScoreInput = {
@@ -301,7 +304,7 @@ export const buildPairedRepairPrompts = (input: {
       JSON.stringify(input.decisionPacket),
       "END KRN DECISION PACKET",
       "Treat packet.rejectedPathIds as the complete rejected-path authority. If that array is empty, emit an explicit no-rejected-path statement even when context exclusions or source rejection records contain rejected material; do not promote those records into a rejected path. Treat the union of packet.staleDecisionIds and packet.staleKnowledgeIds as the complete stale boundary; if both arrays are empty, emit an explicit no-stale statement.",
-      "After the repair report, emit one final line of JSON and no markdown wrapper with exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not emit an array for staleBoundary and do not invent ids or claims outside the packet."
+      `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper. The object must have exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not emit an array for staleBoundary and do not invent ids or claims outside the packet.`
     ].join("\n")
     : baseline;
 
