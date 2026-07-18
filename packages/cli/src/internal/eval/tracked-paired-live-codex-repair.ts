@@ -587,7 +587,10 @@ export const validateLiveCodexObedienceOutputAgainstPacket = (
   const body = packetRoot !== undefined && isRecord(packetRoot.packet) ? packetRoot.packet : undefined;
   const governing = packetStringArray(body, "governingDecisionIds");
   const rejected = packetStringArray(body, "rejectedPathIds");
-  const stale = packetStringArray(body, "staleDecisionIds");
+  const stale = [
+    ...(packetStringArray(body, "staleDecisionIds") ?? []),
+    ...(packetStringArray(body, "staleKnowledgeIds") ?? [])
+  ];
   const nonProofs = packetStringArray(body, "doesNotProve") ?? packetStringArray(body, "nonProofs");
   const reasons = [
     ...decisionValidationReasons(output, governing),

@@ -463,6 +463,27 @@ describe("tracked paired live Codex repair", () => {
     });
   });
 
+  it("accepts a stale memory identity from the packet historical boundary", () => {
+    const staleKnowledgeId = "00000000-0000-4000-8000-000000000001";
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: `stale memory ${staleKnowledgeId}`,
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        staleKnowledgeIds: [staleKnowledgeId],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+  });
+
   it("requires an explicit no-rejected-path statement when the packet has none", () => {
     const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
       decisionId: "decision-a",
