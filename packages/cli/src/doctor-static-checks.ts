@@ -406,6 +406,15 @@ export const checkTargetRepoReadiness = async (
     severity: "warning"
   };
 
+  let targetHarnessProofCheck: DoctorCheck = {
+    label: "Target repo harness smoke",
+    status: targetHarnessSmokeAvailable
+      ? "available (pnpm db:smoke:target-repo-harness; run it for proof)"
+      : "unverified (pnpm db:smoke:target-repo-harness missing)",
+    outcome: targetHarnessSmokeAvailable ? "available" : "runtime_unverified",
+    severity: passOrWarning(targetHarnessSmokeAvailable)
+  };
+
   if (targetProof !== undefined && targetProof.projectId !== null) {
     const targetProofReport = targetProof.report;
     const targetProofValid = targetProofReport.crossProjectLeakageProof === true &&
@@ -414,20 +423,28 @@ export const checkTargetRepoReadiness = async (
       targetProofReport.targetProjectLinked === true;
 
     if (targetProofValid) {
+      const proof = {
+        command: "pnpm db:smoke:target-repo-harness",
+        status: "passed" as const,
+        capturedAt: targetProof.capturedAt,
+        freshness: "current" as const,
+        storeIdentity: targetProof.storeIdentity,
+        projectId: targetProof.projectId,
+        environmentFingerprintId: targetProof.environmentFingerprintId
+      };
+      targetHarnessProofCheck = {
+        label: "Target repo harness smoke",
+        status: `ready (project ${targetProof.projectId}; command pnpm db:smoke:target-repo-harness; captured ${targetProof.capturedAt}; store ${postgresStoreIdentity(databaseUrl!)})`,
+        outcome: "proven",
+        severity: "pass",
+        proof
+      };
       targetProofCheck = {
       label: "Cross-project leakage proof",
       status: `ready (project ${targetProof.projectId}; command pnpm db:smoke:target-repo-harness; captured ${targetProof.capturedAt}; store ${postgresStoreIdentity(databaseUrl!)})`,
       outcome: "proven",
       severity: "pass",
-      proof: {
-        command: "pnpm db:smoke:target-repo-harness",
-        status: "passed",
-        capturedAt: targetProof.capturedAt,
-        freshness: "current",
-        storeIdentity: targetProof.storeIdentity,
-        projectId: targetProof.projectId,
-        environmentFingerprintId: targetProof.environmentFingerprintId
-      }
+        proof
       };
     }
   }
@@ -458,14 +475,7 @@ export const checkTargetRepoReadiness = async (
       severity: passOrWarning(projectRegistrationSchemaPresent)
     },
     initConnectProofCheck,
-    {
-      label: "Target repo harness smoke",
-      status: targetHarnessSmokeAvailable
-        ? "available (pnpm db:smoke:target-repo-harness; run it for proof)"
-        : "unverified (pnpm db:smoke:target-repo-harness missing)",
-      outcome: targetHarnessSmokeAvailable ? "available" : "runtime_unverified",
-      severity: passOrWarning(targetHarnessSmokeAvailable)
-    },
+    targetHarnessProofCheck,
     targetProofCheck,
     {
       label: "Target repo forbidden surfaces",
