@@ -18,6 +18,7 @@ import type {
   IsoTimestamp,
   ValidityWindow
 } from "./time.js";
+import { isIsoTimestamp } from "./time.js";
 import {
   readMetadataString,
   readMetadataStringList
@@ -119,6 +120,25 @@ export interface MemoryRecord extends ValidityWindow {
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+export interface MemorySupersessionTimelineEntry {
+  predecessorMemoryRecordId: MemoryRecordId;
+  predecessorStatus: "superseded";
+  replacementMemoryRecordId: MemoryRecordId;
+  replacementStatus: MemoryRecordStatus | "unknown";
+  transition: {
+    reviewer: string;
+    reason: string;
+    supersededAt: IsoTimestamp;
+  };
+}
+
+export interface MemorySupersessionTimelineReadback {
+  activeMemoryRecordIds: readonly MemoryRecordId[];
+  historicalMemoryRecordIds: readonly MemoryRecordId[];
+  entries: readonly MemorySupersessionTimelineEntry[];
+  doesNotProve: string;
 }
 
 export interface MemoryCandidate {
@@ -260,6 +280,83 @@ export interface ProjectStandardDecisionReadback {
 
 const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const supersessionReviewFor = (
+  record: MemoryRecord
+): MemorySupersessionTimelineEntry["transition"] | undefined => {
+  if (record.status !== "superseded") {
+    return undefined;
+  }
+
+  const value = record.metadata["supersessionReview"];
+  if (!isMetadataRecord(value)) {
+    return undefined;
+  }
+
+  const reviewer = readMetadataString(value, "reviewer");
+  const reason = readMetadataString(value, "reason");
+  const supersededAt = readMetadataString(value, "supersededAt");
+  if (
+    reviewer === undefined ||
+    reason === undefined ||
+    supersededAt === undefined ||
+    !isIsoTimestamp(supersededAt)
+  ) {
+    return undefined;
+  }
+
+  return { reviewer, reason, supersededAt };
+};
+
+export const buildMemorySupersessionTimelineReadback = (input: {
+  records: readonly MemoryRecord[];
+}): MemorySupersessionTimelineReadback => {
+  const recordsById = new Map(input.records.map((record) => [record.id, record]));
+  const entries = input.records.flatMap((record) => {
+    const transition = supersessionReviewFor(record);
+    if (transition === undefined) {
+      return [];
+    }
+
+    const supersessionReview = record.metadata["supersessionReview"];
+    if (!isMetadataRecord(supersessionReview)) {
+      return [];
+    }
+    const replacementMemoryRecordId = readMetadataString(
+      supersessionReview,
+      "supersededByMemoryRecordId"
+    );
+    if (replacementMemoryRecordId === undefined) {
+      return [];
+    }
+    const replacementStatus: MemoryRecordStatus | "unknown" =
+      recordsById.get(replacementMemoryRecordId)?.status ?? "unknown";
+
+    return [{
+      predecessorMemoryRecordId: record.id,
+      predecessorStatus: "superseded" as const,
+      replacementMemoryRecordId,
+      replacementStatus,
+      transition
+    }];
+  }).sort((left, right) =>
+    left.predecessorMemoryRecordId.localeCompare(right.predecessorMemoryRecordId)
+  );
+
+  return {
+    activeMemoryRecordIds: input.records
+      .filter((record) => record.status === "active")
+      .map((record) => record.id)
+      .sort(),
+    historicalMemoryRecordIds: input.records
+      .filter((record) => record.status !== "active")
+      .map((record) => record.id)
+      .sort(),
+    entries,
+    doesNotProve:
+      "Memory supersession readback proves only persisted predecessor/replacement metadata available to this activation run; it does not prove source truth, causal usefulness, or autonomous maintenance."
+  };
+};
 
 const projectStandardDecisionMetadata = (
   metadata: Record<string, unknown>

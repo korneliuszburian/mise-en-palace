@@ -11,7 +11,10 @@ import type {
 import {
   buildDecisionPacketContractReadback
 } from "./decision-packet.js";
-import { parseSourceConsensusTimelineReadback } from "./decision-packet-contract.js";
+import {
+  parseMemorySupersessionTimelineReadback,
+  parseSourceConsensusTimelineReadback
+} from "./decision-packet-contract.js";
 import {
   decideEvidenceContractActivation
 } from "./evidence-contract.js";
@@ -498,8 +501,12 @@ const activationTraceForAuthority = (
   const sourceConsensusTimeline = parseSourceConsensusTimelineReadback(
     aggregate.activationTrace.metadata?.sourceConsensusTimeline
   );
+  const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
+    aggregate.activationTrace.metadata?.memorySupersessionTimeline
+  );
   return {
       ...(sourceConsensusTimeline === undefined ? {} : { sourceConsensusTimeline }),
+      ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
       candidates: aggregate.activationTrace.candidates.map(
         projectDecisionPacketActivationCandidate
       ),

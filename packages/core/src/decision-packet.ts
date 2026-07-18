@@ -10,6 +10,7 @@ import type {
 import type {
   ProjectStandardDecisionReadback
 } from "./memory.js";
+import type { MemorySupersessionTimelineReadback } from "./memory.js";
 import type {
   EvidenceContract,
   EvidenceContractActivationDecision
@@ -515,6 +516,7 @@ export interface DecisionPacket {
   verificationCommands: readonly string[];
   evidenceGaps: readonly DecisionPacketEvidenceGap[];
   sourceConsensus: DecisionPacketSourceConsensus;
+  memorySupersessionTimeline?: MemorySupersessionTimelineReadback;
   abstentionScore: DecisionPacketAbstentionScore;
   doesNotProve: readonly string[];
   nonProofs: readonly string[];
@@ -570,6 +572,7 @@ export interface DecisionPacketActivationTraceInput {
   candidates: readonly DecisionPacketActivationCandidateInput[];
   decisions: readonly DecisionPacketActivationDecisionInput[];
   sourceConsensusTimeline?: SourceConsensusTimelineReadback;
+  memorySupersessionTimeline?: MemorySupersessionTimelineReadback;
 }
 
 export interface DecisionPacketActivationCandidateInput {
@@ -1259,6 +1262,7 @@ export const buildDecisionPacketFromReadModel = (
       ? {}
       : { timeline: readModel.context.activationTrace.sourceConsensusTimeline })
   });
+  const memorySupersessionTimeline = readModel.context.activationTrace?.memorySupersessionTimeline;
   const governingGuidanceInput = {
     readModel,
     unresolvedAcceptedDissentSourceClaimIds
@@ -1323,6 +1327,7 @@ export const buildDecisionPacketFromReadModel = (
     verificationCommands: verificationCommandsFor(activeEvidenceContract),
     evidenceGaps,
     sourceConsensus,
+    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
     abstentionScore: buildDecisionPacketAbstentionScore({
       projectId: task.projectId,
       governingDecisionIds,

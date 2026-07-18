@@ -325,7 +325,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 21,
+      maxRenderedSections: 22,
       maxRenderedItems: 80,
       status: "within_budget"
     });

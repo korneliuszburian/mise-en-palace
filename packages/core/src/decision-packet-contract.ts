@@ -6,6 +6,8 @@ import type {
   DecisionPacketContractReadback,
   DecisionPacketTaskStandard
 } from "./decision-packet.js";
+import { memoryRecordStatuses } from "./memory.js";
+import type { MemorySupersessionTimelineReadback } from "./memory.js";
 import type { SourceConsensusTimelineReadback } from "./source-consensus-timeline.js";
 import {
   decisionPacketAbstentionReasons,
@@ -150,6 +152,33 @@ const sourceConsensusTimelineSchema = z.strictObject({
   doesNotProve: z.string()
 });
 
+const memorySupersessionTimelineSchema = z.strictObject({
+  activeMemoryRecordIds: stringArraySchema,
+  historicalMemoryRecordIds: stringArraySchema,
+  entries: z.array(z.strictObject({
+    predecessorMemoryRecordId: z.string(),
+    predecessorStatus: z.literal("superseded"),
+    replacementMemoryRecordId: z.string(),
+    replacementStatus: z.union([
+      z.enum(memoryRecordStatuses),
+      z.literal("unknown")
+    ]),
+    transition: z.strictObject({
+      reviewer: z.string(),
+      reason: z.string(),
+      supersededAt: isoTimestampSchema
+    })
+  })),
+  doesNotProve: z.string()
+});
+
+export const parseMemorySupersessionTimelineReadback = (
+  value: unknown
+): MemorySupersessionTimelineReadback | undefined => {
+  const parsed = memorySupersessionTimelineSchema.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+};
+
 type ParsedSourceConsensusTimeline = z.infer<typeof sourceConsensusTimelineSchema>;
 
 const normalizeSourceConsensusTimeline = (
@@ -265,6 +294,7 @@ const decisionPacketSchema = z.strictObject({
   verificationCommands: stringArraySchema,
   evidenceGaps: z.array(evidenceGapSchema),
   sourceConsensus: sourceConsensusSchema,
+  memorySupersessionTimeline: memorySupersessionTimelineSchema.optional(),
   abstentionScore: abstentionScoreSchema,
   doesNotProve: stringArraySchema,
   nonProofs: stringArraySchema,
@@ -371,6 +401,7 @@ const normalizePacket = (
     task,
     taskStandardDecisions,
     sourceConsensus,
+    memorySupersessionTimeline,
     reviewOnlyUsefulnessCaveats,
     ...packetFields
   } = packet;
@@ -399,7 +430,8 @@ const normalizePacket = (
     sourceConsensus: {
       ...sourceConsensusFields,
       ...(timeline === undefined ? {} : { timeline: normalizeSourceConsensusTimeline(timeline) })
-    }
+    },
+    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline })
   };
 };
 

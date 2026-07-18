@@ -137,6 +137,7 @@ export interface BrainLoopSmokeReport {
   revisionPacketReplacementMemoryRefCount: number;
   revisionPacketSupersededMemoryRefCount: number;
   revisionPacketSupersessionExplanation: boolean;
+  revisionBriefIncludesSupersession: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -1350,9 +1351,19 @@ export const runBrainLoopSmokeCheck = async (
     const revisionPacketSupersededMemoryRefCount = revisionDecisionPacket.memoryRefs.filter(
       (memoryRef) => memoryRef === memoryRecord.id
     ).length;
+    const revisionPacketSupersessionEntry = revisionDecisionPacket.memorySupersessionTimeline?.entries.find(
+      (entry) => entry.predecessorMemoryRecordId === memoryRecord.id
+    );
     const revisionPacketSupersessionExplanation =
-      revisionDecisionPacket.rejectedPathIds.includes(memoryRecord.id) ||
-      revisionDecisionPacket.supersededPathIds.includes(memoryRecord.id);
+      revisionPacketSupersessionEntry?.replacementMemoryRecordId === revisionReplacementMemory.id &&
+      revisionPacketSupersessionEntry.predecessorStatus === "superseded" &&
+      revisionPacketSupersessionEntry.replacementStatus === "active" &&
+      revisionPacketSupersessionEntry.transition.reason.length > 0;
+    const revisionRenderedBrief = input.renderExecutionBrief(revisionDecisionPacket);
+    const revisionBriefIncludesSupersession =
+      revisionRenderedBrief.includes("Memory Supersession Timeline:") &&
+      revisionRenderedBrief.includes(memoryRecord.id) &&
+      revisionRenderedBrief.includes(revisionReplacementMemory.id);
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
@@ -1612,6 +1623,14 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "revision DecisionPacket excludes superseded memory",
         passed: revisionPacketSupersededMemoryRefCount === 0
+      },
+      {
+        label: "revision DecisionPacket explains supersession",
+        passed: revisionPacketSupersessionExplanation
+      },
+      {
+        label: "revision Codex brief preserves supersession explanation",
+        passed: revisionBriefIncludesSupersession
       }
     ], readbackError);
 
@@ -1706,6 +1725,7 @@ export const runBrainLoopSmokeCheck = async (
       revisionPacketReplacementMemoryRefCount,
       revisionPacketSupersededMemoryRefCount,
       revisionPacketSupersessionExplanation,
+      revisionBriefIncludesSupersession,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

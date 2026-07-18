@@ -697,6 +697,7 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Revision DecisionPacket replacement memory refs: ${report.revisionPacketReplacementMemoryRefCount}`,
       `Revision DecisionPacket superseded memory refs: ${report.revisionPacketSupersededMemoryRefCount}`,
       `Revision DecisionPacket explains supersession: ${report.revisionPacketSupersessionExplanation ? "yes" : "no"}`,
+      `Revision Codex brief preserves supersession: ${report.revisionBriefIncludesSupersession ? "yes" : "no"}`,
       `Run events: ${report.runEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Memory loop smoke")

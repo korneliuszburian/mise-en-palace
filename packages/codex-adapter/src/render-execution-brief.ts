@@ -109,6 +109,7 @@ const executionBriefSectionCounters = {
   source_claims_selected: (brief) => brief.sourceClaimsSelected.length,
   source_decision_ids: (brief) => brief.sourceDecisionIds.length,
   memory_records_selected: (brief) => brief.memoryRecordsSelected.length,
+  memory_supersession_timeline: (brief) => brief.memorySupersessionTimeline.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -251,6 +252,16 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const memoryRecordsSelected = includedContext
     .filter((inclusion) => inclusion.subjectType === "memory_record")
     .map((inclusion) => inclusion.subjectId);
+  const memorySupersessionTimeline = (packet.memorySupersessionTimeline?.entries ?? []).map((entry) =>
+    [
+      `- ${entry.predecessorMemoryRecordId} -> ${entry.replacementMemoryRecordId}`,
+      `predecessor_status=${entry.predecessorStatus}`,
+      `replacement_status=${entry.replacementStatus}`,
+      `reviewer=${entry.transition.reviewer}`,
+      `superseded_at=${entry.transition.supersededAt}`,
+      `reason=${entry.transition.reason}`
+    ].join(" | ")
+  );
   const evidenceContract = packet.evidenceContract === undefined
     ? {
         active: false,
@@ -279,6 +290,9 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const doesNotProve = [...new Set([
     ...packet.doesNotProve,
     ...packet.nonProofs,
+    ...(packet.memorySupersessionTimeline === undefined
+      ? []
+      : [packet.memorySupersessionTimeline.doesNotProve]),
     "Codex executed the work.",
     "Memory was mutated.",
     "Maintenance queue records were processed by a runtime."
@@ -306,6 +320,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     sourceClaimsSelected,
     sourceDecisionIds: [...packet.sourceDecisionIds],
     memoryRecordsSelected,
+    memorySupersessionTimeline,
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
     evidenceGaps,
     toolBoundaries: [...packet.toolBoundaries],
@@ -363,6 +378,7 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     ...renderOptionalSection("Source Claims Selected:", brief.sourceClaimsSelected.map((claim) => `- ${claim}`)),
     ...renderOptionalSection("Canonical SourceDecision IDs:", brief.sourceDecisionIds.map((id) => `- ${id}`)),
     ...renderOptionalSection("Memory Records Selected:", brief.memoryRecordsSelected.map((record) => `- ${record}`)),
+    ...renderOptionalSection("Memory Supersession Timeline:", brief.memorySupersessionTimeline),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),

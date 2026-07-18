@@ -17,6 +17,7 @@ import {
   assessSourceClaimReviewSignals,
   assessSourceMetadataTemporalValidity,
   activationExclusionReasons,
+  buildMemorySupersessionTimelineReadback,
   buildSourceConsensusTimelineReadback
 } from "@krn/core";
 
@@ -121,6 +122,7 @@ export interface RetrieveActivationCandidatesResult {
   antiMemoryCandidates: readonly AntiMemoryCandidate[];
   diagnostics: ActivationRetrievalDiagnostics;
   sourceConsensusTimeline: ReturnType<typeof buildSourceConsensusTimelineReadback>;
+  memorySupersessionTimeline?: ReturnType<typeof buildMemorySupersessionTimelineReadback>;
 }
 
 export interface PersistActivationTraceInput {
@@ -735,6 +737,7 @@ export const retrieveActivationCandidates = async (
         sourceRejections: [],
         now: activationNow
       }),
+      memorySupersessionTimeline: buildMemorySupersessionTimelineReadback({ records: [] }),
       diagnostics: buildActivationRetrievalDiagnostics({
         projectScoped: false,
         memoryRecordCount: 0,
@@ -796,6 +799,9 @@ export const retrieveActivationCandidates = async (
       )
       .map((resolution) => resolution.subject)
   );
+  const memorySupersessionTimeline = buildMemorySupersessionTimelineReadback({
+    records: memoryRecords
+  });
   const seedSourceClaims = appendUniqueById(
     initialSourceClaims,
     searchDocumentResolutions
@@ -1006,6 +1012,7 @@ export const retrieveActivationCandidates = async (
     antiMemoryRecords,
     antiMemoryCandidates,
     sourceConsensusTimeline: sourceConsensus,
+    memorySupersessionTimeline,
     diagnostics: buildActivationRetrievalDiagnostics({
       projectScoped: true,
       memoryRecordCount: memoryRecords.length,

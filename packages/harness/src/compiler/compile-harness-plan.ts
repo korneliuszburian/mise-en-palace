@@ -13,7 +13,8 @@ import {
   capabilityPlanToolBoundaries,
   capabilityPlanToolBoundariesMetadataKey,
   decisionPacketFormatVersion,
-  decisionPacketNegativePathsForContext
+  decisionPacketNegativePathsForContext,
+  parseMemorySupersessionTimelineReadback
 } from "@krn/core";
 import {
   applyContextROI,
@@ -148,6 +149,9 @@ export const decisionPacketForCompiledPlan = (
     contextInclusions,
     contextExclusions
   });
+  const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
+    result.contextAssembly.metadata["memorySupersessionTimeline"]
+  );
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -201,6 +205,7 @@ export const decisionPacketForCompiledPlan = (
       evidenceGapIds: [],
       doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
     },
+    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
     abstentionScore: {
       status: "abstain",
       score: 0,
@@ -328,6 +333,7 @@ const startCompilerRetrievalRun = (
   metadata: {
     sourceQuery: retrieved.sourceQuery.text,
     activationRetrievalDiagnostics: retrieved.diagnostics,
+    memorySupersessionTimeline: retrieved.memorySupersessionTimeline,
     ...targetReadModelMetadata(input, targetOwnerFileRecall)
   }
 });
@@ -390,7 +396,8 @@ const createPersistedContextAssembly = async (
     metadata: {
       retrievalRunId,
       conflictSets: conflictResult.conflictSets,
-      activationRetrievalDiagnostics: retrieved.diagnostics
+      activationRetrievalDiagnostics: retrieved.diagnostics,
+      memorySupersessionTimeline: retrieved.memorySupersessionTimeline
     }
   });
 
