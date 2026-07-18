@@ -530,7 +530,8 @@ export const validateLiveCodexObedienceOutputAgainstPacket = (
 
 export const parseLiveCodexObedienceOutputJson = (raw: string): LiveCodexObedienceOutput => {
   try {
-    return parseLiveCodexObedienceOutput(JSON.parse(raw) as unknown);
+    const parsed: unknown = JSON.parse(raw);
+    return parseLiveCodexObedienceOutput(parsed);
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error("Invalid live Codex obedience output: expected JSON", { cause: error });
@@ -1755,7 +1756,7 @@ export const observeSourceCommands = async (
   sourceRoot: string
 ): Promise<{ readonly test: boolean; readonly typecheck: boolean }> => {
   try {
-    const packageJson = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8")) as unknown;
+    const packageJson: unknown = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8"));
     const scripts = isRecord(packageJson) && isRecord(packageJson["scripts"])
       ? packageJson["scripts"]
       : undefined;
@@ -2372,7 +2373,8 @@ export const readMcpStructuredContent = (stdout: string, requestId: number): unk
       );
       if (textContent === undefined) continue;
       try {
-        return JSON.parse(textContent["text"] as string);
+        const parsed: unknown = JSON.parse(textContent["text"] as string);
+        return parsed;
       } catch {
         continue;
       }

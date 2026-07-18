@@ -1109,7 +1109,8 @@ describe("paired live Codex repair eval", () => {
       const result = await runHeldOutRuntimeWorker(
         compileRoot,
         process.cwd(),
-        sandboxRoot
+        sandboxRoot,
+        "user-create"
       );
 
       expect(result.runtimeAvailable).toBe(false);
@@ -1138,7 +1139,7 @@ describe("paired live Codex repair eval", () => {
     ].join("\n"), "utf8");
 
     try {
-      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot);
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "user-create");
 
       expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
       expect(result.command.exitCode).toBe(0);
@@ -1148,7 +1149,8 @@ describe("paired live Codex repair eval", () => {
         missingEmail: observation({ resultState: "kind:invalid_input" }),
         invalidRole: observation({ resultState: "kind:invalid_input" }),
         redactionSafe: false,
-        enqueueAccepted: false
+        enqueueAccepted: false,
+        validCreation: false
       });
     } finally {
       await rm(root, { recursive: true, force: true });

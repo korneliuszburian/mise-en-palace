@@ -796,21 +796,20 @@ describe("decision packet CLI", () => {
     };
     const projected = buildDecisionPacketReadModel({
       ...aggregate,
-      activationTrace: aggregate.activationTrace === undefined
-        ? undefined
-        : {
+      ...(aggregate.activationTrace === undefined ? {} : {
+          activationTrace: {
             ...aggregate.activationTrace,
             metadata: {
               sourceConsensusTimeline: timeline
             }
           }
+        })
     });
     expect(projected.context.activationTrace?.sourceConsensusTimeline).toEqual(timeline);
     expect(buildDecisionPacketReadModel({
       ...aggregate,
-      activationTrace: aggregate.activationTrace === undefined
-        ? undefined
-        : {
+      ...(aggregate.activationTrace === undefined ? {} : {
+          activationTrace: {
             ...aggregate.activationTrace,
             metadata: {
               sourceConsensusTimeline: {
@@ -826,6 +825,7 @@ describe("decision packet CLI", () => {
               }
             }
           }
+        })
     }).context.activationTrace?.sourceConsensusTimeline).toBeUndefined();
   });
 

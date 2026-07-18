@@ -664,7 +664,9 @@ describe("runCli", () => {
       owner: legacyCandidate.owner,
       confidence: legacyCandidate.confidence,
       applicationGuidance: legacyCandidate.applicationGuidance,
-      invalidationRule: legacyCandidate.invalidationRule,
+      ...(legacyCandidate.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: legacyCandidate.invalidationRule }),
       sourceLineage: legacyCandidate.sourceLineage,
       isUserPreference: false,
       validFrom: now,
@@ -1070,7 +1072,9 @@ describe("runCli", () => {
       owner: candidate.owner,
       confidence: candidate.confidence,
       applicationGuidance: candidate.applicationGuidance,
-      invalidationRule: candidate.invalidationRule,
+      ...(candidate.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: candidate.invalidationRule }),
       sourceLineage: candidate.sourceLineage,
       isUserPreference: false,
       validFrom: now,
