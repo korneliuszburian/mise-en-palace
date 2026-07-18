@@ -526,6 +526,7 @@ export interface DecisionPacketActivationCandidateInput {
     subjectRefs: readonly string[];
     doesNotProve: string;
   };
+  staleSourceDecisionIds?: readonly string[];
 }
 
 export interface DecisionPacketActivationDecisionInput {
@@ -724,6 +725,12 @@ const sourceDecisionIdsFor = (
     : []
   ));
 };
+
+const staleSourceDecisionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.subjectType === "source_claim" ? candidate.staleSourceDecisionIds ?? [] : []
+) ?? []);
 
 const sourceClaimAuthorityCandidateFor = (
   readModel: DecisionPacketReadModelInput,
@@ -1086,7 +1093,7 @@ export const buildDecisionPacketFromReadModel = (
     governingSourceClaimIds
   );
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
-  const staleDecisionIds: string[] = [];
+  const staleDecisionIds = staleSourceDecisionIdsFor(readModel);
   const memoryRefs = memoryRefsFor(readModel);
   const staleKnowledgeIds: string[] = [];
   const noiseKnowledgeIds: string[] = [];

@@ -143,6 +143,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
   sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
+  staleSourceDecisionIds?: string[];
   sourceRejectionIds?: string[];
   pendingAntiMemoryReview?: DecisionPacketReadModelPendingAntiMemoryReview;
 }

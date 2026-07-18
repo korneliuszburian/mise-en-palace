@@ -635,6 +635,18 @@ describe("source review signals", () => {
     });
 
     expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        status: "rejected",
+        metadata: { decisionCorpusStatus: "stale" }
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "stale",
+      reasons: ["stale"]
+    });
+
+    expect(assessSourceClaimAuthority({
       claim: sourceClaim({}),
       now,
       decisionSupportEdgeIds: []

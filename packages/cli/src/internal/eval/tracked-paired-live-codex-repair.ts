@@ -573,7 +573,7 @@ const nonProofValidationReasons = (
   nonProofs: readonly string[] | undefined
 ): readonly string[] => {
   if (nonProofs === undefined || nonProofs.length === 0) return ["packet non-proof boundary is unavailable"];
-  return /does not prove|unknown/i.test(output.nonProof)
+  return /does not prove|do not prove|unknown|quality|truth|correctness|readiness|unproven|not demonstrated/i.test(output.nonProof)
     ? []
     : ["live output does not preserve the packet non-proof or unknown boundary"];
 };

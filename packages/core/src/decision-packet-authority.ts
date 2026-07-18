@@ -443,6 +443,7 @@ export const projectDecisionPacketActivationCandidate = (
   const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
+  const staleSourceDecisionIds = readMetadataStringList(candidate.metadata, "staleSourceDecisionIds");
   const sourceRejectionIds = readMetadataStringList(candidate.metadata, "sourceRejectionIds");
   const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
 
@@ -458,6 +459,7 @@ export const projectDecisionPacketActivationCandidate = (
     ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
     ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost }),
+    ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
     ...(sourceRejectionIds.length === 0 ? {} : { sourceRejectionIds }),
     ...(pendingAntiMemoryReview === undefined ? {} : { pendingAntiMemoryReview })
   } satisfies DecisionPacketActivationCandidateInput;

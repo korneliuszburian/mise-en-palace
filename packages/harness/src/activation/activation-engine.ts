@@ -7,6 +7,7 @@ import type {
   SourceClaimEdge,
   SourceAuthorityLabel,
   SourceConsensusTimelineEntry,
+  SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
   TaskContract
@@ -92,11 +93,13 @@ export interface ActivationCandidateRepositories {
     "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
   >> & Partial<Pick<
     SourceRepository,
-    | "getSourceClaimForProject"
+    "getSourceClaimForProject"
     | "getSourceDecisionForProject"
     | "listSourceRejectionsForClaim"
     | "listHistoricalClaimWarningsForProject"
-  >>;
+  >> & {
+    listSourceDecisionsForClaim?: (sourceClaimId: string) => Promise<readonly SourceDecision[]>;
+  };
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -656,6 +659,19 @@ const sourceDecisionEdgesForClaims = async (
   return edgesBySourceClaimId;
 };
 
+const staleSourceDecisionsForClaims = async (
+  listSourceDecisionsForClaim: (sourceClaimId: string) => Promise<readonly SourceDecision[]>,
+  sourceClaims: readonly { id: string }[]
+): Promise<ReadonlyMap<string, readonly SourceDecision[]>> => {
+  const decisionsBySourceClaimId = new Map<string, readonly SourceDecision[]>();
+
+  await Promise.all(sourceClaims.map(async (claim) => {
+    decisionsBySourceClaimId.set(claim.id, await listSourceDecisionsForClaim(claim.id));
+  }));
+
+  return decisionsBySourceClaimId;
+};
+
 const sourceDecisionSupportBoostMetadata = (
   edges: readonly SourceDecisionEdge[]
 ): Record<string, unknown> => {
@@ -825,6 +841,12 @@ export const retrieveActivationCandidates = async (
     input.repositories.sourceRepository,
     expandedSourceClaims
   );
+  const staleSourceDecisionsByClaimId = input.repositories.sourceRepository.listSourceDecisionsForClaim === undefined
+    ? new Map<string, readonly SourceDecision[]>()
+    : await staleSourceDecisionsForClaims(
+      (sourceClaimId) => input.repositories.sourceRepository.listSourceDecisionsForClaim!(sourceClaimId),
+      sourceClaims
+    );
   const sourceDecisionEdgesByClaimId = new Map([
     ...seedSourceDecisionEdgesByClaimId,
     ...expandedSourceDecisionEdgesByClaimId
@@ -865,6 +887,9 @@ export const retrieveActivationCandidates = async (
     applySourceClaimEdgeRankDown(
       applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
         const sourceDecisionEdges = sourceDecisionEdgesByClaimId.get(claim.id) ?? [];
+        const staleSourceDecisionIds = (staleSourceDecisionsByClaimId.get(claim.id) ?? [])
+          .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
+          .map((decision) => decision.id);
         const sourceConsensusEntry = sourceConsensusEntriesByClaimId.get(claim.id);
         const decisionSupportEdgeIds =
           sourceConsensusEntry?.decisionSupportEdgeIds ??
@@ -902,6 +927,7 @@ export const retrieveActivationCandidates = async (
           sourceClaimReviewSignals,
           metadata: {
             ...candidate.metadata,
+            ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
             ...sourceDecisionSupportBoostMetadata(sourceDecisionEdges),
             sourceClaimAuthority: {
               status: authorityAssessment.status,

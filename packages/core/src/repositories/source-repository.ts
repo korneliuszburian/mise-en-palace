@@ -139,6 +139,9 @@ export interface SourceRepository {
     projectId: ProjectId,
     id: SourceDecision["id"]
   ): Promise<SourceDecision | undefined>;
+  listSourceDecisionsForClaim?(
+    sourceClaimId: SourceClaim["id"]
+  ): Promise<SourceDecision[]>;
   listSourceDecisionKnowledgeSources(
     projectId: ProjectId,
     limit: number

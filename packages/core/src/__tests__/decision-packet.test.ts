@@ -804,6 +804,36 @@ describe("DecisionPacket builder", () => {
     ]));
   });
 
+  it("preserves persisted stale SourceDecision ids as historical packet boundaries", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        activationTrace: {
+          ...readModel.context.activationTrace,
+          candidates: [
+            ...(readModel.context.activationTrace?.candidates ?? []),
+            {
+              id: "candidate-stale-source",
+              kind: "source",
+              status: "excluded",
+              subjectType: "source_claim",
+              subjectId: "claim-stale-source",
+              sourceAuthority: "project-decision",
+              reason: "stale",
+              staleSourceDecisionIds: ["source-decision-historical"]
+            }
+          ]
+        }
+      }
+    });
+
+    expect(packet.staleDecisionIds).toEqual(["source-decision-historical"]);
+    expect(packet.sourceConsensus.staleDecisionIds).toEqual(["source-decision-historical"]);
+    expect(packet.governingDecisionIds).not.toContain("source-decision-historical");
+    expect(packet.sourceDecisionIds).not.toContain("source-decision-historical");
+  });
+
   it("keeps project-scoped owner-file directives out of governing authority", () => {
     const packet = buildDecisionPacketFromReadModel({
       ...readModel,
