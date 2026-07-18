@@ -1372,6 +1372,7 @@ const hasPassedScore = (value: JsonRecord, execution: JsonRecord): boolean => {
 const isPassedTrialArtifact = (value: JsonRecord): boolean => {
   const execution = nestedRecord(value, "execution");
   return execution !== undefined &&
+    execution["decisionApplicationObservation"] === "observed" &&
     hasPassedPacket(value) &&
     hasPassedObservedConditions(execution) &&
     hasPassedTreeIdentity(value) &&
@@ -2125,6 +2126,15 @@ const executeComparableTrial = async (input: {
         }
       });
       decisionApplicationObservation = applications.length === 0 ? "none_observed" : "observed";
+      if (applications.length === 0) {
+        return {
+          status: "unverified",
+          invalidReasons: ["decision application persistence produced no observed applications"],
+          baselineTreeHash: input.trial.baseline.treeHash,
+          krnTreeHash: input.trial.krn.treeHash,
+          execution: { ...execution, decisionApplicationObservation }
+        };
+      }
     } catch {
       decisionApplicationObservation = "persistence_failed";
       return {

@@ -673,7 +673,12 @@ describe("tracked paired live Codex repair", () => {
           expect(input.rules).toEqual(passedManifest.decisionApplications);
           expect(await readFile(join(input.krnTarget.targetRoot, "src/target.ts"), "utf8"))
             .toContain("fixture");
-          return [];
+          return [{
+            sourceDecisionId: passedManifest.decisionApplications[0]!.sourceDecisionId,
+            applicationId: "application:tracked-passed",
+            appliedAt: "2026-07-18T00:00:00.000Z",
+            outcome: "used"
+          }];
         },
         attemptDirectory: join(root, "attempt")
       }, passingChecker));
@@ -681,7 +686,7 @@ describe("tracked paired live Codex repair", () => {
       expect(result.status).toBe("passed");
       expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
-      expect(result.execution.decisionApplicationObservation).toBe("none_observed");
+      expect(result.execution.decisionApplicationObservation).toBe("observed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
         "conditions_observed",
@@ -708,6 +713,26 @@ describe("tracked paired live Codex repair", () => {
         kind: "krn.pairedLiveCodexRepairArtifact.v1",
         score: legacyScore
       }))).toBe(true);
+
+      const noApplication = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: passedManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: { ...packet, request: { runId: passedManifest.runId } },
+        recordDecisionApplications: async () => [],
+        attemptDirectory: join(root, "no-application-attempt")
+      }, passingChecker));
+      expect(noApplication).toMatchObject({
+        status: "unverified",
+        execution: {
+          decisionApplicationObservation: "none_observed",
+          invalidReasons: ["decision application persistence produced no observed applications"]
+        }
+      });
+      expect(verifyTrackedTrialArtifact(noApplication)).toBe(true);
 
       const missingFocusedProof: PairedRepairScore = {
         ...result.score!,
