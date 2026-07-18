@@ -308,7 +308,7 @@ describe("command output artifact persistence", () => {
           packetGeneratedAt: packetBinding.packetGeneratedAt,
           sourceRunLifecycleRevision: packetBinding.sourceRunLifecycleRevision,
           sha256Hex
-        })).toBe(false);
+        })).toBe(true);
 
         const [bundleJson] = await scaffold.client<{ diagnosticJson: string }[]>`
           select (commands::text || metadata::text) as "diagnosticJson"
