@@ -12,6 +12,7 @@ import type {
   UpdateExecutionRunStatusResult,
   FeedbackDelta,
   FeedbackDeltaCreateStatus,
+  FeedbackDeltaStatus,
   HarnessPlan,
   IsoTimestamp,
   KnowledgeUsefulnessOutcomeFeedback,
@@ -95,7 +96,9 @@ export interface CreateReviewFeedbackOnceInput extends RepositoryMetadata {
   evidenceBundleId: string;
   requestIdentity: string;
   review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
-  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
+  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId" | "status"> & {
+    status?: FeedbackDeltaStatus;
+  };
 }
 
 export interface CreateReviewFeedbackOnceResult {

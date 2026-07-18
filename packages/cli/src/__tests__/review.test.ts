@@ -216,4 +216,65 @@ describe("runCli", () => {
       "review:evidence-bundle-1"
     ]);
   });
+
+  it("persists rejected review feedback as rejected lifecycle state", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedInput: CreateReviewFeedbackOnceInput | undefined;
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async createReviewFeedbackOnce(input: CreateReviewFeedbackOnceInput) {
+        capturedInput = input;
+        return {
+          reviewAssessment: {
+            id: "review-rejected-1",
+            evidenceBundleId: input.evidenceBundleId,
+            status: "rejected" as const,
+            reviewer: input.review.reviewer,
+            summary: input.review.summary,
+            findings: input.review.findings,
+            metadata: input.review.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          },
+          feedbackDelta: {
+            id: "feedback-rejected-1",
+            reviewAssessmentId: "review-rejected-1",
+            status: input.feedback.status ?? "candidate",
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: input.feedback.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          },
+          created: true
+        };
+      }
+    };
+
+    const result = await runCli(
+      [
+        "review", "assess", "--evidence-bundle-id", "evidence-rejected-1",
+        "--reviewer", "operator", "--status", "rejected", "--summary", "Rejected feedback.",
+        "--persist"
+      ],
+      {
+        env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createReviewAssessDatabaseRuntime: async () => ({
+          harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(capturedInput?.feedback.status).toBe("rejected");
+  });
 });
