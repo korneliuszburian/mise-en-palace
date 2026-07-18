@@ -100,6 +100,10 @@ const readModel = {
       subjectType: "source_claim",
       subjectId: "claim-superseded",
       reason: "superseded"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "memory-stale",
+      reason: "stale"
     }],
     activationTrace: {
       candidates: [{
@@ -663,7 +667,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.memoryRefs).toEqual(["memory-current"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
     expect(packet.staleDecisionIds).toEqual([]);
-    expect(packet.staleKnowledgeIds).toEqual([]);
+    expect(packet.staleKnowledgeIds).toEqual(["memory-stale"]);
     expect(packet.noiseKnowledgeIds).toEqual([]);
     expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
@@ -690,6 +694,28 @@ describe("DecisionPacket builder", () => {
         "caveated_memory_authority"
       ]
     });
+  });
+
+  it("keeps stale memory identity historical without promoting it into memoryRefs", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        exclusions: readModel.context.exclusions + 1,
+        exclusionDetails: [...(readModel.context.exclusionDetails ?? []), {
+          subjectType: "memory_record",
+          subjectId: "memory-stale-boundary",
+          reason: "stale"
+        }]
+      }
+    });
+
+    expect(packet.staleKnowledgeIds).toContain("memory-stale-boundary");
+    expect(packet.memoryRefs).not.toContain("memory-stale-boundary");
+    expect(packet.contextExclusions).toContainEqual(expect.objectContaining({
+      subjectId: "memory-stale-boundary",
+      reason: "stale"
+    }));
   });
 
   it("exposes canonical selected SourceDecision ids", () => {

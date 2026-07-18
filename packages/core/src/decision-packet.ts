@@ -203,6 +203,21 @@ export const decisionPacketNegativePathsForContext = (input: {
     .map((item) => item.subjectId))
 });
 
+/**
+ * Preserve memory candidates that activation rejected as stale as historical
+ * boundary evidence. They must not be confused with memoryRefs, which are
+ * the current positive context selected for the task.
+ */
+export const staleKnowledgeIdsForContext = (
+  contextExclusions: readonly {
+    readonly subjectType: ContextSubjectType;
+    readonly subjectId: string;
+    readonly reason: string;
+  }[]
+): readonly string[] => unique(contextExclusions
+  .filter((item) => item.subjectType === "memory_record" && item.reason === "stale")
+  .map((item) => item.subjectId));
+
 const decisionLinkedSourceClaimIdsFor = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -1095,7 +1110,7 @@ export const buildDecisionPacketFromReadModel = (
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
   const staleDecisionIds = staleSourceDecisionIdsFor(readModel);
   const memoryRefs = memoryRefsFor(readModel);
-  const staleKnowledgeIds: string[] = [];
+  const staleKnowledgeIds = staleKnowledgeIdsForContext(exclusions);
   const noiseKnowledgeIds: string[] = [];
   const unknownKnowledgeIds: string[] = [];
   const caveatedMemoryRefs = memoryRefsWithPendingAntiMemoryReview(readModel);

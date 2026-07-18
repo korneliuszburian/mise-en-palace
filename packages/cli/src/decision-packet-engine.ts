@@ -3,6 +3,7 @@ import {
   buildDecisionPacketSourceConsensus,
   decisionPacketFormatVersion,
   decisionPacketNegativePathsForContext,
+  staleKnowledgeIdsForContext,
   type CapabilityPlan,
   type ContextAssembly,
   type ContextObservationPrefix,
@@ -301,7 +302,7 @@ const packetForBriefInput = (input: {
     memoryRefs,
     caveatedMemoryRefs: [],
     staleDecisionIds: [],
-    staleKnowledgeIds: [],
+    staleKnowledgeIds: staleKnowledgeIdsForContext(contextExclusions),
     noiseKnowledgeIds: [],
     unknownKnowledgeIds: [],
     supersededPathIds: negativePaths.supersededPathIds,
@@ -649,6 +650,13 @@ export const buildDecisionPacketWithEngine = async (
       activationCandidateCount: retrieved.candidates.length
     }
   });
+  const contextExclusions = contextAssembly.exclusions.map((item) => ({
+    subjectType: item.subjectType,
+    subjectId: item.subjectId,
+    reason: item.reason,
+    explanation: item.explanation,
+    sourceAuthority: item.sourceAuthority
+  }));
   const evidenceContract = evidenceContractFor(testCase);
   const briefInput = {
     taskContract: taskContractFor(testCase),
@@ -755,13 +763,7 @@ export const buildDecisionPacketWithEngine = async (
       expectedUse: item.expectedUse,
       sourceAuthority: item.sourceAuthority
     })),
-    contextExclusions: contextAssembly.exclusions.map((item) => ({
-      subjectType: item.subjectType,
-      subjectId: item.subjectId,
-      reason: item.reason,
-      explanation: item.explanation,
-      sourceAuthority: item.sourceAuthority
-    })),
+    contextExclusions,
     toolBoundaries: briefInput.capabilityPlan.toolBoundaries,
     evidenceContract,
     nextAction: briefInput.nextAction,
@@ -779,7 +781,7 @@ export const buildDecisionPacketWithEngine = async (
       .filter((decision) => supportedGoverningDecisionIds.includes(decision.id))
       .map((decision) => `memory:decision:${decision.id}`)),
     staleDecisionIds,
-    staleKnowledgeIds: [],
+    staleKnowledgeIds: staleKnowledgeIdsForContext(contextExclusions),
     noiseKnowledgeIds: [],
     unknownKnowledgeIds: [],
     supersededPathIds: [],
