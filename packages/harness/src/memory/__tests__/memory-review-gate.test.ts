@@ -151,6 +151,44 @@ describe("promoteMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
+  it("rejects source-lineage-only candidates before they can become memory truth", async () => {
+    let promoteCalled = false;
+    let sourceLookupCalled = false;
+
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate({
+              sourceClaimIds: [],
+              sourceLineage: [{ sourceId: "untrusted-input:prompt-injection" }]
+            });
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimForProject() {
+            sourceLookupCalled = true;
+            return sourceClaim();
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      })
+    ).rejects.toThrow(
+      "MemoryCandidate memory-candidate-1 requires at least one reviewed SourceClaim before promotion"
+    );
+
+    expect(sourceLookupCalled).toBe(false);
+    expect(promoteCalled).toBe(false);
+  });
+
   it("rejects promotion when candidate evidence is weak default-template provenance", async () => {
     let promoteCalled = false;
 

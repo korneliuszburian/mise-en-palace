@@ -93,6 +93,10 @@ const trustedPromotionSourceTiers = new Set([
 const assertCandidatePromotionShape = (candidate: MemoryCandidate): void => {
   const candidateLabel = `MemoryCandidate ${candidate.id}`;
 
+  if (candidate.sourceClaimIds.length === 0) {
+    throw new Error(`${candidateLabel} requires at least one reviewed SourceClaim before promotion`);
+  }
+
   if (candidate.sourceLineage.length === 0) {
     throw new Error(`${candidateLabel} requires sourceLineage before promotion`);
   }
