@@ -72,6 +72,7 @@ export interface CreateSourceClaimEdgeInput {
     consumer: string;
     doesNotProve: string;
     evidenceRef?: string;
+    evidenceRefs?: readonly string[];
     sourceDecisionRef?: string;
     scope?: string;
     validFrom?: string;
