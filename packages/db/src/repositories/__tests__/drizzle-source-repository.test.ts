@@ -297,7 +297,7 @@ describe("DrizzleSourceRepository", () => {
         doesNotProve: valid.metadata.doesNotProve,
         scope: valid.metadata.scope
       }
-    })).toThrow("SourceClaimEdge invalidates requires metadata.evidenceRef or metadata.sourceDecisionRef");
+    })).toThrow("SourceClaimEdge invalidates requires metadata.evidenceRef, metadata.evidenceRefs, or metadata.sourceDecisionRef");
     expect(() => assertSourceClaimEdgeGovernance({
       ...valid,
       kind: "supersedes",

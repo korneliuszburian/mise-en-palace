@@ -889,7 +889,7 @@ export const assertSourceClaimEdgeGovernance = (
     !hasTextList(input.metadata.evidenceRefs)
   ) {
     throw new Error(
-      `SourceClaimEdge ${input.kind} requires metadata.evidenceRef or metadata.sourceDecisionRef`
+      `SourceClaimEdge ${input.kind} requires metadata.evidenceRef, metadata.evidenceRefs, or metadata.sourceDecisionRef`
     );
   }
 };
