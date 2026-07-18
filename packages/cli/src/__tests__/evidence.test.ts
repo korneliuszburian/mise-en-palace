@@ -1173,11 +1173,18 @@ describe("runCli", () => {
     expect(firstInput?.decisionPacketClaim).toBeDefined();
     expect(firstInput?.knowledgeUsefulnessOutcomes).toHaveLength(1);
     expect(firstInput?.maintenance).toBeDefined();
-    expect(retryInput?.decisionPacketClaim).toEqual(firstInput?.decisionPacketClaim);
-    expect(retryInput?.knowledgeUsefulnessOutcomes).toEqual(
-      firstInput?.knowledgeUsefulnessOutcomes
+    expect(retryInput?.decisionPacketClaim).toBeUndefined();
+    expect(retryInput?.semanticRequest?.decisionPacketClaim).toEqual(
+      firstInput?.semanticRequest?.decisionPacketClaim
     );
-    expect(retryInput?.maintenance).toEqual(firstInput?.maintenance);
+    expect(retryInput?.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(retryInput?.semanticRequest?.knowledgeUsefulnessOutcomes).toEqual(
+      firstInput?.semanticRequest?.knowledgeUsefulnessOutcomes
+    );
+    expect(retryInput?.maintenance).toBeUndefined();
+    expect(retryInput?.semanticRequest?.maintenance).toEqual(
+      firstInput?.semanticRequest?.maintenance
+    );
     expect(retryInput?.semanticRequest).toEqual(firstInput?.semanticRequest);
     expect(firstInput?.feedback.sourceDecisions).toHaveLength(1);
     expect(firstInput?.feedback.evalCandidates).toEqual([evalCandidateProposal]);
