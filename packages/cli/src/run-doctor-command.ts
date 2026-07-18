@@ -182,6 +182,11 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     databaseUrl: runtime.env.KRN_DATABASE_URL,
     evaluatorVersion: "db-smoke:targetRepoHarness"
   });
+  const initConnectProofFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "db-smoke:initConnect"
+  });
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
   const harnessPersistenceChecks = await checkHarnessPersistence(
@@ -233,7 +238,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
   const targetRepoChecks = await checkTargetRepoReadiness(
     repoRoot,
     runtime.env.KRN_DATABASE_URL,
-    targetRepoProofFingerprint.id
+    targetRepoProofFingerprint.id,
+    initConnectProofFingerprint.id
   );
   const checks = [
     ...postgresChecks,

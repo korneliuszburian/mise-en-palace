@@ -13,12 +13,17 @@ import {
   repoInstallations,
   workspaces
 } from "../../schema/index.js";
+import {
+  persistActivationRuntimeProof,
+  postgresStoreIdentity
+} from "../../activation-runtime-proof.js";
 
 export interface InitConnectSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
   targetRepoPath: string;
+  environmentFingerprintId?: string;
 }
 
 export interface InitConnectSmokeReport {
@@ -39,6 +44,11 @@ export interface InitConnectSmokeReport {
   repoInstallationCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
+  commandStatus: "passed";
+  observationOnly: true;
+  projectRegistrationReadback: true;
+  idempotencyReadback: true;
+  refreshReadback: true;
 }
 
 interface IdentifiedRecord {
@@ -343,7 +353,7 @@ export const runInitConnectSmokeCheck = async (
 
     const remainingMarkerCount = await cleanup();
 
-    return {
+    const report: InitConnectSmokeReport = {
       workspaceSlug,
       projectId: project.id,
       readBackProjectIdByFingerprint: initialReadback.readBackProjectIdByFingerprint,
@@ -360,8 +370,29 @@ export const runInitConnectSmokeCheck = async (
       refreshedOwnerFilePaths: refreshReadback.refreshedOwnerFilePaths,
       repoInstallationCount: installations.length,
       remainingMarkerCount,
-      cleanedUp: remainingMarkerCount === 0
+      cleanedUp: remainingMarkerCount === 0,
+      commandStatus: "passed",
+      observationOnly: true,
+      projectRegistrationReadback: true,
+      idempotencyReadback: true,
+      refreshReadback: true
     };
+
+    if (input.environmentFingerprintId !== undefined) {
+      await persistActivationRuntimeProof(client, {
+        proofKind: "init_connect",
+        scopeKey: input.targetRepoPath,
+        projectId: report.projectId,
+        environmentFingerprintId: input.environmentFingerprintId,
+        storeIdentity: postgresStoreIdentity(input.databaseUrl),
+        status: "passed",
+        capturedAt: new Date(),
+        cleanupRemainingMarkerCount: report.remainingMarkerCount,
+        report
+      });
+    }
+
+    return report;
   } finally {
     await client.end();
   }

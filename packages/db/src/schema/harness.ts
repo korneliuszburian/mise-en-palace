@@ -417,7 +417,7 @@ export const activationRuntimeProofs = pgTable(
     ),
     check(
       "activation_runtime_proofs_kind_known",
-      sql`${table.proofKind} in ('activation', 'target_repo_harness')`
+      sql`${table.proofKind} in ('activation', 'target_repo_harness', 'init_connect')`
     )
   ]
 );

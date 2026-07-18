@@ -1101,7 +1101,8 @@ const runInitConnectSmokeTarget: DbSmokeTargetHandler = async (
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
     smokeId: runtime.createId("init-connect-smoke"),
-    targetRepoPath: targetRepoFixturePath(context)
+    targetRepoPath: targetRepoFixturePath(context),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -1136,6 +1137,11 @@ const runInitConnectSmokeTarget: DbSmokeTargetHandler = async (
       `Refreshed ProjectKernel version: ${report.refreshedProjectKernelVersion}`,
       `Refreshed owner files: ${report.refreshedOwnerFilePaths.join(", ")}`,
       `Repo installations listed: ${report.repoInstallationCount}`,
+      `Command status: ${report.commandStatus}`,
+      `Observation-only boundary: ${report.observationOnly ? "yes" : "no"}`,
+      `Project registration readback: ${report.projectRegistrationReadback ? "matched" : "mismatch"}`,
+      `Idempotency readback: ${report.idempotencyReadback ? "matched" : "mismatch"}`,
+      `Refresh readback: ${report.refreshReadback ? "matched" : "mismatch"}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Init-connect smoke")
     ]

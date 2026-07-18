@@ -3,7 +3,7 @@ import type postgres from "postgres";
 const freshnessWindowMs = 15 * 60 * 1000;
 
 export interface ActivationRuntimeProofInput {
-  proofKind?: "activation" | "target_repo_harness";
+  proofKind?: "activation" | "target_repo_harness" | "init_connect";
   scopeKey?: string;
   projectId?: string;
   environmentFingerprintId: string;
@@ -16,7 +16,7 @@ export interface ActivationRuntimeProofInput {
 
 export interface ActivationRuntimeProofReadback {
   id: string;
-  proofKind: "activation" | "target_repo_harness";
+  proofKind: "activation" | "target_repo_harness" | "init_connect";
   scopeKey: string;
   projectId: string | null;
   environmentFingerprintId: string;
@@ -163,6 +163,51 @@ export const readCurrentTargetRepoRuntimeProof = async (
       report
     from activation_runtime_proofs
     where proof_kind = 'target_repo_harness'
+      and scope_key = ${input.scopeKey}
+      and store_identity = ${storeIdentity}
+      and environment_fingerprint_id = ${fingerprintId}
+      and status = 'passed'
+      and cleanup_remaining_marker_count = 0
+      and captured_at > ${capturedAfter.toISOString()}
+      and captured_at <= ${now.toISOString()}
+    order by captured_at desc
+    limit 1
+  `;
+
+  return row;
+};
+
+export const readCurrentInitConnectRuntimeProof = async (
+  client: postgres.Sql,
+  input: {
+    databaseUrl: string;
+    environmentFingerprintId: string | undefined;
+    scopeKey: string;
+    now?: Date;
+  }
+): Promise<ActivationRuntimeProofReadback | undefined> => {
+  const fingerprintId = input.environmentFingerprintId?.trim();
+  if (fingerprintId === undefined || fingerprintId.length === 0) {
+    return undefined;
+  }
+
+  const now = input.now ?? new Date();
+  const capturedAfter = new Date(now.getTime() - freshnessWindowMs);
+  const storeIdentity = postgresStoreIdentity(input.databaseUrl);
+  const [row] = await client<ActivationRuntimeProofReadback[]>`
+    select
+      id,
+      proof_kind as "proofKind",
+      scope_key as "scopeKey",
+      project_id as "projectId",
+      environment_fingerprint_id as "environmentFingerprintId",
+      store_identity as "storeIdentity",
+      status,
+      captured_at as "capturedAt",
+      cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
+      report
+    from activation_runtime_proofs
+    where proof_kind = 'init_connect'
       and scope_key = ${input.scopeKey}
       and store_identity = ${storeIdentity}
       and environment_fingerprint_id = ${fingerprintId}

@@ -11,6 +11,7 @@ import {
   persistActivationRuntimeProof,
   postgresStoreIdentity,
   readCurrentActivationRuntimeProof,
+  readCurrentInitConnectRuntimeProof,
   readCurrentTargetRepoRuntimeProof
 } from "../activation-runtime-proof.js";
 
@@ -105,6 +106,44 @@ describe.skipIf(databaseUrl === undefined)("activation runtime proof", () => {
       databaseUrl: databaseUrl!,
       environmentFingerprintId,
       scopeKey: "/repo/foreign",
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toBeUndefined();
+  });
+
+  it("scopes init-connect proofs to the exact fixture path and fingerprint", async () => {
+    const capturedAt = new Date();
+    const environmentFingerprintId = `init-connect-proof-${randomUUID()}`;
+    const scopeKey = "/repo/fixture/typescript-basic";
+    const id = await persistActivationRuntimeProof(client, {
+      proofKind: "init_connect",
+      scopeKey,
+      projectId: "init-project",
+      environmentFingerprintId,
+      storeIdentity: postgresStoreIdentity(databaseUrl!),
+      status: "passed",
+      capturedAt,
+      cleanupRemainingMarkerCount: 0,
+      report: {
+        commandStatus: "passed",
+        observationOnly: true,
+        projectRegistrationReadback: true,
+        idempotencyReadback: true,
+        refreshReadback: true
+      }
+    });
+    insertedIds.push(id);
+
+    await expect(readCurrentInitConnectRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId,
+      scopeKey,
+      now: new Date(capturedAt.getTime() + 60_000)
+    })).resolves.toMatchObject({ id, projectId: "init-project" });
+
+    await expect(readCurrentInitConnectRuntimeProof(client, {
+      databaseUrl: databaseUrl!,
+      environmentFingerprintId: "foreign-init-connect-proof",
+      scopeKey,
       now: new Date(capturedAt.getTime() + 60_000)
     })).resolves.toBeUndefined();
   });
