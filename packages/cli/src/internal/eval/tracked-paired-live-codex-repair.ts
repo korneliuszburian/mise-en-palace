@@ -894,6 +894,29 @@ export const codexCapabilityConfigArgs = (
   return args;
 };
 
+const codexCapabilityProfileConfig = (
+  baseConfig: string,
+  profile: CodexCapabilityProfile | undefined
+): string => {
+  if (profile === undefined) return baseConfig;
+  const serverConfig = profile.mcpServers.map((server) => [
+    `[mcp_servers.${server.name}]`,
+    `command = ${tomlString(server.command)}`,
+    `args = ${JSON.stringify(server.args)}`,
+    "enabled = true",
+    ...(server.envVars === undefined ? [] : [`env_vars = ${JSON.stringify(server.envVars)}`])
+  ].join("\n")).join("\n\n");
+  const skillConfig = profile.skillPaths.map((path) => [
+    "[[skills.config]]",
+    `path = ${tomlString(path)}`,
+    "enabled = true"
+  ].join("\n")).join("\n\n");
+  return [baseConfig.trimEnd(), serverConfig, skillConfig].filter((part) => part.length > 0).join("\n\n") + "\n";
+};
+
+const capabilityProfileName = (baseName: string, arm: "baseline" | "krn"): string =>
+  `${baseName}-${arm}`;
+
 const countCapabilityEvents = (value: Pick<CommandResult, "stdout">): CodexCapabilityUseObservation => {
   let mcpToolCallEvents = 0;
   let skillEvents = 0;
@@ -2001,9 +2024,26 @@ const prepareTrackedTrial = async (input: {
   const profilePath = join(input.sandboxRoot, `${input.context.manifest.codex.profile.name}.config.toml`);
   await writeFile(profilePath, input.context.manifest.codex.profile.config, { encoding: "utf8", flag: "wx" });
   const observedProfileHash = sha256(await readFile(profilePath, "utf8"));
+  const capabilityProfileHashes = {
+    baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
+    krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
+  };
+  if (input.context.manifest.capabilities !== undefined) {
+    for (const arm of ["baseline", "krn"] as const) {
+      const capabilityPath = join(
+        input.sandboxRoot,
+        `${capabilityProfileName(input.context.manifest.codex.profile.name, arm)}.config.toml`
+      );
+      const capabilityConfig = codexCapabilityProfileConfig(
+        input.context.manifest.codex.profile.config,
+        input.context.manifest.capabilities[arm]
+      );
+      await writeFile(capabilityPath, capabilityConfig, { encoding: "utf8", flag: "wx" });
+    }
+  }
   conditions = {
     ...conditions,
-    observed: { ...conditions.observed, profileHash: observedProfileHash }
+    observed: { ...conditions.observed, profileHash: observedProfileHash, capabilityProfileHashes }
   };
   if (observedProfileHash !== input.context.manifest.codex.profile.hash) {
     return { kind: "rejected", status: "invalid", reason: "materialized Codex profile does not match the manifest", conditions };
@@ -2207,10 +2247,18 @@ const executeComparableTrial = async (input: {
     prompt: string,
     environment: NodeJS.ProcessEnv
   ): Promise<CommandResult> => {
+    const capabilityProfile = input.trial.context.manifest.capabilities?.[arm];
+    const profileName = capabilityProfile === undefined
+      ? input.trial.context.manifest.codex.profile.name
+      : capabilityProfileName(input.trial.context.manifest.codex.profile.name, arm);
     const baseArgs = input.trial.context.manifest.codex.args.map((argument) =>
-      replaceArgument(argument, { "{prompt}": prompt, "{targetRoot}": target.root })
+      replaceArgument(argument, {
+        "{prompt}": prompt,
+        "{targetRoot}": target.root,
+        [input.trial.context.manifest.codex.profile.name]: profileName
+      })
     );
-    const capabilityArgs = codexCapabilityConfigArgs(input.trial.context.manifest.capabilities?.[arm]);
+    const capabilityArgs: readonly string[] = [];
     const promptIndex = baseArgs.indexOf(prompt);
     const args = promptIndex < 0
       ? [...baseArgs, ...capabilityArgs]
