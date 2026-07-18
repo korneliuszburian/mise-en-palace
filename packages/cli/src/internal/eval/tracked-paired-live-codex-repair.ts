@@ -754,7 +754,10 @@ const allowlistedEnvironment = (
   TMPDIR: sandboxRoot,
   TMP: sandboxRoot,
   TEMP: sandboxRoot,
-  KRN_TRIAL_TARGET_ROOT: targetRoot
+  KRN_TRIAL_TARGET_ROOT: targetRoot,
+  ...(process.env.KRN_DATABASE_URL === undefined
+    ? {}
+    : { KRN_DATABASE_URL: process.env.KRN_DATABASE_URL })
 });
 
 const materializeChatGptAuth = async (sandboxRoot: string): Promise<string | undefined> => {
@@ -1023,6 +1026,7 @@ const environmentProfileHash = (
   TMP: normalizedEnvironmentPath(environment.TMP, sandboxRoot, "{sandboxRoot}"),
   TEMP: normalizedEnvironmentPath(environment.TEMP, sandboxRoot, "{sandboxRoot}"),
   KRN_TRIAL_TARGET_ROOT: normalizedEnvironmentPath(environment.KRN_TRIAL_TARGET_ROOT, targetRoot, "{targetRoot}"),
+  KRN_DATABASE_URL: environment.KRN_DATABASE_URL === undefined ? "absent" : "configured",
   OPENAI_API_KEY: environment.OPENAI_API_KEY === undefined ? "absent" : "present",
   network: "disabled"
 }));
