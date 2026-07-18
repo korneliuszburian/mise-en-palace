@@ -215,7 +215,11 @@ export const runReviewAssessCommand = async (
           metadata
         },
         feedback: {
-          status: status === "rejected" ? "rejected" : "candidate",
+          status: status === "rejected"
+            ? "rejected"
+            : status === "accepted"
+              ? "accepted"
+              : "candidate",
           memoryCandidates: [],
           sourceDecisions: [],
           evalCandidates: [],
