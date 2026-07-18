@@ -69,6 +69,7 @@ export type CodexCapabilityMcpServer = {
   readonly name: string;
   readonly command: string;
   readonly args: readonly string[];
+  readonly envVars?: readonly string[];
 };
 
 export type CodexCapabilityProfile = {
@@ -341,6 +342,7 @@ const isCapabilityMcpServer = (value: unknown): value is CodexCapabilityMcpServe
   isRecord(value) &&
   hasRequiredStrings(value, ["name", "command"]) &&
   isStringArrayValue(value["args"]) &&
+  (value["envVars"] === undefined || (isStringArrayValue(value["envVars"]) && (value["envVars"] as string[]).every((name) => /^[A-Z][A-Z0-9_]*$/u.test(name)))) &&
   /^[A-Za-z0-9_-]+$/u.test(value["name"] as string);
 
 const isCapabilityProfile = (value: unknown, mode: CodexCapabilityProfile["mode"]): value is CodexCapabilityProfile =>
@@ -883,6 +885,9 @@ export const codexCapabilityConfigArgs = (
     args.push("--config", `mcp_servers.${server.name}.command=${tomlString(server.command)}`);
     args.push("--config", `mcp_servers.${server.name}.args=${JSON.stringify(server.args)}`);
     args.push("--config", `mcp_servers.${server.name}.enabled=true`);
+    if (server.envVars !== undefined) {
+      args.push("--config", `mcp_servers.${server.name}.env_vars=${JSON.stringify(server.envVars)}`);
+    }
   }
   const skills = profile.skillPaths.map((path) => `{path=${tomlString(path)},enabled=true}`);
   args.push("--config", `skills.config=[${skills.join(",")}]`);

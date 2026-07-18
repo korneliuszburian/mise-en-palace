@@ -42,7 +42,7 @@ describe("Codex capability profiles", () => {
     ]);
     expect(codexCapabilityConfigArgs({
       mode: "krn",
-      mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio", "--read-only"] }],
+      mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio", "--read-only"], envVars: ["KRN_DATABASE_URL"] }],
       skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
     })).toEqual([
       "--config",
@@ -51,6 +51,8 @@ describe("Codex capability profiles", () => {
       "mcp_servers.krn_decision_packet.args=[\"stdio\",\"--read-only\"]",
       "--config",
       "mcp_servers.krn_decision_packet.enabled=true",
+      "--config",
+      "mcp_servers.krn_decision_packet.env_vars=[\"KRN_DATABASE_URL\"]",
       "--config",
       "skills.config=[{path=\"/home/krn/skills/krn-memory-core/SKILL.md\",enabled=true}]"
     ]);
