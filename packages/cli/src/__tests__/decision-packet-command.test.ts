@@ -904,6 +904,8 @@ describe("decision packet CLI", () => {
       .toEqual(packetWithoutFeedback.caveatedMemoryRefs);
     expect(packetWithRejectedHistory.staleKnowledgeIds)
       .toEqual(packetWithoutFeedback.staleKnowledgeIds);
+    expect(packetWithRejectedHistory.reviewOnlyUsefulnessCaveats)
+      .toBeUndefined();
     expect(packetWithRejectedHistory.evidenceGaps)
       .toEqual(packetWithoutFeedback.evidenceGaps);
     expect(packetWithRejectedHistory.abstentionScore)

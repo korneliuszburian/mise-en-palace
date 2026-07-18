@@ -8,11 +8,13 @@ import {
 } from "@krn/harness";
 import {
   classifyTargetFit,
+  isSourceUsefulnessOutcome,
   parseTargetFitSummary,
   summarizeTargetFit,
   targetFitValues
 } from "@krn/core";
 import type {
+  DecisionPacketReviewOnlyUsefulnessCaveat,
   TargetFit,
   TargetFitSummary
 } from "@krn/core";
@@ -46,6 +48,7 @@ export interface KnowledgePlanSelection {
   selectedKnowledge: KnowledgePlanItem[];
   targetFitSummary: TargetFitSummary;
   recommendedNextAction: string;
+  reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   reason: string;
   doesNotProve: string;
   proof: {
@@ -129,6 +132,58 @@ const parseStringArray = (value: unknown): string[] | undefined => {
 
   return strings.length === value.length ? strings : undefined;
 };
+
+const isReviewOnlySubjectType = (
+  value: unknown
+): value is DecisionPacketReviewOnlyUsefulnessCaveat["subjectType"] =>
+  value === "source_claim" || value === "source_decision" || value === "knowledge";
+const isReviewOnlyFeedbackStatus = (
+  value: unknown
+): value is DecisionPacketReviewOnlyUsefulnessCaveat["feedbackStatus"] =>
+  value === "candidate" || value === "accepted" || value === "rejected" || value === "applied";
+
+const reviewOnlyUsefulnessCaveatFromMetadata = (
+  value: unknown
+): DecisionPacketReviewOnlyUsefulnessCaveat | undefined => {
+  if (!isRecord(value)) return undefined;
+  const subjectType = value["subjectType"];
+  const feedbackStatus = value["feedbackStatus"];
+  const outcome = value["outcome"];
+  const subjectId = parseNonEmptyString(value["subjectId"]);
+  const reason = parseNonEmptyString(value["reason"]);
+  const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
+
+  if (
+    !isReviewOnlySubjectType(subjectType) ||
+    !isReviewOnlyFeedbackStatus(feedbackStatus) ||
+    !isSourceUsefulnessOutcome(outcome) ||
+    subjectId === undefined ||
+    reason === undefined ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  const feedbackDeltaId = parseNonEmptyString(value["feedbackDeltaId"]);
+  return {
+    ...(feedbackDeltaId === undefined ? {} : { feedbackDeltaId }),
+    subjectType,
+    subjectId,
+    feedbackStatus,
+    outcome,
+    reason,
+    doesNotProve
+  };
+};
+
+const reviewOnlyUsefulnessCaveatsFromMetadata = (
+  value: unknown
+): DecisionPacketReviewOnlyUsefulnessCaveat[] => Array.isArray(value)
+  ? value.flatMap((item) => {
+      const caveat = reviewOnlyUsefulnessCaveatFromMetadata(item);
+      return caveat === undefined ? [] : [caveat];
+    })
+  : [];
 
 const parseObjectFields = <T extends object>(
   record: Record<string, unknown>,
@@ -297,6 +352,12 @@ export const knowledgeSelectionFromReadbackJson = (
     selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
     selectedKnowledge,
     targetFitSummary,
+    ...(reviewOnlyUsefulnessCaveatsFromMetadata(record?.reviewOnlyUsefulnessCaveats).length === 0
+      ? {}
+      : {
+          reviewOnlyUsefulnessCaveats:
+            reviewOnlyUsefulnessCaveatsFromMetadata(record?.reviewOnlyUsefulnessCaveats)
+        }),
     recommendedNextAction: targetFitSummary.recommendedUse,
     reason: "Knowledge read model matched the pre-coding plan query.",
     doesNotProve:
@@ -376,6 +437,12 @@ export const knowledgeSelectionFromMetadata = (
     ...requiredFields,
     selectedKnowledge,
     targetFitSummary,
+    ...(reviewOnlyUsefulnessCaveatsFromMetadata(value.reviewOnlyUsefulnessCaveats).length === 0
+      ? {}
+      : {
+          reviewOnlyUsefulnessCaveats:
+            reviewOnlyUsefulnessCaveatsFromMetadata(value.reviewOnlyUsefulnessCaveats)
+        }),
     recommendedNextAction:
       parseNonEmptyString(value.recommendedNextAction) ?? targetFitSummary.recommendedUse,
     proof: proofFromRecord(value.proof)

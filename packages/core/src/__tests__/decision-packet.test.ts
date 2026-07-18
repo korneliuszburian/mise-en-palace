@@ -1553,6 +1553,26 @@ describe("DecisionPacket builder", () => {
 
     expect(packet.caveatedSourceClaimIds).toEqual(["claim-hurt"]);
     expect(packet.caveatedMemoryRefs).toEqual([]);
+    expect(packet.reviewOnlyUsefulnessCaveats).toEqual([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: "claim-hurt",
+        outcome: "hurt",
+        feedbackStatus: "accepted"
+      }),
+      expect.objectContaining({
+        subjectType: "source_decision",
+        subjectId: "source-decision-feedback-rejected",
+        outcome: "rejected",
+        feedbackStatus: "accepted"
+      }),
+      expect.objectContaining({
+        subjectType: "knowledge",
+        subjectId: "memory-hurt",
+        outcome: "hurt",
+        feedbackStatus: "accepted"
+      })
+    ]);
     expect(packet.rejectedPathIds).not.toContain("source-decision-feedback-rejected");
     expect(packet.sourceRejectionIds).toEqual([]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
@@ -1633,6 +1653,14 @@ describe("DecisionPacket builder", () => {
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
       "decision:<id>=selected"
     );
+    expect(first.packet.reviewOnlyUsefulnessCaveats).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectType: "knowledge",
+        subjectId: "memory-current",
+        outcome: "stale",
+        feedbackStatus: "accepted"
+      })
+    ]));
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);

@@ -52,6 +52,16 @@ const contextExclusionSchema = z.strictObject({
   sourceAuthority: SourceAuthorityLabelSchema
 });
 
+const reviewOnlyUsefulnessCaveatSchema = z.strictObject({
+  feedbackDeltaId: z.string().optional(),
+  subjectType: z.enum(["source_claim", "source_decision", "knowledge"]),
+  subjectId: z.string(),
+  feedbackStatus: z.enum(["candidate", "accepted", "rejected", "applied"]),
+  outcome: z.enum(["selected", "used", "helped", "neutral", "noise", "stale", "hurt", "rejected", "unknown"]),
+  reason: z.string(),
+  doesNotProve: z.string()
+});
+
 const taskStandardSchema = z.strictObject({
   memoryRecordId: z.string(),
   key: z.string(),
@@ -244,6 +254,7 @@ const decisionPacketSchema = z.strictObject({
   sourceRejectionIds: stringArraySchema,
   memoryRefs: stringArraySchema,
   caveatedMemoryRefs: stringArraySchema,
+  reviewOnlyUsefulnessCaveats: z.array(reviewOnlyUsefulnessCaveatSchema).optional(),
   staleDecisionIds: stringArraySchema,
   staleKnowledgeIds: stringArraySchema,
   noiseKnowledgeIds: stringArraySchema,
@@ -342,10 +353,27 @@ const normalizeTaskStandard = (
   doesNotProve: standard.doesNotProve
 });
 
+const normalizeReviewOnlyUsefulnessCaveat = (
+  caveat: NonNullable<ParsedDecisionPacketContractReadback["packet"]["reviewOnlyUsefulnessCaveats"]>[number]
+) => {
+  const { feedbackDeltaId, ...fields } = caveat;
+  return {
+    ...fields,
+    ...(feedbackDeltaId === undefined ? {} : { feedbackDeltaId })
+  };
+};
+
 const normalizePacket = (
   packet: ParsedDecisionPacketContractReadback["packet"]
 ): DecisionPacket => {
-  const { evidenceContract, task, taskStandardDecisions, sourceConsensus, ...packetFields } = packet;
+  const {
+    evidenceContract,
+    task,
+    taskStandardDecisions,
+    sourceConsensus,
+    reviewOnlyUsefulnessCaveats,
+    ...packetFields
+  } = packet;
   const { timeline, ...sourceConsensusFields } = sourceConsensus;
 
   return {
@@ -361,6 +389,12 @@ const normalizePacket = (
       ...(task.status === undefined ? {} : { status: task.status })
     },
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
+    ...(reviewOnlyUsefulnessCaveats === undefined
+      ? {}
+      : {
+          reviewOnlyUsefulnessCaveats:
+            reviewOnlyUsefulnessCaveats.map(normalizeReviewOnlyUsefulnessCaveat)
+        }),
     taskStandardDecisions: taskStandardDecisions.map(normalizeTaskStandard),
     sourceConsensus: {
       ...sourceConsensusFields,

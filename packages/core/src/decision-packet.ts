@@ -129,6 +129,16 @@ export interface DecisionPacketContextExclusion {
   sourceAuthority: SourceAuthorityLabel;
 }
 
+export interface DecisionPacketReviewOnlyUsefulnessCaveat {
+  feedbackDeltaId?: string;
+  subjectType: "source_claim" | "source_decision" | "knowledge";
+  subjectId: string;
+  feedbackStatus: FeedbackDeltaStatus;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  doesNotProve: string;
+}
+
 export interface DecisionPacketEvidenceContract {
   commands: readonly {
     command: string;
@@ -218,6 +228,52 @@ export const staleKnowledgeIdsForContext = (
   .filter((item) => item.subjectType === "memory_record" &&
     (item.reason === "stale" || item.reason === "invalidated"))
   .map((item) => item.subjectId));
+
+const reviewOnlyUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
+  "noise",
+  "stale",
+  "hurt",
+  "rejected",
+  "unknown"
+]);
+
+const reviewOnlyUsefulnessCaveatsFor = (
+  feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[]
+): DecisionPacketReviewOnlyUsefulnessCaveat[] => feedbackDeltas
+  .filter((feedback) => feedback.status !== "rejected")
+  .flatMap((feedback) => [
+    ...feedback.sourceUsefulnessOutcomes.flatMap((outcome) => {
+      if (!reviewOnlyUsefulnessOutcomes.has(outcome.outcome)) return [];
+      const subjectType = outcome.sourceDecisionId === undefined
+        ? "source_claim" as const
+        : "source_decision" as const;
+      const subjectId = outcome.sourceDecisionId ?? outcome.sourceClaimId;
+      return subjectId === undefined ? [] : [{
+        ...(feedback.id === undefined ? {} : { feedbackDeltaId: feedback.id }),
+        subjectType,
+        subjectId,
+        feedbackStatus: feedback.status,
+        outcome: outcome.outcome,
+        reason: outcome.reason,
+        doesNotProve:
+          "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+      }];
+    }),
+    ...feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
+      !reviewOnlyUsefulnessOutcomes.has(outcome.outcome)
+        ? []
+        : [{
+            ...(feedback.id === undefined ? {} : { feedbackDeltaId: feedback.id }),
+            subjectType: "knowledge" as const,
+            subjectId: outcome.knowledgeId,
+            feedbackStatus: feedback.status,
+            outcome: outcome.outcome,
+            reason: outcome.reason,
+            doesNotProve:
+              "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+          }]
+    )
+  ]);
 
 const decisionLinkedSourceClaimIdsFor = (input: {
   readonly sourceClaimIds: readonly string[];
@@ -448,6 +504,7 @@ export interface DecisionPacket {
   sourceRejectionIds: readonly string[];
   memoryRefs: readonly string[];
   caveatedMemoryRefs: readonly string[];
+  reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   staleDecisionIds: readonly string[];
   staleKnowledgeIds: readonly string[];
   noiseKnowledgeIds: readonly string[];
@@ -487,6 +544,7 @@ export interface DecisionPacketReadModelInput {
   evidenceContract?: Pick<EvidenceContract, "commands" | "diffRisk" | "reviewBurden" | "rollbackPath">;
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
   feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
+  reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   proof: {
     doesNotProve: readonly string[];
   };
@@ -557,6 +615,7 @@ export interface DecisionPacketEvidenceBundleInput {
 }
 
 export interface DecisionPacketFeedbackDeltaInput {
+  id?: string;
   status: FeedbackDeltaStatus;
   candidates: readonly {
     kind: FeedbackCandidateProposalKind;
@@ -1114,6 +1173,23 @@ export const buildDecisionPacketFromReadModel = (
   const staleKnowledgeIds = staleKnowledgeIdsForContext(exclusions);
   const noiseKnowledgeIds: string[] = [];
   const unknownKnowledgeIds: string[] = [];
+  const caveatsFromFeedback = reviewOnlyUsefulnessCaveatsFor(readModel.feedbackDeltas);
+  const caveatKeys = new Set<string>();
+  const reviewOnlyUsefulnessCaveats = [
+    ...caveatsFromFeedback,
+    ...(readModel.reviewOnlyUsefulnessCaveats ?? [])
+  ].filter((caveat) => {
+    const key = [
+      caveat.feedbackDeltaId ?? "",
+      caveat.subjectType,
+      caveat.subjectId,
+      caveat.feedbackStatus,
+      caveat.outcome
+    ].join(":");
+    if (caveatKeys.has(key)) return false;
+    caveatKeys.add(key);
+    return true;
+  });
   const caveatedMemoryRefs = memoryRefsWithPendingAntiMemoryReview(readModel);
   const sourceRejectionIds = sourceRejectionIdsFor(readModel);
   const supersededPathIds = sourceClaimExclusionIdsFor(
@@ -1234,6 +1310,9 @@ export const buildDecisionPacketFromReadModel = (
     sourceRejectionIds,
     memoryRefs,
     caveatedMemoryRefs,
+    ...(reviewOnlyUsefulnessCaveats.length === 0
+      ? {}
+      : { reviewOnlyUsefulnessCaveats }),
     staleDecisionIds,
     staleKnowledgeIds,
     noiseKnowledgeIds,

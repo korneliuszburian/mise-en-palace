@@ -619,6 +619,14 @@ const readKnowledgeSelection = async (
       totalReadModels: readModels.length,
       returnedReadModels: readModels.length,
       readModels,
+      ...(usefulnessSelection.reviewOnlyUsefulnessCaveats.length === 0
+        ? {}
+        : {
+            reviewOnlyUsefulnessCaveats:
+              usefulnessSelection.reviewOnlyUsefulnessCaveats.filter((caveat) =>
+                readModels.some((readModel) => readModel.id === caveat.subjectId)
+              )
+          }),
       proof: {
         proves: [
           "plan knowledge selection read active MemoryRecord rows from the resolved DB project",
