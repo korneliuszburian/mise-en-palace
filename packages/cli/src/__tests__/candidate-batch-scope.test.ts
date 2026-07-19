@@ -83,20 +83,20 @@ describe("candidate batch project scope", () => {
   });
 
   it("reports scope safely without leaking candidate metadata", () => {
-    const secret = "do-not-render-this-payload";
+    const privatePayload = "do-not-render-this-payload";
     let message = "";
     try {
       assertCandidateBatchProjectScope({
         projectId,
         sourceDecisionCandidates: [],
         memoryCandidateProposals: [],
-        evalCandidateProposals: [{ ...evalCandidate("project-b"), metadata: { secret } }]
+        evalCandidateProposals: [{ ...evalCandidate("project-b"), metadata: { privatePayload } }]
       });
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
     expect(message).toContain("eval candidate eval-candidate-1");
-    expect(message).not.toContain(secret);
+    expect(message).not.toContain(privatePayload);
   });
 
   it("marks scope rejection as non-retryable and stable", () => {
