@@ -45,6 +45,24 @@ import type {
   PairedDecisionApplicationRecorderInput,
   PairedDecisionApplicationRecord
 } from "./paired-decision-application.js";
+import {
+  isPairedMemoryTreatment,
+  isTrackedTrialCapabilities,
+  isTrackedTrialChecker,
+  isTrackedTrialContainment,
+  parseTrackedTrialManifest,
+  type CodexCapabilityProfile,
+  type PairedMemoryTreatment,
+  type PairedTrialManifest
+} from "./tracked-paired-trial-manifest.js";
+
+export {
+  parseTrackedTrialManifest,
+  type CodexCapabilityProfile,
+  type PairedDecisionApplicationRule,
+  type PairedMemoryTreatment,
+  type PairedTrialManifest
+} from "./tracked-paired-trial-manifest.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -68,86 +86,6 @@ export type ModelUsageObservation = {
   readonly latencySource: "arm_command_duration_ms";
 };
 
-export type PairedDecisionApplicationRule = {
-  readonly governingDecisionId: string;
-  readonly sourceDecisionId: string;
-  readonly check: DecisionApplicationCheckName;
-  readonly changedFiles: readonly string[];
-};
-
-export type CodexCapabilityMcpServer = {
-  readonly name: string;
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly envVars?: readonly string[];
-};
-
-export type CodexCapabilityProfile = {
-  readonly mode: "baseline" | "krn";
-  readonly mcpServers: readonly CodexCapabilityMcpServer[];
-  readonly skillPaths: readonly string[];
-};
-
-type HeldOutCheckName = NonNullable<PairedRepairScore["krn"]["checks"]>[number]["name"];
-type DecisionApplicationCheckName = Exclude<HeldOutCheckName, "focused_test_control">;
-
-/** Preregistered memory treatment labels for paired Codex trials. */
-export type PairedMemoryTreatment =
-  | "plain"
-  | "semantic_governed"
-  | "episodic_examples"
-  | "procedural_skills"
-  | "observational_summary";
-
-export type PairedTrialManifest = {
-  readonly kind: "krn.pairedLiveCodexRepairManifest.v1";
-  readonly scenario: string;
-  readonly sourcePath: string;
-  readonly projectId: string;
-  readonly taskId: string;
-  readonly task: string;
-  readonly requiredDecisionIds: readonly string[];
-  readonly decisionApplications: readonly PairedDecisionApplicationRule[];
-  readonly runId: string;
-  readonly codex: {
-    readonly command: string;
-    readonly args: readonly string[];
-    readonly model: string;
-    readonly cliVersion: string;
-    readonly profile: {
-      readonly name: string;
-      readonly config: string;
-      readonly hash: string;
-    };
-    readonly permissions: {
-      readonly sandbox: "workspace-write";
-      readonly approval: "never";
-    };
-    readonly networkPolicy: "disabled";
-    readonly budget: {
-      readonly timeoutMs: number;
-    };
-  };
-  readonly capabilities?: {
-    readonly baseline: CodexCapabilityProfile;
-    readonly krn: CodexCapabilityProfile;
-  };
-  readonly containment: {
-    readonly command: string;
-    readonly version: string;
-    readonly network: "model_service_egress";
-    readonly workspaceWriteRoot: "{targetRoot}";
-    readonly homeRoot: "{sandboxRoot}";
-  };
-  readonly checker: {
-    readonly heldOut: true;
-    readonly outcome: "win|tie|loss|invalid";
-  };
-  readonly checkerRevision?: string;
-  readonly packetContextMode?: "full" | "task-only";
-  readonly packetReadiness?: "ready" | "weak_context" | "abstain";
-  readonly treatment?: PairedMemoryTreatment;
-};
 
 export type TrialPacketValidation = {
   readonly valid: boolean;
@@ -357,166 +295,11 @@ const nestedRecord = (value: JsonRecord | undefined, key: string): JsonRecord | 
 const hasRequiredStrings = (value: JsonRecord | undefined, keys: readonly string[]): boolean =>
   value !== undefined && keys.every((key) => readString(value[key]) !== undefined);
 
-const isStringArrayValue = (value: unknown): boolean =>
-  Array.isArray(value) && value.every((item) => typeof item === "string");
-
-const isManifestProfile = (value: unknown): boolean =>
-  isRecord(value) && hasRequiredStrings(value, ["name", "config", "hash"]);
-
-const isCapabilityMcpServer = (value: unknown): value is CodexCapabilityMcpServer =>
-  isRecord(value) &&
-  hasRequiredStrings(value, ["name", "command"]) &&
-  isStringArrayValue(value["args"]) &&
-  (value["envVars"] === undefined || (isStringArrayValue(value["envVars"]) && (value["envVars"] as string[]).every((name) => /^[A-Z][A-Z0-9_]*$/u.test(name)))) &&
-  /^[A-Za-z0-9_-]+$/u.test(value["name"] as string);
-
-const isCapabilityProfile = (value: unknown, mode: CodexCapabilityProfile["mode"]): value is CodexCapabilityProfile =>
-  isRecord(value) &&
-  value["mode"] === mode &&
-  Array.isArray(value["mcpServers"]) &&
-  (value["mcpServers"] as unknown[]).every(isCapabilityMcpServer) &&
-  isStringArrayValue(value["skillPaths"]) &&
-  (value["skillPaths"] as string[]).every((path) => isAbsolute(path));
-
-const isManifestCapabilities = (
-  value: unknown
-): value is NonNullable<PairedTrialManifest["capabilities"]> =>
-  isRecord(value) &&
-  isCapabilityProfile(value["baseline"], "baseline") &&
-  isCapabilityProfile(value["krn"], "krn") &&
-  (value["baseline"] as CodexCapabilityProfile).mcpServers.length === 0 &&
-  (value["baseline"] as CodexCapabilityProfile).skillPaths.length === 0;
-
 const isManifestPermissions = (value: unknown): boolean =>
   isRecord(value) &&
   value["sandbox"] === "workspace-write" &&
   value["approval"] === "never";
 
-const isManifestBudget = (value: unknown): boolean =>
-  isRecord(value) &&
-  typeof value["timeoutMs"] === "number" &&
-  Number.isFinite(value["timeoutMs"]);
-
-const isManifestCodex = (value: unknown): boolean => {
-  if (!isRecord(value)) return false;
-  return hasRequiredStrings(value, ["command", "model", "cliVersion"]) &&
-    isStringArrayValue(value["args"]) &&
-    isManifestProfile(value["profile"]) &&
-    isManifestPermissions(value["permissions"]) &&
-    value["networkPolicy"] === "disabled" &&
-    isManifestBudget(value["budget"]);
-};
-
-const isManifestContainment = (value: unknown): boolean =>
-  isRecord(value) &&
-  hasRequiredStrings(value, ["command", "version", "workspaceWriteRoot", "homeRoot"]) &&
-  value["network"] === "model_service_egress" &&
-  value["workspaceWriteRoot"] === "{targetRoot}" &&
-  value["homeRoot"] === "{sandboxRoot}";
-
-const isManifestChecker = (value: unknown): boolean =>
-  isRecord(value) &&
-  value["heldOut"] === true &&
-    value["outcome"] === "win|tie|loss|invalid";
-
-const decisionApplicationCheckNames = new Set<DecisionApplicationCheckName>([
-  "preflight",
-  "invalid_json",
-  "missing_email",
-  "invalid_role",
-  "unknown_first",
-  "finite_result_state",
-  "focused_tests",
-  "forbidden_files",
-  "target_test",
-  "target_typecheck",
-  "target_diff_check",
-  "held_out_runtime"
-]);
-
-const isSafeDecisionApplicationPath = (value: unknown): value is string => {
-  const path = readString(value);
-  return path !== undefined &&
-    !isAbsolute(path) &&
-    path !== ".." &&
-    !path.startsWith(`..${sep}`);
-};
-
-const hasSafeDecisionApplicationPaths = (value: unknown): value is readonly string[] =>
-  Array.isArray(value) &&
-  value.length > 0 &&
-  value.every(isSafeDecisionApplicationPath) &&
-  new Set(value).size === value.length;
-
-const isDecisionApplicationRule = (value: unknown): value is PairedDecisionApplicationRule => {
-  if (!isRecord(value)) return false;
-  const governingDecisionId = readString(value["governingDecisionId"]);
-  const sourceDecisionId = readString(value["sourceDecisionId"]);
-  const check = value["check"];
-  return governingDecisionId !== undefined &&
-    sourceDecisionId !== undefined &&
-    governingDecisionId !== sourceDecisionId &&
-    typeof check === "string" &&
-    decisionApplicationCheckNames.has(check as DecisionApplicationCheckName) &&
-    hasSafeDecisionApplicationPaths(value["changedFiles"]);
-};
-
-const hasUnambiguousDecisionApplicationProofs = (
-  rules: readonly PairedDecisionApplicationRule[]
-): boolean => {
-  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
-  const sourceDecisionIds = rules.map((rule) => rule.sourceDecisionId);
-  const checks = rules.map((rule) => rule.check);
-  const changedFiles = rules.flatMap((rule) => rule.changedFiles);
-  return new Set(governingDecisionIds).size === governingDecisionIds.length &&
-    new Set(sourceDecisionIds).size === sourceDecisionIds.length &&
-    new Set(checks).size === checks.length &&
-    new Set(changedFiles).size === changedFiles.length;
-};
-
-const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
-  const requiredDecisionIds = value["requiredDecisionIds"];
-  const rules = value["decisionApplications"];
-  if (!Array.isArray(requiredDecisionIds) || !Array.isArray(rules) || !rules.every(isDecisionApplicationRule)) {
-    return false;
-  }
-  const requiredDecisionIdSet = new Set(requiredDecisionIds);
-  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
-  return requiredDecisionIds.every((id) => typeof id === "string") &&
-    requiredDecisionIdSet.size === requiredDecisionIds.length &&
-    hasUnambiguousDecisionApplicationProofs(rules) &&
-    governingDecisionIds.every((id) =>
-      requiredDecisionIdSet.has(id)
-    );
-};
-
-const isPairedMemoryTreatment = (value: unknown): value is PairedMemoryTreatment =>
-  value === "plain" ||
-  value === "semantic_governed" ||
-  value === "episodic_examples" ||
-  value === "procedural_skills" ||
-  value === "observational_summary";
-
-const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => {
-  if (!isRecord(value) || value["kind"] !== "krn.pairedLiveCodexRepairManifest.v1") return false;
-  return hasRequiredStrings(value, ["scenario", "sourcePath", "projectId", "taskId", "task", "runId"]) &&
-    Array.isArray(value["requiredDecisionIds"]) &&
-    value["requiredDecisionIds"].every((id) => readString(id) !== undefined) &&
-    hasCompleteDecisionApplicationRules(value) &&
-    (value["checkerRevision"] === undefined || readString(value["checkerRevision"]) !== undefined) &&
-    (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
-    (value["packetReadiness"] === undefined || value["packetReadiness"] === "ready" || value["packetReadiness"] === "weak_context" || value["packetReadiness"] === "abstain") &&
-    (value["treatment"] === undefined || isPairedMemoryTreatment(value["treatment"])) &&
-    (value["capabilities"] === undefined || isManifestCapabilities(value["capabilities"])) &&
-    isManifestCodex(value["codex"]) &&
-    isManifestContainment(value["containment"]) &&
-    isManifestChecker(value["checker"]);
-};
-
-export const parseTrackedTrialManifest = (value: unknown): PairedTrialManifest => {
-  if (!isPairedTrialManifest(value)) throw new Error("Invalid tracked paired-trial manifest");
-  return value;
-};
 
 export type LiveCodexObedienceOutput = {
   readonly decisionId: string | readonly string[];
@@ -1036,7 +819,7 @@ const packetTransportMcpServerName = "krn_decision_packet" as const;
 const hasPacketTransportCapability = (
   capabilities: PairedTrialManifest["capabilities"]
 ): boolean =>
-  isManifestCapabilities(capabilities) &&
+  isTrackedTrialCapabilities(capabilities) &&
   capabilities.krn.mcpServers.some((server) => server.name === packetTransportMcpServerName);
 
 const walkStructuredJson = (node: unknown, visit: (record: JsonRecord) => void): void => {
@@ -1171,7 +954,7 @@ const manifestConditionReasons = (manifest: PairedTrialManifest): readonly strin
     ...(manifest.capabilities === undefined
       ? []
       : [
-        missingReason(isManifestCapabilities(manifest.capabilities), "capability profiles are invalid"),
+        missingReason(isTrackedTrialCapabilities(manifest.capabilities), "capability profiles are invalid"),
         missingReason(manifest.codex.args.includes("--json"), "capability profiles require structured Codex JSON events"),
         missingReason(
           hasPacketTransportCapability(manifest.capabilities),
@@ -1453,7 +1236,7 @@ const isRequestedCodexConditions = (value: unknown): boolean => {
 };
 
 const isRequestedContainmentConditions = (value: unknown): boolean =>
-  isManifestContainment(value);
+  isTrackedTrialContainment(value);
 
 const isRequestedArmOrder = (value: unknown): boolean =>
   Array.isArray(value) &&
@@ -1466,7 +1249,7 @@ const isRequestedTrialConditions = (value: unknown): boolean => {
   return isRequestedCodexConditions(value["codex"]) &&
     isRequestedContainmentConditions(value["containment"]) &&
     isRequestedArmOrder(value["armOrder"]) &&
-    isManifestChecker(value["checker"]);
+    isTrackedTrialChecker(value["checker"]);
 };
 
 const isHeldOutRuntimePermissionFlag = (value: unknown): boolean =>
