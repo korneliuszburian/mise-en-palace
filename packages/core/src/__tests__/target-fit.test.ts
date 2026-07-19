@@ -47,6 +47,28 @@ describe("target fit", () => {
     }).targetFit).toBe("target_specific");
   });
 
+  it("requires target identity or multiple distinctive signals for target-specific fit", () => {
+    expect(classifyTargetFit({
+      query: "review current krn-seo workbench simplification",
+      text: "KRN brain review boundary"
+    }).targetFit).toBe("generic_guardrail");
+
+    expect(classifyTargetFit({
+      query: "review current krn-seo workbench simplification",
+      text: "Review the current krn-seo workbench"
+    })).toMatchObject({
+      targetFit: "target_specific",
+      targetFitReasons: expect.arrayContaining([
+        "matched explicit target identifier(s): krn-seo."
+      ])
+    });
+
+    expect(classifyTargetFit({
+      query: "TypeScript parser exemplar",
+      text: "Retained parser exemplar boundary"
+    }).targetFit).toBe("target_specific");
+  });
+
   it("summarizes selected knowledge target fit", () => {
     expect(summarizeTargetFit([]).verdict).toBe("no_selected_knowledge");
     expect(summarizeTargetFit([
