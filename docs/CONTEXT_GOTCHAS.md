@@ -39,11 +39,14 @@ canonical active profile and a focused preflight proves the profile is current.
 **Trigger:** A paired trial needs a persistent run and packet after the normal
 smoke cleanup has completed.
 
-**Safe action:** Generate an explicitly retained fixture, capture artifacts, and
-run `eval:paired-live:cleanup-retained` with its fixture report. Verify
-`remainingRows=0` and that unrelated project counts are unchanged. Never use
-manual SQL as the normal lifecycle and never confuse retained state with
-runtime memory.
+**Safe action:** Generate an explicitly retained fixture, capture artifacts,
+persist evidence-bearing trials, and run `eval:paired-live:cleanup-retained`
+with `--require-persisted <manifest.json> <attempt-directory> <fixture-report.json>`.
+Use `--disposable <fixture-report.json>` only for explicit no-quality
+harness-debug fixtures. Verify `remainingRows=0`, persisted eval-evidence
+readback before and after cleanup, and unchanged unrelated project counts.
+Never use manual SQL as the normal lifecycle and never confuse retained state
+with runtime memory.
 
 **Evidence / non-proof:** The guarded cleanup preserved unrelated projects
 (`87 -> 88 -> 87`) and reported zero remaining owned rows. This proves cleanup
