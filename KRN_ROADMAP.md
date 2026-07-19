@@ -36,11 +36,17 @@ standard expired.
 
 KRN is being built to beat plain Codex plus notes plus grep on governance,
 temporal correctness, rejected-path recall, source fidelity, abstention, and
-task usefulness. A first matched three-case internal-alpha series now shows one
+task usefulness. A first matched three-case internal-alpha series shows one
 bounded temporal-correctness win and two quality ties against plain Codex under
-the combined KRN MCP-plus-skill treatment. KRN used more model tokens in every case.
-This is evidence that governed context can change one relevant outcome, not yet
-evidence of repeatability, isolated MCP or skill causality, lower token cost,
+the combined KRN MCP-plus-skill treatment. Those authored cases initially used
+more model tokens in every KRN arm. After removing duplicate DecisionPacket
+text at the MCP boundary, one independently sourced historical repair produced
+an equal-quality result (7:7) while the KRN arm used 12.51% fewer input tokens,
+13.59% fewer cached-input tokens, 15.56% fewer output tokens, 27.34% fewer
+reasoning-output tokens, and completed 21.99% faster in that run. This is
+evidence that governed context can change one relevant outcome and can deliver
+the same result at lower observed cost on one ordinary task. It is not yet
+evidence of repeatability, isolated MCP or skill causality,
 arbitrary-repository portability, or broad superiority. KRN does not need to
 win raw recall against a comprehensive notes dump.
 
@@ -87,6 +93,9 @@ Built enough to keep:
   changed the next DecisionPacket readback;
 - retained paired-live evidence for three matched Codex tasks across async-job,
   temporal-policy, and weak-input failure families;
+- one preregistered, independently sourced historical `krn-search` repair in
+  which plain Codex and KRN both scored 7:7 while KRN used fewer observed
+  tokens and less wall time;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -95,8 +104,9 @@ Not product-ready:
 - no dashboard/API or broad MCP product surface beyond the minimal read-only
   `krn_decision_packet` wrapper;
 - no external operator/product proof beyond bounded target-repo harnesses;
-- no replicated advantage claim: the first matched series produced one KRN
-  quality win and two ties, with higher KRN token use in all three cases;
+- no replicated quality-advantage claim: the authored matched series produced
+  one KRN quality win and two ties, while the first independently sourced task
+  tied on quality and supplied only a one-run efficiency signal;
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
@@ -105,8 +115,19 @@ Not product-ready:
 
 The next phase is not a UI or executor phase. It is repeated use on ordinary
 engineering tasks: strengthen task-standard activation and temporal consensus
-where observed failures demand it, then replicate matched comparisons without
-growing a benchmark platform.
+where observed failures demand it, then replicate the independently sourced
+quality and efficiency measurements without growing a benchmark platform. The
+retained independent result is paired-live evidence
+`393cf6af-80cf-482a-bb57-d7c413a1cd27`, bound to DecisionPacket checksum
+`ea9bb76b10db7d6f6698d12344804124e1bffd0cb875eefd16598b5798a70014`
+and immutable artifact SHA-256
+`4ccbd05d065d2efdeeaccd0162d704cd0fbbeb2f676b9706eec1278ee8ae9f60`.
+Two earlier attempts were excluded before scoring because their invocation or
+timeout contract prevented a comparable completed pair. The valid attempt was
+read back after persistence and its retained fixture was removed through the
+guarded cleanup with zero owned rows remaining and unrelated project count
+unchanged. This provenance makes the result auditable; it does not make one
+stochastic task a causal or general advantage claim.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
