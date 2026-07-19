@@ -614,8 +614,8 @@ describe("tracked paired live Codex repair", () => {
   it("requires an explicit no-rejected-path statement when the packet has none", () => {
     const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
       decisionId: "decision-a",
-      rejectedPath: "no rejected paths in this packet",
-      staleBoundary: "no stale decisions",
+      rejectedPath: "No packet rejected path was supplied.",
+      staleBoundary: "No stale decision or knowledge ids were supplied.",
       nonProof: "does not prove execution",
       action: "validate"
     }));

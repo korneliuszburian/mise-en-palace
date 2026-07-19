@@ -372,13 +372,19 @@ const decisionValidationReasons = (
     : [];
 };
 
+const explicitlyNamesNoRejectedPath = (value: string): boolean =>
+  /\b(?:no|none)\b(?:\s+[\p{L}\p{N}_-]+){0,4}\s+rejected paths?\b/iu.test(value);
+
+const explicitlyNamesNoStaleBoundary = (value: string): boolean =>
+  /\b(?:no|none)\b(?:\s+[\p{L}\p{N}_-]+){0,4}\s+stale\b/iu.test(value);
+
 const rejectedPathValidationReasons = (
   output: LiveCodexObedienceOutput,
   rejected: readonly string[] | undefined
 ): readonly string[] => {
   if (rejected === undefined) return ["packet rejected-path ids are unavailable"];
   if (rejected.length === 0) {
-    return /no rejected|none rejected|no rejected path/i.test(output.rejectedPath)
+    return explicitlyNamesNoRejectedPath(output.rejectedPath)
       ? []
       : ["live output does not preserve the packet's explicit no-rejected-path boundary"];
   }
@@ -399,6 +405,9 @@ const staleBoundaryValidationReasons = (
   const uuidTokens = output.staleBoundary.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi) ?? [];
   if (uuidTokens.some((id) => !stale.includes(id))) {
     reasons.push("live output invents a stale boundary id outside packet authority");
+  }
+  if (stale.length === 0 && uuidTokens.length === 0 && !explicitlyNamesNoStaleBoundary(output.staleBoundary)) {
+    reasons.push("live output does not preserve the packet's explicit no-stale boundary");
   }
   return reasons;
 };
