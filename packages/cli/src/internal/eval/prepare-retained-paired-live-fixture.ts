@@ -38,6 +38,10 @@ const mcpServer = path.join(
   repoRoot,
   "packages/cli/src/internal/mcp/decision-packet-mcp-server.ts"
 );
+const memoryCoreSkill = path.join(
+  repoRoot,
+  ".agents/skills/krn-memory-core/SKILL.md"
+);
 const fixtureConfig = retainedPairedLiveFixtureConfigFor(repoRoot, requested.family);
 const retainedTrialSourceSeed = retainedTrialSourceDecisionSeedFor(
   repoRoot,
@@ -84,7 +88,7 @@ const commonCapabilities = {
       args: [mcpServer],
       envVars: ["KRN_DATABASE_URL"]
     }],
-    skillPaths: []
+    skillPaths: [memoryCoreSkill]
   }
 } as const;
 
