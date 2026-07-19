@@ -13,7 +13,8 @@ import type { EvalCandidateProposal } from "@krn/core";
 import type {
   CreateExecutionRunInput,
   CreateEvidenceFeedbackOnceInput,
-  CreateReviewFeedbackOnceInput
+  CreateReviewFeedbackOnceInput,
+  RecordPairedLiveEvalEvidenceInput
 } from "@krn/core/repositories";
 import {
   ReviewFeedbackIdentityConflictError
@@ -44,6 +45,7 @@ import {
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const postgresIt = it.skipIf(databaseUrl === undefined || databaseUrl.length === 0);
 const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
+const sha256Hex = (value: string): string => crypto.createHash("sha256").update(value).digest("hex");
 
 const evalCandidate: EvalCandidateProposal = {
   id: "eval-candidate-1",
@@ -243,7 +245,124 @@ describe("DrizzleHarnessRunRepository", () => {
     expect(typeof DrizzleHarnessRunRepository.prototype.getFeedbackDeltaForProject).toBe(
       "function"
     );
+    expect(typeof DrizzleHarnessRunRepository.prototype.recordPairedLiveEvalEvidenceOnce).toBe(
+      "function"
+    );
+    expect(typeof DrizzleHarnessRunRepository.prototype.listPairedLiveEvalEvidence).toBe(
+      "function"
+    );
   });
+
+  postgresIt(
+    "records paired-live eval evidence idempotently and lists exact refs by durable identity",
+    async () => {
+      const marker = `krn_paired_live_evidence_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "paired-live eval evidence falsifier",
+        workspacePrefix: "krn-paired-live-evidence",
+        projectSlug: "paired-live-evidence",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `paired live evidence ${marker}`,
+        taskContract: {
+          title: "Falsify paired-live eval evidence persistence",
+          objective: "Record a durable paired-live evidence row and read it back by project/run filters.",
+          constraints: ["real PostgreSQL", "proposal-only EvalCandidate evidence"],
+          nonGoals: ["do not promote memory or source truth"],
+          acceptance: ["exact packet, artifact, manifest, checker, and environment refs survive readback"]
+        },
+        harnessPlan: {
+          summary: "Paired-live evidence falsifier",
+          nextAction: "Record and list durable paired-live eval evidence."
+        }
+      });
+      try {
+        const runId = crypto.randomUUID();
+        const packetChecksum = sha256Hex(`${marker}:packet`);
+        const artifactHash = sha256Hex(`${marker}:artifact`);
+        const manifestHash = sha256Hex(`${marker}:manifest`);
+        const environmentProfileHash = sha256Hex(`${marker}:environment`);
+        const checkerRevision = "paired-live-codex-repair-checker.v3";
+        const input: RecordPairedLiveEvalEvidenceInput = {
+          projectId: scaffold.project.id,
+          runId,
+          candidateId: `paired-target-repair:${runId}`,
+          candidateStatus: "candidate",
+          title: "Paired target repair outcome: win",
+          scenario: "temporal-policy-drift",
+          family: "temporal-policy-drift",
+          expectedSignal: "Only a completed, predeclared KRN win may be classified as helped.",
+          artifactStatus: "passed",
+          outcome: "win",
+          usefulnessOutcome: "helped",
+          packetChecksum,
+          packetEvidenceRef: `packet:${packetChecksum}`,
+          artifactHash,
+          artifactRef: `artifact:sha256:${artifactHash}`,
+          manifestHash,
+          manifestRef: `manifest:sha256:${manifestHash}`,
+          checkerRevision,
+          checkerEvidenceRef: `checker:${checkerRevision}`,
+          environmentProfileHash,
+          environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`,
+          sourceEvidence: [
+            `packet:${packetChecksum}`,
+            `artifact:sha256:${artifactHash}`,
+            `manifest:sha256:${manifestHash}`,
+            `checker:${checkerRevision}`,
+            `environment:sha256:${environmentProfileHash}`
+          ],
+          evidenceRefs: [],
+          metadata: {
+            smokeId: marker,
+            evaluationKind: "paired_live_codex_repair"
+          }
+        };
+
+        const first = await scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce(input);
+        const replay = await scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce(input);
+        const listed = await scaffold.harnessRunRepository.listPairedLiveEvalEvidence({
+          projectId: scaffold.project.id,
+          runId,
+          scenario: "temporal-policy-drift",
+          outcome: "win",
+          usefulnessOutcome: "helped",
+          limit: 5
+        });
+        const misses = await scaffold.harnessRunRepository.listPairedLiveEvalEvidence({
+          projectId: scaffold.project.id,
+          runId: crypto.randomUUID()
+        });
+
+        expect(first.created).toBe(true);
+        expect(replay.created).toBe(false);
+        expect(replay.evidence).toEqual(first.evidence);
+        expect(listed).toHaveLength(1);
+        expect(listed[0]).toEqual(expect.objectContaining({
+          projectId: scaffold.project.id,
+          runId,
+          candidateId: `paired-target-repair:${runId}`,
+          packetEvidenceRef: `packet:${packetChecksum}`,
+          artifactRef: `artifact:sha256:${artifactHash}`,
+          manifestRef: `manifest:sha256:${manifestHash}`,
+          checkerEvidenceRef: `checker:${checkerRevision}`,
+          environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`,
+          usefulnessOutcome: "helped"
+        }));
+        expect(misses).toEqual([]);
+      } finally {
+        await scaffold.client`
+          delete from paired_live_eval_evidence
+          where metadata->>'smokeId' = ${marker}
+        `;
+        await scaffold.cleanup();
+        await scaffold.client.end();
+      }
+    }
+  );
 
   it("reads the persisted aggregate in a repeatable-read read-only transaction", async () => {
     const transactionCalls: Array<{
@@ -2000,6 +2119,179 @@ describe("DrizzleHarnessRunRepository", () => {
       }
     });
   });
+
+  postgresIt(
+    "keeps paired-live eval evidence readable after disposable harness rows are cleaned",
+    async () => {
+      const marker = `krn_paired_live_eval_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "paired-live eval evidence durability",
+        workspacePrefix: "krn-paired-live-eval",
+        projectSlug: "paired-live-eval",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `paired-live eval evidence ${marker}`,
+        taskContract: {
+          title: "Persist paired-live eval evidence",
+          objective: "Keep eval evidence after retained fixture cleanup.",
+          constraints: ["real PostgreSQL"],
+          nonGoals: ["do not promote memory or source truth"],
+          acceptance: ["durable paired-live eval readback survives disposable run cleanup"]
+        },
+        harnessPlan: {
+          summary: "Paired-live eval evidence durability falsifier",
+          nextAction: "Persist and read one paired-live eval evidence row."
+        }
+      });
+      try {
+        const run = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "paired-live-eval-durability",
+          metadata: { smokeId: marker }
+        });
+        const artifactHash = sha256Hex(`${marker}:artifact`);
+        const manifestHash = sha256Hex(`${marker}:manifest`);
+        const packetChecksum = sha256Hex(`${marker}:packet`);
+        const environmentProfileHash = sha256Hex(`${marker}:environment`);
+        const requiredEvidenceRefs = [
+          `packet:${packetChecksum}`,
+          `artifact:sha256:${artifactHash}`,
+          `manifest:sha256:${manifestHash}`,
+          "checker:paired-live-codex-repair-checker.v3",
+          `environment:sha256:${environmentProfileHash}`
+        ];
+        const evidenceInput = {
+          projectId: scaffold.project.id,
+          runId: run.id,
+          feedbackDeltaId: "00000000-0000-4000-8000-000000000201",
+          candidateId: `paired-target-repair:${run.id}`,
+          candidateStatus: "candidate" as const,
+          title: "Paired target repair outcome: win",
+          scenario: "temporal-policy-drift",
+          family: "temporal-policy-drift",
+          expectedSignal: "Only a predeclared KRN win may be classified as helped.",
+          artifactStatus: "passed" as const,
+          outcome: "win" as const,
+          usefulnessOutcome: "helped" as const,
+          packetChecksum,
+          packetEvidenceRef: `packet:${packetChecksum}`,
+          artifactHash,
+          artifactRef: `artifact:sha256:${artifactHash}`,
+          manifestHash,
+          manifestRef: `manifest:sha256:${manifestHash}`,
+          checkerRevision: "paired-live-codex-repair-checker.v3",
+          checkerEvidenceRef: "checker:paired-live-codex-repair-checker.v3",
+          environmentProfileHash,
+          environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`,
+          sourceEvidence: requiredEvidenceRefs,
+          evidenceRefs: requiredEvidenceRefs,
+          metadata: {
+            smokeId: marker,
+            evaluationKind: "paired_live_codex_repair"
+          }
+        };
+
+        const first = await scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce(
+          evidenceInput
+        );
+        const retry = await scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce(
+          evidenceInput
+        );
+
+        expect(first.created).toBe(true);
+        expect(retry.created).toBe(false);
+        expect(retry.evidence.id).toBe(first.evidence.id);
+        expect(retry.evidence).toMatchObject({
+          projectId: scaffold.project.id,
+          runId: run.id,
+          scenario: "temporal-policy-drift",
+          outcome: "win",
+          usefulnessOutcome: "helped",
+          checkerEvidenceRef: "checker:paired-live-codex-repair-checker.v3",
+          artifactRef: `artifact:sha256:${artifactHash}`,
+          manifestRef: `manifest:sha256:${manifestHash}`,
+          environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`
+        });
+
+        const otherArtifactHash = sha256Hex(`${marker}:other-artifact`);
+        await expect(scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce({
+          ...evidenceInput,
+          artifactHash: otherArtifactHash,
+          artifactRef: `artifact:sha256:${otherArtifactHash}`,
+          sourceEvidence: [
+            `packet:${packetChecksum}`,
+            `artifact:sha256:${otherArtifactHash}`,
+            `manifest:sha256:${manifestHash}`,
+            "checker:paired-live-codex-repair-checker.v3",
+            `environment:sha256:${environmentProfileHash}`
+          ],
+          evidenceRefs: [
+            `packet:${packetChecksum}`,
+            `artifact:sha256:${otherArtifactHash}`,
+            `manifest:sha256:${manifestHash}`,
+            "checker:paired-live-codex-repair-checker.v3",
+            `environment:sha256:${environmentProfileHash}`
+          ]
+        })).rejects.toThrow("paired-live eval evidence identity conflict");
+
+        const invalidArtifactHash = sha256Hex(`${marker}:invalid-artifact`);
+        await expect(scaffold.harnessRunRepository.recordPairedLiveEvalEvidenceOnce({
+          ...evidenceInput,
+          candidateId: `paired-target-repair:${crypto.randomUUID()}`,
+          artifactHash: invalidArtifactHash,
+          artifactRef: `artifact:sha256:${invalidArtifactHash}`,
+          artifactStatus: "invalid",
+          outcome: "invalid",
+          usefulnessOutcome: "helped",
+          sourceEvidence: [
+            `packet:${packetChecksum}`,
+            `artifact:sha256:${invalidArtifactHash}`,
+            `manifest:sha256:${manifestHash}`,
+            "checker:paired-live-codex-repair-checker.v3",
+            `environment:sha256:${environmentProfileHash}`
+          ],
+          evidenceRefs: [
+            `packet:${packetChecksum}`,
+            `artifact:sha256:${invalidArtifactHash}`,
+            `manifest:sha256:${manifestHash}`,
+            "checker:paired-live-codex-repair-checker.v3",
+            `environment:sha256:${environmentProfileHash}`
+          ]
+        })).rejects.toThrow("cannot mark non-passed artifacts helped");
+
+        await scaffold.cleanup();
+
+        const afterCleanup = await scaffold.harnessRunRepository.listPairedLiveEvalEvidence({
+          projectId: scaffold.project.id,
+          runId: run.id,
+          scenario: "temporal-policy-drift",
+          outcome: "win",
+          usefulnessOutcome: "helped",
+          limit: 10
+        });
+
+        expect(afterCleanup).toHaveLength(1);
+        expect(afterCleanup[0]).toEqual(expect.objectContaining({
+          id: first.evidence.id,
+          projectId: scaffold.project.id,
+          runId: run.id,
+          candidateId: `paired-target-repair:${run.id}`,
+          feedbackDeltaId: "00000000-0000-4000-8000-000000000201",
+          checkerEvidenceRef: "checker:paired-live-codex-repair-checker.v3"
+        }));
+      } finally {
+        await scaffold.client`
+          delete from paired_live_eval_evidence
+          where metadata->>'smokeId' = ${marker}
+        `;
+        await scaffold.cleanup();
+        await scaffold.client.end();
+      }
+    }
+  );
 
   it("returns feedback delta candidates from the mapped persisted row", async () => {
     const rowTimestamp = new Date("2026-07-07T00:00:00.000Z");

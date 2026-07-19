@@ -23,6 +23,12 @@ export type {
   UpdateExecutionRunStatusInput
 } from "./harness-run-repository.js";
 export type {
+  ListPairedLiveEvalEvidenceInput,
+  PairedLiveEvalEvidenceRecord,
+  RecordPairedLiveEvalEvidenceInput,
+  RecordPairedLiveEvalEvidenceResult
+} from "../eval.js";
+export type {
   CreateMemoryCandidateInput,
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,

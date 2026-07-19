@@ -590,3 +590,106 @@ export const feedbackDeltas = pgTable(
     index("feedback_deltas_status_idx").on(table.status)
   ]
 );
+
+export const pairedLiveEvalEvidence = pgTable(
+  "paired_live_eval_evidence",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").notNull(),
+    runId: uuid("run_id").notNull(),
+    feedbackDeltaId: uuid("feedback_delta_id"),
+    candidateId: text("candidate_id").notNull(),
+    candidateStatus: text("candidate_status").notNull().default("candidate"),
+    title: text("title").notNull(),
+    scenario: text("scenario").notNull(),
+    family: text("family").notNull(),
+    expectedSignal: text("expected_signal").notNull(),
+    artifactStatus: text("artifact_status").notNull(),
+    outcome: text("outcome").notNull(),
+    usefulnessOutcome: text("usefulness_outcome").notNull(),
+    packetChecksum: text("packet_checksum").notNull(),
+    packetEvidenceRef: text("packet_evidence_ref").notNull(),
+    artifactHash: text("artifact_hash").notNull(),
+    artifactRef: text("artifact_ref").notNull(),
+    manifestHash: text("manifest_hash").notNull(),
+    manifestRef: text("manifest_ref").notNull(),
+    checkerRevision: text("checker_revision").notNull(),
+    checkerEvidenceRef: text("checker_evidence_ref").notNull(),
+    environmentProfileHash: text("environment_profile_hash").notNull(),
+    environmentEvidenceRef: text("environment_evidence_ref").notNull(),
+    sourceEvidence: jsonListColumn("source_evidence"),
+    evidenceRefs: jsonListColumn("evidence_refs"),
+    metadata: metadataColumn(),
+    createdAt: createdAtColumn(),
+    updatedAt: updatedAtColumn()
+  },
+  (table) => [
+    uniqueIndex("paired_live_eval_evidence_candidate_unique").on(table.candidateId),
+    uniqueIndex("paired_live_eval_evidence_artifact_unique").on(table.artifactHash),
+    index("paired_live_eval_evidence_project_idx").on(table.projectId),
+    index("paired_live_eval_evidence_run_idx").on(table.runId),
+    index("paired_live_eval_evidence_outcome_idx").on(
+      table.projectId,
+      table.scenario,
+      table.outcome,
+      table.usefulnessOutcome
+    ),
+    index("paired_live_eval_evidence_created_idx").on(table.createdAt),
+    check(
+      "paired_live_eval_evidence_candidate_status_known",
+      sql`${table.candidateStatus} = 'candidate'`
+    ),
+    check(
+      "paired_live_eval_evidence_artifact_status_known",
+      sql`${table.artifactStatus} in ('passed', 'invalid', 'blocked', 'unverified')`
+    ),
+    check(
+      "paired_live_eval_evidence_outcome_known",
+      sql`${table.outcome} in ('win', 'tie', 'loss', 'invalid', 'unknown')`
+    ),
+    check(
+      "paired_live_eval_evidence_usefulness_known",
+      sql`${table.usefulnessOutcome} in ('helped', 'neutral', 'hurt', 'unknown')`
+    ),
+    check(
+      "paired_live_eval_evidence_nonpassed_not_helped",
+      sql`${table.artifactStatus} = 'passed' or ${table.usefulnessOutcome} <> 'helped'`
+    ),
+    check(
+      "paired_live_eval_evidence_invalid_not_helped",
+      sql`${table.outcome} <> 'invalid' or ${table.usefulnessOutcome} <> 'helped'`
+    ),
+    check(
+      "paired_live_eval_evidence_candidate_prefix",
+      sql`${table.candidateId} like 'paired-target-repair:%'`
+    ),
+    check(
+      "paired_live_eval_evidence_packet_ref_matches",
+      sql`${table.packetEvidenceRef} = 'packet:' || ${table.packetChecksum}`
+    ),
+    check(
+      "paired_live_eval_evidence_artifact_ref_matches",
+      sql`${table.artifactRef} = 'artifact:sha256:' || ${table.artifactHash}`
+    ),
+    check(
+      "paired_live_eval_evidence_manifest_ref_matches",
+      sql`${table.manifestRef} = 'manifest:sha256:' || ${table.manifestHash}`
+    ),
+    check(
+      "paired_live_eval_evidence_checker_ref_matches",
+      sql`${table.checkerEvidenceRef} = 'checker:' || ${table.checkerRevision}`
+    ),
+    check(
+      "paired_live_eval_evidence_environment_ref_matches",
+      sql`${table.environmentEvidenceRef} = 'environment:sha256:' || ${table.environmentProfileHash}`
+    ),
+    check(
+      "paired_live_eval_evidence_artifact_hash_format",
+      sql`${table.artifactHash} ~ '^[0-9a-f]{64}$'`
+    ),
+    check(
+      "paired_live_eval_evidence_manifest_hash_format",
+      sql`${table.manifestHash} ~ '^[0-9a-f]{64}$'`
+    )
+  ]
+);

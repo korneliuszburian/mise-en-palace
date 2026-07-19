@@ -165,6 +165,16 @@ export type CliCommand =
       format: "text" | "json";
     }
   | {
+      kind: "runEvalEvidence";
+      projectId: string;
+      runId?: string;
+      scenario?: string;
+      outcome?: "win" | "tie" | "loss" | "invalid" | "unknown";
+      usefulnessOutcome?: "helped" | "neutral" | "hurt" | "unknown";
+      limit?: number;
+      format: "text" | "json";
+    }
+  | {
       kind: "decisionPacketHelp";
     }
   | {
@@ -621,6 +631,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
+  "krn run eval-evidence --project-id <project-id> [--run-id <id>] [--json]",
   "krn decision packet --run-id <id> [--json]",
   "krn memory search --query \"...\" [--project <project-id>] [--json]",
   "krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",

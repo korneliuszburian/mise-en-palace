@@ -24,9 +24,13 @@ import type {
   FeedbackDelta,
   ProjectId,
   HarnessPlan,
+  ListPairedLiveEvalEvidenceInput,
   EvidenceCommandReadback,
   OperatorIntent,
+  PairedLiveEvalEvidenceRecord,
   ReviewAssessment,
+  RecordPairedLiveEvalEvidenceInput,
+  RecordPairedLiveEvalEvidenceResult,
   SourceUsefulnessOutcome,
   TaskContract,
   TargetStateSnapshot,
@@ -111,6 +115,7 @@ import {
   memoryRecords,
   operatorIntents,
   outboxEvents,
+  pairedLiveEvalEvidence,
   reviewAssessments,
   retrievalRuns,
   runEvents,
@@ -124,7 +129,10 @@ import {
 } from "../schema/retrieval.js";
 import {
   fromIsoTimestamp,
-  requireReturnedRow
+  metadataOrEmpty,
+  requireReturnedRow,
+  stringListOrEmpty,
+  toIsoTimestamp
 } from "./repository-value-readers.js";
 import {
   mapActivationDecision,
@@ -2120,6 +2128,263 @@ const insertReviewFeedbackChain = async (
   };
 };
 
+type PairedLiveEvalEvidenceRow = typeof pairedLiveEvalEvidence.$inferSelect;
+
+const pairedLiveEvalEvidenceArtifactStatuses = new Set([
+  "passed",
+  "invalid",
+  "blocked",
+  "unverified"
+]);
+const pairedLiveEvalEvidenceOutcomes = new Set([
+  "win",
+  "tie",
+  "loss",
+  "invalid",
+  "unknown"
+]);
+const pairedLiveEvalEvidenceUsefulnessOutcomes = new Set([
+  "helped",
+  "neutral",
+  "hurt",
+  "unknown"
+]);
+
+const asPairedLiveEvalEvidenceArtifactStatus = (
+  value: string
+): PairedLiveEvalEvidenceRecord["artifactStatus"] => {
+  if (pairedLiveEvalEvidenceArtifactStatuses.has(value)) {
+    return value as PairedLiveEvalEvidenceRecord["artifactStatus"];
+  }
+
+  throw new Error(`Unknown paired-live eval artifact status: ${value}`);
+};
+
+const asPairedLiveEvalEvidenceOutcome = (
+  value: string
+): PairedLiveEvalEvidenceRecord["outcome"] => {
+  if (pairedLiveEvalEvidenceOutcomes.has(value)) {
+    return value as PairedLiveEvalEvidenceRecord["outcome"];
+  }
+
+  throw new Error(`Unknown paired-live eval outcome: ${value}`);
+};
+
+const asPairedLiveEvalEvidenceUsefulnessOutcome = (
+  value: string
+): PairedLiveEvalEvidenceRecord["usefulnessOutcome"] => {
+  if (pairedLiveEvalEvidenceUsefulnessOutcomes.has(value)) {
+    return value as PairedLiveEvalEvidenceRecord["usefulnessOutcome"];
+  }
+
+  throw new Error(`Unknown paired-live eval usefulness outcome: ${value}`);
+};
+
+const asPairedLiveEvalEvidenceCandidateStatus = (
+  value: string
+): PairedLiveEvalEvidenceRecord["candidateStatus"] => {
+  if (value === "candidate") {
+    return value;
+  }
+
+  throw new Error(`Unknown paired-live eval candidate status: ${value}`);
+};
+
+const mapPairedLiveEvalEvidence = (
+  row: PairedLiveEvalEvidenceRow
+): PairedLiveEvalEvidenceRecord => ({
+  id: row.id,
+  projectId: row.projectId,
+  runId: row.runId,
+  ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+  candidateId: row.candidateId,
+  candidateStatus: asPairedLiveEvalEvidenceCandidateStatus(row.candidateStatus),
+  title: row.title,
+  scenario: row.scenario,
+  family: row.family,
+  expectedSignal: row.expectedSignal,
+  artifactStatus: asPairedLiveEvalEvidenceArtifactStatus(row.artifactStatus),
+  outcome: asPairedLiveEvalEvidenceOutcome(row.outcome),
+  usefulnessOutcome: asPairedLiveEvalEvidenceUsefulnessOutcome(row.usefulnessOutcome),
+  packetChecksum: row.packetChecksum,
+  packetEvidenceRef: row.packetEvidenceRef,
+  artifactHash: row.artifactHash,
+  artifactRef: row.artifactRef,
+  manifestHash: row.manifestHash,
+  manifestRef: row.manifestRef,
+  checkerRevision: row.checkerRevision,
+  checkerEvidenceRef: row.checkerEvidenceRef,
+  environmentProfileHash: row.environmentProfileHash,
+  environmentEvidenceRef: row.environmentEvidenceRef,
+  sourceEvidence: stringListOrEmpty(row.sourceEvidence),
+  evidenceRefs: stringListOrEmpty(row.evidenceRefs),
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt),
+  updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
+const requiredTrimmedText = (value: string, field: string): string => {
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error(`recordPairedLiveEvalEvidenceOnce requires ${field}`);
+  }
+
+  return trimmed;
+};
+
+const validationFailure = (
+  failed: boolean,
+  message: string
+): string | undefined => failed ? message : undefined;
+
+const pairedLiveEvalEvidenceValidationFailure = (
+  input: RecordPairedLiveEvalEvidenceInput
+): string | undefined => {
+  const allEvidenceRefs = new Set([...input.sourceEvidence, ...input.evidenceRefs]);
+  const requiredRefs = [
+    input.packetEvidenceRef,
+    input.artifactRef,
+    input.manifestRef,
+    input.checkerEvidenceRef,
+    input.environmentEvidenceRef
+  ];
+
+  return [
+    validationFailure(
+      !input.candidateId.startsWith("paired-target-repair:"),
+      "recordPairedLiveEvalEvidenceOnce requires a paired-target-repair candidate id"
+    ),
+    validationFailure(
+      input.candidateStatus !== "candidate",
+      "recordPairedLiveEvalEvidenceOnce stores proposal-only candidates"
+    ),
+    validationFailure(
+      input.artifactStatus !== "passed" && input.usefulnessOutcome === "helped",
+      "recordPairedLiveEvalEvidenceOnce cannot mark non-passed artifacts helped"
+    ),
+    validationFailure(
+      input.outcome === "invalid" && input.usefulnessOutcome === "helped",
+      "recordPairedLiveEvalEvidenceOnce cannot mark invalid outcomes helped"
+    ),
+    validationFailure(
+      input.packetEvidenceRef !== `packet:${input.packetChecksum}`,
+      "recordPairedLiveEvalEvidenceOnce packet evidence ref mismatch"
+    ),
+    validationFailure(
+      input.artifactRef !== `artifact:sha256:${input.artifactHash}`,
+      "recordPairedLiveEvalEvidenceOnce artifact evidence ref mismatch"
+    ),
+    validationFailure(
+      input.manifestRef !== `manifest:sha256:${input.manifestHash}`,
+      "recordPairedLiveEvalEvidenceOnce manifest evidence ref mismatch"
+    ),
+    validationFailure(
+      input.checkerEvidenceRef !== `checker:${input.checkerRevision}`,
+      "recordPairedLiveEvalEvidenceOnce checker evidence ref mismatch"
+    ),
+    validationFailure(
+      input.environmentEvidenceRef !== `environment:sha256:${input.environmentProfileHash}`,
+      "recordPairedLiveEvalEvidenceOnce environment evidence ref mismatch"
+    ),
+    ...requiredRefs.map((ref) =>
+      validationFailure(
+        !allEvidenceRefs.has(ref),
+        `recordPairedLiveEvalEvidenceOnce missing exact evidence ref ${ref}`
+      )
+    )
+  ].find((failure) => failure !== undefined);
+};
+
+const normalizePairedLiveEvalEvidenceInput = (
+  input: RecordPairedLiveEvalEvidenceInput
+): RecordPairedLiveEvalEvidenceInput => {
+  const normalized = {
+    projectId: requiredTrimmedText(input.projectId, "project id"),
+    runId: requiredTrimmedText(input.runId, "run id"),
+    ...(input.feedbackDeltaId === undefined
+      ? {}
+      : { feedbackDeltaId: requiredTrimmedText(input.feedbackDeltaId, "feedback delta id") }),
+    candidateId: requiredTrimmedText(input.candidateId, "candidate id"),
+    candidateStatus: input.candidateStatus,
+    title: requiredTrimmedText(input.title, "title"),
+    scenario: requiredTrimmedText(input.scenario, "scenario"),
+    family: requiredTrimmedText(input.family, "family"),
+    expectedSignal: requiredTrimmedText(input.expectedSignal, "expected signal"),
+    artifactStatus: input.artifactStatus,
+    outcome: input.outcome,
+    usefulnessOutcome: input.usefulnessOutcome,
+    packetChecksum: requiredTrimmedText(input.packetChecksum, "packet checksum"),
+    packetEvidenceRef: requiredTrimmedText(input.packetEvidenceRef, "packet evidence ref"),
+    artifactHash: requiredTrimmedText(input.artifactHash, "artifact hash"),
+    artifactRef: requiredTrimmedText(input.artifactRef, "artifact ref"),
+    manifestHash: requiredTrimmedText(input.manifestHash, "manifest hash"),
+    manifestRef: requiredTrimmedText(input.manifestRef, "manifest ref"),
+    checkerRevision: requiredTrimmedText(input.checkerRevision, "checker revision"),
+    checkerEvidenceRef: requiredTrimmedText(input.checkerEvidenceRef, "checker evidence ref"),
+    environmentProfileHash: requiredTrimmedText(
+      input.environmentProfileHash,
+      "environment profile hash"
+    ),
+    environmentEvidenceRef: requiredTrimmedText(
+      input.environmentEvidenceRef,
+      "environment evidence ref"
+    ),
+    sourceEvidence: [...input.sourceEvidence],
+    evidenceRefs: [...input.evidenceRefs],
+    metadata: input.metadata ?? {}
+  };
+
+  const validationError = pairedLiveEvalEvidenceValidationFailure(normalized);
+  if (validationError !== undefined) {
+    throw new Error(validationError);
+  }
+
+  return normalized;
+};
+
+const pairedLiveEvalEvidenceComparable = (
+  evidence: PairedLiveEvalEvidenceRecord | RecordPairedLiveEvalEvidenceInput
+) => ({
+  projectId: evidence.projectId,
+  runId: evidence.runId,
+  feedbackDeltaId: evidence.feedbackDeltaId ?? null,
+  candidateId: evidence.candidateId,
+  candidateStatus: evidence.candidateStatus,
+  title: evidence.title,
+  scenario: evidence.scenario,
+  family: evidence.family,
+  expectedSignal: evidence.expectedSignal,
+  artifactStatus: evidence.artifactStatus,
+  outcome: evidence.outcome,
+  usefulnessOutcome: evidence.usefulnessOutcome,
+  packetChecksum: evidence.packetChecksum,
+  packetEvidenceRef: evidence.packetEvidenceRef,
+  artifactHash: evidence.artifactHash,
+  artifactRef: evidence.artifactRef,
+  manifestHash: evidence.manifestHash,
+  manifestRef: evidence.manifestRef,
+  checkerRevision: evidence.checkerRevision,
+  checkerEvidenceRef: evidence.checkerEvidenceRef,
+  environmentProfileHash: evidence.environmentProfileHash,
+  environmentEvidenceRef: evidence.environmentEvidenceRef,
+  sourceEvidence: [...evidence.sourceEvidence],
+  evidenceRefs: [...evidence.evidenceRefs],
+  metadata: evidence.metadata ?? {}
+});
+
+const samePairedLiveEvalEvidence = (
+  existing: PairedLiveEvalEvidenceRecord,
+  input: RecordPairedLiveEvalEvidenceInput
+): boolean =>
+  JSON.stringify(canonicalJsonValue(pairedLiveEvalEvidenceComparable(existing))) ===
+  JSON.stringify(canonicalJsonValue(pairedLiveEvalEvidenceComparable(input)));
+
+const listPairedLiveEvalEvidenceLimit = (limit: number | undefined): number =>
+  limit === undefined || !Number.isInteger(limit) || limit <= 0
+    ? 100
+    : Math.min(limit, 500);
+
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(
     private readonly db: KrnDatabase,
@@ -3050,6 +3315,110 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         created: true
       };
     });
+  }
+
+  async recordPairedLiveEvalEvidenceOnce(
+    input: RecordPairedLiveEvalEvidenceInput
+  ): Promise<RecordPairedLiveEvalEvidenceResult> {
+    const authorityInput = normalizePairedLiveEvalEvidenceInput(
+      snapshotRepositoryInput(input)
+    );
+
+    return this.db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`paired-live-eval:${authorityInput.candidateId}`}, 0))`
+      );
+
+      const [inserted] = await tx
+        .insert(pairedLiveEvalEvidence)
+        .values({
+          projectId: authorityInput.projectId,
+          runId: authorityInput.runId,
+          ...(authorityInput.feedbackDeltaId === undefined
+            ? {}
+            : { feedbackDeltaId: authorityInput.feedbackDeltaId }),
+          candidateId: authorityInput.candidateId,
+          candidateStatus: authorityInput.candidateStatus,
+          title: authorityInput.title,
+          scenario: authorityInput.scenario,
+          family: authorityInput.family,
+          expectedSignal: authorityInput.expectedSignal,
+          artifactStatus: authorityInput.artifactStatus,
+          outcome: authorityInput.outcome,
+          usefulnessOutcome: authorityInput.usefulnessOutcome,
+          packetChecksum: authorityInput.packetChecksum,
+          packetEvidenceRef: authorityInput.packetEvidenceRef,
+          artifactHash: authorityInput.artifactHash,
+          artifactRef: authorityInput.artifactRef,
+          manifestHash: authorityInput.manifestHash,
+          manifestRef: authorityInput.manifestRef,
+          checkerRevision: authorityInput.checkerRevision,
+          checkerEvidenceRef: authorityInput.checkerEvidenceRef,
+          environmentProfileHash: authorityInput.environmentProfileHash,
+          environmentEvidenceRef: authorityInput.environmentEvidenceRef,
+          sourceEvidence: authorityInput.sourceEvidence,
+          evidenceRefs: authorityInput.evidenceRefs,
+          metadata: authorityInput.metadata ?? {}
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (inserted !== undefined) {
+        return {
+          evidence: mapPairedLiveEvalEvidence(inserted),
+          created: true
+        };
+      }
+
+      const existing = await tx.query.pairedLiveEvalEvidence.findFirst({
+        where: eq(pairedLiveEvalEvidence.candidateId, authorityInput.candidateId)
+      });
+      if (existing === undefined) {
+        throw new Error(
+          `paired-live eval evidence identity conflict for artifact ${authorityInput.artifactRef}`
+        );
+      }
+
+      const evidence = mapPairedLiveEvalEvidence(existing);
+      if (!samePairedLiveEvalEvidence(evidence, authorityInput)) {
+        throw new Error(
+          `paired-live eval evidence identity conflict for candidate ${authorityInput.candidateId}`
+        );
+      }
+
+      return {
+        evidence,
+        created: false
+      };
+    });
+  }
+
+  async listPairedLiveEvalEvidence(
+    input: ListPairedLiveEvalEvidenceInput
+  ): Promise<PairedLiveEvalEvidenceRecord[]> {
+    const conditions: SQL[] = [
+      eq(pairedLiveEvalEvidence.projectId, input.projectId)
+    ];
+    if (input.runId !== undefined) {
+      conditions.push(eq(pairedLiveEvalEvidence.runId, input.runId));
+    }
+    if (input.scenario !== undefined) {
+      conditions.push(eq(pairedLiveEvalEvidence.scenario, input.scenario));
+    }
+    if (input.outcome !== undefined) {
+      conditions.push(eq(pairedLiveEvalEvidence.outcome, input.outcome));
+    }
+    if (input.usefulnessOutcome !== undefined) {
+      conditions.push(eq(pairedLiveEvalEvidence.usefulnessOutcome, input.usefulnessOutcome));
+    }
+
+    const rows = await this.db
+      .select()
+      .from(pairedLiveEvalEvidence)
+      .where(conditions.length === 0 ? undefined : and(...conditions))
+      .orderBy(desc(pairedLiveEvalEvidence.createdAt), desc(pairedLiveEvalEvidence.id))
+      .limit(listPairedLiveEvalEvidenceLimit(input.limit));
+
+    return rows.map(mapPairedLiveEvalEvidence);
   }
 
   async listFeedbackDeltasForProject(projectId: string, limit = 100): Promise<FeedbackDelta[]> {

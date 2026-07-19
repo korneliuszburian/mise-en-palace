@@ -40,6 +40,9 @@ import {
   runRunShowCommand
 } from "./run-run-show-command.js";
 import {
+  runPairedLiveEvalEvidenceCommand
+} from "./run-paired-live-eval-evidence-command.js";
+import {
   runDecisionPacketCommand
 } from "./run-decision-packet-command.js";
 
@@ -48,6 +51,7 @@ type HarnessCliCommand = Extract<
   | { kind: "plan" }
   | { kind: "reviewAssess" }
   | { kind: "runShow" }
+  | { kind: "runEvalEvidence" }
   | { kind: "decisionPacket" }
   | { kind: "codexBrief" }
   | { kind: "evidenceCapture" }
@@ -102,10 +106,11 @@ const databaseRuntimeOption = (
 
 const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand => (
   command.kind === "plan" ||
-    command.kind === "reviewAssess" ||
-    command.kind === "runShow" ||
-    command.kind === "decisionPacket" ||
-    command.kind === "codexBrief" ||
+  command.kind === "reviewAssess" ||
+  command.kind === "runShow" ||
+  command.kind === "runEvalEvidence" ||
+  command.kind === "decisionPacket" ||
+  command.kind === "codexBrief" ||
   command.kind === "evidenceCapture" ||
   command.kind === "observeRun" ||
   command.kind === "reflect"
@@ -115,6 +120,7 @@ const harnessFallbackMessages = {
   plan: "Unknown CLI error",
   reviewAssess: "Unknown review assess error",
   runShow: "Unknown run show error",
+  runEvalEvidence: "Unknown paired-live eval evidence readback error",
   codexBrief: "Unknown Codex brief error",
   decisionPacket: "Unknown decision packet error",
   evidenceCapture: "Unknown evidence capture error",
@@ -151,7 +157,10 @@ const runReviewAssessCliCommand = (
   });
 
 const runReadbackHarnessCommand = (
-  command: Extract<HarnessCliCommand, { kind: "runShow" | "decisionPacket" | "codexBrief" }>,
+  command: Extract<
+    HarnessCliCommand,
+    { kind: "runShow" | "runEvalEvidence" | "decisionPacket" | "codexBrief" }
+  >,
   context: HarnessCliCommandContext
 ): Promise<HarnessCommandOutput> => {
   if (command.kind === "runShow") {
@@ -162,6 +171,15 @@ const runReadbackHarnessCommand = (
       runId: command.runId,
       format: command.format,
       ...databaseRuntimeOption(context)
+    });
+  }
+
+  if (command.kind === "runEvalEvidence") {
+    return runPairedLiveEvalEvidenceCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command
     });
   }
 
@@ -260,7 +278,12 @@ const runSelectedHarnessCommand = (
     return runReviewAssessCliCommand(command, context);
   }
 
-  if (command.kind === "runShow" || command.kind === "decisionPacket" || command.kind === "codexBrief") {
+  if (
+    command.kind === "runShow" ||
+    command.kind === "runEvalEvidence" ||
+    command.kind === "decisionPacket" ||
+    command.kind === "codexBrief"
+  ) {
     return runReadbackHarnessCommand(command, context);
   }
 

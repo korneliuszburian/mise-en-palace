@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { FeedbackDelta } from "@krn/core";
 
 import {
+  pairedLiveEvalEvidenceInputForPersistence,
   preparePairedTrialPersistence
 } from "../internal/eval/persist-paired-live-codex-repair.js";
 import {
@@ -257,6 +258,67 @@ describe("paired live Codex repair persistence", () => {
 
     expect(prepared.evidenceRefs).toContain("checker:paired-live-codex-repair.v2");
     expect(prepared.evidenceRefs).not.toContain("checker:paired-live-codex-repair.v1");
+  });
+
+  it("builds durable paired-live eval evidence without strengthening invalid observations", () => {
+    const exactArtifact = artifact({
+      kind: "krn.pairedLiveCodexRepairArtifact.v2",
+      checkerRevision: "paired-live-codex-repair-checker.v3"
+    });
+    const prepared = prepare(exactArtifact);
+    const evidenceInput = pairedLiveEvalEvidenceInputForPersistence({
+      manifest,
+      artifact: exactArtifact,
+      candidate: prepared.candidate,
+      packetChecksum: checksum,
+      evidenceRefs: prepared.evidenceRefs,
+      feedbackDeltaId: "feedback-existing",
+      decisionApplications: prepared.decisionApplications
+    });
+
+    expect(evidenceInput).toMatchObject({
+      projectId: manifest.projectId,
+      runId: manifest.runId,
+      feedbackDeltaId: "feedback-existing",
+      candidateId: "paired-target-repair:run-1",
+      artifactStatus: "passed",
+      outcome: "tie",
+      usefulnessOutcome: "neutral",
+      packetEvidenceRef: `packet:${checksum}`,
+      artifactRef: `artifact:sha256:${"f".repeat(64)}`,
+      manifestRef: `manifest:sha256:${sha256(JSON.stringify(manifest))}`,
+      checkerRevision: "paired-live-codex-repair-checker.v3",
+      checkerEvidenceRef: "checker:paired-live-codex-repair-checker.v3",
+      environmentEvidenceRef: `environment:sha256:${environmentHash}`
+    });
+    expect(evidenceInput.sourceEvidence).toEqual(expect.arrayContaining([
+      `packet:${checksum}`,
+      "checker:paired-live-codex-repair-checker.v3"
+    ]));
+
+    const invalidArtifact = artifact({
+      status: "invalid",
+      score: {
+        ...score,
+        outcome: "invalid"
+      }
+    });
+    const invalidPrepared = prepare(invalidArtifact);
+    const invalidEvidenceInput = pairedLiveEvalEvidenceInputForPersistence({
+      manifest,
+      artifact: invalidArtifact,
+      candidate: invalidPrepared.candidate,
+      packetChecksum: checksum,
+      evidenceRefs: invalidPrepared.evidenceRefs,
+      feedbackDeltaId: "feedback-invalid",
+      decisionApplications: invalidPrepared.decisionApplications
+    });
+
+    expect(invalidEvidenceInput).toMatchObject({
+      artifactStatus: "invalid",
+      outcome: "invalid",
+      usefulnessOutcome: "unknown"
+    });
   });
 
   it("never turns a failed arm command into a passed row", () => {

@@ -15,9 +15,13 @@ import type {
   FeedbackDeltaStatus,
   HarnessPlan,
   IsoTimestamp,
+  ListPairedLiveEvalEvidenceInput,
   KnowledgeUsefulnessOutcomeFeedback,
   OperatorIntent,
+  PairedLiveEvalEvidenceRecord,
   ProjectId,
+  RecordPairedLiveEvalEvidenceInput,
+  RecordPairedLiveEvalEvidenceResult,
   ReviewAssessment,
   ReviewFinding,
   SourceUsefulnessOutcomeFeedback,
@@ -267,6 +271,12 @@ export interface HarnessRunRepository {
   createEvalFeedbackDeltaOnce?(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;
+  recordPairedLiveEvalEvidenceOnce?(
+    input: RecordPairedLiveEvalEvidenceInput
+  ): Promise<RecordPairedLiveEvalEvidenceResult>;
+  listPairedLiveEvalEvidence?(
+    input: ListPairedLiveEvalEvidenceInput
+  ): Promise<PairedLiveEvalEvidenceRecord[]>;
   listFeedbackDeltasForProject(projectId: string, limit?: number): Promise<FeedbackDelta[]>;
   listFeedbackDeltasForSubjects?(
     input: ListFeedbackDeltasForSubjectsInput
