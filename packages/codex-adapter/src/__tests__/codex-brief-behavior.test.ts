@@ -168,8 +168,6 @@ const packet: DecisionPacket = {
   caveatedMemoryRefs: [],
   staleDecisionIds: [],
   staleKnowledgeIds: [],
-  noiseKnowledgeIds: [],
-  unknownKnowledgeIds: [],
   supersededPathIds: [],
   rejectedPathIds: ["claim-promptfoo-as-truth"],
   falsifiers: [],
@@ -200,7 +198,6 @@ const packet: DecisionPacket = {
   },
   doesNotProve: ["This test packet does not prove source truth."],
   nonProofs: ["This test packet does not prove source truth."],
-  noiseDecisionIds: [],
   severeStaleAuthorityIds: [],
   brief: {
     includedContextCount: 1,

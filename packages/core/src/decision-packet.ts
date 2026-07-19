@@ -508,8 +508,6 @@ export interface DecisionPacket {
   reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   staleDecisionIds: readonly string[];
   staleKnowledgeIds: readonly string[];
-  noiseKnowledgeIds: readonly string[];
-  unknownKnowledgeIds: readonly string[];
   supersededPathIds: readonly string[];
   rejectedPathIds: readonly string[];
   falsifiers: readonly string[];
@@ -520,7 +518,6 @@ export interface DecisionPacket {
   abstentionScore: DecisionPacketAbstentionScore;
   doesNotProve: readonly string[];
   nonProofs: readonly string[];
-  noiseDecisionIds: readonly string[];
   severeStaleAuthorityIds: readonly string[];
   brief: DecisionPacketBriefSummary;
 }
@@ -1174,8 +1171,6 @@ export const buildDecisionPacketFromReadModel = (
   const staleDecisionIds = staleSourceDecisionIdsFor(readModel);
   const memoryRefs = memoryRefsFor(readModel);
   const staleKnowledgeIds = staleKnowledgeIdsForContext(exclusions);
-  const noiseKnowledgeIds: string[] = [];
-  const unknownKnowledgeIds: string[] = [];
   const caveatsFromFeedback = reviewOnlyUsefulnessCaveatsFor(readModel.feedbackDeltas);
   const caveatKeys = new Set<string>();
   const reviewOnlyUsefulnessCaveats = [
@@ -1319,8 +1314,6 @@ export const buildDecisionPacketFromReadModel = (
       : { reviewOnlyUsefulnessCaveats }),
     staleDecisionIds,
     staleKnowledgeIds,
-    noiseKnowledgeIds,
-    unknownKnowledgeIds,
     supersededPathIds: allSupersededPathIds,
     rejectedPathIds,
     falsifiers: unique(taskStandardDecisions.map((decision) => decision.falsifier)),
@@ -1335,7 +1328,6 @@ export const buildDecisionPacketFromReadModel = (
     }),
     doesNotProve: readModel.proof.doesNotProve,
     nonProofs: readModel.proof.doesNotProve,
-    noiseDecisionIds: [],
     severeStaleAuthorityIds,
     brief: {
       includedContextCount: readModel.context.inclusions,

@@ -305,8 +305,6 @@ const decisionPacketSchema = z.strictObject({
   reviewOnlyUsefulnessCaveats: z.array(reviewOnlyUsefulnessCaveatSchema).optional(),
   staleDecisionIds: stringArraySchema,
   staleKnowledgeIds: stringArraySchema,
-  noiseKnowledgeIds: stringArraySchema,
-  unknownKnowledgeIds: stringArraySchema,
   supersededPathIds: stringArraySchema,
   rejectedPathIds: stringArraySchema,
   falsifiers: stringArraySchema,
@@ -317,7 +315,6 @@ const decisionPacketSchema = z.strictObject({
   abstentionScore: abstentionScoreSchema,
   doesNotProve: stringArraySchema,
   nonProofs: stringArraySchema,
-  noiseDecisionIds: stringArraySchema,
   severeStaleAuthorityIds: stringArraySchema,
   brief: briefSchema
 });

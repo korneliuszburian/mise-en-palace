@@ -1009,12 +1009,9 @@ describe("decision packet CLI", () => {
         memoryRefs: ["memory-agent-1"],
         caveatedMemoryRefs: [],
         staleKnowledgeIds: [],
-        noiseKnowledgeIds: [],
-        unknownKnowledgeIds: [],
         staleDecisionIds: [],
         supersededPathIds: ["claim-agent-superseded"],
         rejectedPathIds: ["anti-memory-agent-1"],
-        noiseDecisionIds: [],
         severeStaleAuthorityIds: [],
         verificationCommands: ["pnpm --filter frontend test"],
         brief: {

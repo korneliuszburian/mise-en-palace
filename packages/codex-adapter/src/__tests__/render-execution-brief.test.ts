@@ -238,8 +238,6 @@ const packetForBrief = (input: {
   caveatedMemoryRefs: [],
   staleDecisionIds: [],
   staleKnowledgeIds: [],
-  noiseKnowledgeIds: [],
-  unknownKnowledgeIds: [],
   supersededPathIds: [],
   rejectedPathIds: input.contextAssembly.exclusions
     .filter((item) => item.subjectType === "anti_memory_record")
@@ -272,7 +270,6 @@ const packetForBrief = (input: {
   },
   doesNotProve: ["Test packet does not prove source truth."],
   nonProofs: ["Test packet does not prove source truth."],
-  noiseDecisionIds: [],
   severeStaleAuthorityIds: [],
   brief: {
     includedContextCount: input.contextAssembly.inclusions.length,

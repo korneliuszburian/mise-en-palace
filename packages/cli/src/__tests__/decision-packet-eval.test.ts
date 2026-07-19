@@ -547,8 +547,6 @@ describe("runDecisionPacketEval", () => {
       caveatedMemoryRefs: [],
       staleDecisionIds: ["cast-json-record"],
       staleKnowledgeIds: [],
-      noiseKnowledgeIds: [],
-      unknownKnowledgeIds: [],
       supersededPathIds: [],
       rejectedPathIds: ["prose-second-opinion"],
       falsifiers: ["A runtime task needs a markdown memory folder to recall KRN knowledge."],
@@ -585,7 +583,6 @@ describe("runDecisionPacketEval", () => {
       },
       doesNotProve: ["Does not prove broad memory retrieval quality or live Codex obedience."],
       nonProofs: ["packet quality only"],
-      noiseDecisionIds: [],
       severeStaleAuthorityIds: [],
       brief: {
         includedContextCount: 1,
