@@ -3,6 +3,9 @@ import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import {
+  decisionPacketReadModelDoesNotProve
+} from "@krn/core";
 
 import {
   buildTrackedTrialArtifact,
@@ -541,6 +544,29 @@ describe("tracked paired live Codex repair", () => {
       ...output,
       nonProof: "This does not prove memory quality, source truth, review correctness, or product readiness."
     }, packet)).toEqual({ valid: true, reasons: [] });
+  });
+
+  it("accepts verbatim default DecisionPacket non-proof prose", () => {
+    const packet = {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: [],
+        staleDecisionIds: [],
+        doesNotProve: [...decisionPacketReadModelDoesNotProve]
+      }
+    };
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "No rejected path is present in the packet.",
+      staleBoundary: "No stale decision or knowledge ids are present in the packet.",
+      nonProof: decisionPacketReadModelDoesNotProve[0],
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, packet)).toEqual({
+      valid: true,
+      reasons: []
+    });
   });
 
   it("rejects an invented UUID in the stale boundary", () => {
