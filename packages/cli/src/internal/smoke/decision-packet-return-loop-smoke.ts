@@ -264,6 +264,52 @@ export interface DecisionPacketReturnLoopSmokeReport {
   retainedFixture: boolean;
 }
 
+const retainedTrialDecisionApplicationChecks = [
+  "target_test",
+  "target_typecheck",
+  "target_diff_check"
+] as const;
+const retainedTrialDecisionApplicationFiles = [
+  "src/config.ts",
+  "src/userService.ts",
+  "tests/userService.test.ts"
+] as const;
+
+export const retainedTrialDecisionApplicationsFor = (input: {
+  readonly governingDecisionIds: readonly string[];
+  readonly preAppliedSourceDecisionIds: readonly string[];
+  readonly sourceDecisionIds: readonly string[];
+}): DecisionPacketReturnLoopSmokeReport["decisionApplications"] => {
+  const preAppliedSourceDecisionIds = new Set(input.preAppliedSourceDecisionIds);
+
+  return input.governingDecisionIds.flatMap((governingDecisionId, index) => {
+    const sourceDecisionId = input.sourceDecisionIds[index];
+    const check = retainedTrialDecisionApplicationChecks[index];
+    const changedFile = retainedTrialDecisionApplicationFiles[index];
+
+    if (sourceDecisionId === undefined) {
+      throw new Error(
+        "DecisionPacket return-loop smoke cannot retain a fixture without one source decision per governing decision"
+      );
+    }
+    if (check === undefined || changedFile === undefined) {
+      throw new Error(
+        "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
+      );
+    }
+    if (preAppliedSourceDecisionIds.has(sourceDecisionId)) {
+      return [];
+    }
+
+    return [{
+      governingDecisionId,
+      sourceDecisionId,
+      check,
+      changedFiles: [changedFile]
+    }];
+  });
+};
+
 interface DecisionPacketSmokeExclusion {
   subjectType: string;
   subjectId: string;
@@ -4037,29 +4083,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     ]);
 
-    const decisionApplications = firstPacket.packet.governingDecisionIds.map(
-      (governingDecisionId, index) => ({
-        governingDecisionId,
-        sourceDecisionId: firstPacket.packet.sourceDecisionIds[index] ??
-          (() => {
-            throw new Error(
-              "DecisionPacket return-loop smoke cannot retain a fixture without one source decision per governing decision"
-            );
-          })(),
-        check: (["target_test", "target_typecheck", "target_diff_check"] as const)[index] ??
-          (() => {
-            throw new Error(
-              "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
-            );
-          })(),
-        changedFiles: [(["src/config.ts", "src/userService.ts", "tests/userService.test.ts"] as const)[index] ??
-          (() => {
-            throw new Error(
-              "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
-            );
-          })()]
-      })
-    );
+    const decisionApplications = retainedTrialDecisionApplicationsFor({
+      governingDecisionIds: firstPacket.packet.governingDecisionIds,
+      sourceDecisionIds: firstPacket.packet.sourceDecisionIds,
+      preAppliedSourceDecisionIds: [helpedFeedbackSource.decisionId]
+    });
     const cleanupRemainingMarkerCount = input.retainFixture === true
       ? 0
       : await cleanup();
