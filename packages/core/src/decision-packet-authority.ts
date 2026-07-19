@@ -568,6 +568,23 @@ const reviewOnlyUsefulnessCaveatFromUnknown = (
   };
 };
 
+const includedMemoryRefsForUsefulnessCaveats = (
+  aggregate: HarnessRunAggregate
+): Set<string> => {
+  const includedMemoryIds = aggregate.contextAssembly?.inclusions
+    .filter((inclusion) => inclusion.subjectType === "memory_record")
+    .map((inclusion) => inclusion.subjectId) ?? [];
+  const includedMemoryRefs = new Set(includedMemoryIds);
+  for (const candidate of aggregate.activationTrace?.candidates ?? []) {
+    if (candidate.subjectType !== "memory_record" || !includedMemoryRefs.has(candidate.subjectId)) {
+      continue;
+    }
+    const knowledgeRef = readMetadataString(candidate.metadata, "key");
+    if (knowledgeRef !== undefined) includedMemoryRefs.add(knowledgeRef);
+  }
+  return includedMemoryRefs;
+};
+
 const reviewOnlyUsefulnessCaveatsFromHarnessPlan = (
   aggregate: HarnessRunAggregate
 ): DecisionPacketReviewOnlyUsefulnessCaveat[] => {
@@ -577,9 +594,10 @@ const reviewOnlyUsefulnessCaveatsFromHarnessPlan = (
   }
   const values = (selection as Record<string, unknown>).reviewOnlyUsefulnessCaveats;
   if (!Array.isArray(values)) return [];
+  const includedMemoryRefs = includedMemoryRefsForUsefulnessCaveats(aggregate);
   return values.flatMap((value) => {
     const caveat = reviewOnlyUsefulnessCaveatFromUnknown(value);
-    return caveat === undefined ? [] : [caveat];
+    return caveat === undefined || !includedMemoryRefs.has(caveat.subjectId) ? [] : [caveat];
   });
 };
 

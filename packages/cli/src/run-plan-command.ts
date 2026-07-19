@@ -692,10 +692,7 @@ const readKnowledgeSelection = async (
       ...(usefulnessSelection.reviewOnlyUsefulnessCaveats.length === 0
         ? {}
         : {
-            reviewOnlyUsefulnessCaveats:
-              usefulnessSelection.reviewOnlyUsefulnessCaveats.filter((caveat) =>
-                readModels.some((readModel) => readModel.id === caveat.subjectId)
-              )
+            reviewOnlyUsefulnessCaveats: usefulnessSelection.reviewOnlyUsefulnessCaveats
           }),
       proof: {
         proves: [
