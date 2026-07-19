@@ -47,12 +47,16 @@ reasoning-output tokens, and completed 21.99% faster in that run. A second
 independently sourced historical repair from a different repository and failure
 family produced a KRN quality win (7:6) with 37.85% fewer input and 39.11% fewer
 cached-input tokens, but 3.59% more output, 51.08% more reasoning output, and
-19.68% more wall time. Across these two independent tasks KRN has one quality
-win, one tie, no losses, and repeated lower input usage; output and latency are
-mixed. This is bounded evidence of useful combined KRN capability, not isolated
-MCP or skill causality, arbitrary-repository portability, total-cost advantage,
-or broad superiority. KRN does not need to win raw recall against a
-comprehensive notes dump.
+19.68% more wall time. A third independently sourced historical repair from a
+third repository produced an 8:8 tie: both arms correctly gated unmapped Google
+Ads metrics, while KRN used 49.51% more input, 53.57% more cached input, 15.09%
+more output, 12.63% more reasoning output, and 43.76% more wall time. Across the
+three independent tasks KRN has one quality win, two ties, and no losses, but no
+repeatable efficiency advantage. This is bounded evidence that the combined KRN
+capability is usable without observed quality regression on these tasks and can
+improve a load-bearing boundary; it is not isolated MCP or skill causality,
+arbitrary-repository portability, total-cost advantage, or broad superiority.
+KRN does not need to win raw recall against a comprehensive notes dump.
 
 ## Product Shape
 
@@ -103,6 +107,9 @@ Built enough to keep:
 - one preregistered, independently sourced historical `krn-llm-wiki` CLI input
   repair in which KRN won 7:6 with lower input usage but higher output,
   reasoning, and wall time;
+- one preregistered, independently sourced historical `seo` performance-
+  authority repair in which both arms scored 8:8 and KRN used more tokens and
+  wall time while structurally consuming current and rejected authority;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -112,8 +119,8 @@ Not product-ready:
   `krn_decision_packet` wrapper;
 - no external operator/product proof beyond bounded target-repo harnesses;
 - no broad quality-advantage claim: the authored matched series produced one
-  KRN quality win and two ties, while the two independently sourced tasks
-  produced one KRN win and one tie with mixed cost signals;
+  KRN quality win and two ties, while the three independently sourced tasks
+  produced one KRN win and two ties with mixed cost signals;
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
@@ -137,12 +144,17 @@ independent result is paired-live evidence
 and immutable artifact SHA-256
 `4b64a39ef6c12a5023ae53d0cd2effdb426ff834afe899b064e185513f43e463`.
 Its first attempt was excluded because the KRN arm timed out before a usage
-event. Both valid attempts were read back after persistence and their retained
+event. The third retained independent result is paired-live evidence
+`3f2c44f3-0fb7-4ee6-ae86-8fdaf90fc95b`, bound to DecisionPacket checksum
+`c6a447fa1568670ea7f6897dab2b3eb2cd1a0e28e5037db6a76d4eea31952732`
+and immutable artifact SHA-256
+`cee2d93f6b272020f4fa74251c41da3ca54448e355d51dcf54ad3eaf4b505ac0`.
+All three valid attempts were read back after persistence and their retained
 fixtures were removed through guarded cleanup with zero owned rows remaining
 and unrelated project counts unchanged. The second cleanup also exposed and
 falsified an incomplete project-owned retrieval deletion, repaired at the
-production cleanup seam. This provenance makes the two results auditable; it
-does not turn two stochastic tasks into a causal or general advantage claim.
+production cleanup seam. This provenance makes the three results auditable; it
+does not turn three stochastic tasks into a causal or general advantage claim.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
