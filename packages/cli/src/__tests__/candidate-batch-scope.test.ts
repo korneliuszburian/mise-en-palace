@@ -132,6 +132,9 @@ describe("candidate batch project scope", () => {
   it("separates permanent scope failures from transient infrastructure failures", () => {
     expect(classifyEvidenceCaptureError(new CandidateProjectScopeError(["eval candidate 1"]))).toBe("permanent");
     expect(classifyEvidenceCaptureError(new Error("postgres connection timeout"))).toBe("transient");
+    expect(classifyEvidenceCaptureError(
+      Object.assign(new Error("connect EADDRNOTAVAIL 127.0.0.1"), { code: "EADDRNOTAVAIL" })
+    )).toBe("transient");
     expect(classifyEvidenceCaptureError(Object.assign(new Error("connect refused"), { code: "ECONNREFUSED" }))).toBe("transient");
     expect(classifyEvidenceCaptureError(Object.assign(new Error("write CONNECT_TIMEOUT localhost:5432"), { code: "CONNECT_TIMEOUT" }))).toBe("transient");
     expect(classifyEvidenceCaptureError(Object.assign(new Error("write CONNECTION_CLOSED localhost:5432"), { code: "CONNECTION_CLOSED" }))).toBe("transient");

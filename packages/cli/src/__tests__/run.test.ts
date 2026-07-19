@@ -32,7 +32,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn run show --run-id <execution-run-id> [--json]");
+    expect(result.stdout).toContain("krn run show --run-id <execution-run-id> [--json]");
     expect(result.stdout).toContain("requires: KRN_DATABASE_URL and a persisted execution run");
     expect(result.stdout).toContain("verify DB first: pnpm db:migrate && pnpm db:ready");
   });
@@ -104,11 +104,11 @@ describe("runCli", () => {
       },
       {
         args: ["run", "--help"],
-        usage: "Usage: krn run show"
+        usage: "krn run show --run-id"
       },
       {
         args: ["run", "-h"],
-        usage: "Usage: krn run show"
+        usage: "krn run show --run-id"
       },
       {
         args: ["decision", "--help"],

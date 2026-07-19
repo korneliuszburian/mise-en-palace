@@ -295,6 +295,7 @@ export class CandidateProjectScopeError extends Error {
 export type EvidenceCaptureErrorDisposition = "permanent" | "transient" | "unknown";
 
 const transientInfrastructureErrorCodes = new Set([
+  "EADDRNOTAVAIL",
   "ECONNABORTED",
   "ECONNREFUSED",
   "ECONNRESET",
