@@ -123,7 +123,7 @@ const expectedRenderedBriefFragments = [
   `Review burden: ${evidenceContract.reviewBurden}`,
   `Rollback path: ${evidenceContract.rollbackPath}`,
   `Rollback Expectation: ${evidenceContract.rollbackPath}`,
-  "Stop Condition: Stop before Codex execution or hidden state mutation.",
+  "Stop Condition: Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation.",
   "What This Does Not Prove:",
   "- Codex executed the work."
 ] as const;

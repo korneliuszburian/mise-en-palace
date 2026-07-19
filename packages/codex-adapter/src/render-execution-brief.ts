@@ -352,7 +352,9 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     evidenceContract,
     stopCondition: abstentionStatus === "abstain"
       ? "Do not execute; the DecisionPacket abstains until its evidence gaps are resolved."
-      : "Stop before Codex execution or hidden state mutation.",
+      : abstentionStatus === "weak_context"
+        ? "Proceed only with bounded Codex execution while preserving the packet readiness caveats; stop before hidden state mutation."
+        : "Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation.",
     rollbackExpectation: evidenceContract.rollbackPath,
     nextAction: packet.nextAction,
     doesNotProve
