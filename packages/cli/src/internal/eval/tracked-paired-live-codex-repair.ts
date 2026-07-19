@@ -45,6 +45,37 @@ import type {
   PairedDecisionApplicationRecorderInput,
   PairedDecisionApplicationRecord
 } from "./paired-decision-application.js";
+import {
+  capabilityProfileHash,
+  capabilityProfileName,
+  capabilityUseFalsifierReasons,
+  codexCapabilityProfileConfig,
+  hasPacketTransportCapability,
+  observeCodexCapabilityUse,
+  type CodexCapabilityUseObservation
+} from "./tracked-paired-trial-capabilities.js";
+import {
+  isPairedMemoryTreatment,
+  isTrackedTrialCapabilities,
+  isTrackedTrialChecker,
+  isTrackedTrialContainment,
+  parseTrackedTrialManifest,
+  type PairedMemoryTreatment,
+  type PairedTrialManifest
+} from "./tracked-paired-trial-manifest.js";
+
+export {
+  parseTrackedTrialManifest,
+  type PairedDecisionApplicationRule,
+  type PairedMemoryTreatment,
+  type PairedTrialManifest
+} from "./tracked-paired-trial-manifest.js";
+export {
+  capabilityUseFalsifierReasons,
+  codexCapabilityConfigArgs,
+  observeCodexCapabilityUse,
+  type CodexCapabilityUseObservation
+} from "./tracked-paired-trial-capabilities.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -55,99 +86,12 @@ export type DecisionApplicationObservation =
   | "observed"
   | "persistence_failed";
 
-export type CodexCapabilityUseObservation = {
-  readonly mcpToolCallEvents: number;
-  readonly skillEvents: number;
-  readonly genericMcpToolCallEvents?: number;
-  readonly genericSkillEvents?: number;
-};
-
 export type ModelUsageObservation = {
   readonly tokenUsage: "unavailable";
   readonly reason: string;
   readonly latencySource: "arm_command_duration_ms";
 };
 
-export type PairedDecisionApplicationRule = {
-  readonly governingDecisionId: string;
-  readonly sourceDecisionId: string;
-  readonly check: DecisionApplicationCheckName;
-  readonly changedFiles: readonly string[];
-};
-
-export type CodexCapabilityMcpServer = {
-  readonly name: string;
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly envVars?: readonly string[];
-};
-
-export type CodexCapabilityProfile = {
-  readonly mode: "baseline" | "krn";
-  readonly mcpServers: readonly CodexCapabilityMcpServer[];
-  readonly skillPaths: readonly string[];
-};
-
-type HeldOutCheckName = NonNullable<PairedRepairScore["krn"]["checks"]>[number]["name"];
-type DecisionApplicationCheckName = Exclude<HeldOutCheckName, "focused_test_control">;
-
-/** Preregistered memory treatment labels for paired Codex trials. */
-export type PairedMemoryTreatment =
-  | "plain"
-  | "semantic_governed"
-  | "episodic_examples"
-  | "procedural_skills"
-  | "observational_summary";
-
-export type PairedTrialManifest = {
-  readonly kind: "krn.pairedLiveCodexRepairManifest.v1";
-  readonly scenario: string;
-  readonly sourcePath: string;
-  readonly projectId: string;
-  readonly taskId: string;
-  readonly task: string;
-  readonly requiredDecisionIds: readonly string[];
-  readonly decisionApplications: readonly PairedDecisionApplicationRule[];
-  readonly runId: string;
-  readonly codex: {
-    readonly command: string;
-    readonly args: readonly string[];
-    readonly model: string;
-    readonly cliVersion: string;
-    readonly profile: {
-      readonly name: string;
-      readonly config: string;
-      readonly hash: string;
-    };
-    readonly permissions: {
-      readonly sandbox: "workspace-write";
-      readonly approval: "never";
-    };
-    readonly networkPolicy: "disabled";
-    readonly budget: {
-      readonly timeoutMs: number;
-    };
-  };
-  readonly capabilities?: {
-    readonly baseline: CodexCapabilityProfile;
-    readonly krn: CodexCapabilityProfile;
-  };
-  readonly containment: {
-    readonly command: string;
-    readonly version: string;
-    readonly network: "model_service_egress";
-    readonly workspaceWriteRoot: "{targetRoot}";
-    readonly homeRoot: "{sandboxRoot}";
-  };
-  readonly checker: {
-    readonly heldOut: true;
-    readonly outcome: "win|tie|loss|invalid";
-  };
-  readonly checkerRevision?: string;
-  readonly packetContextMode?: "full" | "task-only";
-  readonly packetReadiness?: "ready" | "weak_context" | "abstain";
-  readonly treatment?: PairedMemoryTreatment;
-};
 
 export type TrialPacketValidation = {
   readonly valid: boolean;
@@ -357,166 +301,11 @@ const nestedRecord = (value: JsonRecord | undefined, key: string): JsonRecord | 
 const hasRequiredStrings = (value: JsonRecord | undefined, keys: readonly string[]): boolean =>
   value !== undefined && keys.every((key) => readString(value[key]) !== undefined);
 
-const isStringArrayValue = (value: unknown): boolean =>
-  Array.isArray(value) && value.every((item) => typeof item === "string");
-
-const isManifestProfile = (value: unknown): boolean =>
-  isRecord(value) && hasRequiredStrings(value, ["name", "config", "hash"]);
-
-const isCapabilityMcpServer = (value: unknown): value is CodexCapabilityMcpServer =>
-  isRecord(value) &&
-  hasRequiredStrings(value, ["name", "command"]) &&
-  isStringArrayValue(value["args"]) &&
-  (value["envVars"] === undefined || (isStringArrayValue(value["envVars"]) && (value["envVars"] as string[]).every((name) => /^[A-Z][A-Z0-9_]*$/u.test(name)))) &&
-  /^[A-Za-z0-9_-]+$/u.test(value["name"] as string);
-
-const isCapabilityProfile = (value: unknown, mode: CodexCapabilityProfile["mode"]): value is CodexCapabilityProfile =>
-  isRecord(value) &&
-  value["mode"] === mode &&
-  Array.isArray(value["mcpServers"]) &&
-  (value["mcpServers"] as unknown[]).every(isCapabilityMcpServer) &&
-  isStringArrayValue(value["skillPaths"]) &&
-  (value["skillPaths"] as string[]).every((path) => isAbsolute(path));
-
-const isManifestCapabilities = (
-  value: unknown
-): value is NonNullable<PairedTrialManifest["capabilities"]> =>
-  isRecord(value) &&
-  isCapabilityProfile(value["baseline"], "baseline") &&
-  isCapabilityProfile(value["krn"], "krn") &&
-  (value["baseline"] as CodexCapabilityProfile).mcpServers.length === 0 &&
-  (value["baseline"] as CodexCapabilityProfile).skillPaths.length === 0;
-
 const isManifestPermissions = (value: unknown): boolean =>
   isRecord(value) &&
   value["sandbox"] === "workspace-write" &&
   value["approval"] === "never";
 
-const isManifestBudget = (value: unknown): boolean =>
-  isRecord(value) &&
-  typeof value["timeoutMs"] === "number" &&
-  Number.isFinite(value["timeoutMs"]);
-
-const isManifestCodex = (value: unknown): boolean => {
-  if (!isRecord(value)) return false;
-  return hasRequiredStrings(value, ["command", "model", "cliVersion"]) &&
-    isStringArrayValue(value["args"]) &&
-    isManifestProfile(value["profile"]) &&
-    isManifestPermissions(value["permissions"]) &&
-    value["networkPolicy"] === "disabled" &&
-    isManifestBudget(value["budget"]);
-};
-
-const isManifestContainment = (value: unknown): boolean =>
-  isRecord(value) &&
-  hasRequiredStrings(value, ["command", "version", "workspaceWriteRoot", "homeRoot"]) &&
-  value["network"] === "model_service_egress" &&
-  value["workspaceWriteRoot"] === "{targetRoot}" &&
-  value["homeRoot"] === "{sandboxRoot}";
-
-const isManifestChecker = (value: unknown): boolean =>
-  isRecord(value) &&
-  value["heldOut"] === true &&
-    value["outcome"] === "win|tie|loss|invalid";
-
-const decisionApplicationCheckNames = new Set<DecisionApplicationCheckName>([
-  "preflight",
-  "invalid_json",
-  "missing_email",
-  "invalid_role",
-  "unknown_first",
-  "finite_result_state",
-  "focused_tests",
-  "forbidden_files",
-  "target_test",
-  "target_typecheck",
-  "target_diff_check",
-  "held_out_runtime"
-]);
-
-const isSafeDecisionApplicationPath = (value: unknown): value is string => {
-  const path = readString(value);
-  return path !== undefined &&
-    !isAbsolute(path) &&
-    path !== ".." &&
-    !path.startsWith(`..${sep}`);
-};
-
-const hasSafeDecisionApplicationPaths = (value: unknown): value is readonly string[] =>
-  Array.isArray(value) &&
-  value.length > 0 &&
-  value.every(isSafeDecisionApplicationPath) &&
-  new Set(value).size === value.length;
-
-const isDecisionApplicationRule = (value: unknown): value is PairedDecisionApplicationRule => {
-  if (!isRecord(value)) return false;
-  const governingDecisionId = readString(value["governingDecisionId"]);
-  const sourceDecisionId = readString(value["sourceDecisionId"]);
-  const check = value["check"];
-  return governingDecisionId !== undefined &&
-    sourceDecisionId !== undefined &&
-    governingDecisionId !== sourceDecisionId &&
-    typeof check === "string" &&
-    decisionApplicationCheckNames.has(check as DecisionApplicationCheckName) &&
-    hasSafeDecisionApplicationPaths(value["changedFiles"]);
-};
-
-const hasUnambiguousDecisionApplicationProofs = (
-  rules: readonly PairedDecisionApplicationRule[]
-): boolean => {
-  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
-  const sourceDecisionIds = rules.map((rule) => rule.sourceDecisionId);
-  const checks = rules.map((rule) => rule.check);
-  const changedFiles = rules.flatMap((rule) => rule.changedFiles);
-  return new Set(governingDecisionIds).size === governingDecisionIds.length &&
-    new Set(sourceDecisionIds).size === sourceDecisionIds.length &&
-    new Set(checks).size === checks.length &&
-    new Set(changedFiles).size === changedFiles.length;
-};
-
-const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
-  const requiredDecisionIds = value["requiredDecisionIds"];
-  const rules = value["decisionApplications"];
-  if (!Array.isArray(requiredDecisionIds) || !Array.isArray(rules) || !rules.every(isDecisionApplicationRule)) {
-    return false;
-  }
-  const requiredDecisionIdSet = new Set(requiredDecisionIds);
-  const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
-  return requiredDecisionIds.every((id) => typeof id === "string") &&
-    requiredDecisionIdSet.size === requiredDecisionIds.length &&
-    hasUnambiguousDecisionApplicationProofs(rules) &&
-    governingDecisionIds.every((id) =>
-      requiredDecisionIdSet.has(id)
-    );
-};
-
-const isPairedMemoryTreatment = (value: unknown): value is PairedMemoryTreatment =>
-  value === "plain" ||
-  value === "semantic_governed" ||
-  value === "episodic_examples" ||
-  value === "procedural_skills" ||
-  value === "observational_summary";
-
-const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest => {
-  if (!isRecord(value) || value["kind"] !== "krn.pairedLiveCodexRepairManifest.v1") return false;
-  return hasRequiredStrings(value, ["scenario", "sourcePath", "projectId", "taskId", "task", "runId"]) &&
-    Array.isArray(value["requiredDecisionIds"]) &&
-    value["requiredDecisionIds"].every((id) => readString(id) !== undefined) &&
-    hasCompleteDecisionApplicationRules(value) &&
-    (value["checkerRevision"] === undefined || readString(value["checkerRevision"]) !== undefined) &&
-    (value["packetContextMode"] === undefined || value["packetContextMode"] === "full" || value["packetContextMode"] === "task-only") &&
-    (value["packetReadiness"] === undefined || value["packetReadiness"] === "ready" || value["packetReadiness"] === "weak_context" || value["packetReadiness"] === "abstain") &&
-    (value["treatment"] === undefined || isPairedMemoryTreatment(value["treatment"])) &&
-    (value["capabilities"] === undefined || isManifestCapabilities(value["capabilities"])) &&
-    isManifestCodex(value["codex"]) &&
-    isManifestContainment(value["containment"]) &&
-    isManifestChecker(value["checker"]);
-};
-
-export const parseTrackedTrialManifest = (value: unknown): PairedTrialManifest => {
-  if (!isPairedTrialManifest(value)) throw new Error("Invalid tracked paired-trial manifest");
-  return value;
-};
 
 export type LiveCodexObedienceOutput = {
   readonly decisionId: string | readonly string[];
@@ -983,156 +772,6 @@ const exactFlagValue = (args: readonly string[], flag: string): string | undefin
   return indexes.length === 1 && index !== undefined ? args[index + 1] : undefined;
 };
 
-const tomlString = (value: string): string => JSON.stringify(value);
-
-/**
- * Build only capability overrides. The base Codex invocation remains pinned;
- * an absent profile is the legacy packet-only experiment, while a declared
- * profile makes the capability difference explicit and replayable.
- */
-export const codexCapabilityConfigArgs = (
-  profile: CodexCapabilityProfile | undefined
-): readonly string[] => {
-  if (profile === undefined) return [];
-  const args: string[] = [];
-  for (const server of profile.mcpServers) {
-    args.push("--config", `mcp_servers.${server.name}.command=${tomlString(server.command)}`);
-    args.push("--config", `mcp_servers.${server.name}.args=${JSON.stringify(server.args)}`);
-    args.push("--config", `mcp_servers.${server.name}.enabled=true`);
-    if (server.envVars !== undefined) {
-      args.push("--config", `mcp_servers.${server.name}.env_vars=${JSON.stringify(server.envVars)}`);
-    }
-  }
-  const skills = profile.skillPaths.map((path) => `{path=${tomlString(path)},enabled=true}`);
-  args.push("--config", `skills.config=[${skills.join(",")}]`);
-  return args;
-};
-
-const codexCapabilityProfileConfig = (
-  baseConfig: string,
-  profile: CodexCapabilityProfile | undefined
-): string => {
-  if (profile === undefined) return baseConfig;
-  const serverConfig = profile.mcpServers.map((server) => [
-    `[mcp_servers.${server.name}]`,
-    `command = ${tomlString(server.command)}`,
-    `args = ${JSON.stringify(server.args)}`,
-    "enabled = true",
-    ...(server.envVars === undefined ? [] : [`env_vars = ${JSON.stringify(server.envVars)}`])
-  ].join("\n")).join("\n\n");
-  const skillConfig = profile.skillPaths.map((path) => [
-    "[[skills.config]]",
-    `path = ${tomlString(path)}`,
-    "enabled = true"
-  ].join("\n")).join("\n\n");
-  return [baseConfig.trimEnd(), serverConfig, skillConfig].filter((part) => part.length > 0).join("\n\n") + "\n";
-};
-
-const capabilityProfileName = (baseName: string, arm: "baseline" | "krn"): string =>
-  `${baseName}-${arm}`;
-
-const packetTransportMcpServerName = "krn_decision_packet" as const;
-
-const hasPacketTransportCapability = (
-  capabilities: PairedTrialManifest["capabilities"]
-): boolean =>
-  isManifestCapabilities(capabilities) &&
-  capabilities.krn.mcpServers.some((server) => server.name === packetTransportMcpServerName);
-
-const walkStructuredJson = (node: unknown, visit: (record: JsonRecord) => void): void => {
-  if (Array.isArray(node)) {
-    node.forEach((child) => walkStructuredJson(child, visit));
-    return;
-  }
-  if (!isRecord(node)) return;
-  visit(node);
-  Object.values(node).forEach((child) => walkStructuredJson(child, visit));
-};
-
-const capabilityEventName = (record: JsonRecord): string | undefined =>
-  typeof record["server"] === "string"
-    ? record["server"]
-    : typeof record["name"] === "string" ? record["name"] : undefined;
-
-const classifyMcpEvent = (
-  record: JsonRecord,
-  expectedMcpServers: readonly string[] | undefined
-): "configured" | "generic" | undefined => {
-  const eventType = record["type"];
-  if (eventType !== "mcp_tool_call" && eventType !== "mcp_tool_call_completed") return undefined;
-  const name = capabilityEventName(record);
-  return expectedMcpServers === undefined ||
-    (name !== undefined && expectedMcpServers.includes(name)) ? "configured" : "generic";
-};
-
-const classifySkillEvent = (
-  record: JsonRecord,
-  expectedSkills: boolean | undefined
-): "configured" | "generic" | undefined => {
-  const eventType = record["type"];
-  if (eventType !== "skill" && eventType !== "skill_loaded") return undefined;
-  return expectedSkills === undefined || expectedSkills ? "configured" : "generic";
-};
-
-const countCapabilityEvents = (
-  value: Pick<CommandResult, "stdout">,
-  expectedMcpServers?: readonly string[],
-  expectedSkills?: boolean
-): CodexCapabilityUseObservation => {
-  let mcpToolCallEvents = 0;
-  let skillEvents = 0;
-  let genericMcpToolCallEvents = 0;
-  let genericSkillEvents = 0;
-  const visit = (node: JsonRecord): void => {
-    const mcpEvent = classifyMcpEvent(node, expectedMcpServers);
-    if (mcpEvent === "configured") mcpToolCallEvents += 1;
-    if (mcpEvent === "generic") genericMcpToolCallEvents += 1;
-    const skillEvent = classifySkillEvent(node, expectedSkills);
-    if (skillEvent === "configured") skillEvents += 1;
-    if (skillEvent === "generic") genericSkillEvents += 1;
-  };
-  for (const line of value.stdout.split("\n")) {
-    try {
-      const parsed: unknown = JSON.parse(line);
-      walkStructuredJson(parsed, visit);
-    } catch {
-      // Capability evidence is accepted only from structured JSON events.
-    }
-  }
-  return {
-    mcpToolCallEvents,
-    skillEvents,
-    ...(expectedMcpServers === undefined && genericMcpToolCallEvents === 0
-      ? {} : { genericMcpToolCallEvents }),
-    ...(expectedSkills === undefined && genericSkillEvents === 0
-      ? {} : { genericSkillEvents })
-  };
-};
-
-export const observeCodexCapabilityUse = (
-  result: Pick<CommandResult, "stdout">,
-  expectedMcpServers?: readonly string[],
-  expectedSkills?: boolean
-): CodexCapabilityUseObservation => countCapabilityEvents(result, expectedMcpServers, expectedSkills);
-
-export const capabilityUseFalsifierReasons = (
-  observation: { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation }
-): readonly string[] => [
-  observation.baseline.mcpToolCallEvents + observation.baseline.skillEvents === 0
-    ? undefined
-    : "baseline emitted a configured KRN capability-use event",
-  observation.krn.mcpToolCallEvents + observation.krn.skillEvents > 0
-    ? undefined
-    : "KRN emitted no configured capability-use event"
-].filter((reason): reason is string => reason !== undefined);
-
-const capabilityProfileHash = (profile: CodexCapabilityProfile | undefined): string =>
-  sha256(serializedJson(profile ?? {
-    mode: "legacy",
-    mcpServers: [],
-    skillPaths: []
-  }));
-
 const hasOwn = (value: object, key: string): boolean => Object.prototype.hasOwnProperty.call(value, key);
 
 const hasAmbiguousCodexArgument = (argument: string): boolean =>
@@ -1171,7 +810,7 @@ const manifestConditionReasons = (manifest: PairedTrialManifest): readonly strin
     ...(manifest.capabilities === undefined
       ? []
       : [
-        missingReason(isManifestCapabilities(manifest.capabilities), "capability profiles are invalid"),
+        missingReason(isTrackedTrialCapabilities(manifest.capabilities), "capability profiles are invalid"),
         missingReason(manifest.codex.args.includes("--json"), "capability profiles require structured Codex JSON events"),
         missingReason(
           hasPacketTransportCapability(manifest.capabilities),
@@ -1453,7 +1092,7 @@ const isRequestedCodexConditions = (value: unknown): boolean => {
 };
 
 const isRequestedContainmentConditions = (value: unknown): boolean =>
-  isManifestContainment(value);
+  isTrackedTrialContainment(value);
 
 const isRequestedArmOrder = (value: unknown): boolean =>
   Array.isArray(value) &&
@@ -1466,7 +1105,7 @@ const isRequestedTrialConditions = (value: unknown): boolean => {
   return isRequestedCodexConditions(value["codex"]) &&
     isRequestedContainmentConditions(value["containment"]) &&
     isRequestedArmOrder(value["armOrder"]) &&
-    isManifestChecker(value["checker"]);
+    isTrackedTrialChecker(value["checker"]);
 };
 
 const isHeldOutRuntimePermissionFlag = (value: unknown): boolean =>
@@ -2147,16 +1786,27 @@ export const observeSourceCommands = async (
   }
 };
 
-const prepareTrackedTrial = async (input: {
+type TrialPreparationObservations = {
+  readonly conditions: TrialConditions;
+  readonly containment: TrialToolObservation;
+  readonly codex: TrialToolObservation;
+  readonly authentication: CommandResult;
+  readonly runtimePermissionFlag: HeldOutRuntimePermissionFlag | undefined;
+  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean };
+  readonly checkerRuntime: {
+    readonly nodeVersion: string;
+    readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
+  };
+};
+
+const observeTrialPreparation = async (input: {
   readonly context: TrialContext;
   readonly sourceRoot: string;
-  readonly trialRoot: string;
   readonly sandboxRoot: string;
-  readonly journal: TrialJournal;
-  readonly enforceSourceCommands?: boolean;
-}): Promise<TrialPreparation> => {
+  readonly trialRoot: string;
+}): Promise<TrialPreparationObservations> => {
   const probeEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot);
-  const [containment, codex, authentication] = await Promise.all([
+  const [containment, codex, authentication, sourceCommands] = await Promise.all([
     observeTool({
       command: input.context.manifest.containment.command,
       cwd: input.sourceRoot,
@@ -2171,82 +1821,131 @@ const prepareTrackedTrial = async (input: {
       cwd: input.sourceRoot,
       env: probeEnvironment,
       timeoutMs: 10_000
-    })
+    }),
+    observeSourceCommands(input.sourceRoot)
   ]);
   const runtimePermissionFlag = selectHeldOutRuntimePermissionFlag();
   const checkerRuntime = {
     nodeVersion: process.version,
     permissionFlag: runtimePermissionFlag ?? "unsupported"
   } as const;
-  let conditions: TrialConditions = {
-    ...input.context.conditions,
-    observed: {
-      containment,
-      codex,
-      authentication,
-      capabilityProfileHashes: {
-        baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
-        krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
-      },
-      environmentVariableNames: Object.keys(probeEnvironment).sort(),
-      credentialProvided: hasChatGptAuthentication(authentication),
-      environmentAvailability: {
-        databaseConfigured: typeof process.env.KRN_DATABASE_URL === "string" && process.env.KRN_DATABASE_URL.trim().length > 0,
-        codexHomeConfigured: typeof process.env.KRN_TRIAL_CODEX_HOME === "string" && process.env.KRN_TRIAL_CODEX_HOME.trim().length > 0
-      },
-      sourceCommands: await observeSourceCommands(input.sourceRoot),
-      checkerRuntime
-    }
-  };
-  const sourceCommands = conditions.observed?.sourceCommands;
-  const prerequisite = trialPrerequisiteFailure({
+  return {
     containment,
     codex,
-    manifest: input.context.manifest,
-    runtimePermissionFlag
-  });
+    authentication,
+    runtimePermissionFlag,
+    sourceCommands,
+    checkerRuntime,
+    conditions: {
+      ...input.context.conditions,
+      observed: {
+        containment,
+        codex,
+        authentication,
+        capabilityProfileHashes: {
+          baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
+          krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
+        },
+        environmentVariableNames: Object.keys(probeEnvironment).sort(),
+        credentialProvided: hasChatGptAuthentication(authentication),
+        environmentAvailability: {
+          databaseConfigured: typeof process.env.KRN_DATABASE_URL === "string" && process.env.KRN_DATABASE_URL.trim().length > 0,
+          codexHomeConfigured: typeof process.env.KRN_TRIAL_CODEX_HOME === "string" && process.env.KRN_TRIAL_CODEX_HOME.trim().length > 0
+        },
+        sourceCommands,
+        checkerRuntime
+      }
+    }
+  };
+};
+
+const trialPreparationRejection = (input: {
+  readonly observations: TrialPreparationObservations;
+  readonly manifest: PairedTrialManifest;
+  readonly enforceSourceCommands?: boolean;
+}): Extract<TrialPreparation, { readonly kind: "rejected" }> | undefined => {
+  const { authentication, containment, codex, runtimePermissionFlag, sourceCommands, conditions } = input.observations;
+  if (!hasChatGptAuthentication(authentication)) {
+    return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
+  }
+  if (input.enforceSourceCommands === true && (!sourceCommands.test || !sourceCommands.typecheck)) {
+    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
+  }
+  const prerequisite = trialPrerequisiteFailure({ containment, codex, manifest: input.manifest, runtimePermissionFlag });
+  return prerequisite === undefined ? undefined : { kind: "rejected", ...prerequisite, conditions };
+};
+
+const materializeTrialProfiles = async (input: {
+  readonly manifest: PairedTrialManifest;
+  readonly sandboxRoot: string;
+}): Promise<{
+  readonly profileHash: string;
+  readonly capabilityProfileHashes: { readonly baseline: string; readonly krn: string };
+}> => {
+  const profilePath = join(input.sandboxRoot, `${input.manifest.codex.profile.name}.config.toml`);
+  await writeFile(profilePath, input.manifest.codex.profile.config, { encoding: "utf8", flag: "wx" });
+  if (input.manifest.capabilities !== undefined) {
+    await Promise.all((["baseline", "krn"] as const).map(async (arm) => {
+      const capabilityPath = join(
+        input.sandboxRoot,
+        `${capabilityProfileName(input.manifest.codex.profile.name, arm)}.config.toml`
+      );
+      await writeFile(
+        capabilityPath,
+        codexCapabilityProfileConfig(input.manifest.codex.profile.config, input.manifest.capabilities?.[arm]),
+        { encoding: "utf8", flag: "wx" }
+      );
+    }));
+  }
+  return {
+    profileHash: sha256(await readFile(profilePath, "utf8")),
+    capabilityProfileHashes: {
+      baseline: capabilityProfileHash(input.manifest.capabilities?.baseline),
+      krn: capabilityProfileHash(input.manifest.capabilities?.krn)
+    }
+  };
+};
+
+const prepareTrackedTrial = async (input: {
+  readonly context: TrialContext;
+  readonly sourceRoot: string;
+  readonly trialRoot: string;
+  readonly sandboxRoot: string;
+  readonly journal: TrialJournal;
+  readonly enforceSourceCommands?: boolean;
+}): Promise<TrialPreparation> => {
+  const observations = await observeTrialPreparation(input);
+  const { authentication, checkerRuntime, codex, containment, sourceCommands } = observations;
   await input.journal.phase("conditions_observed", {
     containment,
     codex,
     authentication: authentication.exitCode === 0 ? "chatgpt" : "unavailable",
-    environmentAvailability: conditions.observed?.environmentAvailability,
+    environmentAvailability: observations.conditions.observed?.environmentAvailability,
     sourceCommands,
     checkerRuntime,
-    prerequisite: prerequisite?.reason
+    prerequisite: trialPrerequisiteFailure({
+      containment,
+      codex,
+      manifest: input.context.manifest,
+      runtimePermissionFlag: observations.runtimePermissionFlag
+    })?.reason
   });
-  if (!hasChatGptAuthentication(authentication)) {
-    return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
-  }
-  if (input.enforceSourceCommands === true && (sourceCommands?.test !== true || sourceCommands?.typecheck !== true)) {
-    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
-  }
-  if (prerequisite !== undefined) return { kind: "rejected", ...prerequisite, conditions };
+  const rejection = trialPreparationRejection({
+    observations,
+    manifest: input.context.manifest,
+    ...(input.enforceSourceCommands === undefined ? {} : { enforceSourceCommands: input.enforceSourceCommands })
+  });
+  if (rejection !== undefined) return rejection;
 
-  const profilePath = join(input.sandboxRoot, `${input.context.manifest.codex.profile.name}.config.toml`);
-  await writeFile(profilePath, input.context.manifest.codex.profile.config, { encoding: "utf8", flag: "wx" });
-  const observedProfileHash = sha256(await readFile(profilePath, "utf8"));
-  const capabilityProfileHashes = {
-    baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
-    krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
+  const materializedProfiles = await materializeTrialProfiles({
+    manifest: input.context.manifest,
+    sandboxRoot: input.sandboxRoot
+  });
+  const conditions: TrialConditions = {
+    ...observations.conditions,
+    observed: { ...observations.conditions.observed, ...materializedProfiles }
   };
-  if (input.context.manifest.capabilities !== undefined) {
-    for (const arm of ["baseline", "krn"] as const) {
-      const capabilityPath = join(
-        input.sandboxRoot,
-        `${capabilityProfileName(input.context.manifest.codex.profile.name, arm)}.config.toml`
-      );
-      const capabilityConfig = codexCapabilityProfileConfig(
-        input.context.manifest.codex.profile.config,
-        input.context.manifest.capabilities[arm]
-      );
-      await writeFile(capabilityPath, capabilityConfig, { encoding: "utf8", flag: "wx" });
-    }
-  }
-  conditions = {
-    ...conditions,
-    observed: { ...conditions.observed, profileHash: observedProfileHash, capabilityProfileHashes }
-  };
-  if (observedProfileHash !== input.context.manifest.codex.profile.hash) {
+  if (materializedProfiles.profileHash !== input.context.manifest.codex.profile.hash) {
     return { kind: "rejected", status: "invalid", reason: "materialized Codex profile does not match the manifest", conditions };
   }
   return {
@@ -2432,7 +2131,7 @@ export const promptPacketForContext = (
   return { ...packet, packet: body };
 };
 
-const executeComparableTrial = async (input: {
+type ComparableTrialExecutionInput = {
   readonly trial: ComparableTrial;
   readonly packet: unknown;
   readonly checkerRoot: string;
@@ -2441,136 +2140,243 @@ const executeComparableTrial = async (input: {
   readonly containmentExecutable: string;
   readonly codexExecutable: string;
   readonly recordDecisionApplications: PairedDecisionApplicationRecorder | undefined;
-}, checker: PairedTrialChecker): Promise<TrialArtifactInput> => {
-  const runArm = async (
-    arm: "baseline" | "krn",
-    target: MaterializedTrialTarget,
-    prompt: string,
-    environment: NodeJS.ProcessEnv
-  ): Promise<CommandResult> => {
-    const capabilityProfile = input.trial.context.manifest.capabilities?.[arm];
-    const profileName = capabilityProfile === undefined
-      ? input.trial.context.manifest.codex.profile.name
-      : capabilityProfileName(input.trial.context.manifest.codex.profile.name, arm);
-    const configuredArgs = input.trial.context.manifest.codex.args.map((argument) =>
-      replaceArgument(argument, {
-        "{prompt}": prompt,
-        "{targetRoot}": target.root,
-        [input.trial.context.manifest.codex.profile.name]: profileName
-      })
-    );
-    // `--ignore-user-config` also suppresses the isolated CODEX_HOME profile;
-    // capability trials have no host config to protect because the sandbox
-    // home contains only the materialized auth/profile files.
-    const baseArgs = capabilityProfile === undefined
-      ? configuredArgs
-      : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
-    const capabilityArgs: readonly string[] = [];
-    const promptIndex = baseArgs.indexOf(prompt);
-    const args = promptIndex < 0
-      ? [...baseArgs, ...capabilityArgs]
-      : [...baseArgs.slice(0, promptIndex), ...capabilityArgs, ...baseArgs.slice(promptIndex)];
-    return runProcess(input.containmentExecutable, [
-      "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
-      "--tmpfs", "/tmp", "--dir", "/tmp/.git",
-      "--bind", target.root, target.root,
-      "--bind", input.sandboxRoot, input.sandboxRoot, "--", input.codexExecutable, ...args
-    ], {
-      cwd: target.root,
-      env: environment,
-      timeoutMs: input.trial.context.manifest.codex.budget.timeoutMs
-    });
-  };
-  const promptPacket = promptPacketForContext(
-    input.packet,
-    input.trial.context.manifest.packetContextMode ?? "full"
+};
+
+const runComparableTrialArm = async (input: {
+  readonly execution: ComparableTrialExecutionInput;
+  readonly arm: "baseline" | "krn";
+  readonly target: MaterializedTrialTarget;
+  readonly prompt: string;
+  readonly environment: NodeJS.ProcessEnv;
+}): Promise<CommandResult> => {
+  const manifest = input.execution.trial.context.manifest;
+  const capabilityProfile = manifest.capabilities?.[input.arm];
+  const profileName = capabilityProfile === undefined
+    ? manifest.codex.profile.name
+    : capabilityProfileName(manifest.codex.profile.name, input.arm);
+  const configuredArgs = manifest.codex.args.map((argument) =>
+    replaceArgument(argument, {
+      "{prompt}": input.prompt,
+      "{targetRoot}": input.target.root,
+      [manifest.codex.profile.name]: profileName
+    })
   );
-  const family = resolvePairedEvalFamily(input.trial.context.manifest.scenario);
-  const prompts = buildPairedRepairPrompts({
-    task: input.trial.context.manifest.task,
-    decisionPacket: promptPacket,
-    family,
-    includeDecisionPacket: input.trial.context.manifest.capabilities === undefined,
-    ...(input.trial.context.manifest.capabilities === undefined
-      ? {}
-      : { contextToolRunId: input.trial.context.manifest.runId })
+  // Capability trials use only the isolated sandbox home, so the arm-specific
+  // profile must remain visible instead of being suppressed with host config.
+  const args = capabilityProfile === undefined
+    ? configuredArgs
+    : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
+  return runProcess(input.execution.containmentExecutable, [
+    "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
+    "--tmpfs", "/tmp", "--dir", "/tmp/.git",
+    "--bind", input.target.root, input.target.root,
+    "--bind", input.execution.sandboxRoot, input.execution.sandboxRoot,
+    "--", input.execution.codexExecutable, ...args
+  ], {
+    cwd: input.target.root,
+    env: input.environment,
+    timeoutMs: manifest.codex.budget.timeoutMs
   });
-  const baselineResult = await runArm("baseline", input.trial.baseline, prompts.baseline, input.trial.baselineArmEnvironment);
+};
+
+type ExecutedComparableArms = {
+  readonly prompts: ReturnType<typeof buildPairedRepairPrompts>;
+  readonly baselineResult: CommandResult;
+  readonly krnResult: CommandResult;
+  readonly baselineAfter: TrialTargetState;
+  readonly krnAfter: TrialTargetState;
+};
+
+const executeComparableArms = async (
+  input: ComparableTrialExecutionInput
+): Promise<ExecutedComparableArms> => {
+  const manifest = input.trial.context.manifest;
+  const prompts = buildPairedRepairPrompts({
+    task: manifest.task,
+    decisionPacket: promptPacketForContext(input.packet, manifest.packetContextMode ?? "full"),
+    family: resolvePairedEvalFamily(manifest.scenario),
+    includeDecisionPacket: manifest.capabilities === undefined,
+    ...(manifest.capabilities === undefined ? {} : { contextToolRunId: manifest.runId })
+  });
+  const baselineResult = await runComparableTrialArm({
+    execution: input,
+    arm: "baseline",
+    target: input.trial.baseline,
+    prompt: prompts.baseline,
+    environment: input.trial.baselineArmEnvironment
+  });
   const baselineAfter = await captureTargetState({
     targetRoot: input.trial.baseline.root,
     initialCommit: input.trial.baseline.commit,
     environment: input.trial.baselineObservationEnvironment
   });
-  await input.journal.phase("baseline_executed", { result: baselineResult, before: input.trial.baselineBefore, after: baselineAfter });
-  const krnResult = await runArm("krn", input.trial.krn, prompts.krn, input.trial.krnArmEnvironment);
+  await input.journal.phase("baseline_executed", {
+    result: baselineResult,
+    before: input.trial.baselineBefore,
+    after: baselineAfter
+  });
+  const krnResult = await runComparableTrialArm({
+    execution: input,
+    arm: "krn",
+    target: input.trial.krn,
+    prompt: prompts.krn,
+    environment: input.trial.krnArmEnvironment
+  });
   const krnAfter = await captureTargetState({
     targetRoot: input.trial.krn.root,
     initialCommit: input.trial.krn.commit,
     environment: input.trial.krnObservationEnvironment
   });
-  await input.journal.phase("krn_executed", { result: krnResult, before: input.trial.krnBefore, after: krnAfter });
-  const liveOutputCapture = inspectLiveCodexObedienceOutput(krnResult.stdout);
-  const capabilityProfiles = input.trial.context.manifest.capabilities;
-  const capabilityUseObservation = {
+  await input.journal.phase("krn_executed", {
+    result: krnResult,
+    before: input.trial.krnBefore,
+    after: krnAfter
+  });
+  return { prompts, baselineResult, krnResult, baselineAfter, krnAfter };
+};
+
+const observeComparableCapabilities = (
+  manifest: PairedTrialManifest,
+  arms: Pick<ExecutedComparableArms, "baselineResult" | "krnResult">
+): { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation } => {
+  const profiles = manifest.capabilities;
+  return {
     baseline: observeCodexCapabilityUse(
-      baselineResult,
-      capabilityProfiles?.baseline.mcpServers.map((server) => server.name),
-      capabilityProfiles === undefined ? undefined : capabilityProfiles.baseline.skillPaths.length > 0
+      arms.baselineResult,
+      profiles?.baseline.mcpServers.map((server) => server.name),
+      profiles === undefined ? undefined : profiles.baseline.skillPaths.length > 0
     ),
     krn: observeCodexCapabilityUse(
-      krnResult,
-      capabilityProfiles?.krn.mcpServers.map((server) => server.name),
-      capabilityProfiles === undefined ? undefined : capabilityProfiles.krn.skillPaths.length > 0
+      arms.krnResult,
+      profiles?.krn.mcpServers.map((server) => server.name),
+      profiles === undefined ? undefined : profiles.krn.skillPaths.length > 0
     )
   };
-  let decisionApplicationObservation: DecisionApplicationObservation | undefined;
-  const execution = {
-    environmentProfileHash: input.trial.environmentHash,
-    promptDelta: prompts.delta,
-    baseline: baselineResult,
-    krn: krnResult,
-    ...(input.trial.context.manifest.capabilities === undefined ? {} : { capabilityUseObservation }),
-    ...(input.recordDecisionApplications === undefined
-      ? {}
-      : { decisionApplicationObservation: "not_attempted" as const }),
-    targets: {
-      baseline: { before: input.trial.baselineBefore, after: baselineAfter },
-      krn: { before: input.trial.krnBefore, after: krnAfter }
-    },
-    liveObedienceStatus: liveOutputCapture.status,
-    ...optionalField("liveOutput", liveOutputCapture.output)
-  };
-  const liveOutputValidation = execution.liveOutput === undefined
-    ? {
+};
+
+const validateComparableLiveOutput = (
+  capture: LiveCodexObedienceCapture,
+  packet: unknown
+): { readonly validation: LiveCodexObedienceValidation; readonly status: LiveCodexObedienceStatus } => {
+  if (capture.output === undefined) {
+    return {
+      status: capture.status,
+      validation: {
         valid: false,
-        reasons: [liveOutputCapture.status === "malformed"
+        reasons: [capture.status === "malformed"
           ? "KRN arm emitted a malformed bounded live obedience JSON"
           : "KRN arm did not emit the bounded live obedience JSON"]
       }
-    : validateLiveCodexObedienceOutputAgainstPacket(execution.liveOutput, input.packet);
-  const liveObedienceStatus: LiveCodexObedienceStatus =
-    liveOutputCapture.output === undefined
-      ? liveOutputCapture.status
-      : liveOutputValidation.valid ? "valid" : "packet_mismatch";
-  const executionWithLiveValidation = { ...execution, liveOutputValidation };
-  const executionWithStatus = { ...executionWithLiveValidation, liveObedienceStatus };
-  const armReasons = [
-    armFailureReason("baseline", baselineResult),
-    armFailureReason("krn", krnResult),
-    targetStateReason("baseline", "after", baselineAfter),
-    targetStateReason("krn", "after", krnAfter)
-  ].filter((reason): reason is string => reason !== undefined);
-  if (krnResult.exitCode === 0) armReasons.push(...liveOutputValidation.reasons);
-  if (input.trial.context.manifest.capabilities !== undefined) {
-    armReasons.push(...capabilityUseFalsifierReasons(capabilityUseObservation));
+    };
   }
-  if (armReasons.length > 0) {
+  const validation = validateLiveCodexObedienceOutputAgainstPacket(capture.output, packet);
+  return { validation, status: validation.valid ? "valid" : "packet_mismatch" };
+};
+
+const comparableInvalidReasons = (input: {
+  readonly arms: ExecutedComparableArms;
+  readonly liveValidation: LiveCodexObedienceValidation;
+  readonly capabilityUse: { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation };
+  readonly capabilitiesDeclared: boolean;
+}): readonly string[] => [
+  armFailureReason("baseline", input.arms.baselineResult),
+  armFailureReason("krn", input.arms.krnResult),
+  targetStateReason("baseline", "after", input.arms.baselineAfter),
+  targetStateReason("krn", "after", input.arms.krnAfter),
+  ...(input.arms.krnResult.exitCode === 0 ? input.liveValidation.reasons : []),
+  ...(input.capabilitiesDeclared ? capabilityUseFalsifierReasons(input.capabilityUse) : [])
+].filter((reason): reason is string => reason !== undefined);
+
+const comparableExecutionEvidence = (
+  input: ComparableTrialExecutionInput,
+  arms: ExecutedComparableArms
+): { readonly execution: TrialExecutionDetails; readonly invalidReasons: readonly string[] } => {
+  const liveOutputCapture = inspectLiveCodexObedienceOutput(arms.krnResult.stdout);
+  const capabilityProfiles = input.trial.context.manifest.capabilities;
+  const capabilityUseObservation = observeComparableCapabilities(input.trial.context.manifest, arms);
+  const liveOutput = validateComparableLiveOutput(liveOutputCapture, input.packet);
+  return {
+    invalidReasons: comparableInvalidReasons({
+      arms,
+      liveValidation: liveOutput.validation,
+      capabilityUse: capabilityUseObservation,
+      capabilitiesDeclared: capabilityProfiles !== undefined
+    }),
+    execution: {
+      environmentProfileHash: input.trial.environmentHash,
+      promptDelta: arms.prompts.delta,
+      baseline: arms.baselineResult,
+      krn: arms.krnResult,
+      ...(capabilityProfiles === undefined ? {} : { capabilityUseObservation }),
+      ...(input.recordDecisionApplications === undefined
+        ? {}
+        : { decisionApplicationObservation: "not_attempted" as const }),
+      targets: {
+        baseline: { before: input.trial.baselineBefore, after: arms.baselineAfter },
+        krn: { before: input.trial.krnBefore, after: arms.krnAfter }
+      },
+      liveObedienceStatus: liveOutput.status,
+      liveOutputValidation: liveOutput.validation,
+      ...optionalField("liveOutput", liveOutputCapture.output)
+    }
+  };
+};
+
+type DecisionApplicationPersistence =
+  | { readonly kind: "skipped" }
+  | { readonly kind: "observed"; readonly observation: "observed" }
+  | {
+      readonly kind: "unverified";
+      readonly observation: "none_observed" | "persistence_failed";
+      readonly reason: string;
+    };
+
+const persistDecisionApplications = async (input: {
+  readonly execution: ComparableTrialExecutionInput;
+  readonly score: PairedRepairScore;
+}): Promise<DecisionApplicationPersistence> => {
+  const recorder = input.execution.recordDecisionApplications;
+  if (recorder === undefined || input.score.outcome === "invalid") return { kind: "skipped" };
+  try {
+    const applications = await recorder({
+      runId: input.execution.trial.context.manifest.runId,
+      packet: input.execution.packet,
+      score: input.score,
+      rules: input.execution.trial.context.manifest.decisionApplications,
+      krnTarget: {
+        targetRoot: input.execution.trial.krn.root,
+        checkerRoot: input.execution.checkerRoot,
+        initialCommit: input.execution.trial.krn.commit
+      }
+    });
+    return applications.length > 0
+      ? { kind: "observed", observation: "observed" }
+      : {
+          kind: "unverified",
+          observation: "none_observed",
+          reason: "decision application persistence produced no observed applications"
+        };
+  } catch (error) {
+    const reason = error instanceof Error && error.message.trim().length > 0
+      ? `decision application persistence failed: ${error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/giu, "postgres://<redacted>")}`
+      : "decision application persistence failed";
+    return { kind: "unverified", observation: "persistence_failed", reason };
+  }
+};
+
+const executeComparableTrial = async (
+  input: ComparableTrialExecutionInput,
+  checker: PairedTrialChecker
+): Promise<TrialArtifactInput> => {
+  const arms = await executeComparableArms(input);
+  const evidence = comparableExecutionEvidence(input, arms);
+  if (evidence.invalidReasons.length > 0) {
     return {
       status: "invalid",
-      invalidReasons: armReasons,
+      invalidReasons: evidence.invalidReasons,
       baselineTreeHash: input.trial.baseline.treeHash,
       krnTreeHash: input.trial.krn.treeHash,
-      execution: executionWithStatus
+      execution: evidence.execution
     };
   }
   const score = await checker({
@@ -2578,50 +2384,26 @@ const executeComparableTrial = async (input: {
     krn: { targetRoot: input.trial.krn.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.krn.commit, family: resolvePairedEvalFamily(input.trial.context.manifest.scenario) }
   });
   await input.journal.phase("checker_scored", { outcome: score.outcome, reason: score.reason });
-  if (input.recordDecisionApplications !== undefined && score.outcome !== "invalid") {
-    try {
-      const applications = await input.recordDecisionApplications({
-        runId: input.trial.context.manifest.runId,
-        packet: input.packet,
-        score,
-        rules: input.trial.context.manifest.decisionApplications,
-        krnTarget: {
-          targetRoot: input.trial.krn.root,
-          checkerRoot: input.checkerRoot,
-          initialCommit: input.trial.krn.commit
-        }
-      });
-      decisionApplicationObservation = applications.length === 0 ? "none_observed" : "observed";
-      if (applications.length === 0) {
-        return {
-          status: "unverified",
-          invalidReasons: ["decision application persistence produced no observed applications"],
-          baselineTreeHash: input.trial.baseline.treeHash,
-          krnTreeHash: input.trial.krn.treeHash,
-          execution: { ...executionWithStatus, decisionApplicationObservation }
-        };
-      }
-    } catch (error) {
-      decisionApplicationObservation = "persistence_failed";
-      const persistenceReason = error instanceof Error && error.message.trim().length > 0
-        ? `decision application persistence failed: ${error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/giu, "postgres://<redacted>")}`
-        : "decision application persistence failed";
-      return {
-        status: "unverified",
-        invalidReasons: [persistenceReason],
-        baselineTreeHash: input.trial.baseline.treeHash,
-        krnTreeHash: input.trial.krn.treeHash,
-        execution: { ...executionWithStatus, decisionApplicationObservation },
-        score
-      };
-    }
+  const persistence = await persistDecisionApplications({ execution: input, score });
+  if (persistence.kind === "unverified") {
+    return {
+      status: "unverified",
+      invalidReasons: [persistence.reason],
+      baselineTreeHash: input.trial.baseline.treeHash,
+      krnTreeHash: input.trial.krn.treeHash,
+      execution: { ...evidence.execution, decisionApplicationObservation: persistence.observation },
+      ...(persistence.observation === "persistence_failed" ? { score } : {})
+    };
   }
+  const decisionApplicationObservation = persistence.kind === "observed"
+    ? persistence.observation
+    : undefined;
   return {
     status: score.outcome === "invalid" ? "invalid" : "passed",
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
     baselineTreeHash: input.trial.baseline.treeHash,
     krnTreeHash: input.trial.krn.treeHash,
-    execution: { ...executionWithStatus, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
+    execution: { ...evidence.execution, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
     score
   };
 };
