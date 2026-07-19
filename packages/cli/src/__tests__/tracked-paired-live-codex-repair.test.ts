@@ -61,6 +61,8 @@ describe("Codex capability profiles", () => {
       "--config",
       "mcp_servers.krn_decision_packet.enabled=true",
       "--config",
+      "mcp_servers.krn_decision_packet.required=true",
+      "--config",
       "mcp_servers.krn_decision_packet.env_vars=[\"KRN_DATABASE_URL\"]",
       "--config",
       "skills.config=[{path=\"/home/krn/skills/krn-memory-core/SKILL.md\",enabled=true}]"
@@ -84,6 +86,26 @@ describe("Codex capability profiles", () => {
       "baseline emitted a configured KRN capability-use event",
       "KRN emitted no configured capability-use event"
     ]);
+  });
+
+  it("counts structured reads of configured materialized skill files", () => {
+    expect(observeCodexCapabilityUse({ stdout: [
+      "I read /tmp/sandbox/skills/krn-memory-core/SKILL.md.",
+      JSON.stringify({
+        type: "item.completed",
+        item: {
+          type: "command_execution",
+          command: "/usr/bin/bash -lc 'sed -n \"1,120p\" /tmp/sandbox/skills/krn-memory-core/SKILL.md'",
+          status: "completed",
+          exit_code: 0
+        }
+      })
+    ].join("\n") }, [], ["/repo/.agents/skills/krn-memory-core/SKILL.md"])).toEqual({
+      mcpToolCallEvents: 0,
+      skillEvents: 1,
+      genericMcpToolCallEvents: 0,
+      genericSkillEvents: 0
+    });
   });
 
   it("ignores generic host MCP discovery when configured capability names are supplied", () => {
@@ -1279,7 +1301,10 @@ describe("tracked paired live Codex repair", () => {
     const binRoot = join(root, "bin");
     const baselinePromptPath = join(root, "baseline-prompt.txt");
     const krnPromptPath = join(root, "krn-prompt.txt");
+    const skillRoot = join(root, "krn-memory-core");
+    const skillPath = join(skillRoot, "SKILL.md");
     const capabilityUseEvent = JSON.stringify({ type: "mcp_tool_call", server: "krn_decision_packet" });
+    const skillUseEvent = JSON.stringify({ type: "skill_loaded", path: skillPath });
     const obedienceLine = `${liveCodexObedienceMarker}${JSON.stringify({
       decisionId: ["decision-1", "decision-2"],
       rejectedPath: "rejected-path-1",
@@ -1288,6 +1313,8 @@ describe("tracked paired live Codex repair", () => {
       action: "validate"
     })}`;
     await mkdir(binRoot, { recursive: true });
+    await mkdir(skillRoot, { recursive: true });
+    await writeFile(skillPath, "---\nname: krn-memory-core\n---\n# KRN Memory Core\n");
     await makeFakeCodex(join(binRoot, "codex"), [
       "if printf '%s\\n' \"$@\" | grep -q 'trial-baseline'; then",
       `  printf '%s\\n' "$@" > "${baselinePromptPath}"`,
@@ -1296,6 +1323,7 @@ describe("tracked paired live Codex repair", () => {
       "if printf '%s\\n' \"$@\" | grep -q 'trial-krn'; then",
       `  printf '%s\\n' "$@" > "${krnPromptPath}"`,
       `  printf '%s\\n' '${capabilityUseEvent}'`,
+      `  printf '%s\\n' '${skillUseEvent}'`,
       `  if printf '%s\\n' "$@" | grep -q '${liveCodexObedienceMarker}'; then printf '%s\\n' '${obedienceLine}'; fi`,
       "  exit 0",
       "fi",
@@ -1320,7 +1348,7 @@ describe("tracked paired live Codex repair", () => {
           krn: {
             mode: "krn",
             mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio"] }],
-            skillPaths: []
+            skillPaths: [skillPath]
           }
         }
       };
@@ -1345,13 +1373,23 @@ describe("tracked paired live Codex repair", () => {
       expect(result.execution.liveObedienceStatus).toBe("valid");
       expect(result.execution.capabilityUseObservation).toMatchObject({
         baseline: { mcpToolCallEvents: 0, skillEvents: 0 },
-        krn: { mcpToolCallEvents: 1, skillEvents: 0 }
+        krn: { mcpToolCallEvents: 1, skillEvents: 1 }
       });
 
       const baselinePrompt = await readFile(baselinePromptPath, "utf8");
       const krnPrompt = await readFile(krnPromptPath, "utf8");
-      expect(baselinePrompt).toContain("runId replayed-run");
+      expect(baselinePrompt).toContain("skills.config=[]");
+      expect(baselinePrompt).not.toContain("mcp_servers.krn_decision_packet.command");
+      expect(krnPrompt).toContain("krn-decision-packet-mcp.mjs");
+      expect(krnPrompt).toContain("mcp_servers.krn_decision_packet.required=true");
+      expect(krnPrompt).toContain("skills/krn-memory-core/SKILL.md");
+      expect(krnPrompt).not.toContain("/bin/krn-mcp");
+      expect(krnPrompt).not.toContain(skillPath);
+      expect(baselinePrompt).not.toContain("runId replayed-run");
+      expect(baselinePrompt).not.toContain("krn_decision_packet MCP tool directly");
       expect(krnPrompt).toContain("runId replayed-run");
+      expect(krnPrompt).toContain("Use the configured $krn-memory-core skill");
+      expect(krnPrompt).toContain("call the krn_decision_packet MCP tool directly");
       expect(baselinePrompt).not.toContain(liveCodexObedienceMarker);
       expect(krnPrompt).toContain(liveCodexObedienceMarker);
       expect(baselinePrompt).not.toContain(privatePacketMarker);

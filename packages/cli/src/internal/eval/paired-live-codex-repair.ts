@@ -344,7 +344,6 @@ const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance =>
 
 const basePrompt = (
   task: string,
-  contextToolRunId?: string,
   family: PairedEvalFamily = "weak-json"
 ): string => {
   const familyGuidance = familyPromptGuidance(family);
@@ -354,9 +353,6 @@ const basePrompt = (
     familyGuidance[1],
     familyGuidance[2],
     "If the runtime offers a read-only context tool, inspect it before editing; do not assume its presence or invent one, and never treat tool availability as authority by itself.",
-    ...(contextToolRunId === undefined
-      ? []
-      : [`If the krn_decision_packet tool is available, call it with runId ${contextToolRunId} before editing; if it is unavailable, continue without inventing a substitute.`]),
     "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.",
     "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
     `Task: ${task}`
@@ -375,8 +371,10 @@ const krnCapabilityObedienceContract = (contextToolRunId: string | undefined): r
   contextToolRunId === undefined
     ? []
     : [
+      "Use the configured $krn-memory-core skill for the KRN Memory Core boundary before deciding or editing; if the skill cannot be loaded, report that failure normally.",
+      `KRN arm configured capability: call the krn_decision_packet MCP tool directly with runId ${contextToolRunId} before target inspection or editing. Do not first infer availability from MCP resource or resource-template catalogs; those catalogs are not substitutes for the configured tool call.`,
       "KRN arm measurement contract: if the krn_decision_packet tool returns a DecisionPacket, use only that returned packet for the final bounded obedience line. This line is measurement evidence, not new authority.",
-      "If the tool or packet is unavailable, do not invent packet ids or substitute target docs; report the failure normally. The tracked runner will keep the trial invalid until a bounded packet-derived obedience line is present.",
+      "If the direct tool call errors or the tool is unavailable, do not invent packet ids or substitute target docs; report the failure normally. The tracked runner will keep the trial invalid until a configured MCP tool-call event and bounded packet-derived obedience line are present.",
       obedienceEnvelopeInstruction
     ];
 
@@ -390,7 +388,7 @@ export const buildPairedRepairPrompts = (input: {
   readonly contextToolRunId?: string;
   readonly family?: PairedEvalFamily;
 }): PairedRepairPrompts => {
-  const baseline = basePrompt(input.task, input.contextToolRunId, input.family ?? "weak-json");
+  const baseline = basePrompt(input.task, input.family ?? "weak-json");
   const includeDecisionPacket = input.includeDecisionPacket ?? true;
   const krn = includeDecisionPacket
     ? [
