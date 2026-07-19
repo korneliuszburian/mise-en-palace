@@ -154,14 +154,24 @@ const capabilityInvalidReasons = (
   capabilityUse: CodexCapabilityUseObservation,
   configuredMcpRequired: boolean
 ): readonly string[] => {
-  if (arm === "baseline") {
-    return capabilityUse.configuredMcpToolCallEvents > 0
-      ? ["baseline emitted a configured KRN MCP tool-call event"]
-      : [];
-  }
-  return configuredMcpRequired && capabilityUse.configuredMcpToolCallEvents === 0
-    ? ["treatment emitted no configured KRN MCP tool-call event"]
-    : [];
+  if (arm === "baseline") return baselineCapabilityInvalidReasons(capabilityUse);
+  return treatmentCapabilityInvalidReasons(capabilityUse, configuredMcpRequired);
+};
+
+const baselineCapabilityInvalidReasons = (
+  capabilityUse: CodexCapabilityUseObservation
+): readonly string[] => {
+  if (capabilityUse.configuredMcpToolCallEvents === 0) return [];
+  return ["baseline emitted a configured KRN MCP tool-call event"];
+};
+
+const treatmentCapabilityInvalidReasons = (
+  capabilityUse: CodexCapabilityUseObservation,
+  configuredMcpRequired: boolean
+): readonly string[] => {
+  if (!configuredMcpRequired) return [];
+  if (capabilityUse.configuredMcpToolCallEvents > 0) return [];
+  return ["treatment emitted no configured KRN MCP tool-call event"];
 };
 
 const observeCapabilityUse = (
@@ -197,7 +207,9 @@ const successfulMcpServer = (record: Record<string, unknown>): string | undefine
   if (record["type"] !== "mcp_tool_call") return undefined;
   if (record["status"] !== "completed") return undefined;
   if (record["error"] !== null) return undefined;
-  return typeof record["server"] === "string" ? record["server"] : undefined;
+  const server = record["server"];
+  if (typeof server !== "string") return undefined;
+  return server;
 };
 
 const walkJson = (value: unknown, visit: (record: Record<string, unknown>) => void): void => {
