@@ -146,13 +146,23 @@ const invalidReasonsForArm = (
 ): readonly string[] => [
   ...commandInvalidReasons(execution),
   ...graders.flatMap((grader) => checkerInvalidReasons(execution, grader)),
-  ...(arm === "baseline" && capabilityUse.configuredMcpToolCallEvents > 0
-    ? ["baseline emitted a configured KRN MCP tool-call event"]
-    : []),
-  ...(arm === "krn" && configuredMcpRequired && capabilityUse.configuredMcpToolCallEvents === 0
-    ? ["treatment emitted no configured KRN MCP tool-call event"]
-    : [])
+  ...capabilityInvalidReasons(arm, capabilityUse, configuredMcpRequired)
 ];
+
+const capabilityInvalidReasons = (
+  arm: CodexCapabilityEvalArmName,
+  capabilityUse: CodexCapabilityUseObservation,
+  configuredMcpRequired: boolean
+): readonly string[] => {
+  if (arm === "baseline") {
+    return capabilityUse.configuredMcpToolCallEvents > 0
+      ? ["baseline emitted a configured KRN MCP tool-call event"]
+      : [];
+  }
+  return configuredMcpRequired && capabilityUse.configuredMcpToolCallEvents === 0
+    ? ["treatment emitted no configured KRN MCP tool-call event"]
+    : [];
+};
 
 const observeCapabilityUse = (
   output: string,
@@ -165,14 +175,14 @@ const observeCapabilityUse = (
   for (const rawLine of output.split(/\r?\n/u)) {
     const parsed = parseJsonLine(rawLine);
     walkJson(parsed, (record) => {
-      if (record["type"] !== "mcp_tool_call" || record["status"] !== "completed" || record["error"] !== null) return;
-      const server = typeof record["server"] === "string" ? record["server"] : undefined;
-      if (server !== undefined && configuredMcpServerIds.includes(server)) {
+      const server = successfulMcpServer(record);
+      if (server === undefined) return;
+      if (configuredMcpServerIds.includes(server)) {
         configuredMcpToolCallEvents += 1;
         observedMcpServerIds.add(server);
-      } else {
-        genericMcpToolCallEvents += 1;
+        return;
       }
+      genericMcpToolCallEvents += 1;
     });
   }
 
@@ -181,6 +191,13 @@ const observeCapabilityUse = (
     observedMcpServerIds: [...observedMcpServerIds].sort(),
     genericMcpToolCallEvents
   };
+};
+
+const successfulMcpServer = (record: Record<string, unknown>): string | undefined => {
+  if (record["type"] !== "mcp_tool_call") return undefined;
+  if (record["status"] !== "completed") return undefined;
+  if (record["error"] !== null) return undefined;
+  return typeof record["server"] === "string" ? record["server"] : undefined;
 };
 
 const walkJson = (value: unknown, visit: (record: Record<string, unknown>) => void): void => {

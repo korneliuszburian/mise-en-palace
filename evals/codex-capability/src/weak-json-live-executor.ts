@@ -144,7 +144,7 @@ const executeArm = async (
   return {
     commandExecutable,
     cliVersion: version.stdout.trim(),
-    commandStatus: execution.timedOut ? "timed_out" : execution.exitCode === 0 ? "completed" : "failed",
+    commandStatus: commandStatus(execution),
     exitCode: execution.exitCode,
     stdoutJsonl: execution.stdout,
     stderr: execution.stderr,
@@ -153,18 +153,29 @@ const executeArm = async (
   };
 };
 
+const commandStatus = (
+  result: CommandResult
+): CodexCapabilityArmExecution["commandStatus"] => {
+  if (result.timedOut) return "timed_out";
+  return result.exitCode === 0 ? "completed" : "failed";
+};
+
 const runGrader = async (
   grader: CodexCapabilityEvalGrader,
   workspace: string,
   env: NodeJS.ProcessEnv,
   runCommand: (input: CommandInput) => Promise<CommandResult>
 ): Promise<CodexCapabilityCheckerResult> => {
-  if (grader.kind !== "deterministic_command" || grader.command === undefined) {
+  const command = grader.command;
+  if (grader.kind !== "deterministic_command" || command === undefined) {
     return { graderId: grader.id, status: "not_run", exitCode: null, stdout: "", stderr: "grader requires model or human review" };
   }
-  const result = await runCommand({ command: grader.command, args: grader.args ?? [], cwd: workspace, env, timeoutMs: 120_000 });
-  return { graderId: grader.id, status: result.exitCode === 0 ? "passed" : "failed", exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
+  const result = await runCommand({ command, args: grader.args ?? [], cwd: workspace, env, timeoutMs: 120_000 });
+  return { graderId: grader.id, status: checkerStatus(result), exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr };
 };
+
+const checkerStatus = (result: CommandResult): "passed" | "failed" =>
+  result.exitCode === 0 ? "passed" : "failed";
 
 const liveEnvironment = (
   arm: CodexCapabilityEvalArmName,

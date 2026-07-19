@@ -30,19 +30,7 @@ export const runCodexCapabilityEvalCli = async (
   const plan = createCodexCapabilityDryRunPlan(manifest);
 
   if (parsed.mode === "live") {
-    const sourceRoot = process.cwd();
-    const executeArm = await prepareWeakJsonLiveExecutor({
-      sourceRoot,
-      outputRoot: resolve(sourceRoot, parsed.outputPath),
-      codexHome: process.env["CODEX_HOME"] ?? resolve(homedir(), ".codex"),
-      databaseUrl: process.env["KRN_DATABASE_URL"] ?? "postgres://krn:krn@localhost:54329/krn",
-      ...(process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"] === undefined
-        ? {}
-        : { codexExecutable: process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"] })
-    }, manifest.target.commit, manifest.target.taskId);
-    const summary = await runCodexCapabilityEval(plan, executeArm);
-    writeCodexCapabilityEvalArtifacts(resolve(sourceRoot, parsed.outputPath), summary);
-    return { status: "ok", output: summary };
+    return runLiveEval(parsed.outputPath, manifest.target.commit, manifest.target.taskId, plan);
   }
 
   return {
@@ -51,16 +39,43 @@ export const runCodexCapabilityEvalCli = async (
   };
 };
 
+const runLiveEval = async (
+  outputPath: string,
+  targetCommit: string,
+  scenario: string,
+  plan: ReturnType<typeof createCodexCapabilityDryRunPlan>
+): Promise<CodexCapabilityEvalCliResult> => {
+  const sourceRoot = process.cwd();
+  const outputRoot = resolve(sourceRoot, outputPath);
+  const codexExecutable = process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"];
+  const executeArm = await prepareWeakJsonLiveExecutor({
+    sourceRoot,
+    outputRoot,
+    codexHome: process.env["CODEX_HOME"] ?? resolve(homedir(), ".codex"),
+    databaseUrl: process.env["KRN_DATABASE_URL"] ?? "postgres://krn:krn@localhost:54329/krn",
+    ...(codexExecutable === undefined ? {} : { codexExecutable })
+  }, targetCommit, scenario);
+  const summary = await runCodexCapabilityEval(plan, executeArm);
+  writeCodexCapabilityEvalArtifacts(outputRoot, summary);
+  return { status: "ok", output: summary };
+};
+
 const parseArgs = (
   args: readonly string[]
 ): { readonly status: "ok"; readonly manifestPath: string; readonly mode: "dry-run" } | { readonly status: "ok"; readonly manifestPath: string; readonly mode: "live"; readonly outputPath: string } | { readonly status: "error"; readonly message: string } => {
   const manifestPath = readManifestPath(args);
   if (manifestPath === undefined) return parseArgsError();
+  return readMode(args, manifestPath) ?? parseArgsError();
+};
+
+const readMode = (
+  args: readonly string[],
+  manifestPath: string
+): Exclude<ReturnType<typeof parseArgs>, { readonly status: "error" }> | undefined => {
   if (args.includes("--dry-run")) return { status: "ok", manifestPath, mode: "dry-run" };
+  if (!args.includes("--live")) return undefined;
   const outputPath = readFlagValue(args, "--output");
-  return args.includes("--live") && outputPath !== undefined
-    ? { status: "ok", manifestPath, mode: "live", outputPath }
-    : parseArgsError();
+  return outputPath === undefined ? undefined : { status: "ok", manifestPath, mode: "live", outputPath };
 };
 
 const readManifestPath = (args: readonly string[]): string | undefined => {
