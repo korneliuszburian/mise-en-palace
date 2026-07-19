@@ -429,6 +429,383 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
     }
   );
 
+  postgresIt(
+    "admits evidence feedback against an issued packet after current projection drift",
+    async () => {
+      const marker = `krn_issued_feedback_authority_${crypto.randomUUID().replaceAll("-", "")}`;
+      const scaffold = await createSmokeHarnessScaffold({
+        databaseUrl: databaseUrl!,
+        migrationsFolder,
+        smokeId: marker,
+        smokeName: "issued feedback authority smoke",
+        workspacePrefix: "krn-issued-feedback-authority",
+        projectSlug: "issued-feedback-authority",
+        cleanupRows: cleanupActivationSmokeRows,
+        countMarkerRows: countActivationSmokeMarkerRows,
+        rawIntent: `issued feedback authority ${marker}`,
+        taskContract: {
+          title: "Admit issued packet feedback after drift",
+          objective: "Keep application-bound source usefulness feedback tied to the issued packet.",
+          constraints: ["real PostgreSQL", "issued DecisionPacket readback"],
+          nonGoals: ["no current packet reconstruction shortcut"],
+          acceptance: ["a source decision application has a persisted outcome readback"]
+        },
+        harnessPlan: {
+          summary: "Issued feedback authority smoke",
+          nextAction: "Verify issued packet usefulness feedback after current drift.",
+          evidenceContract: {
+            commands: [],
+            diffRisk: "low",
+            reviewBurden: "Review issued packet feedback admission.",
+            rollbackPath: "Delete marker-scoped smoke rows.",
+            metadata: { smokeId: marker }
+          }
+        }
+      });
+      const targetRepo = await mkdtemp(path.join(tmpdir(), "krn-issued-feedback-authority-"));
+      execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: targetRepo });
+      execFileSync("git", ["config", "user.email", "fixture@example.test"], { cwd: targetRepo });
+      execFileSync("git", ["config", "user.name", "Fixture"], { cwd: targetRepo });
+      await mkdir(path.join(targetRepo, "src"));
+      await writeFile(path.join(targetRepo, "src/base.ts"), "export const base = true;\n");
+      execFileSync("git", ["add", "src/base.ts"], { cwd: targetRepo });
+      execFileSync("git", ["commit", "--quiet", "-m", "base"], { cwd: targetRepo });
+      await writeFile(
+        path.join(targetRepo, "src/application.ts"),
+        "export const issuedApplication = true;\n"
+      );
+      const targetRepoAlias = `${targetRepo}-alias`;
+      await symlink(targetRepo, targetRepoAlias, "dir");
+
+      try {
+        const capturedSourceEvidence = {
+          evidenceStatus: "captured",
+          evidenceFreshness: "current",
+          evidenceContentHash: `sha256:${crypto
+            .createHash("sha256")
+            .update(`issued-feedback-authority:${marker}:source`)
+            .digest("hex")}`
+        };
+        const sourceArtifact = await scaffold.sourceRepository.createSourceArtifact({
+          projectId: scaffold.project.id,
+          kind: "operator_input",
+          sourceAuthority: "project-decision",
+          uri: `operator://issued-feedback-authority/${marker}`,
+          title: "Issued feedback authority source",
+          contentHash: `issued-feedback-authority-${marker}`,
+          metadata: { smokeId: marker, ...capturedSourceEvidence }
+        });
+        const sourceChunk = await scaffold.sourceRepository.createSourceChunk({
+          sourceArtifactId: sourceArtifact.id,
+          ordinal: 0,
+          content: "Issued DecisionPacket feedback must survive current projection drift.",
+          contentHash: `issued-feedback-authority-${marker}:chunk`,
+          metadata: { smokeId: marker, ...capturedSourceEvidence }
+        });
+        const sourceClaim = await scaffold.sourceRepository.createSourceClaim({
+          sourceArtifactId: sourceArtifact.id,
+          sourceChunkId: sourceChunk.id,
+          claim: "Issued DecisionPacket feedback must survive later current projection drift.",
+          mechanism: "The repository authorizes feedback against the persisted issuance when exact identity matches.",
+          krnImplication: "Evidence capture can read back source usefulness outcomes for issued packets.",
+          doesNotProve: "One repository smoke does not prove agent quality.",
+          sourceAuthority: "project-decision",
+          supportType: "implementation-boundary",
+          consumer: "issued feedback authority smoke",
+          falsifier: "A persisted source decision application has no outcome readback.",
+          metadata: { smokeId: marker, ...capturedSourceEvidence }
+        });
+        const sourceDecision = await scaffold.sourceRepository.createSourceDecision({
+          projectId: scaffold.project.id,
+          sourceClaimId: sourceClaim.id,
+          status: "adopt",
+          decision: "Authorize source decision usefulness against issued packets.",
+          rationale: "Current packet reconstruction can drift after the packet has been issued.",
+          falsifier: "Evidence feedback with exact issued identity is persisted unbound.",
+          consumer: "issued feedback authority smoke",
+          metadata: { smokeId: marker }
+        });
+        const sourceDecisionEdge = await scaffold.sourceRepository.createSourceDecisionEdge({
+          sourceClaimId: sourceClaim.id,
+          sourceDecisionId: sourceDecision.id,
+          targetType: "architecture_decision",
+          targetId: sourceDecision.id,
+          supportType: "implementation-boundary",
+          confidence: "high",
+          notes: "Decision-grade support for the issued packet selection.",
+          metadata: { smokeId: marker }
+        });
+        const currentSourceClaim = requireTestValue(
+          await scaffold.sourceRepository.getSourceClaimById(sourceClaim.id),
+          "source claim disappeared after source decision adoption"
+        );
+        const retrievalRun = await scaffold.retrievalRepository.startRetrievalRun({
+          projectId: scaffold.project.id,
+          taskContractId: scaffold.taskContract.id,
+          query: `issued feedback authority ${marker}`,
+          mode: "mixed",
+          metadata: { smokeId: marker }
+        });
+        const contextAssembly = await scaffold.harnessRunRepository.createContextAssembly({
+          harnessPlanId: scaffold.harnessPlan.id,
+          inclusions: [{
+            subjectType: "source_claim",
+            subjectId: sourceClaim.id,
+            reason: "Selected source claim carries source decision support.",
+            expectedUse: "Keep the issued source decision selected for application feedback.",
+            sourceAuthority: "project-decision"
+          }],
+          exclusions: [],
+          metadata: {
+            smokeId: marker,
+            retrievalRunId: retrievalRun.id,
+            canonicalRevisionTokens: [{
+              subjectType: "source_claim",
+              subjectId: currentSourceClaim.id,
+              updatedAt: currentSourceClaim.updatedAt,
+              status: currentSourceClaim.status
+            }]
+          }
+        });
+        scaffold.setContextAssemblyId(contextAssembly.id);
+        const retrievalCandidate = await scaffold.retrievalRepository.addCandidate({
+          retrievalRunId: retrievalRun.id,
+          kind: "source" as const,
+          status: "included" as const,
+          subjectType: "source_claim" as const,
+          subjectId: sourceClaim.id,
+          sourceAuthority: "project-decision",
+          score: 95,
+          reason: "The source claim is selected with source decision support.",
+          metadata: {
+            smokeId: marker,
+            sourceDecisionSupportBoost: {
+              edges: [{
+                sourceDecisionEdgeId: sourceDecisionEdge.id,
+                sourceDecisionId: sourceDecision.id,
+                targetType: "architecture_decision",
+                targetId: sourceDecision.id
+              }],
+              confidence: ["high"],
+              supportTypes: ["implementation-boundary"],
+              doesNotProve: "Selection does not prove the decision is true."
+            }
+          }
+        });
+        await scaffold.retrievalRepository.recordActivationDecision({
+          retrievalRunId: retrievalRun.id,
+          retrievalCandidateId: retrievalCandidate.id,
+          contextAssemblyId: contextAssembly.id,
+          subjectType: "source_claim",
+          subjectId: sourceClaim.id,
+          decision: "included",
+          reason: "Source decision support is relevant to the task.",
+          score: 95,
+          expectedDecisionImpact: "Authorize source decision feedback if used.",
+          expectedUse: "Apply the issued source decision in the target task.",
+          metadata: { smokeId: marker }
+        });
+        const executionRun = await scaffold.harnessRunRepository.createExecutionRun({
+          harnessPlanId: scaffold.harnessPlan.id,
+          adapter: "issued-feedback-authority",
+          status: "planned",
+          metadata: { smokeId: marker }
+        });
+        const issuedPacket = await scaffold.harnessRunRepository
+          .issueDecisionPacketForExecutionRun(executionRun.id);
+
+        expect(issuedPacket.packet.sourceDecisionIds).toContain(sourceDecision.id);
+
+        const targetSnapshot = await collectTargetStateSnapshot(targetRepo);
+        const application = await scaffold.harnessRunRepository.recordUsefulnessApplicationOnce({
+          applicationId: `issued-feedback-authority:${marker}:source-decision`,
+          subjectKind: "source_decision",
+          subjectId: sourceDecision.id,
+          projectId: scaffold.project.id,
+          executionRunId: executionRun.id,
+          taskContractId: scaffold.taskContract.id,
+          packetChecksum: issuedPacket.packetIdentity.checksum,
+          packetGeneratedAt: issuedPacket.packetIdentity.generatedAt,
+          sourceRunLifecycleRevision: issuedPacket.packetIdentity.sourceRunLifecycleRevision,
+          targetState: {
+            targetRepo: targetRepoAlias,
+            treeIdentity: targetSnapshot.treeIdentity,
+            patchIdentity: targetSnapshot.patchIdentity,
+            changedFiles: [...targetSnapshot.changedPaths]
+          }
+        });
+        await scaffold.harnessRunRepository.createEvidenceFeedbackOnce({
+          executionRunId: executionRun.id,
+          sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+          projectId: scaffold.project.id,
+          captureIdentity: `issued-feedback-authority:${marker}:drift`,
+          decisionPacketClaim: {
+            checksum: issuedPacket.packetIdentity.checksum,
+            generatedAt: issuedPacket.packetIdentity.generatedAt
+          },
+          semanticRequest: {
+            decisionPacketClaim: {
+              checksum: issuedPacket.packetIdentity.checksum,
+              generatedAt: issuedPacket.packetIdentity.generatedAt
+            },
+            sourceUsefulnessOutcomes: [{
+              sourceClaimId: sourceClaim.id,
+              outcome: "stale",
+              reason: "Post-issuance usefulness feedback changes the current projection.",
+              evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
+              doesNotProve: "Drift feedback does not prove source truth."
+            }]
+          },
+          sourceUsefulnessOutcomes: [{
+            sourceClaimId: sourceClaim.id,
+            outcome: "stale",
+            reason: "Post-issuance usefulness feedback changes the current projection.",
+            evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
+            doesNotProve: "Drift feedback does not prove source truth."
+          }],
+          evidence: {
+            status: "captured",
+            changedFiles: [],
+            commands: [],
+            diffRisk: "low",
+            reviewBurden: "Create post-issuance current projection drift.",
+            rollbackPath: "Delete marker-scoped smoke rows.",
+            event: {
+              type: "smoke.issued_feedback_authority.drift",
+              message: "post-issuance feedback drift captured",
+              payload: { smokeId: marker }
+            },
+            metadata: { smokeId: marker }
+          },
+          review: {
+            status: "pending",
+            reviewer: "issued-feedback-authority-smoke",
+            summary: "Unbound drift feedback changes current projection.",
+            findings: [],
+            metadata: { smokeId: marker }
+          },
+          feedback: {
+            status: "candidate",
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: { smokeId: marker }
+          }
+        });
+        const driftedAggregate = await scaffold.harnessRunRepository
+          .getHarnessRunByExecutionRunId(executionRun.id);
+        if (driftedAggregate === undefined) {
+          throw new Error("issued feedback authority aggregate disappeared after drift");
+        }
+        const driftedBinding = currentDecisionPacketBindingForHarnessRun({
+          aggregate: driftedAggregate,
+          packetGeneratedAt: issuedPacket.packetIdentity.generatedAt,
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        expect(driftedBinding.packetChecksum).not.toBe(issuedPacket.packetIdentity.checksum);
+
+        const sourceOutcomes = [{
+          sourceDecisionId: sourceDecision.id,
+          applicationId: application.application.applicationId,
+          appliedAt: application.application.appliedAt,
+          outcome: "used" as const,
+          reason: "The issued source decision governed the target change.",
+          evidenceRefs: [issuedPacket.packetIdentity.evidenceRef],
+          doesNotProve: "Usefulness application does not prove source truth."
+        }];
+        const outcomeCapture = await scaffold.harnessRunRepository.createEvidenceFeedbackOnce({
+          executionRunId: executionRun.id,
+          sourceRunLifecycleRevision: executionRun.lifecycleRevision,
+          projectId: scaffold.project.id,
+          captureIdentity: `issued-feedback-authority:${marker}:outcome`,
+          decisionPacketClaim: {
+            checksum: issuedPacket.packetIdentity.checksum,
+            generatedAt: issuedPacket.packetIdentity.generatedAt
+          },
+          semanticRequest: {
+            decisionPacketClaim: {
+              checksum: issuedPacket.packetIdentity.checksum,
+              generatedAt: issuedPacket.packetIdentity.generatedAt
+            },
+            sourceUsefulnessOutcomes: sourceOutcomes
+          },
+          sourceUsefulnessOutcomes: sourceOutcomes,
+          evidence: {
+            status: "captured",
+            changedFiles: [...targetSnapshot.changedPaths],
+            commands: [],
+            diffRisk: "low",
+            reviewBurden: "Verify source decision application readback.",
+            rollbackPath: "Delete marker-scoped smoke rows.",
+            event: {
+              type: "smoke.issued_feedback_authority.outcome",
+              message: "issued source decision outcome captured",
+              payload: { smokeId: marker }
+            },
+            metadata: {
+              smokeId: marker,
+              targetEvidence: {
+                targetRepo: targetRepoAlias,
+                mode: "headless_repair",
+                dirtyBefore: "clean",
+                dirtyAfter: "dirty",
+                ownedChanges: "owned_by_current_krn_run",
+                targetStatusFreshness: "fresh_current_task",
+                targetPatchLifecycle: "none",
+                treeIdentity: targetSnapshot.treeIdentity,
+                patchIdentity: targetSnapshot.patchIdentity,
+                allowedWrites: [],
+                forbiddenWrites: [],
+                changedFiles: [...targetSnapshot.changedPaths].map((changedPath) => ({
+                  status: "??",
+                  path: changedPath,
+                  ownership: "owned_by_current_krn_run"
+                })),
+                commands: [],
+                doesNotProve: []
+              }
+            }
+          },
+          review: {
+            status: "pending",
+            reviewer: "issued-feedback-authority-smoke",
+            summary: "Issued source decision outcome must remain bound.",
+            findings: [],
+            metadata: { smokeId: marker }
+          },
+          feedback: {
+            status: "candidate",
+            memoryCandidates: [],
+            sourceDecisions: [],
+            evalCandidates: [],
+            metadata: { smokeId: marker }
+          }
+        });
+
+        expect(decisionPacketBindingReadbackFromMetadata(
+          outcomeCapture.feedbackDelta.metadata
+        )).toMatchObject({
+          status: "bound_current",
+          checksum: issuedPacket.packetIdentity.checksum,
+          generatedAt: issuedPacket.packetIdentity.generatedAt
+        });
+        expect(sourceUsefulnessOutcomesFromMetadata(
+          outcomeCapture.feedbackDelta.metadata
+        )).toEqual([expect.objectContaining({
+          applicationId: application.application.applicationId,
+          sourceDecisionId: sourceDecision.id,
+          outcome: "used"
+        })]);
+      } finally {
+        await scaffold.cleanup();
+        await Promise.all([
+          rm(targetRepoAlias, { force: true }),
+          rm(targetRepo, { recursive: true, force: true })
+        ]);
+      }
+    }
+  );
+
   // fallow-ignore-next-line complexity -- one real-PostgreSQL race keeps lock ordering, authority readback, side effects, retries, and caller-mutation assertions in a single transaction narrative
   postgresIt(
     "keeps an old packet current after concurrent feedback enters review",

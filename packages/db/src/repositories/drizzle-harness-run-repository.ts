@@ -1538,15 +1538,27 @@ const unboundEvidenceFeedbackInput = (
   };
 };
 
-const admitDecisionPacketIdentity = (
+const admittedDecisionPacketIdentity = (
+  authorization: Extract<
+    ReturnType<typeof authorizeDecisionPacketUsefulness>,
+    { authorized: true }
+  >
+): AdmittedDecisionPacketIdentity => ({
+  checksum: authorization.packetChecksum,
+  generatedAt: authorization.packetGeneratedAt,
+  sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision
+});
+
+const admitDecisionPacketIdentity = async (
+  tx: KrnDatabaseTransaction,
   input: CreateEvidenceFeedbackOnceInput & {
     decisionPacketClaim: NonNullable<CreateEvidenceFeedbackOnceInput["decisionPacketClaim"]>;
   },
   aggregate: HarnessRunAggregate,
   invalidClaim: "persist_unbound" | "reject"
-): AdmittedDecisionPacketIdentity | undefined => {
+): Promise<AdmittedDecisionPacketIdentity | undefined> => {
   const claim = input.decisionPacketClaim;
-  const authorization = authorizeDecisionPacketUsefulness({
+  const currentAuthorization = authorizeDecisionPacketUsefulness({
     aggregate,
     runId: input.executionRunId,
     runtimeProjectId: input.projectId,
@@ -1559,18 +1571,41 @@ const admitDecisionPacketIdentity = (
     sha256Hex
   });
 
-  if (!authorization.authorized) {
-    if (invalidClaim === "persist_unbound") {
-      return undefined;
-    }
-    throw new Error(`createEvidenceFeedbackOnce rejected: ${authorization.reason}`);
+  if (currentAuthorization.authorized) {
+    return admittedDecisionPacketIdentity(currentAuthorization);
   }
 
-  return {
-    checksum: authorization.packetChecksum,
-    generatedAt: authorization.packetGeneratedAt,
-    sourceRunLifecycleRevision: authorization.sourceRunLifecycleRevision
-  };
+  const issuanceRow = await tx.query.decisionPacketIssuances.findFirst({
+    where: eq(decisionPacketIssuances.executionRunId, input.executionRunId)
+  });
+  if (issuanceRow !== undefined) {
+    const issuedAuthorization = authorizeIssuedDecisionPacketUsefulness({
+      aggregate,
+      issuance: mapDecisionPacketIssuance(issuanceRow),
+      runId: input.executionRunId,
+      runtimeProjectId: input.projectId,
+      callerPacketChecksum: claim.checksum,
+      callerPacketGeneratedAt: claim.generatedAt,
+      callerSourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      subjects: projectDecisionPacketUsefulnessSubjects({
+        sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes,
+        knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes
+      })
+    });
+
+    if (issuedAuthorization.authorized) {
+      return admittedDecisionPacketIdentity(issuedAuthorization);
+    }
+    if (invalidClaim === "reject") {
+      throw new Error(`createEvidenceFeedbackOnce rejected: ${issuedAuthorization.reason}`);
+    }
+  }
+
+  if (invalidClaim === "persist_unbound") {
+    return undefined;
+  }
+
+  throw new Error(`createEvidenceFeedbackOnce rejected: ${currentAuthorization.reason}`);
 };
 
 const helpedProofContext = (
@@ -1711,7 +1746,8 @@ const evidenceFeedbackInputWithRepositoryAuthority = async (
     ...input,
     decisionPacketClaim: input.decisionPacketClaim
   };
-  const authorityIdentity = admitDecisionPacketIdentity(
+  const authorityIdentity = await admitDecisionPacketIdentity(
+    tx,
     boundInput,
     aggregate,
     invalidClaim
