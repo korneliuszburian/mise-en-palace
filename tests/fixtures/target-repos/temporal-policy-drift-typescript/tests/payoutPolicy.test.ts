@@ -1,8 +1,12 @@
-import { strict as assert } from "node:assert";
-
 import {
   decidePayoutPolicy
 } from "../src/payoutPolicy.js";
+
+const assertEqual = (actual: unknown, expected: unknown): void => {
+  if (actual !== expected) {
+    throw new Error(`Expected ${String(expected)}, received ${String(actual)}.`);
+  }
+};
 
 const highRiskEu = decidePayoutPolicy({
   region: "EU",
@@ -10,8 +14,8 @@ const highRiskEu = decidePayoutPolicy({
   requestedAt: "2026-06-15"
 });
 
-assert.equal(highRiskEu.action, "legacy_hold");
-assert.equal(highRiskEu.validFrom, "2025-01-01");
+assertEqual(highRiskEu.action, "legacy_hold");
+assertEqual(highRiskEu.validFrom, "2025-01-01");
 
 const thresholdRiskEu = decidePayoutPolicy({
   region: "EU",
@@ -19,8 +23,8 @@ const thresholdRiskEu = decidePayoutPolicy({
   requestedAt: "2026-06-15"
 });
 
-assert.equal(thresholdRiskEu.action, "legacy_hold");
-assert.equal(thresholdRiskEu.validFrom, "2025-01-01");
+assertEqual(thresholdRiskEu.action, "legacy_hold");
+assertEqual(thresholdRiskEu.validFrom, "2025-01-01");
 
 const belowThresholdEu = decidePayoutPolicy({
   region: "EU",
@@ -28,7 +32,7 @@ const belowThresholdEu = decidePayoutPolicy({
   requestedAt: "2026-06-15"
 });
 
-assert.equal(belowThresholdEu.action, "manual_review");
+assertEqual(belowThresholdEu.action, "manual_review");
 
 const highRiskUs = decidePayoutPolicy({
   region: "US",
@@ -36,7 +40,7 @@ const highRiskUs = decidePayoutPolicy({
   requestedAt: "2026-06-15"
 });
 
-assert.equal(highRiskUs.action, "manual_review");
+assertEqual(highRiskUs.action, "manual_review");
 
 const observedActions: readonly string[] = [
   highRiskEu.action,
