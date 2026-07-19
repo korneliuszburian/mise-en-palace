@@ -333,6 +333,35 @@ describe("paired live Codex repair eval", () => {
     expect(score.status).toBe("pass");
   });
 
+  it("omits weak-json focused-test proof from non-weak family artifacts", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "interface Clock { now(): number; }",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'leased' | 'dead_lettered'; leaseExpiresAt: number };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      focusedTestControl: command(1),
+      focusedTestMutations: focusedMutationProofs("invalid_json"),
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      }
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.focusedTestControl).toBeUndefined();
+    expect(score.focusedTestMutations).toBeUndefined();
+    expect(score.checks.map((check) => check.name)).not.toContain("focused_test_control");
+    expect(score.checks.map((check) => check.name)).not.toContain("focused_tests");
+  });
+
   it("invalidates a family arm when its independent runtime observer is unavailable", () => {
     const score = scoreTargetRepair({
       family: "env-config",
@@ -747,6 +776,8 @@ describe("paired live Codex repair eval", () => {
     expect(result.status).toBe("pass");
     expect(result.score).toBe(3);
     expect(result.checks.every((check) => check.passed)).toBe(true);
+    expect(result.focusedTestControl?.exitCode).toBe(0);
+    expect(result.focusedTestMutations?.map((proof) => proof.command.exitCode)).toEqual([0, 0, 0]);
   });
 
   it("does not award advantage for static tokens without held-out behavior", () => {

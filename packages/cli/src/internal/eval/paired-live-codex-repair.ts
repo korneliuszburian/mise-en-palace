@@ -482,6 +482,20 @@ const checkFiniteResult = (files: TargetSourceFiles): HeldOutCheck => {
   };
 };
 
+const checkRejectedObservation = (
+  name: Extract<HeldOutCheck["name"], "invalid_json" | "missing_email" | "invalid_role">,
+  observation: HeldOutObservation,
+  passedDetails: string,
+  failedDetails: string
+): HeldOutCheck => {
+  const isPassed = observationPassed(observation);
+  return {
+    name,
+    passed: isPassed,
+    details: isPassed ? passedDetails : failedDetails
+  };
+};
+
 const checkFocusedTests = (
   changedFiles: readonly string[],
   control: CommandResult | undefined,
@@ -592,83 +606,109 @@ const checkPreflight = (manifest: TargetChangeManifest): HeldOutCheck => {
   };
 };
 
-export const scoreTargetRepair = (
-  input: TargetRepairScoreInput
-): HeldOutArmScore => {
-  const changeManifest = input.changeManifest ?? knownChangeManifest(input.changedFiles);
-  const family = input.family ?? "weak-json";
-  if (family !== "weak-json") {
-    const checks: HeldOutCheck[] = [
-      checkPreflight(changeManifest),
-      checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable, input.runtimeFailureReason, input.observations),
-      checkAllowedFiles(input.changedFiles),
-      {
-        name: "target_test",
-        passed: passed(input.commands.test),
-        details: passed(input.commands.test) ? "Target test command passed." : "Target test command failed."
-      },
-      {
-        name: "target_typecheck",
-        passed: passed(input.commands.typecheck),
-        details: passed(input.commands.typecheck) ? "Target typecheck passed." : "Target typecheck failed."
-      },
-      {
-        name: "target_diff_check",
-        passed: passed(input.commands.diffCheck),
-        details: passed(input.commands.diffCheck) ? "Target diff check passed." : "Target diff check failed."
-      },
-      {
-        name: "held_out_runtime",
-        passed: input.runtimeAvailable,
-        details: !input.runtimeAvailable
-          ? "Family-specific held-out runtime observer was unavailable or malformed."
-          : runtimeObservationPassed(family, input.observations)
-            ? "Family-specific held-out runtime observer passed."
-            : "Family-specific held-out runtime observer completed and measured a contract failure."
-      }
-    ];
-    const invalid = checks.some((check) => ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check", "held_out_runtime"].includes(check.name) && !check.passed);
-    const contract = checks.find((check) => check.name === "family_contract");
-    return {
-      status: invalid ? "invalid" : contract?.passed === true ? "pass" : "fail",
-      score: checks.filter((check) => check.passed).length,
-      checks,
-      changedFiles: [...input.changedFiles],
-      changeManifest,
-      commands: input.commands,
-      ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
-      ...(input.runtimeFailureReason === undefined ? {} : { runtimeFailureReason: input.runtimeFailureReason }),
-      ...(input.focusedTestControl === undefined
-        ? {}
-        : { focusedTestControl: input.focusedTestControl }),
-      ...(input.focusedTestMutations === undefined
-        ? {}
-        : { focusedTestMutations: input.focusedTestMutations })
-    };
+const checkTargetCommands = (
+  commands: TargetRepairScoreInput["commands"]
+): readonly HeldOutCheck[] => [
+  {
+    name: "target_test",
+    passed: passed(commands.test),
+    details: passed(commands.test) ? "Target test command passed." : "Target test command failed."
+  },
+  {
+    name: "target_typecheck",
+    passed: passed(commands.typecheck),
+    details: passed(commands.typecheck) ? "Target typecheck passed." : "Target typecheck failed."
+  },
+  {
+    name: "target_diff_check",
+    passed: passed(commands.diffCheck),
+    details: passed(commands.diffCheck) ? "Target diff check passed." : "Target diff check failed."
   }
+];
+
+const weakJsonRequiredForValidity = new Set<HeldOutCheck["name"]>([
+  "preflight",
+  "forbidden_files",
+  "target_test",
+  "target_typecheck",
+  "target_diff_check",
+  "held_out_runtime",
+  "focused_test_control"
+]);
+
+const weakJsonBehaviorChecks = new Set<HeldOutCheck["name"]>([
+  "invalid_json",
+  "missing_email",
+  "invalid_role"
+]);
+
+const weakJsonRepairContractChecks = new Set<HeldOutCheck["name"]>([
+  ...weakJsonBehaviorChecks,
+  "unknown_first",
+  "finite_result_state",
+  "focused_tests"
+]);
+
+const scoreFamilyTargetRepair = (
+  input: TargetRepairScoreInput,
+  family: Exclude<PairedEvalFamily, "weak-json">,
+  changeManifest: TargetChangeManifest
+): HeldOutArmScore => {
   const checks: HeldOutCheck[] = [
     checkPreflight(changeManifest),
+    checkFamilyContract(family, input.sourceFiles, input.commands, input.runtimeAvailable, input.runtimeFailureReason, input.observations),
+    checkAllowedFiles(input.changedFiles),
+    ...checkTargetCommands(input.commands),
     {
-      name: "invalid_json",
-      passed: observationPassed(input.observations.invalidJson),
-      details: observationPassed(input.observations.invalidJson)
-        ? "Malformed JSON is rejected without saving a user."
-        : "Malformed JSON was thrown, accepted, or produced a non-finite result."
-    },
-    {
-      name: "missing_email",
-      passed: observationPassed(input.observations.missingEmail),
-      details: observationPassed(input.observations.missingEmail)
-        ? "Missing email is rejected without saving a user."
-        : "Missing email was accepted, thrown, or produced a non-finite result."
-    },
-    {
-      name: "invalid_role",
-      passed: observationPassed(input.observations.invalidRole),
-      details: observationPassed(input.observations.invalidRole)
-        ? "Invalid role is rejected without saving a user."
-        : "Invalid role was accepted, thrown, or produced a non-finite result."
-    },
+      name: "held_out_runtime",
+      passed: input.runtimeAvailable,
+      details: !input.runtimeAvailable
+        ? "Family-specific held-out runtime observer was unavailable or malformed."
+        : runtimeObservationPassed(family, input.observations)
+          ? "Family-specific held-out runtime observer passed."
+          : "Family-specific held-out runtime observer completed and measured a contract failure."
+    }
+  ];
+  const invalid = checks.some((check) =>
+    ["preflight", "forbidden_files", "target_test", "target_typecheck", "target_diff_check", "held_out_runtime"].includes(check.name) && !check.passed
+  );
+  const contract = checks.find((check) => check.name === "family_contract");
+  return {
+    status: invalid ? "invalid" : contract?.passed === true ? "pass" : "fail",
+    score: checks.filter((check) => check.passed).length,
+    checks,
+    changedFiles: [...input.changedFiles],
+    changeManifest,
+    commands: input.commands,
+    ...(input.runtimeCommand === undefined ? {} : { runtimeCommand: input.runtimeCommand }),
+    ...(input.runtimeFailureReason === undefined ? {} : { runtimeFailureReason: input.runtimeFailureReason })
+  };
+};
+
+const scoreWeakJsonTargetRepair = (
+  input: TargetRepairScoreInput,
+  changeManifest: TargetChangeManifest
+): HeldOutArmScore => {
+  const checks: HeldOutCheck[] = [
+    checkPreflight(changeManifest),
+    checkRejectedObservation(
+      "invalid_json",
+      input.observations.invalidJson,
+      "Malformed JSON is rejected without saving a user.",
+      "Malformed JSON was thrown, accepted, or produced a non-finite result."
+    ),
+    checkRejectedObservation(
+      "missing_email",
+      input.observations.missingEmail,
+      "Missing email is rejected without saving a user.",
+      "Missing email was accepted, thrown, or produced a non-finite result."
+    ),
+    checkRejectedObservation(
+      "invalid_role",
+      input.observations.invalidRole,
+      "Invalid role is rejected without saving a user.",
+      "Invalid role was accepted, thrown, or produced a non-finite result."
+    ),
     checkUnknownFirst(input.sourceFiles),
     checkFiniteResult(input.sourceFiles),
     checkFocusedTestControl(input.focusedTestControl),
@@ -678,21 +718,7 @@ export const scoreTargetRepair = (
       input.focusedTestMutations
     ),
     checkAllowedFiles(input.changedFiles),
-    {
-      name: "target_test",
-      passed: passed(input.commands.test),
-      details: passed(input.commands.test) ? "Target test command passed." : "Target test command failed."
-    },
-    {
-      name: "target_typecheck",
-      passed: passed(input.commands.typecheck),
-      details: passed(input.commands.typecheck) ? "Target typecheck passed." : "Target typecheck failed."
-    },
-    {
-      name: "target_diff_check",
-      passed: passed(input.commands.diffCheck),
-      details: passed(input.commands.diffCheck) ? "Target diff check passed." : "Target diff check failed."
-    },
+    ...checkTargetCommands(input.commands),
     {
       name: "held_out_runtime",
       passed: input.runtimeAvailable,
@@ -701,34 +727,14 @@ export const scoreTargetRepair = (
         : "Held-out checker could not compile and exercise the target."
     }
   ];
-  const requiredForValidity = new Set<HeldOutCheck["name"]>([
-    "preflight",
-    "forbidden_files",
-    "target_test",
-    "target_typecheck",
-    "target_diff_check",
-    "held_out_runtime",
-    "focused_test_control"
-  ]);
-  const behaviorChecks = new Set<HeldOutCheck["name"]>([
-    "invalid_json",
-    "missing_email",
-    "invalid_role"
-  ]);
-  const repairContractChecks = new Set<HeldOutCheck["name"]>([
-    ...behaviorChecks,
-    "unknown_first",
-    "finite_result_state",
-    "focused_tests"
-  ]);
   const invalid = checks.some((check) =>
-    requiredForValidity.has(check.name) && !check.passed
+    weakJsonRequiredForValidity.has(check.name) && !check.passed
   );
   const satisfiesRepairContract = checks.every((check) =>
-    !repairContractChecks.has(check.name) || check.passed
+    !weakJsonRepairContractChecks.has(check.name) || check.passed
   );
   const score = checks.filter((check) =>
-    behaviorChecks.has(check.name) && check.passed
+    weakJsonBehaviorChecks.has(check.name) && check.passed
   ).length;
 
   return {
@@ -749,6 +755,16 @@ export const scoreTargetRepair = (
       ? {}
       : { focusedTestMutations: input.focusedTestMutations })
   };
+};
+
+export const scoreTargetRepair = (
+  input: TargetRepairScoreInput
+): HeldOutArmScore => {
+  const changeManifest = input.changeManifest ?? knownChangeManifest(input.changedFiles);
+  const family = input.family ?? "weak-json";
+  return family === "weak-json"
+    ? scoreWeakJsonTargetRepair(input, changeManifest)
+    : scoreFamilyTargetRepair(input, family, changeManifest);
 };
 
 export const scorePairedRepairs = (input: {
@@ -1480,8 +1496,12 @@ export const runHeldOutTargetRepairChecker = async (
         diffCheck: skipped("git diff --check")
       },
       runtimeAvailable: false,
-      focusedTestControl: skippedFocusedTestControl("target preflight was invalid"),
-      focusedTestMutations: skippedFocusedTestMutations("target preflight was invalid"),
+      ...(family === "weak-json"
+        ? {
+            focusedTestControl: skippedFocusedTestControl("target preflight was invalid"),
+            focusedTestMutations: skippedFocusedTestMutations("target preflight was invalid")
+          }
+        : {}),
       observations: unknownRuntimeObservations()
     });
   }
@@ -1526,20 +1546,31 @@ export const runHeldOutTargetRepairChecker = async (
   let runtimeFailureReason: HeldOutRuntimeFailureReason | undefined;
   let observations = unknownRuntimeObservations();
   let runtimeCommand = skipped("held-out runtime");
-  let focusedTestControl = skippedFocusedTestControl("target compilation failed");
-  let focusedTestMutations = skippedFocusedTestMutations("target compilation failed");
+  let focusedTestControl: CommandResult | undefined = family === "weak-json"
+    ? skippedFocusedTestControl("target compilation failed")
+    : undefined;
+  let focusedTestMutations: readonly FocusedTestMutationProof[] | undefined = family === "weak-json"
+    ? skippedFocusedTestMutations("target compilation failed")
+    : undefined;
 
   if (compile.exitCode === 0) {
-    const [runtime, mutationSuite] = await Promise.all([
-      runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot, family),
-      runFocusedTestMutationSuite(compileRoot, input.checkerRoot, sandboxRoot)
-    ]);
+    const [runtime, mutationSuite] = family === "weak-json"
+      ? await Promise.all([
+          runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot, family),
+          runFocusedTestMutationSuite(compileRoot, input.checkerRoot, sandboxRoot)
+        ])
+      : [
+          await runHeldOutRuntimeWorker(compileRoot, input.checkerRoot, sandboxRoot, family),
+          undefined
+        ] as const;
     runtimeAvailable = runtime.runtimeAvailable;
     runtimeFailureReason = runtime.failureReason;
     runtimeCommand = runtime.command;
     observations = runtime.observations;
-    focusedTestControl = mutationSuite.control;
-    focusedTestMutations = mutationSuite.mutations;
+    if (mutationSuite !== undefined) {
+      focusedTestControl = mutationSuite.control;
+      focusedTestMutations = mutationSuite.mutations;
+    }
   }
 
   const postflight = await targetPreflight(input);
@@ -1557,8 +1588,8 @@ export const runHeldOutTargetRepairChecker = async (
     commands: { test, typecheck, diffCheck },
     runtimeCommand,
     ...(runtimeFailureReason === undefined ? {} : { runtimeFailureReason }),
-    focusedTestControl,
-    focusedTestMutations,
+    ...(focusedTestControl === undefined ? {} : { focusedTestControl }),
+    ...(focusedTestMutations === undefined ? {} : { focusedTestMutations }),
     runtimeAvailable,
     observations
   });
