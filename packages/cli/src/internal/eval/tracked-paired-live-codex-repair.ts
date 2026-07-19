@@ -371,7 +371,9 @@ const isCapabilityProfile = (value: unknown, mode: CodexCapabilityProfile["mode"
   isStringArrayValue(value["skillPaths"]) &&
   (value["skillPaths"] as string[]).every((path) => isAbsolute(path));
 
-const isManifestCapabilities = (value: unknown): boolean =>
+const isManifestCapabilities = (
+  value: unknown
+): value is NonNullable<PairedTrialManifest["capabilities"]> =>
   isRecord(value) &&
   isCapabilityProfile(value["baseline"], "baseline") &&
   isCapabilityProfile(value["krn"], "krn") &&
@@ -1021,6 +1023,14 @@ const codexCapabilityProfileConfig = (
 const capabilityProfileName = (baseName: string, arm: "baseline" | "krn"): string =>
   `${baseName}-${arm}`;
 
+const packetTransportMcpServerName = "krn_decision_packet" as const;
+
+const hasPacketTransportCapability = (
+  capabilities: PairedTrialManifest["capabilities"]
+): boolean =>
+  isManifestCapabilities(capabilities) &&
+  capabilities.krn.mcpServers.some((server) => server.name === packetTransportMcpServerName);
+
 const walkStructuredJson = (node: unknown, visit: (record: JsonRecord) => void): void => {
   if (Array.isArray(node)) {
     node.forEach((child) => walkStructuredJson(child, visit));
@@ -1154,7 +1164,11 @@ const manifestConditionReasons = (manifest: PairedTrialManifest): readonly strin
       ? []
       : [
         missingReason(isManifestCapabilities(manifest.capabilities), "capability profiles are invalid"),
-        missingReason(manifest.codex.args.includes("--json"), "capability profiles require structured Codex JSON events")
+        missingReason(manifest.codex.args.includes("--json"), "capability profiles require structured Codex JSON events"),
+        missingReason(
+          hasPacketTransportCapability(manifest.capabilities),
+          "capability KRN arm cannot satisfy bounded packet-derived obedience without krn_decision_packet"
+        )
       ].filter((reason): reason is string => reason !== undefined)),
     missingReason(Number.isFinite(manifest.codex.budget.timeoutMs) && manifest.codex.budget.timeoutMs > 0, "Codex timeout budget is invalid"),
     missingReason(!hasOwn(manifest.codex.budget, "maxTokens"), "Codex maxTokens is not an enforceable CLI budget"),

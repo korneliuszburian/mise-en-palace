@@ -847,6 +847,47 @@ describe("tracked paired live Codex repair", () => {
     });
   });
 
+  it("rejects capability trials that cannot produce packet-derived obedience", async () => {
+    const proceduralOnlyManifest: PairedTrialManifest = {
+      ...manifest,
+      codex: {
+        ...manifest.codex,
+        args: [
+          ...manifest.codex.args.slice(0, 3),
+          "--json",
+          ...manifest.codex.args.slice(3)
+        ]
+      },
+      capabilities: {
+        baseline: { mode: "baseline", mcpServers: [], skillPaths: [] },
+        krn: {
+          mode: "krn",
+          mcpServers: [],
+          skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+        }
+      },
+      treatment: "procedural_skills"
+    };
+
+    const result = await runTrackedPairedTrial({
+      manifest: proceduralOnlyManifest,
+      sourceRoot,
+      checkerRoot: process.cwd(),
+      packet
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid",
+      execution: {
+        invalidReasons: [
+          "capability KRN arm cannot satisfy bounded packet-derived obedience without krn_decision_packet"
+        ]
+      }
+    });
+    expect(result.execution.baseline).toBeUndefined();
+    expect(result.execution.krn).toBeUndefined();
+  });
+
   it("rejects an observed CLI-version mismatch before an arm starts", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-version-"));
     const source = await makeRunnableTargetSource();
