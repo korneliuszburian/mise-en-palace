@@ -15,20 +15,6 @@
         "count": 1
       }
     },
-    "packages/cli/src/decision-packet-read-model-builders.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      },
-      "crap_high": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 2
-      }
-    },
     "packages/cli/src/doctor-static-checks.ts": {
       "complexity_high": {
         "count": 1
