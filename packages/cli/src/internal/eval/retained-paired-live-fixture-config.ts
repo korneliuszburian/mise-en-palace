@@ -133,7 +133,7 @@ export const retainedPairedLiveFixtureConfigFor = (
       return {
         family,
         scenarioName: "temporal-policy-drift-typescript",
-        taskPrefix: "temporal policy drift repair",
+        taskPrefix: "temporal policy drift typescript repair",
         fixtureRoot,
         sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
       };

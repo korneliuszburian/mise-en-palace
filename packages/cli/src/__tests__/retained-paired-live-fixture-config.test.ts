@@ -96,7 +96,7 @@ describe("retained paired-live fixture config", () => {
     expect(config).toMatchObject({
       family: "temporal-policy-drift",
       scenarioName: "temporal-policy-drift-typescript",
-      taskPrefix: "temporal policy drift repair"
+      taskPrefix: "temporal policy drift typescript repair"
     });
     expect(config.fixtureRoot).toBe(
       resolve("/repo/tests/fixtures/target-repos/temporal-policy-drift-typescript")
