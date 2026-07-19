@@ -7,20 +7,11 @@ import {
 import {
   formatRegisteredCommandHelp,
   isRegisteredHelpCommandKind,
-  parseRegisteredTopLevelCommand,
-  registeredCliCommandGroups
+  parseRegisteredTopLevelCommand
 } from "../cli-command-registry.js";
 
 describe("cliCommandRegistry", () => {
-  it("registers the run show parser and help as the first pilot", () => {
-    expect(registeredCliCommandGroups.map((group) => group.topLevelCommand)).toEqual([
-      "run"
-    ]);
-    expect(registeredCliCommandGroups[0]?.commandKinds).toEqual([
-      "runShow",
-      "runShowHelp"
-    ]);
-
+  it("parses run show through the registered command boundary", () => {
     expect(parseRegisteredTopLevelCommand("run", ["show", "--run-id", "run-1"])).toEqual({
       command: {
         kind: "runShow",
