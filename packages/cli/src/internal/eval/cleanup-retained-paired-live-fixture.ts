@@ -479,9 +479,8 @@ export const main = async (): Promise<void> => {
         manifestPath: path.resolve(repoRoot, args.manifestPath),
         attemptDirectory: path.resolve(repoRoot, args.attemptDirectory)
       });
-  const report = parseRetainedFixtureReport(
-    JSON.parse(await readFile(path.resolve(repoRoot, args.reportPath), "utf8"))
-  );
+  const reportValue: unknown = JSON.parse(await readFile(path.resolve(repoRoot, args.reportPath), "utf8"));
+  const report = parseRetainedFixtureReport(reportValue);
   const result = await cleanupRetainedFixture({
     databaseUrl: process.env.KRN_DATABASE_URL ?? "postgres://krn:krn@localhost:54329/krn",
     guard,
