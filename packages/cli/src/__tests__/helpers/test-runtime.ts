@@ -48,6 +48,7 @@ export type CapturedPlanRun = {
 
 interface PersistedPlanOptions {
   feedbackDeltas?: readonly FeedbackDelta[];
+  format?: "text" | "json";
   memoryRecords?: readonly MemoryRecord[];
   omitDecisionPacketIssuance?: boolean;
   onListActiveMemory?: (limit: number) => void;
@@ -176,7 +177,8 @@ export const runPersistedPlanWithCapturedMetadata = async (
       "plan",
       "--task",
       task,
-      "--persist"
+      "--persist",
+      ...(options.format === "json" ? ["--json"] : [])
     ],
     {
       env: {

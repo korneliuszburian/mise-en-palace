@@ -80,11 +80,11 @@ describe("runCli", () => {
       },
       {
         args: ["plan", "--help"],
-        usage: "Usage: krn plan --task"
+        usage: "Usage: krn plan [--project <project-id>] --task"
       },
       {
         args: ["plan", "-h"],
-        usage: "Usage: krn plan --task"
+        usage: "Usage: krn plan [--project <project-id>] --task"
       },
       {
         args: ["evidence", "--help"],

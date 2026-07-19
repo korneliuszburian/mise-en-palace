@@ -16,18 +16,31 @@ describe("parsePlanArgs", () => {
           kind: "plan",
           task: "improve memory",
           projectId: "project-1",
-          persist: true
+          persist: true,
+          format: "text"
         }
       });
     expect(parsePlanArgs(["--task=review source grounding"])).toEqual({
       command: {
         kind: "plan",
         task: "review source grounding",
-        persist: false
+        persist: false,
+        format: "text"
       }
     });
   });
 
+  it("selects machine-readable plan output explicitly", () => {
+    expect(parsePlanArgs(["--task", "handoff to Codex", "--persist", "--json"]))
+      .toEqual({
+        command: {
+          kind: "plan",
+          task: "handoff to Codex",
+          persist: true,
+          format: "json"
+        }
+      });
+  });
   it("rejects plan commands without a task or with unsupported options", () => {
     expect(parsePlanArgs([]).error).toContain("Usage: krn plan");
     expect(parsePlanArgs(["--task", ""]).error).toContain("Usage: krn plan");
