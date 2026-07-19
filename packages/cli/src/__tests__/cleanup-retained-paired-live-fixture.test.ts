@@ -148,7 +148,7 @@ describe("retained paired-live fixture cleanup guard", () => {
         projectId,
         runId,
         scenario: "temporal-policy-drift"
-      } as Parameters<typeof retainedFixturePersistenceIdentityFor>[0]["manifest"],
+      },
       artifact: {
         kind: "krn.pairedLiveCodexRepairArtifact.v2",
         status: "passed",
@@ -158,7 +158,7 @@ describe("retained paired-live fixture cleanup guard", () => {
         packet: { checksum: "a".repeat(64) },
         execution: {},
         score: { outcome: "win" }
-      } as unknown as Parameters<typeof retainedFixturePersistenceIdentityFor>[0]["artifact"],
+      },
       manifestHash: "c".repeat(64)
     });
 

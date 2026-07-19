@@ -71,6 +71,18 @@ export type RetainedFixtureCleanupGuard =
       readonly expected: RetainedFixturePersistenceIdentity;
     };
 
+type RetainedFixturePersistenceManifestIdentityInput =
+  Pick<PairedTrialManifest, "projectId" | "runId" | "scenario">;
+
+type RetainedFixturePersistenceArtifactIdentityInput =
+  Pick<TrackedTrialArtifact, "kind" | "artifactHash" | "manifestHash" | "runId" | "status" | "checkerRevision"> & {
+    readonly packet: Pick<TrackedTrialArtifact["packet"], "checksum">;
+    readonly execution: Pick<TrackedTrialArtifact["execution"], "environmentProfileHash">;
+    readonly score?: {
+      readonly outcome: PairedLiveEvalEvidenceOutcome;
+    };
+  };
+
 export type RetainedFixtureCleanupGuardResult =
   | {
       readonly mode: "disposable";
@@ -161,7 +173,9 @@ export const parseRetainedFixtureReport = (value: unknown): RetainedFixtureRepor
   return { smokeId, workspaceSlug, projectId, runId, retainedFixture: true };
 };
 
-const checkerEvidenceRef = (artifact: TrackedTrialArtifact): string =>
+const checkerEvidenceRef = (
+  artifact: Pick<RetainedFixturePersistenceArtifactIdentityInput, "kind" | "checkerRevision">
+): string =>
   artifact.checkerRevision === undefined
     ? artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
       ? "checker:paired-live-codex-repair.v2"
@@ -169,7 +183,7 @@ const checkerEvidenceRef = (artifact: TrackedTrialArtifact): string =>
     : `checker:${artifact.checkerRevision}`;
 
 const usefulnessOutcomeFor = (
-  artifact: TrackedTrialArtifact
+  artifact: RetainedFixturePersistenceArtifactIdentityInput
 ): PairedLiveEvalEvidenceUsefulnessOutcome => {
   const value = artifact.score?.outcome;
 
@@ -181,8 +195,8 @@ const usefulnessOutcomeFor = (
 };
 
 export const retainedFixturePersistenceIdentityFor = (input: {
-  readonly manifest: PairedTrialManifest;
-  readonly artifact: TrackedTrialArtifact;
+  readonly manifest: RetainedFixturePersistenceManifestIdentityInput;
+  readonly artifact: RetainedFixturePersistenceArtifactIdentityInput;
   readonly manifestHash: string;
 }): RetainedFixturePersistenceIdentity => {
   if (input.artifact.runId !== input.manifest.runId) {
