@@ -186,8 +186,6 @@ export const decisionPacketForCompiledPlan = (
     caveatedMemoryRefs: [],
     staleDecisionIds: [],
     staleKnowledgeIds: [],
-    noiseKnowledgeIds: [],
-    unknownKnowledgeIds: [],
     supersededPathIds: negativePaths.supersededPathIds,
     rejectedPathIds: negativePaths.rejectedPathIds,
     falsifiers: [],
@@ -223,7 +221,6 @@ export const decisionPacketForCompiledPlan = (
     },
     doesNotProve: ["A compile-time packet does not prove source truth or persisted authority."],
     nonProofs: ["A compile-time packet does not prove source truth or persisted authority."],
-    noiseDecisionIds: [],
     severeStaleAuthorityIds: [],
     brief: {
       includedContextCount: contextInclusions.length,

@@ -668,12 +668,9 @@ describe("DecisionPacket builder", () => {
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
     expect(packet.staleDecisionIds).toEqual([]);
     expect(packet.staleKnowledgeIds).toEqual(["memory-stale"]);
-    expect(packet.noiseKnowledgeIds).toEqual([]);
-    expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
     expect(packet.rejectedPathIds).toEqual(["anti-memory-superseded-template"]);
     expect(packet.sourceRejectionIds).toEqual(["source-rejection-current"]);
-    expect(packet.noiseDecisionIds).toEqual([]);
     expect(packet.severeStaleAuthorityIds).toEqual([]);
     expect(packet.falsifiers).toEqual([
       "A matching app setup packet omits the current template decision."
@@ -1120,7 +1117,6 @@ describe("DecisionPacket builder", () => {
     expect(packet.governingDecisionIds).toEqual([]);
     expect(packet.governingStatements).toEqual([]);
     expect(packet.staleDecisionIds).toEqual([]);
-    expect(packet.noiseDecisionIds).toEqual([]);
     expect(packet.rejectedPathIds).toEqual([]);
     expect(packet.sourceRejectionIds).toEqual([]);
   });

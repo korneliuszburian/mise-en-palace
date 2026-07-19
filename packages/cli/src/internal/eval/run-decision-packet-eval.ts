@@ -64,6 +64,13 @@ const evalCandidateDoesNotProve =
 const missingBriefPropagationReason =
   "packet-selected guidance is missing from Codex-facing brief";
 
+const noiseDecisionIdsFor = (
+  packet: DecisionPacketEvalCaseReadback["packet"],
+  testCase: Pick<DecisionPacketCase, "expectedDecisionId">
+): readonly string[] => packet.governingDecisionIds.filter(
+  (decisionId) => decisionId !== testCase.expectedDecisionId
+);
+
 interface DecisionPacketEvalCliOptions {
   fixturePath: string;
   persistFailures: boolean;
@@ -346,7 +353,7 @@ const packetReasons = (
     "packet includes caveated source claims without decision support"
   ),
   reasonFor(
-    packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions,
+    noiseDecisionIdsFor(packet, testCase).length <= maximumAverageNoiseDecisions,
     "packet noise is within budget",
     "packet is too noisy for pre-code use"
   )
@@ -367,7 +374,7 @@ const scoreTaskUsefulness = (
   : score(
       testCase.expectedDecisionId !== undefined &&
       packet.governingDecisionIds.includes(testCase.expectedDecisionId) &&
-      packet.noiseDecisionIds.length <= maximumAverageNoiseDecisions
+      noiseDecisionIdsFor(packet, testCase).length <= maximumAverageNoiseDecisions
     );
 
 const scoreEvidenceFidelity = (
@@ -488,7 +495,7 @@ export const classifyDecisionPacketForEval = (
     packet.caveatedSourceClaimIds.length > maximumCaveatedSourceClaimInclusions ||
     !hasSameIds(packet.rejectedPathIds, testCase.rejectedDecisionIds) ||
     !hasSameIds(packet.sourceRejectionIds, expectedSourceRejectionIds(fixture, testCase)) ||
-    packet.noiseDecisionIds.length > maximumAverageNoiseDecisions
+    noiseDecisionIdsFor(packet, testCase).length > maximumAverageNoiseDecisions
   ) {
     return "noisy";
   }
@@ -901,7 +908,9 @@ export const runDecisionPacketEval = async (
   const averageConsensusConflictScore = average(cases.map((testCase) =>
     testCase.scores.consensusConflict
   ));
-  const averageNoiseDecisions = average(cases.map((testCase) => testCase.packet.noiseDecisionIds.length));
+  const averageNoiseDecisions = average(cases.map((testCase) =>
+    noiseDecisionIdsFor(testCase.packet, testCase).length
+  ));
   const severeStaleAuthorityInclusions = cases.reduce(
     (sum, testCase) => sum + testCase.packet.severeStaleAuthorityIds.length,
     0

@@ -827,9 +827,9 @@ describe("DecisionPacket MCP wrapper", () => {
         "run-agent-source-dissent",
         "run-agent-unsafe"
       ],
-      messageUtf8Bytes: { minimum: 10_368, maximum: 12_662 },
-      structuredContentUtf8Bytes: { minimum: 4_944, maximum: 6_050 },
-      collectionCount: { minimum: 53, maximum: 56 },
+      messageUtf8Bytes: { minimum: 10_222, maximum: 12_516 },
+      structuredContentUtf8Bytes: { minimum: 4_874, maximum: 5_980 },
+      collectionCount: { minimum: 50, maximum: 53 },
       collectionP95: { minimum: 1, maximum: 2 },
       maximumCollectionLength: 4
     });

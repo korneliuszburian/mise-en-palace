@@ -148,9 +148,6 @@ export const decisionPacketMcpFixture = bindDecisionPacketFixtureIdentity({
     nonProofs: ["live Codex obedience"],
     caveatedMemoryRefs: [],
     staleKnowledgeIds: [],
-    noiseKnowledgeIds: [],
-    unknownKnowledgeIds: [],
-    noiseDecisionIds: [],
     severeStaleAuthorityIds: [],
     brief: {
       includedContextCount: 1,

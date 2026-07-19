@@ -303,8 +303,6 @@ const packetForBriefInput = (input: {
     caveatedMemoryRefs: [],
     staleDecisionIds: [],
     staleKnowledgeIds: staleKnowledgeIdsForContext(contextExclusions),
-    noiseKnowledgeIds: [],
-    unknownKnowledgeIds: [],
     supersededPathIds: negativePaths.supersededPathIds,
     rejectedPathIds: negativePaths.rejectedPathIds,
     falsifiers: [],
@@ -318,7 +316,6 @@ const packetForBriefInput = (input: {
     }),
     doesNotProve: ["This compile-time packet does not prove source truth."],
     nonProofs: ["This compile-time packet does not prove source truth."],
-    noiseDecisionIds: [],
     severeStaleAuthorityIds: [],
     brief: {
       includedContextCount: contextInclusions.length,
@@ -782,8 +779,6 @@ export const buildDecisionPacketWithEngine = async (
       .map((decision) => `memory:decision:${decision.id}`)),
     staleDecisionIds,
     staleKnowledgeIds: staleKnowledgeIdsForContext(contextExclusions),
-    noiseKnowledgeIds: [],
-    unknownKnowledgeIds: [],
     supersededPathIds: [],
     rejectedPathIds,
     falsifiers: unique(supportedGoverningRows.map((decision) => decision.falsifier).filter(nonEmpty)),
@@ -801,7 +796,6 @@ export const buildDecisionPacketWithEngine = async (
       "does not prove live Codex obedience",
       "does not prove source truth"
     ],
-    noiseDecisionIds: supportedGoverningDecisionIds.filter((id) => id !== testCase.expectedDecisionId),
     severeStaleAuthorityIds,
     brief: {
       includedContextCount: contextAssembly.inclusions.length,
