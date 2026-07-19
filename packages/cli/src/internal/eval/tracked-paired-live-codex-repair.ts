@@ -49,6 +49,7 @@ import {
   capabilityProfileHash,
   capabilityProfileName,
   capabilityUseFalsifierReasons,
+  codexCapabilityConfigArgs,
   codexCapabilityProfileConfig,
   hasPacketTransportCapability,
   observeCodexCapabilityUse,
@@ -63,6 +64,12 @@ import {
   type PairedMemoryTreatment,
   type PairedTrialManifest
 } from "./tracked-paired-trial-manifest.js";
+import {
+  isModelUsageObservation,
+  observeModelUsage,
+  unavailableModelUsageObservation,
+  type ModelUsageObservation
+} from "./tracked-paired-trial-model-usage.js";
 
 export {
   parseTrackedTrialManifest,
@@ -86,11 +93,7 @@ export type DecisionApplicationObservation =
   | "observed"
   | "persistence_failed";
 
-export type ModelUsageObservation = {
-  readonly tokenUsage: "unavailable";
-  readonly reason: string;
-  readonly latencySource: "arm_command_duration_ms";
-};
+export type { ModelUsageObservation } from "./tracked-paired-trial-model-usage.js";
 
 
 export type TrialPacketValidation = {
@@ -1255,12 +1258,6 @@ const isTrialPromptDelta = (value: unknown): boolean =>
   Number.isFinite(value["deltaBytes"]) &&
   value["packetOnlyByConstruction"] === true;
 
-const isModelUsageObservation = (value: unknown): value is ModelUsageObservation =>
-  isRecord(value) &&
-  value["tokenUsage"] === "unavailable" &&
-  readString(value["reason"]) !== undefined &&
-  value["latencySource"] === "arm_command_duration_ms";
-
 const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "environmentProfileHash", isPresentString) &&
   optionalValue(value, "attempt", isTrialAttempt) &&
@@ -1619,12 +1616,6 @@ const trialProof = (status: TrackedTrialStatus): TrackedTrialArtifact["proof"] =
         "product readiness"
       ]
     };
-
-const unavailableModelUsageObservation = (): ModelUsageObservation => ({
-  tokenUsage: "unavailable",
-  reason: "Codex structured trial output does not expose model token usage; command durationMs is the recorded latency proxy.",
-  latencySource: "arm_command_duration_ms"
-});
 
 const trialExecution = (
   context: TrialContext,
@@ -2165,7 +2156,10 @@ const runComparableTrialArm = async (input: {
   // profile must remain visible instead of being suppressed with host config.
   const args = capabilityProfile === undefined
     ? configuredArgs
-    : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
+    : [
+        ...codexCapabilityConfigArgs(capabilityProfile),
+        ...configuredArgs.filter((argument) => argument !== "--ignore-user-config")
+      ];
   return runProcess(input.execution.containmentExecutable, [
     "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
     "--tmpfs", "/tmp", "--dir", "/tmp/.git",
@@ -2307,6 +2301,7 @@ const comparableExecutionEvidence = (
       promptDelta: arms.prompts.delta,
       baseline: arms.baselineResult,
       krn: arms.krnResult,
+      modelUsageObservation: observeModelUsage(arms.baselineResult, arms.krnResult),
       ...(capabilityProfiles === undefined ? {} : { capabilityUseObservation }),
       ...(input.recordDecisionApplications === undefined
         ? {}
