@@ -383,6 +383,8 @@ export const cleanupRetainedFixture = async (input: {
     await client`
       delete from retrieval_runs
       where metadata->>'smokeId' = ${input.report.smokeId}
+         or project_id = ${input.report.projectId}::uuid
+         or execution_run_id = ${input.report.runId}::uuid
     `;
     await client`
       delete from context_assemblies
@@ -414,7 +416,11 @@ export const cleanupRetainedFixture = async (input: {
         select count(*)::int as count from execution_runs where id = ${input.report.runId}::uuid
       `) +
       await countRows(client`
-        select count(*)::int as count from retrieval_runs where metadata->>'smokeId' = ${input.report.smokeId}
+        select count(*)::int as count
+        from retrieval_runs
+        where metadata->>'smokeId' = ${input.report.smokeId}
+           or project_id = ${input.report.projectId}::uuid
+           or execution_run_id = ${input.report.runId}::uuid
       `) +
       await countRows(client`
         select count(*)::int as count from context_assemblies where metadata->>'smokeId' = ${input.report.smokeId}
