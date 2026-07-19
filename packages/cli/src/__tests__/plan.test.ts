@@ -616,7 +616,7 @@ describe("runCli", () => {
     });
   });
 
-  it("keeps diagnostic feedback out of ContextAssembly and DecisionPacket authority", async () => {
+  it("carries review-only feedback for activation candidates without changing selection", async () => {
     const memoryRecords = Array.from(
       { length: 21 },
       (_, index) => planBackfillMemory(index + 1)
@@ -652,7 +652,13 @@ describe("runCli", () => {
           "backfill-3",
           "backfill-4",
           "backfill-5"
-        ]
+        ],
+        reviewOnlyUsefulnessCaveats: expect.arrayContaining([
+          expect.objectContaining({
+            subjectId: "knowledge:backfill-20",
+            outcome: "stale"
+          })
+        ])
       }
     });
     expect(feedbackFiltered.result.stdout).toContain(

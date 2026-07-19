@@ -830,8 +830,8 @@ describe("decision packet CLI", () => {
   });
 
   it("projects persisted tool boundaries and fail-closed abstention guidance", () => {
-    if (aggregate.contextAssembly === undefined) {
-      throw new Error("decision packet fixture requires a context assembly");
+    if (aggregate.contextAssembly === undefined || aggregate.activationTrace === undefined) {
+      throw new Error("decision packet fixture requires context assembly and activation trace");
     }
 
     const abstainedAggregate: HarnessRunAggregate = {
@@ -876,6 +876,82 @@ describe("decision packet CLI", () => {
       executionRun: aggregate.executionRun
     });
     expect(historicalProjection.nextAction).toBe("Render Codex adapter brief.");
+  });
+
+  it("projects review-only usefulness caveats only for memory included in the packet", () => {
+    const activationTrace = aggregate.activationTrace;
+
+    if (aggregate.contextAssembly === undefined || activationTrace === undefined) {
+      throw new Error("decision packet fixture requires context assembly and activation trace");
+    }
+
+    const includedMemoryRef = aggregate.contextAssembly.inclusions.find(
+      (inclusion) => inclusion.subjectType === "memory_record"
+    )?.subjectId;
+
+    if (includedMemoryRef === undefined) {
+      throw new Error("decision packet fixture requires an included memory");
+    }
+    const includedKnowledgeRef = "knowledge:included-memory";
+    const candidateTemplate = activationTrace.candidates[0];
+
+    if (candidateTemplate === undefined) {
+      throw new Error("decision packet fixture requires an activation candidate");
+    }
+
+    const projection = buildDecisionPacketAuthorityProjection({
+      ...aggregate,
+      activationTrace: {
+        ...activationTrace,
+        candidates: [...activationTrace.candidates, {
+          ...candidateTemplate,
+          id: "retrieval-candidate-included-memory",
+          kind: "memory",
+          subjectType: "memory_record",
+          subjectId: includedMemoryRef,
+          metadata: { key: includedKnowledgeRef }
+        }]
+      },
+      harnessPlan: {
+        ...aggregate.harnessPlan,
+        metadata: {
+          ...aggregate.harnessPlan.metadata,
+          knowledgeSelection: {
+            reviewOnlyUsefulnessCaveats: [{
+              feedbackDeltaId: "feedback-included-noise",
+              subjectType: "knowledge",
+              subjectId: includedKnowledgeRef,
+              feedbackStatus: "accepted",
+              outcome: "noise",
+              reason: "This memory was noise for the prior matching task.",
+              doesNotProve: "Task-scoped feedback does not mutate memory truth."
+            }, {
+              feedbackDeltaId: "feedback-unselected-noise",
+              subjectType: "knowledge",
+              subjectId: "memory-not-included",
+              feedbackStatus: "accepted",
+              outcome: "noise",
+              reason: "This other memory was noise.",
+              doesNotProve: "Task-scoped feedback does not mutate memory truth."
+            }]
+          }
+        }
+      }
+    });
+
+    expect(projection.reviewOnlyUsefulnessCaveats).toEqual([
+      expect.objectContaining({
+        subjectId: includedKnowledgeRef,
+        outcome: "noise"
+      })
+    ]);
+    expect(buildDecisionPacketFromReadModel(projection).reviewOnlyUsefulnessCaveats)
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          subjectId: includedKnowledgeRef,
+          outcome: "noise"
+        })
+      ]));
   });
 
   it("keeps rejected feedback visible without granting it packet caveat authority", () => {
