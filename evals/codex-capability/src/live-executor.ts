@@ -10,7 +10,7 @@ import type { CodexCapabilityEvalArmName, CodexCapabilityEvalGrader } from "./co
 import type { CodexCapabilityPlannedArm } from "./dry-run-plan.js";
 import type { CodexCapabilityArmExecution, CodexCapabilityArmExecutor, CodexCapabilityCheckerResult } from "./run-eval.js";
 
-export type WeakJsonLiveExecutorOptions = {
+export type CodexCapabilityLiveExecutorOptions = {
   readonly sourceRoot: string;
   readonly outputRoot: string;
   readonly codexHome: string;
@@ -19,17 +19,18 @@ export type WeakJsonLiveExecutorOptions = {
   readonly runCommand?: (input: CommandInput) => Promise<CommandResult>;
 };
 
-export const prepareWeakJsonLiveExecutor = async (
-  options: WeakJsonLiveExecutorOptions,
+export const prepareCodexCapabilityLiveExecutor = async (
+  options: CodexCapabilityLiveExecutorOptions,
   targetCommit: string,
   scenario: string
 ): Promise<CodexCapabilityArmExecutor> => {
   const runCommand = options.runCommand ?? runProcessCommand;
   const snapshotRoot = join(options.outputRoot, "source");
-  await materializeSourceSnapshot(options.sourceRoot, snapshotRoot, targetCommit, runCommand);
+  const scenarioConfig = liveScenarioConfig(scenario);
+  await materializeSourceSnapshot(options.sourceRoot, snapshotRoot, targetCommit, scenarioConfig.fixturePath, runCommand);
   const workspaces = await Promise.all([
-    prepareArmWorkspace("baseline", options, snapshotRoot, scenario, runCommand),
-    prepareArmWorkspace("krn", options, snapshotRoot, scenario, runCommand)
+    prepareArmWorkspace("baseline", options, snapshotRoot, scenarioConfig, runCommand),
+    prepareArmWorkspace("krn", options, snapshotRoot, scenarioConfig, runCommand)
   ]);
   const workspaceByArm = new Map(workspaces);
   return async (arm, graders) => executeArm(arm, graders, workspaceByArm, options, runCommand);
@@ -39,13 +40,14 @@ const materializeSourceSnapshot = async (
   sourceRoot: string,
   snapshotRoot: string,
   commit: string,
+  fixturePath: string,
   runCommand: (input: CommandInput) => Promise<CommandResult>
 ): Promise<void> => {
   mkdirSync(snapshotRoot, { recursive: true });
   const archivePath = join(dirname(snapshotRoot), "source.tar");
   await requireSuccess(await runCommand({
     command: "git",
-    args: ["archive", "--format=tar", `--output=${archivePath}`, commit, "--", "tests/fixtures/target-repos/weak-json-boundary-typescript"],
+    args: ["archive", "--format=tar", `--output=${archivePath}`, commit, "--", fixturePath],
     cwd: sourceRoot,
     timeoutMs: 30_000
   }), "git archive target fixture");
@@ -59,23 +61,55 @@ const materializeSourceSnapshot = async (
 
 const prepareArmWorkspace = async (
   arm: CodexCapabilityEvalArmName,
-  options: WeakJsonLiveExecutorOptions,
+  options: CodexCapabilityLiveExecutorOptions,
   snapshotRoot: string,
-  scenario: string,
+  scenario: LiveScenarioConfig,
   runCommand: (input: CommandInput) => Promise<CommandResult>
 ): Promise<readonly [CodexCapabilityEvalArmName, string]> => {
   const workspace = join(options.outputRoot, arm, "workspace");
-  const fixtureRoot = join(snapshotRoot, "tests/fixtures/target-repos/weak-json-boundary-typescript");
+  const fixtureRoot = join(snapshotRoot, scenario.fixturePath);
+  await materializeTarget(arm, fixtureRoot, workspace, scenario, snapshotRoot, runCommand);
+  await initializeWorkspace(workspace, runCommand);
+  prepareTargetDependencies(workspace, options.sourceRoot);
+  return [arm, workspace];
+};
+
+type LiveScenarioConfig = {
+  readonly fixturePath: string;
+  readonly overlay?: string;
+};
+
+const liveScenarioConfig = (scenario: string): LiveScenarioConfig => {
+  if (scenario === "weak-json-boundary") {
+    return {
+      fixturePath: "tests/fixtures/target-repos/weak-json-boundary-typescript",
+      overlay: scenario
+    };
+  }
+  if (scenario === "temporal-policy-hidden-source-typescript") {
+    return { fixturePath: "tests/fixtures/target-repos/temporal-policy-drift-typescript" };
+  }
+  throw new Error(`unsupported live eval scenario: ${scenario}`);
+};
+
+const materializeTarget = async (
+  arm: CodexCapabilityEvalArmName,
+  fixtureRoot: string,
+  workspace: string,
+  scenario: LiveScenarioConfig,
+  snapshotRoot: string,
+  runCommand: (input: CommandInput) => Promise<CommandResult>
+): Promise<void> => {
+  if (scenario.overlay === undefined) {
+    cpSync(fixtureRoot, workspace, { recursive: true });
+    return;
+  }
   await requireSuccess(await runCommand({
     command: "node",
-    args: [join(fixtureRoot, "scripts/materialize-scenario.mjs"), scenario, workspace],
+    args: [join(fixtureRoot, "scripts/materialize-scenario.mjs"), scenario.overlay, workspace],
     cwd: snapshotRoot,
     timeoutMs: 30_000
   }), `materialize ${arm} target`);
-  await initializeWorkspace(workspace, runCommand);
-  prepareTargetDependencies(workspace, options.sourceRoot);
-  prepareCodexHome(arm, options);
-  return [arm, workspace];
 };
 
 const initializeWorkspace = async (
@@ -102,21 +136,24 @@ const prepareTargetDependencies = (workspace: string, sourceRoot: string): void 
   const nodeModules = join(workspace, "node_modules");
   const binaries = join(nodeModules, ".bin");
   mkdirSync(binaries, { recursive: true });
-  symlinkSync(resolve(sourceRoot, "node_modules/typescript"), join(nodeModules, "typescript"));
-  symlinkSync(resolve(sourceRoot, "node_modules/.bin/tsc"), join(binaries, "tsc"));
+  cpSync(resolve(sourceRoot, "node_modules/typescript"), join(nodeModules, "typescript"), {
+    recursive: true,
+    dereference: true
+  });
+  symlinkSync("../typescript/bin/tsc", join(binaries, "tsc"));
 };
 
 const prepareCodexHome = (
-  arm: CodexCapabilityEvalArmName,
-  options: WeakJsonLiveExecutorOptions
+  arm: CodexCapabilityPlannedArm,
+  options: CodexCapabilityLiveExecutorOptions
 ): void => {
-  const home = join(options.outputRoot, arm, "codex-home");
+  const home = join(options.outputRoot, arm.arm, "codex-home");
   mkdirSync(home, { recursive: true });
   symlinkSync(join(options.codexHome, "auth.json"), join(home, "auth.json"));
-  const profileSource = resolve(options.sourceRoot, `evals/codex-capability/profiles/${arm === "baseline" ? "plain-codex-eval" : "krn-codex-eval"}.config.toml`);
+  const profileSource = resolve(options.sourceRoot, arm.profile.configPath);
   cpSync(profileSource, join(home, basename(profileSource)));
   cpSync(profileSource, join(home, "config.toml"));
-  if (arm === "krn") {
+  if (arm.arm === "krn") {
     const skillTarget = join(home, "skills", "krn-memory-core");
     mkdirSync(dirname(skillTarget), { recursive: true });
     cpSync(resolve(options.sourceRoot, ".agents/skills/krn-memory-core"), skillTarget, { recursive: true });
@@ -127,17 +164,18 @@ const executeArm = async (
   arm: CodexCapabilityPlannedArm,
   graders: readonly CodexCapabilityEvalGrader[],
   workspaces: ReadonlyMap<CodexCapabilityEvalArmName, string>,
-  options: WeakJsonLiveExecutorOptions,
+  options: CodexCapabilityLiveExecutorOptions,
   runCommand: (input: CommandInput) => Promise<CommandResult>
 ): Promise<CodexCapabilityArmExecution> => {
   const workspace = workspaces.get(arm.arm);
   if (workspace === undefined) throw new Error(`missing ${arm.arm} workspace`);
+  prepareCodexHome(arm, options);
   const env = liveEnvironment(arm.arm, options);
   const commandExecutable = options.codexExecutable ?? arm.command;
   const version = await runCommand({ command: commandExecutable, args: ["--version"], cwd: workspace, env, timeoutMs: 30_000 });
   await requireSuccess(version, `${arm.arm} codex version`);
   const execution = await runCommand({ command: commandExecutable, args: arm.args, cwd: workspace, env, timeoutMs: arm.timeoutMs });
-  const checkers = await Promise.all(graders.map((grader) => runGrader(grader, workspace, env, runCommand)));
+  const checkers = await Promise.all(graders.map((grader) => runGrader(grader, workspace, graderEnvironment(options), runCommand)));
   await requireSuccess(await runCommand({ command: "git", args: ["add", "--intent-to-add", "."], cwd: workspace, timeoutMs: 30_000 }), `${arm.arm} untracked diff admission`);
   const diff = await runCommand({ command: "git", args: ["diff", "--binary"], cwd: workspace, timeoutMs: 30_000 });
   await requireSuccess(diff, `${arm.arm} diff capture`);
@@ -179,7 +217,7 @@ const checkerStatus = (result: CommandResult): "passed" | "failed" =>
 
 const liveEnvironment = (
   arm: CodexCapabilityEvalArmName,
-  options: WeakJsonLiveExecutorOptions
+  options: CodexCapabilityLiveExecutorOptions
 ): NodeJS.ProcessEnv => {
   const isolatedHome = join(options.outputRoot, arm, "codex-home");
   return {
@@ -190,11 +228,18 @@ const liveEnvironment = (
     XDG_CONFIG_HOME: join(isolatedHome, ".config"),
     XDG_DATA_HOME: join(isolatedHome, ".local", "share"),
     XDG_STATE_HOME: join(isolatedHome, ".local", "state"),
-    KRN_SOURCE_ROOT: options.sourceRoot,
-    KRN_DATABASE_URL: options.databaseUrl,
+    ...(arm === "krn" ? { KRN_SOURCE_ROOT: options.sourceRoot, KRN_DATABASE_URL: options.databaseUrl } : {}),
     CI: "1"
   };
 };
+
+const graderEnvironment = (
+  options: CodexCapabilityLiveExecutorOptions
+): NodeJS.ProcessEnv => ({
+  ...process.env,
+  KRN_SOURCE_ROOT: options.sourceRoot,
+  CI: "1"
+});
 
 const requireSuccess = async (result: CommandResult, operation: string): Promise<void> => {
   if (!result.timedOut && result.exitCode === 0) return;

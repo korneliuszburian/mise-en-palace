@@ -71,10 +71,9 @@ export const runCodexCapabilityEval = async (
   plan: CodexCapabilityDryRunPlan,
   executeArm: CodexCapabilityArmExecutor
 ): Promise<CodexCapabilityEvalSummary> => {
-  const [baseline, krn] = await Promise.all([
-    runArm(plan.arms[0], plan.graders, plan.usage.source, plan.arms[1].capabilities.mcpServers.map(({ id }) => id), executeArm),
-    runArm(plan.arms[1], plan.graders, plan.usage.source, plan.arms[1].capabilities.mcpServers.map(({ id }) => id), executeArm)
-  ]);
+  const configuredMcpServerIds = plan.arms[1].capabilities.mcpServers.map(({ id }) => id);
+  const baseline = await runArm(plan.arms[0], plan.graders, plan.usage.source, configuredMcpServerIds, executeArm);
+  const krn = await runArm(plan.arms[1], plan.graders, plan.usage.source, configuredMcpServerIds, executeArm);
   const usageComparable = baseline.usage.status === "available" && krn.usage.status === "available";
   const invalidReasons = summaryInvalidReasons(baseline, krn, plan.usage.requireComparable, usageComparable);
 

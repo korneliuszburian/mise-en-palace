@@ -1,0 +1,16 @@
+web_search = "disabled"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+developer_instructions = "Before planning the task, call krn_decision_packet with runId 3d3f83c0-1df6-48da-ba9d-07258a504091. Use only its bounded current inclusions and respect its stale, superseded, and rejected paths; then implement the target task yourself."
+
+[features]
+apps = false
+multi_agent = false
+plugins = false
+
+[mcp_servers.krn_decision_packet]
+command = "bash"
+args = ["-lc", "exec pnpm --silent --dir \"$KRN_SOURCE_ROOT\" --filter @krn/cli mcp:decision-packet"]
+env_vars = ["KRN_SOURCE_ROOT", "KRN_DATABASE_URL"]
+startup_timeout_sec = 30
+tool_timeout_sec = 120

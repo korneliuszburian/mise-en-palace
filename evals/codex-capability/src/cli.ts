@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { parseCodexCapabilityEvalManifest } from "./contracts.js";
 import { createCodexCapabilityDryRunPlan } from "./dry-run-plan.js";
 import { runCodexCapabilityEval, writeCodexCapabilityEvalArtifacts } from "./run-eval.js";
-import { prepareWeakJsonLiveExecutor } from "./weak-json-live-executor.js";
+import { prepareCodexCapabilityLiveExecutor } from "./live-executor.js";
 
 export type CodexCapabilityEvalCliResult =
   | {
@@ -48,7 +48,7 @@ const runLiveEval = async (
   const sourceRoot = process.cwd();
   const outputRoot = resolve(sourceRoot, outputPath);
   const codexExecutable = process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"];
-  const executeArm = await prepareWeakJsonLiveExecutor({
+  const executeArm = await prepareCodexCapabilityLiveExecutor({
     sourceRoot,
     outputRoot,
     codexHome: process.env["CODEX_HOME"] ?? resolve(homedir(), ".codex"),

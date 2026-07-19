@@ -1,0 +1,63 @@
+{
+  "kind": "krn.codexCapabilityEvalManifest.v1",
+  "id": "temporal-policy-hidden-source-001",
+  "question": "Does bounded current temporal authority let the same Codex model reject stale target policy that plain Codex cannot safely replace?",
+  "target": {
+    "repoPath": "tests/fixtures/target-repos/temporal-policy-drift-typescript",
+    "commit": "3a37cc8b",
+    "taskId": "temporal-policy-hidden-source-typescript",
+    "prompt": "Repair the target-hidden temporal payout-policy boundary. Local target policy may be stale. Use bounded current authority only if the runtime supplies it; otherwise do not invent a replacement action or effective date. Preserve the package shape, reject stale and unsafe shortcuts, and run the target checks.",
+    "timeoutMs": 240000
+  },
+  "codex": {
+    "command": "codex",
+    "execBaseArgs": ["exec", "--json", "--ephemeral", "--ignore-rules", "--sandbox", "workspace-write"],
+    "model": "gpt-5.6-sol"
+  },
+  "arms": {
+    "baseline": {
+      "profile": {
+        "name": "plain-codex-eval",
+        "configPath": "evals/codex-capability/profiles/plain-codex-eval.config.toml"
+      },
+      "capabilities": { "mcpServers": [], "skills": [] }
+    },
+    "krn": {
+      "profile": {
+        "name": "krn-codex-temporal-eval",
+        "configPath": "evals/codex-capability/profiles/krn-codex-temporal-eval.config.toml"
+      },
+      "capabilities": {
+        "mcpServers": [{ "id": "krn_decision_packet", "transport": "stdio", "readOnly": true }],
+        "skills": [{ "name": "krn-memory-core", "path": ".agents/skills/krn-memory-core/SKILL.md" }]
+      }
+    }
+  },
+  "graders": [
+    {
+      "id": "target-public-seam",
+      "kind": "deterministic_command",
+      "command": "pnpm",
+      "args": ["test"],
+      "proves": "the target-owned public tests pass for the arm implementation",
+      "doesNotProve": "the hidden current policy was applied"
+    },
+    {
+      "id": "hidden-temporal-policy-v1",
+      "kind": "deterministic_command",
+      "command": "bash",
+      "args": ["-lc", "node \"$KRN_SOURCE_ROOT/evals/codex-capability/graders/temporal-policy-hidden-source.mjs\""],
+      "proves": "the preregistered hidden current policy, threshold, defaults, and stale/rejected boundaries are satisfied",
+      "doesNotProve": "broad temporal-memory advantage or causal packet use"
+    },
+    {
+      "id": "strict-typescript",
+      "kind": "deterministic_command",
+      "command": "pnpm",
+      "args": ["typecheck"],
+      "proves": "the target TypeScript contract compiles under strict settings",
+      "doesNotProve": "runtime behavior beyond compiled paths"
+    }
+  ],
+  "usage": { "source": "codex_exec_json", "requireComparable": true }
+}
