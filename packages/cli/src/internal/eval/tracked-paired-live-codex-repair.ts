@@ -2163,6 +2163,9 @@ const runComparableTrialArm = async (input: {
   return runProcess(input.execution.containmentExecutable, [
     "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
     "--tmpfs", "/tmp", "--dir", "/tmp/.git",
+    // The checker owns the pinned MCP implementation and project-local skills.
+    // Rebind it read-only after tmpfs so worktrees below /tmp remain executable.
+    "--ro-bind", input.execution.checkerRoot, input.execution.checkerRoot,
     "--bind", input.target.root, input.target.root,
     "--bind", input.execution.sandboxRoot, input.execution.sandboxRoot,
     "--", input.execution.codexExecutable, ...args
