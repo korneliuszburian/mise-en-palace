@@ -716,6 +716,59 @@ const sourceRejectionsForClaims = async (
   return rejections.flat();
 };
 
+const sourceCandidateWithAuthority = (input: {
+  readonly claim: SourceClaim;
+  readonly now: string;
+  readonly sourceDecisionEdges: readonly SourceDecisionEdge[];
+  readonly staleSourceDecisions: readonly SourceDecision[];
+  readonly sourceConsensusEntry: SourceConsensusTimelineEntry | undefined;
+  readonly currentAuthoritySourceClaimIds: ReadonlySet<string>;
+}): ReturnType<typeof toSourceClaimCandidate> => {
+  const staleSourceDecisionIds = input.staleSourceDecisions
+    .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
+    .map((decision) => decision.id);
+  const decisionSupportEdgeIds = input.sourceConsensusEntry?.decisionSupportEdgeIds ??
+    input.sourceDecisionEdges.map((edge) => edge.id);
+  const authorityAssessment = assessSourceClaimAuthority({
+    claim: input.claim,
+    now: input.now,
+    decisionSupportEdgeIds,
+    ...(input.sourceConsensusEntry === undefined
+      ? {}
+      : {
+          supersededBySourceClaimIds: input.sourceConsensusEntry.supersededBySourceClaimIds,
+          acceptedDissentingSourceClaimIds: input.sourceConsensusEntry.dissentingSourceClaimIds.filter(
+            (sourceClaimId) => input.currentAuthoritySourceClaimIds.has(sourceClaimId)
+          ),
+          rejectionIds: input.sourceConsensusEntry.rejectionIds,
+          ...(input.sourceConsensusEntry.blockedByCurrentSourceClaimId === undefined
+            ? {}
+            : { blockedByCurrentSourceClaimId: input.sourceConsensusEntry.blockedByCurrentSourceClaimId })
+        })
+  });
+  const candidate = toSourceClaimCandidate(input.claim);
+  return {
+    ...candidate,
+    sourceClaimAuthorityStatus: authorityAssessment.status,
+    sourceClaimAuthorityReasons: authorityAssessment.reasons,
+    sourceClaimReviewSignals: assessSourceClaimReviewSignals(input.claim, {
+      now: input.now,
+      sourceDecisionCount: decisionSupportEdgeIds.length
+    }),
+    metadata: {
+      ...candidate.metadata,
+      ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
+      ...sourceDecisionSupportBoostMetadata(input.sourceDecisionEdges),
+      sourceClaimAuthority: {
+        status: authorityAssessment.status,
+        reasons: authorityAssessment.reasons,
+        caveats: authorityAssessment.caveats
+      },
+      sourceRejectionIds: input.sourceConsensusEntry?.rejectionIds ?? []
+    }
+  };
+};
+
 export const retrieveActivationCandidates = async (
   input: RetrieveActivationCandidatesInput
 ): Promise<RetrieveActivationCandidatesResult> => {
@@ -891,59 +944,16 @@ export const retrieveActivationCandidates = async (
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(
     applySourceClaimEdgeRankDown(
-      applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
-        const sourceDecisionEdges = sourceDecisionEdgesByClaimId.get(claim.id) ?? [];
-        const staleSourceDecisionIds = (staleSourceDecisionsByClaimId.get(claim.id) ?? [])
-          .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
-          .map((decision) => decision.id);
-        const sourceConsensusEntry = sourceConsensusEntriesByClaimId.get(claim.id);
-        const decisionSupportEdgeIds =
-          sourceConsensusEntry?.decisionSupportEdgeIds ??
-          sourceDecisionEdges.map((edge) => edge.id);
-        const authorityAssessment = assessSourceClaimAuthority({
+      applySourceClaimEdgeInfluence(sourceClaims.map((claim) =>
+        sourceCandidateWithAuthority({
           claim,
           now: activationNow,
-          decisionSupportEdgeIds,
-          ...(sourceConsensusEntry === undefined
-            ? {}
-            : {
-                supersededBySourceClaimIds: sourceConsensusEntry.supersededBySourceClaimIds,
-                acceptedDissentingSourceClaimIds: sourceConsensusEntry.dissentingSourceClaimIds.filter(
-                  (sourceClaimId) => currentAuthoritySourceClaimIds.has(sourceClaimId)
-                ),
-                rejectionIds: sourceConsensusEntry.rejectionIds,
-                ...(sourceConsensusEntry.blockedByCurrentSourceClaimId === undefined
-                  ? {}
-                  : {
-                      blockedByCurrentSourceClaimId:
-                        sourceConsensusEntry.blockedByCurrentSourceClaimId
-                    })
-              })
-        });
-        const sourceClaimReviewSignals = assessSourceClaimReviewSignals(claim, {
-          now: activationNow,
-          sourceDecisionCount: decisionSupportEdgeIds.length
-        });
-        const candidate = toSourceClaimCandidate(claim);
-
-        return {
-          ...candidate,
-          sourceClaimAuthorityStatus: authorityAssessment.status,
-          sourceClaimAuthorityReasons: authorityAssessment.reasons,
-          sourceClaimReviewSignals,
-          metadata: {
-            ...candidate.metadata,
-            ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
-            ...sourceDecisionSupportBoostMetadata(sourceDecisionEdges),
-            sourceClaimAuthority: {
-              status: authorityAssessment.status,
-              reasons: authorityAssessment.reasons,
-              caveats: authorityAssessment.caveats
-            },
-            sourceRejectionIds: sourceConsensusEntry?.rejectionIds ?? []
-          }
-        };
-      }), {
+          sourceDecisionEdges: sourceDecisionEdgesByClaimId.get(claim.id) ?? [],
+          staleSourceDecisions: staleSourceDecisionsByClaimId.get(claim.id) ?? [],
+          sourceConsensusEntry: sourceConsensusEntriesByClaimId.get(claim.id),
+          currentAuthoritySourceClaimIds
+        })
+      ), {
         edges: sourceClaimEdges,
         seedSourceClaimIds: sourceClaims.map((claim) => claim.id),
         now: activationNow
