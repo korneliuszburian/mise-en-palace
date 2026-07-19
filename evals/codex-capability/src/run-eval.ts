@@ -204,12 +204,17 @@ const observeCapabilityUse = (
 };
 
 const successfulMcpServer = (record: Record<string, unknown>): string | undefined => {
-  if (record["type"] !== "mcp_tool_call") return undefined;
-  if (record["status"] !== "completed") return undefined;
-  if (record["error"] !== null) return undefined;
+  if (!isSuccessfulMcpCall(record)) return undefined;
   const server = record["server"];
   if (typeof server !== "string") return undefined;
   return server;
+};
+
+const isSuccessfulMcpCall = (record: Record<string, unknown>): boolean => {
+  if (record["type"] !== "mcp_tool_call") return false;
+  if (record["status"] !== "completed") return false;
+  if (record["error"] !== null) return false;
+  return true;
 };
 
 const walkJson = (value: unknown, visit: (record: Record<string, unknown>) => void): void => {
