@@ -5,7 +5,8 @@ import type {
   ContextAssembly,
   ContextExclusion,
   ContextInclusion,
-  DecisionPacket
+  DecisionPacket,
+  DecisionPacketContractReadback
 } from "@krn/core";
 import {
   activationRetrievalDiagnosticsFromMetadata,
@@ -82,6 +83,7 @@ import {
 export interface PlanCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
   persist: boolean;
+  format?: "text" | "json";
   projectId?: string;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -104,7 +106,27 @@ interface PersistedPlanIdentity {
 
 interface PersistedPlanOutput {
   identity: PersistedPlanIdentity;
-  issuedDecisionPacket: DecisionPacket;
+  issuance: DecisionPacketContractReadback;
+}
+
+interface PlanJsonOutput {
+  kind: "krn.plan.v1";
+  task: string;
+  project: {
+    id: string;
+    resolution?: ProjectResolution;
+  };
+  handoff:
+    | {
+        kind: "persisted";
+        identity: PersistedPlanIdentity;
+        packetIdentity: DecisionPacketContractReadback["packetIdentity"];
+      }
+    | {
+        kind: "preview";
+        packet: DecisionPacket;
+        doesNotProve: string;
+      };
 }
 
 interface ProjectScopedPlanMetadata {
@@ -826,6 +848,35 @@ const renderPlanExecutionBrief = (
   packet: issuedDecisionPacket ?? decisionPacketForCompiledPlan(result)
 });
 
+const renderPlanJson = (input: {
+  task: string;
+  compilerRuntime: CompilerRuntimeResolution;
+  persistedPlan?: PersistedPlanOutput;
+  packet: DecisionPacket;
+}): string => {
+  return `${JSON.stringify({
+    kind: "krn.plan.v1",
+    task: input.task,
+    project: {
+      id: input.compilerRuntime.projectId,
+      ...(input.compilerRuntime.projectResolution === undefined
+        ? {}
+        : { resolution: input.compilerRuntime.projectResolution })
+    },
+    handoff: input.persistedPlan === undefined
+      ? {
+          kind: "preview",
+          packet: input.packet,
+          doesNotProve: "A no-store preview is not an issued DecisionPacket and cannot bind persisted evidence."
+        }
+      : {
+          kind: "persisted",
+          identity: input.persistedPlan.identity,
+          packetIdentity: input.persistedPlan.issuance.packetIdentity
+        }
+  } satisfies PlanJsonOutput, null, 2)}\n`;
+};
+
 const targetReadModelMetadata = (
   targetReadModel: TargetActivationReadModel | undefined,
   targetOwnerFileRecall: TargetOwnerFileRecall | undefined
@@ -906,9 +957,8 @@ const createPersistedPlanOutput = async (
     throw new Error("Persisted plan requires authoritative DecisionPacket issuance");
   }
 
-  const issuedDecisionPacket = (
-    await compilerRuntime.harnessRunRepository.issueDecisionPacketForExecutionRun(executionRun.id)
-  ).packet;
+  const issuance =
+    await compilerRuntime.harnessRunRepository.issueDecisionPacketForExecutionRun(executionRun.id);
 
   return {
     identity: {
@@ -918,7 +968,7 @@ const createPersistedPlanOutput = async (
       contextAssemblyId: result.contextAssembly.id,
       executionRunId: executionRun.id
     },
-    issuedDecisionPacket
+    issuance
   };
 };
 
@@ -950,7 +1000,7 @@ export const runPlanCommand = async (
       targetReadModel,
       targetOwnerFileRecall
     );
-    const authoritativePacket = persistedPlan?.issuedDecisionPacket;
+    const authoritativePacket = persistedPlan?.issuance.packet;
     const evidenceCommands = authoritativePacket?.verificationCommands ??
       result.evidenceContract.commands.map((command) => command.command);
     const nextAction = authoritativePacket?.nextAction ?? result.nextAction;
@@ -958,6 +1008,17 @@ export const runPlanCommand = async (
       result,
       authoritativePacket
     );
+
+    if (runtime.format === "json") {
+      return {
+        stdout: renderPlanJson({
+          task,
+          compilerRuntime,
+          ...(persistedPlan === undefined ? {} : { persistedPlan }),
+          packet: authoritativePacket ?? decisionPacketForCompiledPlan(result)
+        })
+      };
+    }
 
     return {
       stdout: formatPlanSummary(

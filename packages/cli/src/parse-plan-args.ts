@@ -2,7 +2,8 @@ import type {
   ParseArgsResult
 } from "./parse-args.js";
 
-const defaultPlanUsage = "Usage: krn plan --task \"...\"";
+const defaultPlanUsage =
+  "Usage: krn plan [--project <project-id>] --task \"...\" [--persist] [--json]";
 
 export const formatPlanUsage = (): string => `${defaultPlanUsage}\n`;
 
@@ -20,6 +21,7 @@ interface PlanArgsState {
   task?: string;
   persist: boolean;
   projectId?: string;
+  format: "text" | "json";
 }
 
 type PlanStringField = "projectId" | "task";
@@ -101,6 +103,15 @@ const parsePlanArgStep = (
     };
   }
 
+  if (rest[index] === "--json") {
+    state.format = "json";
+
+    return {
+      kind: "parsed",
+      nextIndex: index
+    };
+  }
+
   const projectStep = parseStringOptionStep(rest, index, "--project", "projectId", state, usage);
 
   if (projectStep.kind !== "unmatched") {
@@ -125,7 +136,8 @@ export const parsePlanArgs = (
   }
 
   const state: PlanArgsState = {
-    persist: false
+    persist: false,
+    format: "text"
   };
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -158,6 +170,7 @@ export const parsePlanArgs = (
       kind: "plan",
       task: state.task,
       persist: state.persist,
+      format: state.format,
       ...(state.projectId === undefined ? {} : { projectId: state.projectId })
     }
   };

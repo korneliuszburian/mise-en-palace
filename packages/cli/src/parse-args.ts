@@ -85,6 +85,7 @@ export type CliCommand =
       task: string;
       persist: boolean;
       projectId?: string;
+      format: "text" | "json";
     }
   | {
       kind: "planHelp";

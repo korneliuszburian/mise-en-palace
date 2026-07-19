@@ -166,6 +166,62 @@ describe("runCli", () => {
     expect(result.stdout).toContain("no-store preview");
   });
 
+  it("returns a machine-readable handoff for preview and persisted plans", async () => {
+    const preview = await runCli(
+      ["plan", "--task", "preview machine-readable handoff", "--json"],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+    const previewJson = JSON.parse(preview.stdout) as Record<string, unknown>;
+
+    expect(preview.exitCode).toBe(0);
+    expect(preview.stderr).toBe("");
+    expect(previewJson).toMatchObject({
+      kind: "krn.plan.v1",
+      task: "preview machine-readable handoff",
+      handoff: {
+        kind: "preview",
+        packet: { abstentionScore: { status: "abstain" } }
+      }
+    });
+
+    const { result: persisted } = await runPersistedPlanWithCapturedMetadata(
+      "persist machine-readable handoff",
+      { format: "json" }
+    );
+    const persistedJson = JSON.parse(persisted.stdout) as Record<string, unknown>;
+
+    expect(persisted.exitCode).toBe(0);
+    expect(persisted.stderr).toBe("");
+    expect(persistedJson).toMatchObject({
+      kind: "krn.plan.v1",
+      task: "persist machine-readable handoff",
+      project: { id: "project-1" },
+      handoff: {
+        kind: "persisted",
+        identity: {
+          operatorIntentId: "operator-intent-1",
+          taskContractId: "task-contract-1",
+          harnessPlanId: "harness-plan-1",
+          contextAssemblyId: "context-assembly-1",
+          executionRunId: "execution-run-1"
+        },
+        packetIdentity: decisionPacketMcpFixture.packetIdentity
+      }
+    });
+    expect(persistedJson.handoff).not.toHaveProperty("packet");
+
+    const { result: persistedText } = await runPersistedPlanWithCapturedMetadata(
+      "persist machine-readable handoff"
+    );
+    expect(Buffer.byteLength(persisted.stdout)).toBeLessThan(
+      Buffer.byteLength(persistedText.stdout)
+    );
+  });
+
   it("requires database config for plan --persist", async () => {
     const result = await runCli(
       ["plan", "--task", "persist harness run", "--persist"],
