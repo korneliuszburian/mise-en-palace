@@ -13,6 +13,11 @@ package and exported entry points.
   rejected without throwing and without saving a user.
 - Every call returns an explicit object whose state lets a caller distinguish
   creation from rejected input.
+- Export `type CreateUserResult` from `src/userService.ts`, and have
+  `createUserFromJson` return it. Use a finite discriminator field named
+  `status`, `kind`, or `ok` to distinguish the created and invalid-input
+  states; do not return `null`, a bare boolean, or a raw `CreatedUser` as the
+  whole result.
 - Focused tests cover the three rejected-input classes above, and the package
   test and typecheck commands pass.
 

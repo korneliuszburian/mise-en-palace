@@ -685,6 +685,20 @@ describe("paired live Codex repair eval", () => {
         expect(materializedInput).toBe(blindInput);
         expect(materializedInput).not.toBe(operatorInput);
       }
+
+      const materializedContract = await readFile(join(targetRoot, "docs/repair-contract.md"), "utf8");
+      const materializedService = await readFile(join(targetRoot, "src/userService.ts"), "utf8");
+      const materializedTests = await readFile(join(targetRoot, "tests/userService.test.ts"), "utf8");
+
+      expect(materializedContract).toContain("type CreateUserResult");
+      expect(materializedContract).toContain("status");
+      expect(materializedContract).toContain("kind");
+      expect(materializedContract).toContain("ok");
+      expect(materializedService).toContain("CreatedUser | null");
+      expect(materializedService).not.toContain("CreateUserResult");
+      expect(materializedTests).not.toContain("invalid_json");
+      expect(materializedTests).not.toContain("invalid_shape");
+      expect(materializedTests).not.toContain("unsupported role");
     } finally {
       await rm(targetRoot, { recursive: true, force: true });
     }
