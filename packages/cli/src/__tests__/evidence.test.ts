@@ -188,6 +188,48 @@ const expectPacketAuthorizationRejection = (
   expect(authorization.reason).toContain(expectedReason);
 };
 
+const withSelectedSourceDecision = (
+  aggregate: HarnessRunAggregate,
+  sourceDecisionId: string
+): HarnessRunAggregate => ({
+  ...aggregate,
+  activationTrace: {
+    retrievalRunId: "retrieval-run-source-decision-application",
+    candidates: [{
+      id: "retrieval-candidate-source-decision-application",
+      retrievalRunId: "retrieval-run-source-decision-application",
+      kind: "source",
+      status: "included",
+      subjectType: "source_claim",
+      subjectId: "source-claim-1",
+      sourceAuthority: "project-decision",
+      lexicalScore: 10,
+      vectorScore: 0,
+      graphScore: 10,
+      temporalScore: 0,
+      contextRoiScore: 10,
+      totalScore: 30,
+      score: 30,
+      reason: "Selected source claim supports an architecture target.",
+      metadata: {
+        sourceDecisionSupportBoost: {
+          edges: [{
+            sourceDecisionEdgeId: "source-decision-edge-application",
+            sourceDecisionId,
+            targetType: "architecture_decision",
+            targetId: "architecture-target-application"
+          }],
+          confidence: ["high"],
+          supportTypes: ["decision"],
+          doesNotProve: "Decision support does not prove the decision helped."
+        }
+      },
+      createdAt: now
+    }],
+    decisions: []
+  }
+});
+
 export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
   operatorIntent: {
     id: "operator-intent-1",
@@ -1288,6 +1330,124 @@ describe("runCli", () => {
     expect(retry.stdout).toContain(applicationReadback);
     expect(retry.stdout).toContain("outcome=helped knowledge=knowledge:historical-helped-retry");
     expect(retry.stdout).not.toContain("usefulnessAuthorization:");
+  });
+
+  it("replays selected SourceDecision application readback when feedback capture is idempotent", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-source-decision-selected-retry`
+    });
+    const sourceDecisionId = "source-decision-selected-application";
+    const aggregate = withSelectedSourceDecision(
+      createEvidencePersistenceAggregate(),
+      sourceDecisionId
+    );
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const capture: EvidencePersistenceCapture = {};
+    const baseRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const createEvidenceFeedbackOnce = requireAtomicEvidenceFeedback(baseRepository);
+    const applicationId = "application:source-decision-selected-retry";
+    const appliedAt = "2026-06-21T12:00:30.000Z";
+    let storedApplication: UsefulnessApplicationEvidence | undefined;
+    let storedResult: Awaited<ReturnType<
+      typeof createEvidenceFeedbackOnce
+    >> | undefined;
+    const harnessRunRepository = {
+      ...baseRepository,
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async recordUsefulnessApplicationOnce(input: UsefulnessApplicationEvidenceIdentity) {
+        if (storedApplication !== undefined) {
+          return { application: storedApplication, created: false };
+        }
+
+        storedApplication = { ...input, appliedAt };
+        capture.usefulnessApplications = [storedApplication];
+        capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "application"];
+        return { application: storedApplication, created: true };
+      },
+      async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
+        if (storedResult !== undefined) {
+          capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "feedback-retry"];
+          return { ...storedResult, created: false };
+        }
+
+        const created = await createEvidenceFeedbackOnce(input);
+        storedResult = created;
+        aggregate.evidenceBundles.push(created.evidenceBundle);
+        aggregate.reviewAssessments.push(created.reviewAssessment);
+        aggregate.feedbackDeltas.push(created.feedbackDelta);
+        return created;
+      }
+    };
+    const runtime = {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: aggregate.executionRun.id,
+      decisionPacketChecksum: packetBinding.packetChecksum,
+      decisionPacketGeneratedAt: packetBinding.packetGeneratedAt,
+      intendedFiles: ["src/config.ts"],
+      targetEvidence: {
+        targetRepo: ".",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
+        dirtyAfter: "dirty",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "fresh-current-task",
+        changedFiles: [{
+          status: "M",
+          path: "src/config.ts",
+          ownership: "owned-by-current-krn-run"
+        }],
+        commands: ["pnpm test"]
+      },
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId,
+        applicationId,
+        outcome: "selected" as const,
+        reason: "Record selected SourceDecision application before verification.",
+        evidenceRefs: [packetBinding.packetEvidenceRef, "src/config.ts"],
+        doesNotProve: "Selected application readback does not prove help."
+      }],
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-source-decision-selected-retry`,
+      readGitStatus: async () => " M src/config.ts\n",
+      readTargetStateSnapshot: async () => ({
+        ...targetSnapshot,
+        changedPaths: ["src/config.ts"]
+      }),
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: { ...dependencies, harnessRunRepository },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    };
+
+    const first = await runEvidenceCaptureCommand(runtime);
+    const retry = await runEvidenceCaptureCommand(runtime);
+    const applicationReadback = `usefulnessApplication: ${applicationId}|${appliedAt}`;
+
+    expect(first.stdout).toContain(applicationReadback);
+    expect(retry.stdout).toContain(applicationReadback);
+    expect(retry.persistence?.usefulnessApplications).toEqual([
+      expect.objectContaining({
+        applicationId,
+        subjectKind: "source_decision",
+        subjectId: sourceDecisionId
+      })
+    ]);
   });
 
   it("admits exact later command-runner proof against the run project when the runtime fallback differs", async () => {

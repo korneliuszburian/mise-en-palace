@@ -1768,17 +1768,15 @@ const buildPersistedEvidenceIdentity = (input: {
     sourceOutcomes,
     knowledgeOutcomes
   });
-  const applications = input.atomicResult.created
-    ? [
-        ...input.applications,
-        ...persistedOutcomeApplications.filter((outcomeApplication) =>
-          !input.applications.some((application) =>
-            application.applicationId === outcomeApplication.applicationId &&
-            application.appliedAt === outcomeApplication.appliedAt
-          )
-        )
-      ]
-    : persistedOutcomeApplications;
+  const applications = [
+    ...input.applications,
+    ...persistedOutcomeApplications.filter((outcomeApplication) =>
+      !input.applications.some((application) =>
+        application.applicationId === outcomeApplication.applicationId &&
+        application.appliedAt === outcomeApplication.appliedAt
+      )
+    )
+  ];
 
   return {
     captureIdentity: input.captureIdentity,
