@@ -284,8 +284,13 @@ const basePrompt = (task: string, contextToolRunId?: string): string => [
   `Task: ${task}`
 ].join("\n");
 
-const obedienceEnvelopeInstruction =
-  `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper. The object must have exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not emit an array for staleBoundary and do not invent ids or claims outside the packet.`;
+const obedienceEnvelopeInstruction = [
+  `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper.`,
+  "The object must have exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof, and action (the bounded next action).",
+  "The nonProof field must preserve the compact packet proof boundary: start from a sentence or phrase in packet.doesNotProve or packet.nonProofs, and use packet.evidenceGaps, packet.sourceConsensus.doesNotProve, packet.abstentionScore.doesNotProve, or an explicit unknown-boundary statement only to clarify that same boundary without inventing authority.",
+  "Do not take nonProof only from the outer readback proof, do not use a generic live-obedience phrase as the entire value, and do not claim product readiness.",
+  "Do not emit an array for staleBoundary and do not invent ids or claims outside the packet."
+].join(" ");
 
 const krnCapabilityObedienceContract = (contextToolRunId: string | undefined): readonly string[] =>
   contextToolRunId === undefined

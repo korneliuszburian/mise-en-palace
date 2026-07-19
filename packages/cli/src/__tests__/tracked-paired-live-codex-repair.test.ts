@@ -516,6 +516,33 @@ describe("tracked paired live Codex repair", () => {
     }).valid).toBe(false);
   });
 
+  it("rejects generic live-obedience non-proof instead of packet proof-boundary language", () => {
+    const packet = {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["memory quality, source truth, review correctness, or product readiness"]
+      }
+    };
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: "no stale decisions",
+      nonProof: "live Codex obedience",
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, packet)).toEqual({
+      valid: false,
+      reasons: ["live output does not preserve the packet non-proof or unknown boundary"]
+    });
+    expect(validateLiveCodexObedienceOutputAgainstPacket({
+      ...output,
+      nonProof: "This does not prove memory quality, source truth, review correctness, or product readiness."
+    }, packet)).toEqual({ valid: true, reasons: [] });
+  });
+
   it("rejects an invented UUID in the stale boundary", () => {
     const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
       decisionId: "decision-a",
