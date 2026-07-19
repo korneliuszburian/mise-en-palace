@@ -27,6 +27,7 @@ export type HeldOutRuntimeObservations = {
   readonly invalidRole: HeldOutObservation;
   readonly redactionSafe?: boolean;
   readonly enqueueAccepted?: boolean;
+  readonly temporalPolicyCurrent?: boolean;
   readonly validCreation?: boolean;
 };
 
@@ -76,7 +77,12 @@ export type HeldOutCheck = {
   readonly details: string;
 };
 
-export type PairedEvalFamily = "weak-json" | "env-config" | "async-job" | "user-create";
+export type PairedEvalFamily =
+  | "weak-json"
+  | "env-config"
+  | "async-job"
+  | "user-create"
+  | "temporal-policy-drift";
 
 export type HeldOutFamilyContract = {
   readonly family: PairedEvalFamily;
@@ -89,6 +95,7 @@ export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
   const normalized = scenario.toLowerCase();
   if (normalized.includes("env-config")) return "env-config";
   if (normalized.includes("async-job")) return "async-job";
+  if (normalized.includes("temporal-policy")) return "temporal-policy-drift";
   if (normalized.includes("user-create")) return "user-create";
   return "weak-json";
 };
@@ -108,6 +115,13 @@ export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamil
         sourcePaths: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
         allowedPrefixes: ["src/", "tests/", "docs/"],
         requiredChecks: ["target_test", "target_typecheck", "target_diff_check"]
+      };
+    case "temporal-policy-drift":
+      return {
+        family,
+        sourcePaths: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts", "docs/payout-policy-contract.md"],
+        allowedPrefixes: ["src/", "tests/", "docs/"],
+        requiredChecks: ["held_out_runtime", "target_test", "target_typecheck", "target_diff_check"]
       };
     case "weak-json":
       return {
@@ -293,6 +307,12 @@ const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance =>
         "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
         "Preserve existing focused tests and their distinct invalid-input vectors; do not weaken, replace, or collapse a missing-property, malformed-JSON, or unsupported-role assertion. Add coverage only when it strengthens the existing contract."
       ];
+    case "temporal-policy-drift":
+      return [
+        "Repair the externally observable temporal payout-policy boundary in this controlled TypeScript target.",
+        "Use the target docs plus any supplied current org/source authority to make the smallest surgical repair. Local target docs may be stale when a bounded current authority is supplied. Preserve the existing package shape; do not add workflow engines, dashboards, schedulers, external services, or unrelated cleanup.",
+        "Preserve existing focused tests and add coverage only when it strengthens the payout-policy boundary: EU high-risk policy-review action, valid-from readback, stale legacy action absence, and rejected shortcut absence. Do not invent current policy text when no current authority is supplied."
+      ];
     case "weak-json":
       return [
         "Repair the externally observable weak JSON/user-creation boundary in this controlled TypeScript target.",
@@ -400,6 +420,8 @@ const runtimeObservationPassed = (
       return observations.redactionSafe === true;
     case "async-job":
       return observations.enqueueAccepted === true;
+    case "temporal-policy-drift":
+      return observations.temporalPolicyCurrent === true;
     case "weak-json":
       return observationPassed(observations.invalidJson) &&
         observationPassed(observations.missingEmail) &&
@@ -414,6 +436,57 @@ const runtimeObservationPassed = (
 
 const source = (files: TargetSourceFiles, path: string): string => files[path] ?? "";
 
+const envConfigSourceContractPassed = (input: {
+  readonly config: string;
+  readonly readback: string;
+  readonly tests: string;
+}): boolean =>
+  /mode\s*!==\s*["']development["'][\s\S]*mode\s*!==\s*["']staging["'][\s\S]*mode\s*!==\s*["']production["']/.test(input.config) &&
+  /secretKeyPattern\.test\(key\)[\s\S]*\[redacted\]/.test(input.readback) &&
+  /invalid_config/.test(input.tests);
+
+const asyncJobSourceContractPassed = (job: string): boolean =>
+  /idempotencyKey/.test(job) &&
+  /retryBudget/.test(job) &&
+  /leaseTimeoutMs/.test(job) &&
+  /dead_lettered/.test(job) &&
+  (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job));
+
+const temporalPolicyDriftSourceContractPassed = (payoutPolicy: string): boolean =>
+  /hold_for_policy_review/.test(payoutPolicy) &&
+  /2026-06-01/.test(payoutPolicy) &&
+  !/legacy_hold/.test(payoutPolicy) &&
+  !/auto_approve/.test(payoutPolicy);
+
+const userCreateSourceContractPassed = (service: string): boolean =>
+  /(?:status|state|kind)\s*[:?]/.test(service) &&
+  !/CreatedUser\s*\|\s*null/.test(service) &&
+  /admin/.test(service) &&
+  /member/.test(service);
+
+const familySourceContractPassed = (
+  family: PairedEvalFamily,
+  files: TargetSourceFiles
+): boolean => {
+  const tests = Object.values(files).filter((value): value is string => value !== undefined).join("\n");
+  switch (family) {
+    case "env-config":
+      return envConfigSourceContractPassed({
+        config: source(files, "src/config.ts"),
+        readback: source(files, "src/configReadback.ts"),
+        tests
+      });
+    case "async-job":
+      return asyncJobSourceContractPassed(source(files, "src/jobQueue.ts"));
+    case "temporal-policy-drift":
+      return temporalPolicyDriftSourceContractPassed(source(files, "src/payoutPolicy.ts"));
+    case "user-create":
+      return userCreateSourceContractPassed(source(files, "src/userService.ts"));
+    case "weak-json":
+      return false;
+  }
+};
+
 const checkFamilyContract = (
   family: PairedEvalFamily,
   files: TargetSourceFiles,
@@ -422,23 +495,7 @@ const checkFamilyContract = (
   runtimeFailureReason: HeldOutRuntimeFailureReason | undefined,
   observations: HeldOutRuntimeObservations
 ): HeldOutCheck => {
-  const config = source(files, "src/config.ts");
-  const readback = source(files, "src/configReadback.ts");
-  const job = source(files, "src/jobQueue.ts");
-  const tests = Object.values(files).filter((value): value is string => value !== undefined).join("\n");
-  const passedContract = family === "env-config"
-    ? /mode\s*!==\s*["']development["'][\s\S]*mode\s*!==\s*["']staging["'][\s\S]*mode\s*!==\s*["']production["']/.test(config) &&
-      /secretKeyPattern\.test\(key\)[\s\S]*\[redacted\]/.test(readback) && /invalid_config/.test(tests)
-    : family === "async-job"
-      ? /idempotencyKey/.test(job) && /retryBudget/.test(job) && /leaseTimeoutMs/.test(job) &&
-        /dead_lettered/.test(job) &&
-        (/(?:interface|type)\s+\w*Clock\b/.test(job) || /nowMs\s*:\s*\(\)\s*=>/.test(job) || /now\s*\(\)\s*:\s*number/.test(job))
-      : family === "user-create"
-        ? /(?:status|state|kind)\s*[:?]/.test(source(files, "src/userService.ts")) &&
-          !/CreatedUser\s*\|\s*null/.test(source(files, "src/userService.ts")) &&
-          /admin/.test(source(files, "src/userService.ts")) &&
-          /member/.test(source(files, "src/userService.ts"))
-        : false;
+  const passedContract = familySourceContractPassed(family, files);
   const passedCommands = commands.test.exitCode === 0 && commands.typecheck.exitCode === 0 && commands.diffCheck.exitCode === 0;
   const passed = passedContract && passedCommands && runtimeAvailable && runtimeObservationPassed(family, observations);
   return {
@@ -1087,6 +1144,26 @@ try {
       // A target rejection is an observed contract failure, not an unavailable observer.
     }
     writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { enqueueAccepted } }) + "\\n");
+  } else if (family === "temporal-policy-drift") {
+    let temporalPolicyCurrent = false;
+    try {
+      if (typeof service.decidePayoutPolicy === "function") {
+        const output = service.decidePayoutPolicy({
+          region: "EU",
+          riskScore: 95,
+          requestedAt: "2026-06-15"
+        });
+        const record = isRecord(output) ? output : undefined;
+        const action = [record?.action, record?.status, record?.kind, record?.state]
+          .find((value) => value === "hold_for_policy_review");
+        const validFrom = [record?.validFrom, record?.effectiveFrom]
+          .find((value) => value === "2026-06-01");
+        temporalPolicyCurrent = action === "hold_for_policy_review" && validFrom === "2026-06-01";
+      }
+    } catch {
+      // A target rejection is an observed contract failure, not an unavailable observer.
+    }
+    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { temporalPolicyCurrent } }) + "\\n");
   } else {
   const createUser = service.createUserFromJson;
   const listUsers = service.listSavedUsers;
@@ -1132,38 +1209,162 @@ const unknownRuntimeObservations = (): HeldOutRuntimeObservations => ({
   missingEmail: unknownObservation(),
   invalidRole: unknownObservation(),
   redactionSafe: false,
-  enqueueAccepted: false
+  enqueueAccepted: false,
+  temporalPolicyCurrent: false
 });
+
+const runtimeModulePathFor = (family: PairedEvalFamily): string => {
+  switch (family) {
+    case "env-config":
+      return "src/configReadback.js";
+    case "async-job":
+      return "src/jobQueue.js";
+    case "temporal-policy-drift":
+      return "src/payoutPolicy.js";
+    case "weak-json":
+    case "user-create":
+      return "src/userService.js";
+  }
+};
+
+const parseFamilyRuntimeObservations = (
+  family: PairedEvalFamily,
+  observations: Record<string, unknown>
+): HeldOutRuntimeObservations => {
+  switch (family) {
+    case "env-config":
+      return {
+        ...unknownRuntimeObservations(),
+        redactionSafe: observations["redactionSafe"] === true
+      };
+    case "async-job":
+      return {
+        ...unknownRuntimeObservations(),
+        enqueueAccepted: observations["enqueueAccepted"] === true
+      };
+    case "temporal-policy-drift":
+      return {
+        ...unknownRuntimeObservations(),
+        temporalPolicyCurrent: observations["temporalPolicyCurrent"] === true
+      };
+    case "weak-json":
+    case "user-create":
+      return {
+        invalidJson: observations["invalidJson"] as HeldOutObservation,
+        missingEmail: observations["missingEmail"] as HeldOutObservation,
+        invalidRole: observations["invalidRole"] as HeldOutObservation,
+        redactionSafe: false,
+        enqueueAccepted: false,
+        temporalPolicyCurrent: false,
+        ...(family === "user-create"
+          ? { validCreation: observations["validCreation"] === true }
+          : {})
+      };
+  }
+};
+
+type HeldOutRuntimeWorkerResult = {
+  readonly command: CommandResult;
+  readonly runtimeAvailable: boolean;
+  readonly failureReason?: HeldOutRuntimeFailureReason;
+  readonly observations: HeldOutRuntimeObservations;
+};
+
+const unsupportedRuntimePermissionResult = (): HeldOutRuntimeWorkerResult => {
+  const now = new Date().toISOString();
+  return {
+    command: {
+      command: process.execPath,
+      args: [],
+      exitCode: null,
+      stdout: "",
+      stderr: "held-out runtime unavailable: Node filesystem permissions are unsupported",
+      startedAt: now,
+      completedAt: now,
+      durationMs: 0
+    },
+    runtimeAvailable: false,
+    failureReason: "runtime_permissions_unsupported",
+    observations: unknownRuntimeObservations()
+  };
+};
+
+const unavailableRuntimeWorkerResult = (
+  command: CommandResult,
+  failureReason: HeldOutRuntimeFailureReason
+): HeldOutRuntimeWorkerResult => ({
+  command,
+  runtimeAvailable: false,
+  failureReason,
+  observations: unknownRuntimeObservations()
+});
+
+const latestRuntimeWorkerMarkerPayload = (
+  stdout: string
+): string | undefined => stdout
+  .split("\n")
+  .reverse()
+  .find((line) => line.startsWith(runtimeWorkerMarker))
+  ?.slice(runtimeWorkerMarker.length);
+
+const hasUserRuntimeObservationShape = (
+  family: PairedEvalFamily,
+  observations: Record<string, unknown>
+): boolean =>
+  (family !== "weak-json" && family !== "user-create") || (
+    isRecord(observations["invalidJson"]) &&
+    isRecord(observations["missingEmail"]) &&
+    isRecord(observations["invalidRole"])
+  );
+
+const runtimeEnvelopeFailureReason = (
+  parsed: unknown
+): HeldOutRuntimeFailureReason =>
+  isRecord(parsed) && isHeldOutRuntimeFailureReason(parsed["reason"])
+    ? parsed["reason"]
+    : "runtime_envelope_malformed";
+
+const parseRuntimeWorkerResult = (
+  command: CommandResult,
+  family: PairedEvalFamily
+): HeldOutRuntimeWorkerResult => {
+  const markerPayload = latestRuntimeWorkerMarkerPayload(command.stdout);
+  if (markerPayload === undefined) {
+    return unavailableRuntimeWorkerResult(command, "runtime_command_failed");
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(markerPayload);
+    if (!isRecord(parsed) || parsed["runtimeAvailable"] !== true || !isRecord(parsed["observations"])) {
+      return unavailableRuntimeWorkerResult(command, runtimeEnvelopeFailureReason(parsed));
+    }
+    if (command.exitCode !== 0) {
+      return unavailableRuntimeWorkerResult(command, "runtime_command_failed");
+    }
+    const observations = parsed["observations"];
+    if (!hasUserRuntimeObservationShape(family, observations)) {
+      throw new Error("Malformed held-out observations");
+    }
+
+    return {
+      command,
+      runtimeAvailable: true,
+      observations: parseFamilyRuntimeObservations(family, observations)
+    };
+  } catch {
+    return unavailableRuntimeWorkerResult(command, "runtime_envelope_malformed");
+  }
+};
 
 export const runHeldOutRuntimeWorker = async (
   compileRoot: string,
   checkerRoot: string,
   sandboxRoot: string,
   family: PairedEvalFamily
-): Promise<{
-  readonly command: CommandResult;
-  readonly runtimeAvailable: boolean;
-  readonly failureReason?: HeldOutRuntimeFailureReason;
-  readonly observations: HeldOutRuntimeObservations;
-}> => {
+): Promise<HeldOutRuntimeWorkerResult> => {
   const permissionFlag = selectHeldOutRuntimePermissionFlag();
   if (permissionFlag === undefined) {
-    const now = new Date().toISOString();
-    return {
-      command: {
-        command: process.execPath,
-        args: [],
-        exitCode: null,
-        stdout: "",
-        stderr: "held-out runtime unavailable: Node filesystem permissions are unsupported",
-        startedAt: now,
-        completedAt: now,
-        durationMs: 0
-      },
-      runtimeAvailable: false,
-      failureReason: "runtime_permissions_unsupported",
-      observations: unknownRuntimeObservations()
-    };
+    return unsupportedRuntimePermissionResult();
   }
   const workerPath = join(sandboxRoot, "held-out-runtime-worker.mjs");
   await writeFile(workerPath, runtimeWorkerSource, { encoding: "utf8", flag: "wx", mode: 0o600 });
@@ -1171,9 +1372,7 @@ export const runHeldOutRuntimeWorker = async (
     realpath(compileRoot),
     realpath(workerPath)
   ]);
-  const modulePath = family === "env-config"
-    ? "src/configReadback.js"
-    : family === "async-job" ? "src/jobQueue.js" : "src/userService.js";
+  const modulePath = runtimeModulePathFor(family);
   const targetModuleUrl = `${pathToFileURL(join(canonicalCompileRoot, modulePath)).href}?checker=${Date.now()}`;
   const command = await runCommand(
     process.execPath,
@@ -1191,77 +1390,7 @@ export const runHeldOutRuntimeWorker = async (
       timeoutMs: targetCommandTimeoutMs
     }
   );
-  const outputLines = command.stdout.split("\n");
-  let markerLine: string | undefined;
-  for (const line of outputLines.reverse()) {
-    if (line.startsWith(runtimeWorkerMarker)) {
-      markerLine = line;
-      break;
-    }
-  }
-
-  if (markerLine === undefined) {
-    return {
-      command,
-      runtimeAvailable: false,
-      failureReason: "runtime_command_failed",
-      observations: unknownRuntimeObservations()
-    };
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(markerLine.slice(runtimeWorkerMarker.length));
-    if (!isRecord(parsed) || parsed["runtimeAvailable"] !== true || !isRecord(parsed["observations"])) {
-      const reason = isRecord(parsed) && isHeldOutRuntimeFailureReason(parsed["reason"])
-        ? parsed["reason"]
-        : "runtime_envelope_malformed";
-      return { command, runtimeAvailable: false, failureReason: reason, observations: unknownRuntimeObservations() };
-    }
-    if (command.exitCode !== 0) {
-      return { command, runtimeAvailable: false, failureReason: "runtime_command_failed", observations: unknownRuntimeObservations() };
-    }
-    const observations = parsed["observations"];
-    if ((family === "weak-json" || family === "user-create") && (!isRecord(observations) ||
-      !isRecord(observations["invalidJson"]) ||
-      !isRecord(observations["missingEmail"]) ||
-      !isRecord(observations["invalidRole"]))) {
-      throw new Error("Malformed held-out observations");
-    }
-
-    const runtimeObservations: HeldOutRuntimeObservations = family === "env-config"
-      ? {
-          ...unknownRuntimeObservations(),
-          redactionSafe: observations["redactionSafe"] === true
-        }
-      : family === "async-job"
-        ? {
-            ...unknownRuntimeObservations(),
-            enqueueAccepted: observations["enqueueAccepted"] === true
-          }
-        : {
-            invalidJson: observations["invalidJson"] as HeldOutObservation,
-            missingEmail: observations["missingEmail"] as HeldOutObservation,
-            invalidRole: observations["invalidRole"] as HeldOutObservation,
-            redactionSafe: false,
-            enqueueAccepted: false,
-            ...(family === "user-create"
-              ? { validCreation: observations["validCreation"] === true }
-              : {})
-          };
-
-    return {
-      command,
-      runtimeAvailable: true,
-      observations: runtimeObservations
-    };
-  } catch {
-    return {
-      command,
-      runtimeAvailable: false,
-      failureReason: "runtime_envelope_malformed",
-      observations: unknownRuntimeObservations()
-    };
-  }
+  return parseRuntimeWorkerResult(command, family);
 };
 
 const focusedTestMutationNames: readonly FocusedTestMutationName[] = [

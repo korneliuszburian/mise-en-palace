@@ -62,6 +62,12 @@ export type CodexCapabilityUseObservation = {
   readonly genericSkillEvents?: number;
 };
 
+export type ModelUsageObservation = {
+  readonly tokenUsage: "unavailable";
+  readonly reason: string;
+  readonly latencySource: "arm_command_duration_ms";
+};
+
 export type PairedDecisionApplicationRule = {
   readonly governingDecisionId: string;
   readonly sourceDecisionId: string;
@@ -309,6 +315,7 @@ export type TrackedTrialArtifact = {
       readonly baseline: CodexCapabilityUseObservation;
       readonly krn: CodexCapabilityUseObservation;
     };
+    readonly modelUsageObservation?: ModelUsageObservation;
     readonly packetContextMode?: "full" | "task-only";
     readonly treatment?: PairedMemoryTreatment;
     readonly baseline?: CommandResult;
@@ -1609,6 +1616,12 @@ const isTrialPromptDelta = (value: unknown): boolean =>
   Number.isFinite(value["deltaBytes"]) &&
   value["packetOnlyByConstruction"] === true;
 
+const isModelUsageObservation = (value: unknown): value is ModelUsageObservation =>
+  isRecord(value) &&
+  value["tokenUsage"] === "unavailable" &&
+  readString(value["reason"]) !== undefined &&
+  value["latencySource"] === "arm_command_duration_ms";
+
 const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "environmentProfileHash", isPresentString) &&
   optionalValue(value, "attempt", isTrialAttempt) &&
@@ -1643,6 +1656,7 @@ const isTrialExecutionFields = (value: JsonRecord): boolean =>
         );
     })
   ) &&
+  optionalValue(value, "modelUsageObservation", isModelUsageObservation) &&
   optionalValue(value, "packetContextMode", (item) => item === "full" || item === "task-only") &&
   optionalValue(value, "treatment", isPairedMemoryTreatment) &&
   optionalValue(value, "baseline", isCommandResult) &&
@@ -1967,6 +1981,12 @@ const trialProof = (status: TrackedTrialStatus): TrackedTrialArtifact["proof"] =
       ]
     };
 
+const unavailableModelUsageObservation = (): ModelUsageObservation => ({
+  tokenUsage: "unavailable",
+  reason: "Codex structured trial output does not expose model token usage; command durationMs is the recorded latency proxy.",
+  latencySource: "arm_command_duration_ms"
+});
+
 const trialExecution = (
   context: TrialContext,
   input: TrialArtifactInput
@@ -1979,6 +1999,7 @@ const trialExecution = (
       : [...input.invalidReasons]
   ),
   ...(input.execution ?? {}),
+  modelUsageObservation: input.execution?.modelUsageObservation ?? unavailableModelUsageObservation(),
   packetContextMode: context.manifest.packetContextMode ?? "full",
   ...optionalField("treatment", context.manifest.treatment),
   ...optionalField("attempt", input.attempt),

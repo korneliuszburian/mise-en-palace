@@ -44,7 +44,7 @@ const overlongRules = [
 ];
 
 describe("retained paired-live fixture config", () => {
-  it("defaults to weak-json and accepts an explicit async-job family", () => {
+  it("defaults to weak-json and accepts explicit retained families", () => {
     expect(parseRetainedPairedLiveFixtureArgs([".local-lab/run"])).toEqual({
       family: "weak-json",
       requestedDirectory: ".local-lab/run"
@@ -57,6 +57,13 @@ describe("retained paired-live fixture config", () => {
     ])).toEqual({
       family: "async-job",
       requestedDirectory: ".local-lab/async"
+    });
+    expect(parseRetainedPairedLiveFixtureArgs([
+      ".local-lab/temporal",
+      "--family=temporal-policy-drift"
+    ])).toEqual({
+      family: "temporal-policy-drift",
+      requestedDirectory: ".local-lab/temporal"
     });
   });
 
@@ -71,6 +78,28 @@ describe("retained paired-live fixture config", () => {
     });
     expect(config.fixtureRoot).toBe(
       resolve("/repo/tests/fixtures/target-repos/async-job-boundary-typescript")
+    );
+    expect(config.sourceEntries).toEqual([
+      "AGENTS.md",
+      "docs",
+      "package.json",
+      "src",
+      "tests",
+      "tsconfig.json"
+    ]);
+  });
+
+  it("maps temporal-policy-drift to its target fixture and scenario", () => {
+    const repoRoot = resolve("/repo");
+    const config = retainedPairedLiveFixtureConfigFor(repoRoot, "temporal-policy-drift");
+
+    expect(config).toMatchObject({
+      family: "temporal-policy-drift",
+      scenarioName: "temporal-policy-drift-typescript",
+      taskPrefix: "temporal policy drift repair"
+    });
+    expect(config.fixtureRoot).toBe(
+      resolve("/repo/tests/fixtures/target-repos/temporal-policy-drift-typescript")
     );
     expect(config.sourceEntries).toEqual([
       "AGENTS.md",
@@ -98,6 +127,25 @@ describe("retained paired-live fixture config", () => {
       sourceDecisionId: "source-3",
       check: "target_diff_check",
       changedFiles: ["docs/job-contract.md"]
+    }]);
+  });
+
+  it("remaps temporal-policy decision application rules to temporal owner files", () => {
+    expect(retainedFamilyDecisionApplications(extendedRules, "temporal-policy-drift")).toEqual([{
+      governingDecisionId: "governing-1",
+      sourceDecisionId: "source-1",
+      check: "target_test",
+      changedFiles: ["src/payoutPolicy.ts"]
+    }, {
+      governingDecisionId: "governing-2",
+      sourceDecisionId: "source-2",
+      check: "target_typecheck",
+      changedFiles: ["tests/payoutPolicy.test.ts"]
+    }, {
+      governingDecisionId: "governing-3",
+      sourceDecisionId: "source-3",
+      check: "target_diff_check",
+      changedFiles: ["docs/payout-policy-contract.md"]
     }]);
   });
 
@@ -141,6 +189,43 @@ describe("retained paired-live fixture config", () => {
     );
   });
 
+  it("loads a target-specific temporal-policy source seed from the decision corpus", () => {
+    const seed = retainedTrialSourceDecisionSeedFor(resolve("../.."), "temporal-policy-drift");
+
+    expect(seed).toMatchObject({
+      family: "temporal-policy-drift",
+      corpusName: "temporal-policy-drift-typescript-retained"
+    });
+    expect(seed?.decisions.map((decision) => ({
+      id: decision.id,
+      status: decision.status
+    }))).toEqual([{
+      id: "temporal-policy-review-action",
+      status: "current"
+    }, {
+      id: "temporal-policy-valid-from",
+      status: "current"
+    }, {
+      id: "temporal-policy-high-risk-scope",
+      status: "current"
+    }, {
+      id: "stale-temporal-policy-legacy-hold",
+      status: "stale"
+    }, {
+      id: "rejected-temporal-policy-auto-approve",
+      status: "rejected"
+    }]);
+    expect(seed?.decisions.filter((decision) => decision.status === "current").map((decision) => decision.evidenceRef))
+      .toEqual([
+        "tests/fixtures/second-repo/temporal-policy-current-authority.md",
+        "tests/fixtures/second-repo/temporal-policy-current-authority.md",
+        "tests/fixtures/second-repo/temporal-policy-current-authority.md"
+      ]);
+    expect(seed?.decisions.map((decision) => decision.evidenceRef)).toContain(
+      "tests/fixtures/target-repos/temporal-policy-drift-typescript/docs/payout-policy-contract.md"
+    );
+  });
+
   it("does not seed target-specific source decisions for weak-json retained fixtures", () => {
     expect(retainedTrialSourceDecisionSeedFor(resolve("../.."), "weak-json")).toBeUndefined();
   });
@@ -159,6 +244,27 @@ describe("retained paired-live fixture config", () => {
         .resolves.toContain("JobEnvelope");
       await expect(readFile(resolve(materializedSourceDirectory, "tests/jobQueue.test.ts"), "utf8"))
         .resolves.toContain("idempotencyKey");
+      await expect(readFile(resolve(materializedSourceDirectory, "src/userService.ts"), "utf8"))
+        .rejects.toThrow();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("materializes the temporal-policy target source without weak-json files", async () => {
+    const tempRoot = await mkdtemp(resolve(tmpdir(), "krn-retained-temporal-policy-"));
+    const materializedSourceDirectory = resolve(tempRoot, "target-source");
+
+    try {
+      await materializeRetainedPairedLiveFixtureSource({
+        config: retainedPairedLiveFixtureConfigFor(resolve("../.."), "temporal-policy-drift"),
+        materializedSourceDirectory
+      });
+
+      await expect(readFile(resolve(materializedSourceDirectory, "src/payoutPolicy.ts"), "utf8"))
+        .resolves.toContain("legacy_hold");
+      await expect(readFile(resolve(materializedSourceDirectory, "tests/payoutPolicy.test.ts"), "utf8"))
+        .resolves.toContain("legacy_hold");
       await expect(readFile(resolve(materializedSourceDirectory, "src/userService.ts"), "utf8"))
         .rejects.toThrow();
     } finally {

@@ -126,9 +126,11 @@ describe("paired live Codex repair eval", () => {
   it("routes scenarios to one explicit family contract", () => {
     expect(resolvePairedEvalFamily("env-config-contract-typescript held-out")).toBe("env-config");
     expect(resolvePairedEvalFamily("async-job-boundary-typescript held-out")).toBe("async-job");
+    expect(resolvePairedEvalFamily("temporal-policy-drift-typescript held-out")).toBe("temporal-policy-drift");
     expect(resolvePairedEvalFamily("user-create-boundary-typescript held-out")).toBe("user-create");
     expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
     expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
+    expect(pairedEvalFamilyContract("temporal-policy-drift").sourcePaths).toContain("src/payoutPolicy.ts");
     expect(pairedEvalFamilyContract("user-create").sourcePaths).toContain("src/userService.ts");
   });
 
@@ -331,6 +333,59 @@ describe("paired live Codex repair eval", () => {
 
     expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
     expect(score.status).toBe("pass");
+  });
+
+  it("accepts only current temporal policy behavior and rejects stale/rejected paths", () => {
+    const current = scoreTargetRepair({
+      family: "temporal-policy-drift",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'hold_for_policy_review' | 'manual_review';",
+          "export const validFrom = '2026-06-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "hold_for_policy_review 2026-06-01",
+        "docs/payout-policy-contract.md": "current authority overrides stale docs"
+      },
+      changedFiles: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        temporalPolicyCurrent: true
+      }
+    });
+    const stale = scoreTargetRepair({
+      family: "temporal-policy-drift",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'legacy_hold' | 'manual_review';",
+          "export const validFrom = '2025-01-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "legacy_hold",
+        "docs/payout-policy-contract.md": "current authority overrides stale docs"
+      },
+      changedFiles: ["src/payoutPolicy.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        temporalPolicyCurrent: false
+      }
+    });
+
+    expect(current.status).toBe("pass");
+    expect(current.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+    expect(stale.status).toBe("fail");
+    expect(stale.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+    expect(stale.checks).toContainEqual(expect.objectContaining({
+      name: "held_out_runtime",
+      passed: true,
+      details: expect.stringContaining("contract failure")
+    }));
   });
 
   it("omits weak-json focused-test proof from non-weak family artifacts", () => {
@@ -588,6 +643,33 @@ describe("paired live Codex repair eval", () => {
       "--experimental-permission"
     ]))).toBe("--experimental-permission");
     expect(selectHeldOutRuntimePermissionFlag(new Set())).toBeUndefined();
+  });
+
+  it("observes current temporal policy behavior through the held-out runtime worker", async () => {
+    if (selectHeldOutRuntimePermissionFlag() === undefined) return;
+    const root = await mkdtemp(join(tmpdir(), "krn-temporal-policy-runtime-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/payoutPolicy.js"), [
+        "export const decidePayoutPolicy = () => ({",
+        "  action: 'hold_for_policy_review',",
+        "  validFrom: '2026-06-01'",
+        "});"
+      ].join("\n"), "utf8");
+
+      const result = await runHeldOutRuntimeWorker(
+        root,
+        process.cwd(),
+        root,
+        "temporal-policy-drift"
+      );
+
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.temporalPolicyCurrent).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("forces a timed-out command to settle when it ignores SIGTERM", async () => {
@@ -1271,6 +1353,7 @@ describe("paired live Codex repair eval", () => {
         invalidRole: observation({ resultState: "kind:invalid_input" }),
         redactionSafe: false,
         enqueueAccepted: false,
+        temporalPolicyCurrent: false,
         validCreation: false
       });
     } finally {

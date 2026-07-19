@@ -1036,6 +1036,10 @@ describe("tracked paired live Codex repair", () => {
       expect(result.score?.outcome).toBe("tie");
       expect(result.execution.liveObedienceStatus).toBe("valid");
       expect(result.execution.decisionApplicationObservation).toBe("observed");
+      expect(result.execution.modelUsageObservation).toMatchObject({
+        tokenUsage: "unavailable",
+        latencySource: "arm_command_duration_ms"
+      });
       expect(result.execution.treatment).toBe("semantic_governed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",

@@ -12,7 +12,10 @@ import {
   loadDecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
 
-export type RetainedPairedLiveFixtureFamily = Extract<PairedEvalFamily, "weak-json" | "async-job">;
+export type RetainedPairedLiveFixtureFamily = Extract<
+  PairedEvalFamily,
+  "weak-json" | "async-job" | "temporal-policy-drift"
+>;
 
 export type RetainedDecisionApplicationRule = {
   readonly governingDecisionId: string;
@@ -50,7 +53,8 @@ export type RetainedTrialSourceDecisionSeed = {
 
 const retainedFamilies = new Set<RetainedPairedLiveFixtureFamily>([
   "weak-json",
-  "async-job"
+  "async-job",
+  "temporal-policy-drift"
 ]);
 
 const defaultFamily: RetainedPairedLiveFixtureFamily = "weak-json";
@@ -121,6 +125,19 @@ export const retainedPairedLiveFixtureConfigFor = (
         sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
       };
     }
+    case "temporal-policy-drift": {
+      const fixtureRoot = path.join(
+        repoRoot,
+        "tests/fixtures/target-repos/temporal-policy-drift-typescript"
+      );
+      return {
+        family,
+        scenarioName: "temporal-policy-drift-typescript",
+        taskPrefix: "temporal policy drift repair",
+        fixtureRoot,
+        sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
+      };
+    }
     case "weak-json": {
       const fixtureRoot = path.join(
         repoRoot,
@@ -170,19 +187,50 @@ export const materializeRetainedPairedLiveFixtureSource = async (input: {
   }
 };
 
-const asyncJobDecisionApplicationMappings = [
-  { check: "target_test", changedFiles: ["src/jobQueue.ts"] },
-  { check: "target_typecheck", changedFiles: ["tests/jobQueue.test.ts"] },
-  { check: "target_diff_check", changedFiles: ["docs/job-contract.md"] }
-] as const;
+const retainedFamilyDecisionApplicationMappings = {
+  "async-job": [
+    { check: "target_test", changedFiles: ["src/jobQueue.ts"] },
+    { check: "target_typecheck", changedFiles: ["tests/jobQueue.test.ts"] },
+    { check: "target_diff_check", changedFiles: ["docs/job-contract.md"] }
+  ],
+  "temporal-policy-drift": [
+    { check: "target_test", changedFiles: ["src/payoutPolicy.ts"] },
+    { check: "target_typecheck", changedFiles: ["tests/payoutPolicy.test.ts"] },
+    { check: "target_diff_check", changedFiles: ["docs/payout-policy-contract.md"] }
+  ]
+} as const satisfies Record<
+  Exclude<RetainedPairedLiveFixtureFamily, "weak-json">,
+  readonly {
+    readonly check: string;
+    readonly changedFiles: readonly string[];
+  }[]
+>;
 
-const asyncJobRetainedSourceSeedDecisionIds = [
-  "async-job-idempotency-key",
-  "async-job-retry-budget",
-  "async-job-lease-timeout",
-  "stale-async-job-forever-retry",
-  "rejected-async-job-no-idempotency"
-] as const;
+const retainedFamilySourceSeedDecisionIds = {
+  "async-job": [
+    "async-job-idempotency-key",
+    "async-job-retry-budget",
+    "async-job-lease-timeout",
+    "stale-async-job-forever-retry",
+    "rejected-async-job-no-idempotency"
+  ],
+  "temporal-policy-drift": [
+    "temporal-policy-review-action",
+    "temporal-policy-valid-from",
+    "temporal-policy-high-risk-scope",
+    "stale-temporal-policy-legacy-hold",
+    "rejected-temporal-policy-auto-approve"
+  ]
+} as const satisfies Record<
+  Exclude<RetainedPairedLiveFixtureFamily, "weak-json">,
+  readonly string[]
+>;
+
+const retainedFamilyDecisionFixtureFile = (
+  family: Exclude<RetainedPairedLiveFixtureFamily, "weak-json">
+): string => family === "async-job"
+  ? "async-job-decision-packet-vs-notes.json"
+  : "temporal-policy-drift-decision-packet-vs-notes.json";
 
 export const retainedFamilyDecisionApplications = (
   rules: readonly RetainedDecisionApplicationRule[],
@@ -195,15 +243,16 @@ export const retainedFamilyDecisionApplications = (
     }));
   }
 
-  if (rules.length > asyncJobDecisionApplicationMappings.length) {
+  const mappings = retainedFamilyDecisionApplicationMappings[family];
+  if (rules.length > mappings.length) {
     throw new Error(
-      `Async-job retained paired-live fixture has ${rules.length} decision application rules but only ${asyncJobDecisionApplicationMappings.length} family mappings`
+      `${family} retained paired-live fixture has ${rules.length} decision application rules but only ${mappings.length} family mappings`
     );
   }
 
   return rules.map((rule, index) => {
-    const mapping = asyncJobDecisionApplicationMappings[index];
-    if (mapping === undefined) throw new Error("Missing async-job decision application mapping");
+    const mapping = mappings[index];
+    if (mapping === undefined) throw new Error(`Missing ${family} decision application mapping`);
     return {
       ...rule,
       check: mapping.check,
@@ -235,18 +284,19 @@ export const retainedTrialSourceDecisionSeedFor = (
 
   const fixture = loadDecisionPacketEvalFixture(path.join(
     repoRoot,
-    "tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json"
+    "tests/fixtures/second-repo",
+    retainedFamilyDecisionFixtureFile(family)
   ));
   const decisionsById = new Map(fixture.decisions.map((decision) => [decision.id, decision]));
 
   return {
     family,
     corpusName: fixture.corpusName,
-    decisions: asyncJobRetainedSourceSeedDecisionIds.map((id) => {
+    decisions: retainedFamilySourceSeedDecisionIds[family].map((id) => {
       const decision = decisionsById.get(id);
       if (decision === undefined) {
         throw new Error(
-          `Retained paired-live async-job source seed fixture is missing decision ${id}`
+          `Retained paired-live ${family} source seed fixture is missing decision ${id}`
         );
       }
 
