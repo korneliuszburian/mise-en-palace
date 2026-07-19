@@ -147,7 +147,7 @@ export const retainedPairedLiveFixtureConfigFor = (
       return {
         family,
         scenarioName: "temporal-policy-hidden-source-typescript",
-        taskPrefix: "target-hidden temporal policy repair",
+        taskPrefix: "temporal policy hidden source typescript repair",
         fixtureRoot,
         sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
       };

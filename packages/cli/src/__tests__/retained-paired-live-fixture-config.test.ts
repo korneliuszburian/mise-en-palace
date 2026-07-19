@@ -125,7 +125,7 @@ describe("retained paired-live fixture config", () => {
     expect(config).toMatchObject({
       family: "temporal-policy-hidden-source",
       scenarioName: "temporal-policy-hidden-source-typescript",
-      taskPrefix: "target-hidden temporal policy repair"
+      taskPrefix: "temporal policy hidden source typescript repair"
     });
     expect(config.fixtureRoot).toBe(
       resolve("/repo/tests/fixtures/target-repos/temporal-policy-drift-typescript")
