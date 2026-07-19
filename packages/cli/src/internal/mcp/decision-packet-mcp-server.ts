@@ -230,14 +230,23 @@ const textResult = (
 
 const jsonResult = (
   value: JsonValue
-): ToolCallResult => ({
-  content: [{
-    type: "text",
-    text: JSON.stringify(value)
-  }],
-  structuredContent: value,
-  isError: false
-});
+): ToolCallResult => {
+  const packetIdentity = isRecord(value) ? value["packetIdentity"] : undefined;
+  const checksum = isRecord(packetIdentity) ? packetIdentity["checksum"] : undefined;
+  const identity = typeof checksum === "string" ? ` Checksum: ${checksum}.` : "";
+
+  return {
+    // MCP 2025-06-18 recommends full JSON text only for backward compatibility.
+    // Codex consumes the declared structured output, so keep text identity-only
+    // instead of charging the bounded DecisionPacket to context twice.
+    content: [{
+      type: "text",
+      text: `KRN DecisionPacket is available in structuredContent.${identity}`
+    }],
+    structuredContent: value,
+    isError: false
+  };
+};
 
 const outputLimitResult = (): ToolCallResult =>
   textResult(decisionPacketOutputLimitErrorText, true);

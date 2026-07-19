@@ -102,9 +102,11 @@ describe("DecisionPacket official MCP client compatibility", () => {
           checksum: decisionPacketMcpFixture.packetIdentity.checksum
         }
       });
-      expect(validText?.type === "text" ? JSON.parse(validText.text) : undefined).toEqual(
-        parsedValid.structuredContent
-      );
+      expect(validText).toEqual({
+        type: "text",
+        text:
+          `KRN DecisionPacket is available in structuredContent. Checksum: ${decisionPacketMcpFixture.packetIdentity.checksum}.`
+      });
 
       await expect(call("r".repeat(257))).rejects.toMatchObject({ code: -32602 });
 

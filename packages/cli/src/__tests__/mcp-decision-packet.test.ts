@@ -715,7 +715,7 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(names).not.toContain("krn_candidate_persist");
   });
 
-  it("advertises validated output schema with JSON text parity", async () => {
+  it("advertises validated structured output with compact identity text", async () => {
     const listed = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: "list-output-schema",
@@ -756,7 +756,9 @@ describe("DecisionPacket MCP wrapper", () => {
       const text = requiredString(contentItem["text"], "tool content text");
 
       expect(validator.safeParse(structuredContent).success).toBe(true);
-      expect(JSON.parse(text)).toEqual(structuredContent);
+      expect(text).toBe(
+        `KRN DecisionPacket is available in structuredContent. Checksum: ${fixture.packetIdentity.checksum}.`
+      );
     }
 
     expect(validator.safeParse({
@@ -791,50 +793,16 @@ describe("DecisionPacket MCP wrapper", () => {
       );
 
       measurements.push({
-        fixture: fixture.request.runId,
         messageUtf8Bytes: measureDecisionPacketTransport(called).utf8Bytes,
         structuredContent: measureDecisionPacketTransport(structuredContent)
       });
     }
 
-    const messageBytes = measurements.map((item) => item.messageUtf8Bytes);
-    const structuredBytes = measurements.map((item) => item.structuredContent.utf8Bytes);
-    const collectionCounts = measurements.map((item) => item.structuredContent.collectionCount);
-    const collectionP95s = measurements.map(
-      (item) => item.structuredContent.collectionLength.p95
-    );
-    const collectionMaximums = measurements.map(
-      (item) => item.structuredContent.collectionLength.maximum
-    );
-
-    expect({
-      fixtures: measurements.map((item) => item.fixture),
-      messageUtf8Bytes: { minimum: Math.min(...messageBytes), maximum: Math.max(...messageBytes) },
-      structuredContentUtf8Bytes: {
-        minimum: Math.min(...structuredBytes),
-        maximum: Math.max(...structuredBytes)
-      },
-      collectionCount: {
-        minimum: Math.min(...collectionCounts),
-        maximum: Math.max(...collectionCounts)
-      },
-      collectionP95: { minimum: Math.min(...collectionP95s), maximum: Math.max(...collectionP95s) },
-      maximumCollectionLength: Math.max(...collectionMaximums)
-    }).toEqual({
-      fixtures: [
-        "run-agent-1",
-        "run-agent-weak",
-        "run-agent-source-dissent",
-        "run-agent-unsafe"
-      ],
-      messageUtf8Bytes: { minimum: 10_222, maximum: 12_516 },
-      structuredContentUtf8Bytes: { minimum: 4_874, maximum: 5_980 },
-      collectionCount: { minimum: 50, maximum: 53 },
-      collectionP95: { minimum: 1, maximum: 2 },
-      maximumCollectionLength: 4
-    });
-
     for (const measured of measurements) {
+      const envelopeBytes = measured.messageUtf8Bytes - measured.structuredContent.utf8Bytes;
+
+      expect(envelopeBytes).toBeGreaterThan(0);
+      expect(envelopeBytes).toBeLessThan(512);
       expect(measured.messageUtf8Bytes).toBeLessThan(
         decisionPacketTransportBudget.maximumMessageUtf8Bytes
       );
@@ -915,8 +883,6 @@ describe("DecisionPacket MCP wrapper", () => {
     const outputPaddingBytes =
       decisionPacketTransportBudget.maximumMessageUtf8Bytes - baseBytes;
 
-    expect(outputPaddingBytes % 2).toBe(1);
-
     const boundaryPacket = bindFixtureIdentity({
       ...packetJson,
       packet: {
@@ -924,7 +890,7 @@ describe("DecisionPacket MCP wrapper", () => {
         task: {
           ...packetJson.packet.task,
           objective: `${packetJson.packet.task.objective}${"x".repeat(
-            Math.floor(outputPaddingBytes / 2)
+            outputPaddingBytes
           )}`
         }
       }
@@ -936,7 +902,7 @@ describe("DecisionPacket MCP wrapper", () => {
     );
 
     expect(measureDecisionPacketTransport(boundaryResponse).utf8Bytes).toBe(
-      decisionPacketTransportBudget.maximumMessageUtf8Bytes - 1
+      decisionPacketTransportBudget.maximumMessageUtf8Bytes
     );
     expect(requiredRecord(
       boundaryResult["structuredContent"],
@@ -1127,7 +1093,8 @@ describe("DecisionPacket MCP wrapper", () => {
     const result = isRecord(reply) ? reply["result"] : undefined;
     expect(isRecord(result) ? result["content"] : undefined).toEqual([{
       type: "text",
-      text: expect.stringContaining(packetJson.packetIdentity.checksum)
+      text:
+        `KRN DecisionPacket is available in structuredContent. Checksum: ${packetJson.packetIdentity.checksum}.`
     }]);
     const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
     expect(isRecord(structuredContent) && !("readModel" in structuredContent)).toBe(true);
