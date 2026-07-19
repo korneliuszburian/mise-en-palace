@@ -925,7 +925,7 @@ const assertTargetEvidenceReadback = (
   return proofIds;
 };
 
-const capturePacketBoundTargetEvidence = async (input: {
+type PacketBoundTargetEvidenceInput = {
   readonly createId: (prefix: string) => string;
   readonly databaseUrl: string;
   readonly decisionPacketProof: DecisionPacketConsumerProof;
@@ -937,7 +937,94 @@ const capturePacketBoundTargetEvidence = async (input: {
   readonly projectId: string;
   readonly now: string;
   readonly targetRepoPath: string;
-}): Promise<PacketBoundTargetEvidenceProof> => {
+};
+
+const captureLiveCandidates = (
+  input: PacketBoundTargetEvidenceInput,
+  targetCommandProof: TargetCommandProof,
+  candidates: readonly EvalCandidateProposal[]
+) => runEvidenceCaptureCommand({
+  env: { KRN_DATABASE_URL: input.databaseUrl },
+  cwd: process.cwd(),
+  now: () => input.now,
+  createId: input.createId,
+  persist: true,
+  runId: input.executionRunId,
+  decisionPacketChecksum: input.decisionPacketProof.checksum,
+  decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+  commandOutcomes: [targetCommandProof.evidenceCommand],
+  commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+  evalCandidateProposals: candidates,
+  readGitStatus: async () => "",
+  createDatabaseRuntime: async () => input.decisionRuntime
+});
+
+const candidatesWithId = (
+  aggregate: HarnessRunAggregate | undefined,
+  candidateId: string
+): readonly EvalCandidateProposal[] =>
+  aggregate?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === candidateId) ?? [];
+
+const assertLiveCandidateReadback = (input: {
+  readonly aggregate: HarnessRunAggregate | undefined;
+  readonly candidate: EvalCandidateProposal;
+  readonly expectedProjectId: string;
+  readonly expectedLiveOutput: Readonly<Record<string, string>>;
+}): void => {
+  const readBackCandidate = candidatesWithId(input.aggregate, input.candidate.id)[0];
+  const readBackLiveOutput = isRecord(readBackCandidate?.metadata)
+    ? readBackCandidate.metadata["liveOutput"]
+    : undefined;
+  if (!liveOutputMatches(readBackLiveOutput, input.expectedLiveOutput)) {
+    throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackCandidate)})`);
+  }
+  if (readBackCandidate?.projectId !== input.expectedProjectId) {
+    throw new Error("Target repo harness smoke lost live evidence project scope in PostgreSQL readback");
+  }
+  const feedbackDelta = input.aggregate?.feedbackDeltas.find((delta) =>
+    delta.evalCandidates.some((candidate) => candidate.id === input.candidate.id)
+  );
+  if (!feedbackDeltaHasNoCandidateMutations(feedbackDelta)) {
+    throw new Error("Target repo harness smoke allowed live obedience evidence to mutate memory or source decisions");
+  }
+};
+
+const liveOutputMatches = (
+  value: unknown,
+  expected: Readonly<Record<string, string>>
+): boolean => isRecord(value) &&
+  Object.entries(expected).every(([key, item]) => value[key] === item);
+
+const feedbackDeltaHasNoCandidateMutations = (
+  delta: FeedbackReadbackDelta | undefined
+): boolean => delta !== undefined &&
+  delta.memoryCandidates.length === 0 &&
+  delta.sourceDecisions.length === 0;
+
+const assertCandidateCount = (input: {
+  readonly aggregate: HarnessRunAggregate | undefined;
+  readonly candidateId: string;
+  readonly expected: number;
+  readonly failure: (count: number) => string;
+}): void => {
+  const count = candidatesWithId(input.aggregate, input.candidateId).length;
+  if (count !== input.expected) throw new Error(input.failure(count));
+};
+
+const assertConcurrentCaptureOutcomes = (
+  results: readonly PromiseSettledResult<unknown>[]
+): void => {
+  const fulfilled = results.filter((result) => result.status === "fulfilled").length;
+  const rejected = results.filter((result) => result.status === "rejected").length;
+  if (fulfilled !== 1 || rejected !== 1) {
+    throw new Error("Target repo harness smoke did not isolate concurrent project captures");
+  }
+};
+
+const capturePacketBoundTargetEvidence = async (
+  input: PacketBoundTargetEvidenceInput
+): Promise<PacketBoundTargetEvidenceProof> => {
   const targetCommandProof = await runTargetFixtureCommand(input.targetRepoPath);
   const evidenceCapture = await runEvidenceCaptureCommand({
     env: {
@@ -1031,63 +1118,22 @@ const capturePacketBoundTargetEvidence = async (input: {
     metadata: { liveOutput },
     createdAt: input.now
   };
-  await runEvidenceCaptureCommand({
-    env: { KRN_DATABASE_URL: input.databaseUrl },
-    cwd: process.cwd(),
-    now: () => input.now,
-    createId: input.createId,
-    persist: true,
-    runId: input.executionRunId,
-    decisionPacketChecksum: input.decisionPacketProof.checksum,
-    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
-    commandOutcomes: [targetCommandProof.evidenceCommand],
-    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-    evalCandidateProposals: [liveCandidate],
-    readGitStatus: async () => "",
-    createDatabaseRuntime: async () => input.decisionRuntime
-  });
+  await captureLiveCandidates(input, targetCommandProof, [liveCandidate]);
   const liveReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
-  const liveCandidates = liveReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates) ?? [];
-  const readBackLiveCandidate = liveCandidates.find((candidate) => candidate.id === liveCandidate.id);
-  const readBackLiveOutput = isRecord(readBackLiveCandidate?.metadata)
-    ? readBackLiveCandidate.metadata["liveOutput"]
-    : undefined;
-  const liveOutputMatches = isRecord(readBackLiveOutput) &&
-    Object.entries(liveOutput).every(([key, value]) => readBackLiveOutput[key] === value);
-  if (!liveOutputMatches) {
-    throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackLiveCandidate)})`);
-  }
-  if (readBackLiveCandidate?.projectId !== input.projectId) {
-    throw new Error("Target repo harness smoke lost live evidence project scope in PostgreSQL readback");
-  }
-  const liveFeedbackDelta = liveReadback?.feedbackDeltas.find((delta) =>
-    delta.evalCandidates.some((candidate) => candidate.id === liveCandidate.id)
-  );
-  if (liveFeedbackDelta === undefined || liveFeedbackDelta.memoryCandidates.length !== 0 ||
-      liveFeedbackDelta.sourceDecisions.length !== 0) {
-    throw new Error("Target repo harness smoke allowed live obedience evidence to mutate memory or source decisions");
-  }
-  await runEvidenceCaptureCommand({
-    env: { KRN_DATABASE_URL: input.databaseUrl },
-    cwd: process.cwd(),
-    now: () => input.now,
-    createId: input.createId,
-    persist: true,
-    runId: input.executionRunId,
-    decisionPacketChecksum: input.decisionPacketProof.checksum,
-    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
-    commandOutcomes: [targetCommandProof.evidenceCommand],
-    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-    evalCandidateProposals: [liveCandidate],
-    readGitStatus: async () => "",
-    createDatabaseRuntime: async () => input.decisionRuntime
+  assertLiveCandidateReadback({
+    aggregate: liveReadback,
+    candidate: liveCandidate,
+    expectedProjectId: input.projectId,
+    expectedLiveOutput: liveOutput
   });
+  await captureLiveCandidates(input, targetCommandProof, [liveCandidate]);
   const replayReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
-  const replayCandidates = replayReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
-    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
-  if (replayCandidates.length !== 1) {
-    throw new Error(`Target repo harness smoke duplicated live obedience candidate on replay (count=${replayCandidates.length})`);
-  }
+  assertCandidateCount({
+    aggregate: replayReadback,
+    candidateId: liveCandidate.id,
+    expected: 1,
+    failure: (count) => `Target repo harness smoke duplicated live obedience candidate on replay (count=${count})`
+  });
   const foreignCandidate: EvalCandidateProposal = {
     ...liveCandidate,
     id: `target-repo-live-output-foreign:${input.marker}`,
@@ -1095,21 +1141,7 @@ const capturePacketBoundTargetEvidence = async (input: {
   };
   let foreignRejected = false;
   try {
-    await runEvidenceCaptureCommand({
-      env: { KRN_DATABASE_URL: input.databaseUrl },
-      cwd: process.cwd(),
-      now: () => input.now,
-      createId: input.createId,
-      persist: true,
-      runId: input.executionRunId,
-      decisionPacketChecksum: input.decisionPacketProof.checksum,
-      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
-      commandOutcomes: [targetCommandProof.evidenceCommand],
-      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-      evalCandidateProposals: [liveCandidate, foreignCandidate],
-      readGitStatus: async () => "",
-      createDatabaseRuntime: async () => input.decisionRuntime
-    });
+    await captureLiveCandidates(input, targetCommandProof, [liveCandidate, foreignCandidate]);
   } catch {
     foreignRejected = true;
   }
@@ -1117,48 +1149,30 @@ const capturePacketBoundTargetEvidence = async (input: {
     throw new Error("Target repo harness smoke accepted a cross-project live evidence candidate");
   }
   const atomicReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
-  const atomicCandidates = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
-    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
-  if (atomicCandidates.length !== 1) {
-    throw new Error(`Target repo harness smoke partially persisted mixed cross-project batch (count=${atomicCandidates.length})`);
-  }
-  const foreignReadback = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
-    .filter((candidate) => candidate.id === foreignCandidate.id) ?? [];
-  if (foreignReadback.length !== 0) {
-    throw new Error("Target repo harness smoke persisted a rejected foreign candidate");
-  }
+  assertCandidateCount({
+    aggregate: atomicReadback,
+    candidateId: liveCandidate.id,
+    expected: 1,
+    failure: (count) => `Target repo harness smoke partially persisted mixed cross-project batch (count=${count})`
+  });
+  assertCandidateCount({
+    aggregate: atomicReadback,
+    candidateId: foreignCandidate.id,
+    expected: 0,
+    failure: () => "Target repo harness smoke persisted a rejected foreign candidate"
+  });
   const concurrentResults = await Promise.allSettled([
-    runEvidenceCaptureCommand({
-      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
-      createId: input.createId, persist: true, runId: input.executionRunId,
-      decisionPacketChecksum: input.decisionPacketProof.checksum,
-      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
-      commandOutcomes: [targetCommandProof.evidenceCommand],
-      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-      evalCandidateProposals: [liveCandidate], readGitStatus: async () => "",
-      createDatabaseRuntime: async () => input.decisionRuntime
-    }),
-    runEvidenceCaptureCommand({
-      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
-      createId: input.createId, persist: true, runId: input.executionRunId,
-      decisionPacketChecksum: input.decisionPacketProof.checksum,
-      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
-      commandOutcomes: [targetCommandProof.evidenceCommand],
-      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
-      evalCandidateProposals: [foreignCandidate], readGitStatus: async () => "",
-      createDatabaseRuntime: async () => input.decisionRuntime
-    })
+    captureLiveCandidates(input, targetCommandProof, [liveCandidate]),
+    captureLiveCandidates(input, targetCommandProof, [foreignCandidate])
   ]);
-  if (concurrentResults.filter((result) => result.status === "fulfilled").length !== 1 ||
-      concurrentResults.filter((result) => result.status === "rejected").length !== 1) {
-    throw new Error("Target repo harness smoke did not isolate concurrent project captures");
-  }
+  assertConcurrentCaptureOutcomes(concurrentResults);
   const concurrentReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
-  const concurrentCandidates = concurrentReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
-    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
-  if (concurrentCandidates.length !== 1) {
-    throw new Error(`Target repo harness smoke duplicated concurrent live evidence (count=${concurrentCandidates.length})`);
-  }
+  assertCandidateCount({
+    aggregate: concurrentReadback,
+    candidateId: liveCandidate.id,
+    expected: 1,
+    failure: (count) => `Target repo harness smoke duplicated concurrent live evidence (count=${count})`
+  });
 
   return {
     ...proof,

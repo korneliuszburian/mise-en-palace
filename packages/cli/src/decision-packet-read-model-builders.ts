@@ -19,12 +19,6 @@ import {
   targetEvidenceFromMetadata,
   toEvidenceCommandReadback
 } from "@krn/core";
-import {
-  isIsoTimestamp,
-  sourceAuthorityLabels,
-  sourceClaimEdgeKinds,
-  sourceClaimStatuses
-} from "@krn/core";
 import type {
   CommandOutputArtifact,
   ContextAssembly,
@@ -69,7 +63,6 @@ import type {
   DecisionPacketReadModelSourceUsefulnessOutcome,
   DecisionPacketReadModelTask
 } from "./decision-packet-read-model.js";
-import type { SourceConsensusTimelineReadback } from "@krn/core";
 import {
   commandOutputArtifactSha256Hex
 } from "./command-output-artifact-hash.js";
@@ -77,6 +70,7 @@ import {
   knowledgeSelectionFromMetadata
 } from "./knowledge-selection.js";
 import type { ProjectResolution } from "./database-runtime.js";
+import { isSourceConsensusTimelineReadback } from "./decision-packet-source-consensus-decoder.js";
 
 const commandOutputIntegrityResource = (
   command: EvidenceCommand,
@@ -275,82 +269,6 @@ export const activationTraceResource = (
         candidates: aggregate.activationTrace.candidates.map(activationCandidateResource),
         decisions: aggregate.activationTrace.decisions.map(activationDecisionResource)
       };
-};
-
-const isSourceConsensusTimelineReadback = (
-  value: unknown
-): value is SourceConsensusTimelineReadback => {
-  if (typeof value !== "object" || value === null) return false;
-  const record = value as Record<string, unknown>;
-  const stringArray = (candidate: unknown): candidate is string[] =>
-    Array.isArray(candidate) && candidate.every((item) => typeof item === "string");
-  const relationTemporalValidity = (candidate: unknown): boolean => {
-    if (typeof candidate !== "object" || candidate === null) return false;
-    const item = candidate as Record<string, unknown>;
-    return item.status === "current" ||
-      (item.status === "historical" &&
-        (item.reason === "before_valid_from" || item.reason === "valid_until_elapsed" || item.reason === "invalidated")) ||
-      (item.status === "invalid" &&
-        (item.reason === "invalid_now" || item.reason === "invalid_valid_from" ||
-          item.reason === "invalid_valid_until" || item.reason === "invalid_invalidated_at"));
-  };
-  const entryTemporalValidity = (candidate: unknown): boolean => {
-    if (!relationTemporalValidity(candidate)) {
-      if (typeof candidate !== "object" || candidate === null) return false;
-      const item = candidate as Record<string, unknown>;
-      return (item.status === "historical" && item.reason === "revisit_when_elapsed") ||
-        (item.status === "invalid" && item.reason === "invalid_revisit_when") ||
-        (item.status === "inactive" && item.reason === "rejected_or_deprecated");
-    }
-    return true;
-  };
-  const entryIsValid = (candidate: unknown): boolean => {
-    if (typeof candidate !== "object" || candidate === null) return false;
-    const entry = candidate as Record<string, unknown>;
-    return typeof entry.sourceClaimId === "string" &&
-      typeof entry.claim === "string" &&
-      sourceClaimStatuses.includes(entry.status as typeof sourceClaimStatuses[number]) &&
-      typeof entry.createdAt === "string" && isIsoTimestamp(entry.createdAt) &&
-      sourceAuthorityLabels.includes(entry.sourceAuthority as typeof sourceAuthorityLabels[number]) &&
-      typeof entry.authorityRank === "number" && Number.isFinite(entry.authorityRank) &&
-      (entry.authorityState === "accepted" || entry.authorityState === "stale" || entry.authorityState === "superseded" || entry.authorityState === "rejected" || entry.authorityState === "unsupported" || entry.authorityState === "conflicting" || entry.authorityState === "unknown") &&
-      (entry.state === "current_authority" || entry.state === "caveated_authority" || entry.state === "historical" || entry.state === "rejected") &&
-      entryTemporalValidity(entry.temporalValidity) &&
-      (entry.blockedByCurrentSourceClaimId === undefined || typeof entry.blockedByCurrentSourceClaimId === "string") &&
-      stringArray(entry.decisionSupportEdgeIds) &&
-      stringArray(entry.evidenceRefs) &&
-      stringArray(entry.rawEvidenceCitationRefs) &&
-      stringArray(entry.sourceRanges) &&
-      Array.isArray(entry.relationEvidence) && entry.relationEvidence.every((relation) => {
-        if (typeof relation !== "object" || relation === null) return false;
-        const item = relation as Record<string, unknown>;
-        return typeof item.sourceClaimEdgeId === "string" &&
-          (item.direction === "incoming" || item.direction === "outgoing") &&
-          sourceClaimEdgeKinds.includes(item.kind as typeof sourceClaimEdgeKinds[number]) &&
-          typeof item.relatedSourceClaimId === "string" &&
-          stringArray(item.metadataEvidenceRefs) &&
-          (item.metadataSourceDecisionRef === undefined || typeof item.metadataSourceDecisionRef === "string") &&
-          stringArray(item.sourceRanges) &&
-          Array.isArray(item.evidenceGaps) &&
-          item.evidenceGaps.every((gap: unknown) => gap === "missing_relation_support_ref") &&
-          relationTemporalValidity(item.temporalValidity);
-      }) &&
-      stringArray(entry.supportingSourceClaimIds) &&
-      stringArray(entry.dissentingSourceClaimIds) &&
-      stringArray(entry.supersededBySourceClaimIds) &&
-      stringArray(entry.supersedesSourceClaimIds) &&
-      stringArray(entry.rejectionIds) &&
-      stringArray(entry.caveats);
-  };
-  return stringArray(record.currentSourceClaimIds) &&
-    stringArray(record.caveatedSourceClaimIds) &&
-    stringArray(record.historicalSourceClaimIds) &&
-    stringArray(record.staleSourceClaimIds) &&
-    stringArray(record.supersededSourceClaimIds) &&
-    stringArray(record.unknownSourceClaimIds) &&
-    stringArray(record.rejectedSourceClaimIds) &&
-    Array.isArray(record.entries) && record.entries.every(entryIsValid) &&
-    typeof record.doesNotProve === "string";
 };
 
 const evalCandidateEvidenceFields = (

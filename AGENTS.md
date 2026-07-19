@@ -49,6 +49,11 @@ recreating its procedure locally.
 - Build the Memory Core, not dashboards, benchmark lanes, broad multi-agent
   systems, prompt archives, decorative platform wiring, or file-backed runtime
   memory.
+- Treat production code and executable contracts as the authority for current
+  behavior. Documentation owns only what code cannot express: alternatives and
+  rationale in ADRs, shared domain language in `CONTEXT.md`, and thin
+  navigation or instructions in `AGENTS.md` and `CONVENTIONS.md`. Do not mirror
+  implementation details in prose.
 - Before architecture or public-shape work, map the current caller, interface,
   implementation, and persistence or IO path. Name the consumer, owner,
   falsifier, and non-proof.

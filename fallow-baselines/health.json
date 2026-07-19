@@ -15,20 +15,6 @@
         "count": 1
       }
     },
-    "packages/cli/src/decision-packet-read-model-builders.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      },
-      "crap_high": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 2
-      }
-    },
     "packages/cli/src/doctor-static-checks.ts": {
       "complexity_high": {
         "count": 1
@@ -79,14 +65,6 @@
         "count": 3
       }
     },
-    "packages/cli/src/internal/smoke/target-repo-harness-smoke.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      }
-    },
     "packages/cli/src/run-db-smoke-command.ts": {
       "crap_moderate": {
         "count": 2
@@ -127,9 +105,6 @@
     },
     "packages/harness/src/activation/activation-engine.ts": {
       "complexity_moderate": {
-        "count": 1
-      },
-      "crap_moderate": {
         "count": 1
       }
     }
