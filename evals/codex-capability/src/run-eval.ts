@@ -23,6 +23,7 @@ export type CodexCapabilityCheckerResult = {
 };
 
 export type CodexCapabilityArmExecution = {
+  readonly commandExecutable: string;
   readonly cliVersion: string;
   readonly commandStatus: "completed" | "failed" | "timed_out";
   readonly exitCode: number | null;
@@ -32,10 +33,17 @@ export type CodexCapabilityArmExecution = {
   readonly checkers: readonly CodexCapabilityCheckerResult[];
 };
 
+export type CodexCapabilityUseObservation = {
+  readonly configuredMcpToolCallEvents: number;
+  readonly observedMcpServerIds: readonly string[];
+  readonly genericMcpToolCallEvents: number;
+};
+
 export type CodexCapabilityArmArtifact = CodexCapabilityArmExecution & {
   readonly arm: CodexCapabilityEvalArmName;
   readonly profileHash: string;
   readonly capabilities: CodexCapabilityPlannedArm["capabilities"];
+  readonly capabilityUse: CodexCapabilityUseObservation;
   readonly usage: CodexExecUsageObservation;
   readonly invalidReasons: readonly string[];
 };
@@ -43,6 +51,9 @@ export type CodexCapabilityArmArtifact = CodexCapabilityArmExecution & {
 export type CodexCapabilityEvalSummary = {
   readonly kind: "krn.codexCapabilityEvalSummary.v1";
   readonly manifestId: string;
+  readonly target: CodexCapabilityDryRunPlan["target"];
+  readonly codex: CodexCapabilityDryRunPlan["codex"];
+  readonly graders: CodexCapabilityDryRunPlan["graders"];
   readonly outcome: "win" | "tie" | "loss" | "invalid";
   readonly invalidReasons: readonly string[];
   readonly arms: readonly [CodexCapabilityArmArtifact, CodexCapabilityArmArtifact];
@@ -61,8 +72,8 @@ export const runCodexCapabilityEval = async (
   executeArm: CodexCapabilityArmExecutor
 ): Promise<CodexCapabilityEvalSummary> => {
   const [baseline, krn] = await Promise.all([
-    runArm(plan.arms[0], plan.graders, plan.usage.source, executeArm),
-    runArm(plan.arms[1], plan.graders, plan.usage.source, executeArm)
+    runArm(plan.arms[0], plan.graders, plan.usage.source, plan.arms[1].capabilities.mcpServers.map(({ id }) => id), executeArm),
+    runArm(plan.arms[1], plan.graders, plan.usage.source, plan.arms[1].capabilities.mcpServers.map(({ id }) => id), executeArm)
   ]);
   const usageComparable = baseline.usage.status === "available" && krn.usage.status === "available";
   const invalidReasons = summaryInvalidReasons(baseline, krn, plan.usage.requireComparable, usageComparable);
@@ -70,18 +81,23 @@ export const runCodexCapabilityEval = async (
   return {
     kind: "krn.codexCapabilityEvalSummary.v1",
     manifestId: plan.manifestId,
+    target: plan.target,
+    codex: plan.codex,
+    graders: plan.graders,
     outcome: invalidReasons.length > 0 ? "invalid" : compareQuality(baseline, krn),
     invalidReasons,
     arms: [baseline, krn],
     usageComparable,
     proves: [
       "both matched arms returned command, diff, checker, capability, and usage evidence",
-      "win, tie, or loss reflects only the declared deterministic checker outcomes"
+      "win, tie, or loss reflects only the declared deterministic checker outcomes",
+      "structured Codex events prove the configured KRN MCP was used only in the treatment arm"
     ],
     doesNotProve: [
       "one task does not prove broad KRN advantage",
       "a quality win does not prove lower token cost",
-      "declared capabilities do not prove the agent used them causally"
+      "observed capability use does not prove the DecisionPacket caused the resulting implementation quality",
+      "the v1 runner does not independently prove causal use of the declared skill"
     ]
   };
 };
@@ -102,29 +118,91 @@ const runArm = async (
   arm: CodexCapabilityPlannedArm,
   graders: readonly CodexCapabilityEvalGrader[],
   usageSource: CodexCapabilityDryRunPlan["usage"]["source"],
+  configuredMcpServerIds: readonly string[],
   executeArm: CodexCapabilityArmExecutor
 ): Promise<CodexCapabilityArmArtifact> => {
   const execution = await executeArm(arm, graders);
   const usage = usageSource === "codex_exec_json"
     ? extractCodexExecUsageFromJsonLines(execution.stdoutJsonl)
     : unavailableUsage(usageSource);
+  const capabilityUse = observeCapabilityUse(execution.stdoutJsonl, configuredMcpServerIds);
   return {
     arm: arm.arm,
     profileHash: arm.profile.hash,
     capabilities: arm.capabilities,
     ...execution,
+    capabilityUse,
     usage,
-    invalidReasons: invalidReasonsForArm(execution, graders)
+    invalidReasons: invalidReasonsForArm(arm.arm, execution, graders, capabilityUse, configuredMcpServerIds.length > 0)
   };
 };
 
 const invalidReasonsForArm = (
+  arm: CodexCapabilityEvalArmName,
   execution: CodexCapabilityArmExecution,
-  graders: readonly CodexCapabilityEvalGrader[]
+  graders: readonly CodexCapabilityEvalGrader[],
+  capabilityUse: CodexCapabilityUseObservation,
+  configuredMcpRequired: boolean
 ): readonly string[] => [
   ...commandInvalidReasons(execution),
-  ...graders.flatMap((grader) => checkerInvalidReasons(execution, grader))
+  ...graders.flatMap((grader) => checkerInvalidReasons(execution, grader)),
+  ...(arm === "baseline" && capabilityUse.configuredMcpToolCallEvents > 0
+    ? ["baseline emitted a configured KRN MCP tool-call event"]
+    : []),
+  ...(arm === "krn" && configuredMcpRequired && capabilityUse.configuredMcpToolCallEvents === 0
+    ? ["treatment emitted no configured KRN MCP tool-call event"]
+    : [])
 ];
+
+const observeCapabilityUse = (
+  output: string,
+  configuredMcpServerIds: readonly string[]
+): CodexCapabilityUseObservation => {
+  let configuredMcpToolCallEvents = 0;
+  let genericMcpToolCallEvents = 0;
+  const observedMcpServerIds = new Set<string>();
+
+  for (const rawLine of output.split(/\r?\n/u)) {
+    const parsed = parseJsonLine(rawLine);
+    walkJson(parsed, (record) => {
+      if (record["type"] !== "mcp_tool_call" || record["status"] !== "completed" || record["error"] !== null) return;
+      const server = typeof record["server"] === "string" ? record["server"] : undefined;
+      if (server !== undefined && configuredMcpServerIds.includes(server)) {
+        configuredMcpToolCallEvents += 1;
+        observedMcpServerIds.add(server);
+      } else {
+        genericMcpToolCallEvents += 1;
+      }
+    });
+  }
+
+  return {
+    configuredMcpToolCallEvents,
+    observedMcpServerIds: [...observedMcpServerIds].sort(),
+    genericMcpToolCallEvents
+  };
+};
+
+const walkJson = (value: unknown, visit: (record: Record<string, unknown>) => void): void => {
+  if (Array.isArray(value)) {
+    value.forEach((entry) => walkJson(entry, visit));
+    return;
+  }
+  if (!isRecord(value)) return;
+  visit(value);
+  Object.values(value).forEach((entry) => walkJson(entry, visit));
+};
+
+const parseJsonLine = (rawLine: string): unknown => {
+  try {
+    return rawLine.trim().length === 0 ? undefined : JSON.parse(rawLine);
+  } catch {
+    return undefined;
+  }
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const commandInvalidReasons = (
   execution: CodexCapabilityArmExecution

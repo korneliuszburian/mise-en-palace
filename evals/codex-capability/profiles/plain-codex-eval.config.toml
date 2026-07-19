@@ -1,4 +1,6 @@
 web_search = "disabled"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
 
 [features]
 apps = false

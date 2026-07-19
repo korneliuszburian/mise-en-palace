@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseCodexCapabilityEvalManifest } from "./contracts.js";
 import { createCodexCapabilityDryRunPlan } from "./dry-run-plan.js";
+import { runCodexCapabilityEval, writeCodexCapabilityEvalArtifacts } from "./run-eval.js";
+import { prepareWeakJsonLiveExecutor } from "./weak-json-live-executor.js";
 
 export type CodexCapabilityEvalCliResult =
   | {
@@ -14,9 +18,9 @@ export type CodexCapabilityEvalCliResult =
       readonly message: string;
     };
 
-export const runCodexCapabilityEvalCli = (
+export const runCodexCapabilityEvalCli = async (
   args: readonly string[]
-): CodexCapabilityEvalCliResult => {
+): Promise<CodexCapabilityEvalCliResult> => {
   const parsed = parseArgs(args);
   if (parsed.status === "error") return parsed;
 
@@ -24,6 +28,22 @@ export const runCodexCapabilityEvalCli = (
   const manifestJson: unknown = JSON.parse(manifestText);
   const manifest = parseCodexCapabilityEvalManifest(manifestJson);
   const plan = createCodexCapabilityDryRunPlan(manifest);
+
+  if (parsed.mode === "live") {
+    const sourceRoot = process.cwd();
+    const executeArm = await prepareWeakJsonLiveExecutor({
+      sourceRoot,
+      outputRoot: resolve(sourceRoot, parsed.outputPath),
+      codexHome: process.env["CODEX_HOME"] ?? resolve(homedir(), ".codex"),
+      databaseUrl: process.env["KRN_DATABASE_URL"] ?? "postgres://krn:krn@localhost:54329/krn",
+      ...(process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"] === undefined
+        ? {}
+        : { codexExecutable: process.env["KRN_CAPABILITY_CODEX_EXECUTABLE"] })
+    }, manifest.target.commit, manifest.target.taskId);
+    const summary = await runCodexCapabilityEval(plan, executeArm);
+    writeCodexCapabilityEvalArtifacts(resolve(sourceRoot, parsed.outputPath), summary);
+    return { status: "ok", output: summary };
+  }
 
   return {
     status: "ok",
@@ -33,24 +53,31 @@ export const runCodexCapabilityEvalCli = (
 
 const parseArgs = (
   args: readonly string[]
-): { readonly status: "ok"; readonly manifestPath: string } | { readonly status: "error"; readonly message: string } => {
+): { readonly status: "ok"; readonly manifestPath: string; readonly mode: "dry-run" } | { readonly status: "ok"; readonly manifestPath: string; readonly mode: "live"; readonly outputPath: string } | { readonly status: "error"; readonly message: string } => {
   const manifestPath = readManifestPath(args);
-  return args.includes("--dry-run") && manifestPath !== undefined
-    ? { status: "ok", manifestPath }
+  if (manifestPath === undefined) return parseArgsError();
+  if (args.includes("--dry-run")) return { status: "ok", manifestPath, mode: "dry-run" };
+  const outputPath = readFlagValue(args, "--output");
+  return args.includes("--live") && outputPath !== undefined
+    ? { status: "ok", manifestPath, mode: "live", outputPath }
     : parseArgsError();
 };
 
 const readManifestPath = (args: readonly string[]): string | undefined => {
-  const manifestFlagIndex = args.indexOf("--manifest");
-  const manifestPath = manifestFlagIndex >= 0 ? args[manifestFlagIndex + 1] : undefined;
-  return manifestPath === undefined || manifestPath.trim().length === 0
+  return readFlagValue(args, "--manifest");
+};
+
+const readFlagValue = (args: readonly string[], flag: string): string | undefined => {
+  const flagIndex = args.indexOf(flag);
+  const value = flagIndex >= 0 ? args[flagIndex + 1] : undefined;
+  return value === undefined || value.trim().length === 0
     ? undefined
-    : manifestPath;
+    : value;
 };
 
 const parseArgsError = (): { readonly status: "error"; readonly message: string } => ({
   status: "error",
-  message: "Usage: codex-capability-eval --dry-run --manifest <path>"
+  message: "Usage: codex-capability-eval (--dry-run | --live --output <path>) --manifest <path>"
 });
 
 const isCliEntrypoint = (): boolean => {
@@ -60,7 +87,7 @@ const isCliEntrypoint = (): boolean => {
 
 if (isCliEntrypoint()) {
   try {
-    const result = runCodexCapabilityEvalCli(process.argv.slice(2));
+    const result = await runCodexCapabilityEvalCli(process.argv.slice(2));
     if (result.status === "ok") {
       process.stdout.write(`${JSON.stringify(result.output, null, 2)}\n`);
     } else {

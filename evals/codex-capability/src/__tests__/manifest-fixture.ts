@@ -4,18 +4,18 @@ import type {
 
 export const validManifest = (): CodexCapabilityEvalManifest => ({
   kind: "krn.codexCapabilityEvalManifest.v1",
-  id: "weak-json-boundary-dry-run",
+  id: "weak-json-boundary-001",
   question: "Does KRN context improve the same Codex model on matched repo tasks?",
   target: {
     repoPath: "tests/fixtures/target-repos/weak-json-boundary-typescript",
     commit: "028ee980a7167855bafd3f8beb3e388fb3529bad",
     taskId: "weak-json-boundary",
     prompt: "Repair invalid JSON handling with explicit result states.",
-    timeoutMs: 120000
+    timeoutMs: 240000
   },
   codex: {
     command: "codex",
-    execBaseArgs: ["exec", "--json", "--ephemeral"],
+    execBaseArgs: ["exec", "--json", "--ephemeral", "--ignore-rules", "--sandbox", "workspace-write"],
     model: "gpt-5.6-sol"
   },
   arms: {
