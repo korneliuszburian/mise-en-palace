@@ -687,13 +687,18 @@ describe("paired live Codex repair eval", () => {
       }
 
       const materializedContract = await readFile(join(targetRoot, "docs/repair-contract.md"), "utf8");
+      const materializedConfig = await readFile(join(targetRoot, "src/config.ts"), "utf8");
       const materializedService = await readFile(join(targetRoot, "src/userService.ts"), "utf8");
       const materializedTests = await readFile(join(targetRoot, "tests/userService.test.ts"), "utf8");
 
       expect(materializedContract).toContain("type CreateUserResult");
+      expect(materializedContract).toContain("parseJsonConfig(raw: string)");
+      expect(materializedContract).toContain("return `unknown`");
+      expect(materializedContract).toContain("JSON.parse");
       expect(materializedContract).toContain("status");
       expect(materializedContract).toContain("kind");
       expect(materializedContract).toContain("ok");
+      expect(materializedConfig).toContain("parseJsonConfig(raw: string): any");
       expect(materializedService).toContain("CreatedUser | null");
       expect(materializedService).not.toContain("CreateUserResult");
       expect(materializedTests).not.toContain("invalid_json");

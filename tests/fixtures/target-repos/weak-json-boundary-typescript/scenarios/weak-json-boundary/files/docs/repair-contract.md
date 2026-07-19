@@ -7,6 +7,9 @@ package and exported entry points.
 
 - Valid JSON containing a non-empty email and either the `admin` or `member`
   role creates and saves one user.
+- The raw JSON boundary is unknown-first: `parseJsonConfig(raw: string)` must
+  return `unknown` or an equivalent validated unknown value, and `JSON.parse`
+  output must not flow into domain logic as `any`.
 - When the role is omitted, the configured default is used only if it is
   supported; otherwise use a safe supported default.
 - Malformed JSON, a missing or empty email, and any unsupported role are
