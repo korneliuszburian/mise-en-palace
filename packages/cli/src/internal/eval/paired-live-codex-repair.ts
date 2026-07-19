@@ -80,12 +80,15 @@ export type HeldOutCheck = {
   readonly details: string;
 };
 
-export type PairedEvalFamily =
-  | "weak-json"
-  | "env-config"
-  | "async-job"
-  | "user-create"
-  | "temporal-policy-drift";
+export const pairedEvalFamilies = [
+  "env-config",
+  "async-job",
+  "weak-json",
+  "user-create",
+  "temporal-policy-drift"
+] as const;
+
+export type PairedEvalFamily = typeof pairedEvalFamilies[number];
 
 export type HeldOutFamilyContract = {
   readonly family: PairedEvalFamily;

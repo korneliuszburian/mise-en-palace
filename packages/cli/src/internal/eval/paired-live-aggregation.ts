@@ -4,6 +4,9 @@ import type {
   PairedRepairOutcome
 } from "./paired-live-codex-repair.js";
 import {
+  pairedEvalFamilies
+} from "./paired-live-codex-repair.js";
+import {
   readTrackedTrialArtifact,
   type TrackedTrialArtifact
 } from "./tracked-paired-live-codex-repair.js";
@@ -96,7 +99,6 @@ export type PairedEvalMixedReadback = PairedEvalAggregate & {
   readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
 };
 
-const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json", "user-create"];
 const qualityOutcomes: readonly PairedRepairOutcome[] = ["win", "tie", "loss"];
 
 const invalidReasonsForArtifact = (artifact: TrackedTrialArtifact): readonly string[] => {
@@ -304,7 +306,7 @@ export const aggregatePairedEvalArtifacts = (
     else seenRunIds.add(input.artifact.runId);
   }
   const indexedInputs = inputs.map((input, index) => ({ input, index }));
-  const familyAggregates = families.map((family) => aggregateFamily(
+  const familyAggregates = pairedEvalFamilies.map((family) => aggregateFamily(
     family,
     indexedInputs.filter(({ input }) => input.family === family),
     duplicateIndices

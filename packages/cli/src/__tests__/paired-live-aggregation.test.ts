@@ -42,7 +42,8 @@ describe("paired live eval aggregation", () => {
     const report = aggregatePairedEvalArtifacts([
       { family: "env-config", artifact: artifact("env-win", "passed", "win") },
       { family: "env-config", artifact: artifact("env-tie", "passed", "tie") },
-      { family: "async-job", artifact: artifact("async-loss", "passed", "loss") }
+      { family: "async-job", artifact: artifact("async-loss", "passed", "loss") },
+      { family: "temporal-policy-drift", artifact: artifact("temporal-win", "passed", "win") }
     ]);
 
     expect(report.families.find((family) => family.family === "env-config")).toMatchObject({
@@ -53,13 +54,21 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: 0.5
     });
-    expect(report.overall).toMatchObject({
+    expect(report.families.find((family) => family.family === "temporal-policy-drift")).toMatchObject({
       wins: 1,
+      ties: 0,
+      losses: 0,
+      qualityTrials: 1,
+      invalidTrials: 0,
+      winRateAmongQuality: 1
+    });
+    expect(report.overall).toMatchObject({
+      wins: 2,
       ties: 1,
       losses: 1,
-      qualityTrials: 3,
+      qualityTrials: 4,
       invalidTrials: 0,
-      winRateAmongQuality: 1 / 3
+      winRateAmongQuality: 0.5
     });
   });
 
@@ -162,7 +171,7 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: null
     });
-    expect(report.families).toHaveLength(4);
+    expect(report.families).toHaveLength(5);
     expect(report.comparison).toEqual({
       outcomeLevel: "cross-family",
       scoreLevel: "family-local-only",
@@ -173,6 +182,12 @@ describe("paired live eval aggregation", () => {
       reason: expect.stringContaining("do not currently carry a checker revision")
     });
     expect(report.families.find((family) => family.family === "user-create")).toMatchObject({
+      qualityTrials: 0,
+      invalidTrials: 0,
+      totalInputs: 0,
+      winRateAmongQuality: null
+    });
+    expect(report.families.find((family) => family.family === "temporal-policy-drift")).toMatchObject({
       qualityTrials: 0,
       invalidTrials: 0,
       totalInputs: 0,

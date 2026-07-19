@@ -3,9 +3,10 @@ import { stat } from "node:fs/promises";
 import {
   aggregatePairedEvalMixedInputs
 } from "./paired-live-aggregation.js";
-import type { PairedEvalFamily } from "./paired-live-codex-repair.js";
-
-const families: readonly PairedEvalFamily[] = ["env-config", "async-job", "weak-json", "user-create"];
+import {
+  pairedEvalFamilies,
+  type PairedEvalFamily
+} from "./paired-live-codex-repair.js";
 
 const usage = "Usage: run-paired-live-aggregate <family=artifact-directory> [...]";
 
@@ -13,7 +14,7 @@ const parseInput = (value: string): { readonly family: PairedEvalFamily; readonl
   const separator = value.indexOf("=");
   const family = separator < 0 ? undefined : value.slice(0, separator);
   const directory = separator < 0 ? "" : value.slice(separator + 1);
-  if (!families.includes(family as PairedEvalFamily) || directory.length === 0) {
+  if (!pairedEvalFamilies.includes(family as PairedEvalFamily) || directory.length === 0) {
     throw new Error(`${usage}\nInvalid input: ${value}`);
   }
   return { family: family as PairedEvalFamily, directory };
