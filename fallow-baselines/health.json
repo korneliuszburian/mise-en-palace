@@ -65,14 +65,6 @@
         "count": 3
       }
     },
-    "packages/cli/src/internal/smoke/target-repo-harness-smoke.ts": {
-      "complexity_critical": {
-        "count": 1
-      },
-      "crap_critical": {
-        "count": 1
-      }
-    },
     "packages/cli/src/run-db-smoke-command.ts": {
       "crap_moderate": {
         "count": 2
