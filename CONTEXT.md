@@ -20,6 +20,7 @@ this index stays short so it can be read every session.
 | Retained paired fixtures | [Fixture lifecycle](docs/CONTEXT_GOTCHAS.md#retained-fixture-lifecycle) | Retain only for capture, then run the guarded cleanup and verify zero owned rows. |
 | Trial interpretation | [Invalid versus quality outcome](docs/CONTEXT_GOTCHAS.md#trial-interpretation) | Missing obedience, capability, packet, or auth evidence is not a win/loss/tie. |
 | Trial chronology | [First trial versus rerun](docs/CONTEXT_GOTCHAS.md#first-trial-versus-rerun) | Report the original trial separately from reruns and harness debugging. |
+| Trial readback | [Aggregate and evidence identity](docs/CONTEXT_GOTCHAS.md#trial-readback) | New eval families and checker revisions must appear in aggregate and persistence readbacks before claims are reused. |
 | CLI argument forwarding | [Entrypoint arguments](docs/CONTEXT_GOTCHAS.md#entrypoint-arguments) | Verify what `pnpm` forwards before treating an argument failure as product behavior. |
 | Scope control | [Memory Core boundary](docs/CONTEXT_GOTCHAS.md#memory-core-boundary) | Improve governed context/evidence; do not grow an operator/executor platform without a consumer falsifier. |
 

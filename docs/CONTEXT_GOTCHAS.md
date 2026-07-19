@@ -90,6 +90,31 @@ milestone or a quality result.
 **Retirement:** Retire only when the experiment ledger records immutable trial
 identity and automatically labels reruns and preflight attempts.
 
+## Trial readback
+
+**Trigger:** A paired-live eval family, checker revision, artifact schema, or
+evidence field changes.
+
+**Safe action:** Update the public aggregate and persistence readbacks in the
+same slice or create an explicit blocking follow-up before using the result as
+frontier evidence. Aggregate readback must include every supported eval family.
+Persistence must prefer an artifact's exact `checkerRevision` over legacy
+artifact-kind fallbacks. Run the aggregate command against at least one current
+artifact when the changed surface is a trial result readback.
+
+**Evidence / non-proof:** The 2026-07-19 temporal-policy-drift checker-v3 win
+exposed two stale readback paths: aggregate omitted the new family until
+8f2181f3, and persistence would have collapsed the exact checker-v3 identity to
+the artifact-kind v2 fallback until 0287e03a. These fixes prove those readback
+surfaces now preserve the temporal family and checker revision for the observed
+shape; they do not prove causal KRN advantage, product readiness, source truth,
+or future artifact schema coverage.
+
+**Retirement:** Retire only when supported eval families and checker identities
+are derived from one schema-owned source and a focused test fails whenever a
+new family or checker revision is missing from aggregate or persistence
+readback.
+
 ## Entrypoint arguments
 
 **Trigger:** A script receives a path named `--`, or a command behaves
