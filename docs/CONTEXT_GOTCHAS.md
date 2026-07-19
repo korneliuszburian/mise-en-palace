@@ -74,6 +74,30 @@ proves configuration exposure at the CLI boundary, not model use or quality.
 load arm capabilities and a focused regression signal rejects missing or
 leaked capability configuration.
 
+## Hermetic fixture dependencies
+
+**Trigger:** A tracked paired-live source declares test or typecheck commands
+that depend on a package binary not contained as regular files in the source
+tree.
+
+**Safe action:** Materialize the exact dependency version before hashing and
+running the trial, with every required file physically contained in the source
+tree. Package-manager symlinks are not valid trial inputs. Treat a missing tool
+or rejected symlink as fixture preparation failure, preserve its chronology,
+and exclude the attempt from quality scoring.
+
+**Evidence / non-proof:** The 2026-07-19 async-job attempt first reached both
+arms but failed their public commands because `tsc` was absent. Installing it
+through pnpm then failed preflight because `node_modules/typescript` was a
+symlink. Dereferencing the same pinned TypeScript dependency produced a valid
+matched trial. This proves the fixture requirement for the current runner, not
+that installed dependencies are trustworthy or that either arm has higher
+quality.
+
+**Retirement:** Retire when fixture preparation owns dependency materialization
+and a focused preflight rejects missing or linked tools before launching either
+Codex arm.
+
 ## Trial interpretation
 
 **Trigger:** A tracked artifact is `invalid`, `blocked`, or `unverified`, or an
