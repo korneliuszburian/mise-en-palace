@@ -1,3 +1,5 @@
+import { postgresStoreIdentity } from "@krn/db/dev";
+
 import type {
   DoctorCheck,
   DoctorProofEvidence
@@ -15,18 +17,6 @@ export interface DoctorProofExpectation {
 const hasNonEmptyValue = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
-const parseDatabaseIdentity = (databaseUrl: string): string => {
-  try {
-    const parsed = new URL(databaseUrl);
-    const port = parsed.port.length > 0 ? parsed.port : "5432";
-    const database = parsed.pathname.replace(/^\//u, "") || "default";
-
-    return `${parsed.protocol}//${parsed.hostname}:${port}/${database}`;
-  } catch {
-    return "postgres-store:unparseable-url";
-  }
-};
-
 export const createDoctorProof = (
   databaseUrl: string,
   probeName: string,
@@ -36,7 +26,7 @@ export const createDoctorProof = (
   status: "passed",
   capturedAt: capturedAt.toISOString(),
   freshness: "current",
-  storeIdentity: `${parseDatabaseIdentity(databaseUrl)}#${probeName}`
+  storeIdentity: `${postgresStoreIdentity(databaseUrl)}#${probeName}`
 });
 
 export const isCurrentDoctorProof = (

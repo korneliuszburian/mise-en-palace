@@ -27,6 +27,14 @@ export interface ActivationRuntimeProofReadback {
   report: Record<string, unknown>;
 }
 
+interface CurrentRuntimeProofInput {
+  databaseUrl: string;
+  environmentFingerprintId: string | undefined;
+  proofKind: ActivationRuntimeProofReadback["proofKind"];
+  scopeKey: string;
+  now?: Date;
+}
+
 export const postgresStoreIdentity = (databaseUrl: string): string => {
   try {
     const parsed = new URL(databaseUrl);
@@ -88,13 +96,9 @@ export const persistActivationRuntimeProof = async (
   return row.id;
 };
 
-export const readCurrentActivationRuntimeProof = async (
+const readCurrentRuntimeProof = async (
   client: postgres.Sql,
-  input: {
-    databaseUrl: string;
-    environmentFingerprintId: string | undefined;
-    now?: Date;
-  }
+  input: CurrentRuntimeProofInput
 ): Promise<ActivationRuntimeProofReadback | undefined> => {
   const fingerprintId = input.environmentFingerprintId?.trim();
   if (fingerprintId === undefined || fingerprintId.length === 0) {
@@ -117,8 +121,8 @@ export const readCurrentActivationRuntimeProof = async (
       cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
       report
     from activation_runtime_proofs
-    where proof_kind = 'activation'
-      and scope_key = 'activation'
+    where proof_kind = ${input.proofKind}
+      and scope_key = ${input.scopeKey}
       and store_identity = ${storeIdentity}
       and environment_fingerprint_id = ${fingerprintId}
       and status = 'passed'
@@ -130,6 +134,21 @@ export const readCurrentActivationRuntimeProof = async (
   `;
 
   return row;
+};
+
+export const readCurrentActivationRuntimeProof = async (
+  client: postgres.Sql,
+  input: {
+    databaseUrl: string;
+    environmentFingerprintId: string | undefined;
+    now?: Date;
+  }
+): Promise<ActivationRuntimeProofReadback | undefined> => {
+  return readCurrentRuntimeProof(client, {
+    ...input,
+    proofKind: "activation",
+    scopeKey: "activation"
+  });
 };
 
 export const readCurrentTargetRepoRuntimeProof = async (
@@ -141,40 +160,10 @@ export const readCurrentTargetRepoRuntimeProof = async (
     now?: Date;
   }
 ): Promise<ActivationRuntimeProofReadback | undefined> => {
-  const fingerprintId = input.environmentFingerprintId?.trim();
-  if (fingerprintId === undefined || fingerprintId.length === 0) {
-    return undefined;
-  }
-
-  const now = input.now ?? new Date();
-  const capturedAfter = new Date(now.getTime() - freshnessWindowMs);
-  const storeIdentity = postgresStoreIdentity(input.databaseUrl);
-  const [row] = await client<ActivationRuntimeProofReadback[]>`
-    select
-      id,
-      proof_kind as "proofKind",
-      scope_key as "scopeKey",
-      project_id as "projectId",
-      environment_fingerprint_id as "environmentFingerprintId",
-      store_identity as "storeIdentity",
-      status,
-      captured_at as "capturedAt",
-      cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
-      report
-    from activation_runtime_proofs
-    where proof_kind = 'target_repo_harness'
-      and scope_key = ${input.scopeKey}
-      and store_identity = ${storeIdentity}
-      and environment_fingerprint_id = ${fingerprintId}
-      and status = 'passed'
-      and cleanup_remaining_marker_count = 0
-      and captured_at > ${capturedAfter.toISOString()}
-      and captured_at <= ${now.toISOString()}
-    order by captured_at desc
-    limit 1
-  `;
-
-  return row;
+  return readCurrentRuntimeProof(client, {
+    ...input,
+    proofKind: "target_repo_harness"
+  });
 };
 
 export const readCurrentInitConnectRuntimeProof = async (
@@ -186,40 +175,10 @@ export const readCurrentInitConnectRuntimeProof = async (
     now?: Date;
   }
 ): Promise<ActivationRuntimeProofReadback | undefined> => {
-  const fingerprintId = input.environmentFingerprintId?.trim();
-  if (fingerprintId === undefined || fingerprintId.length === 0) {
-    return undefined;
-  }
-
-  const now = input.now ?? new Date();
-  const capturedAfter = new Date(now.getTime() - freshnessWindowMs);
-  const storeIdentity = postgresStoreIdentity(input.databaseUrl);
-  const [row] = await client<ActivationRuntimeProofReadback[]>`
-    select
-      id,
-      proof_kind as "proofKind",
-      scope_key as "scopeKey",
-      project_id as "projectId",
-      environment_fingerprint_id as "environmentFingerprintId",
-      store_identity as "storeIdentity",
-      status,
-      captured_at as "capturedAt",
-      cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
-      report
-    from activation_runtime_proofs
-    where proof_kind = 'init_connect'
-      and scope_key = ${input.scopeKey}
-      and store_identity = ${storeIdentity}
-      and environment_fingerprint_id = ${fingerprintId}
-      and status = 'passed'
-      and cleanup_remaining_marker_count = 0
-      and captured_at > ${capturedAfter.toISOString()}
-      and captured_at <= ${now.toISOString()}
-    order by captured_at desc
-    limit 1
-  `;
-
-  return row;
+  return readCurrentRuntimeProof(client, {
+    ...input,
+    proofKind: "init_connect"
+  });
 };
 
 export const readCurrentCodexAdapterRuntimeProof = async (
@@ -230,38 +189,9 @@ export const readCurrentCodexAdapterRuntimeProof = async (
     now?: Date;
   }
 ): Promise<ActivationRuntimeProofReadback | undefined> => {
-  const fingerprintId = input.environmentFingerprintId?.trim();
-  if (fingerprintId === undefined || fingerprintId.length === 0) {
-    return undefined;
-  }
-
-  const now = input.now ?? new Date();
-  const capturedAfter = new Date(now.getTime() - freshnessWindowMs);
-  const storeIdentity = postgresStoreIdentity(input.databaseUrl);
-  const [row] = await client<ActivationRuntimeProofReadback[]>`
-    select
-      id,
-      proof_kind as "proofKind",
-      scope_key as "scopeKey",
-      project_id as "projectId",
-      environment_fingerprint_id as "environmentFingerprintId",
-      store_identity as "storeIdentity",
-      status,
-      captured_at as "capturedAt",
-      cleanup_remaining_marker_count as "cleanupRemainingMarkerCount",
-      report
-    from activation_runtime_proofs
-    where proof_kind = 'codex_adapter'
-      and scope_key = 'codex_adapter'
-      and store_identity = ${storeIdentity}
-      and environment_fingerprint_id = ${fingerprintId}
-      and status = 'passed'
-      and cleanup_remaining_marker_count = 0
-      and captured_at > ${capturedAfter.toISOString()}
-      and captured_at <= ${now.toISOString()}
-    order by captured_at desc
-    limit 1
-  `;
-
-  return row;
+  return readCurrentRuntimeProof(client, {
+    ...input,
+    proofKind: "codex_adapter",
+    scopeKey: "codex_adapter"
+  });
 };
