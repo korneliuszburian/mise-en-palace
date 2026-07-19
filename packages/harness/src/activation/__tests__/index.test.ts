@@ -1156,7 +1156,7 @@ describe("activation engine", () => {
 
   it("classifies AMA-shaped selectedKnowledge misses with useful linked evidence as an exploration candidate", () => {
     const readback = buildActivationUtilityLabReadback({
-      selectedKnowledgeCount: 0,
+      targetSpecificKnowledgeCount: 0,
       answerUsefulness: "partly_useful_missing_document",
       supportingClaims: 8,
       supportingDocuments: 0,
@@ -1169,7 +1169,7 @@ describe("activation engine", () => {
       selectedKnowledge: {
         signal: "selected_knowledge",
         strength: "missing",
-        reasons: ["selectedKnowledge returned no packets."]
+        reasons: ["selectedKnowledge returned no target-specific packets."]
       },
       sourceLinkGraph: {
         signal: "source_link_graph",
@@ -1189,7 +1189,7 @@ describe("activation engine", () => {
 
   it("keeps selected knowledge as the primary utility signal when present", () => {
     const readback = buildActivationUtilityLabReadback({
-      selectedKnowledgeCount: 1,
+      targetSpecificKnowledgeCount: 1,
       answerUsefulness: "useful",
       supportingClaims: 1,
       supportingDocuments: 1,
@@ -1202,7 +1202,7 @@ describe("activation engine", () => {
       selectedKnowledge: {
         signal: "selected_knowledge",
         strength: "useful",
-        reasons: ["selectedKnowledge returned 1 packet(s)."]
+        reasons: ["selectedKnowledge returned 1 target-specific packet(s)."]
       },
       verdict: "selected_knowledge_sufficient",
       recommendedNextAction:
@@ -1212,7 +1212,7 @@ describe("activation engine", () => {
 
   it("rejects activation utility changes when both signals are missing", () => {
     const readback = buildActivationUtilityLabReadback({
-      selectedKnowledgeCount: 0,
+      targetSpecificKnowledgeCount: 0,
       answerUsefulness: "not_useful",
       supportingClaims: 0,
       supportingDocuments: 0,

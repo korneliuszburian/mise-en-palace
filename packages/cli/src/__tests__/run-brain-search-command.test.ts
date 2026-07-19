@@ -1237,7 +1237,11 @@ describe("runBrainSearchCommand", () => {
         ]
       },
       activationUtility: {
-        verdict: "selected_knowledge_sufficient"
+        selectedKnowledge: {
+          strength: "missing",
+          reasons: ["selectedKnowledge returned no target-specific packets."]
+        },
+        verdict: "linked_evidence_exploration_candidate"
       },
       recommendedNextAction:
         "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient."
@@ -1565,7 +1569,7 @@ describe("runBrainSearchCommand", () => {
         selectedKnowledge: {
           signal: "selected_knowledge",
           strength: "missing",
-          reasons: ["selectedKnowledge returned no packets."]
+          reasons: ["selectedKnowledge returned no target-specific packets."]
         },
         sourceLinkGraph: {
           signal: "source_link_graph",

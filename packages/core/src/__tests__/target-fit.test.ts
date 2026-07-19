@@ -30,6 +30,23 @@ describe("target fit", () => {
     }).targetFit).toBe("noise");
   });
 
+  it("does not treat the generic real qualifier as target-specific", () => {
+    expect(classifyTargetFit({
+      query: "krn-seo workbench real client",
+      text: "paired eval records real model-facing application evidence"
+    })).toMatchObject({
+      targetFit: "adjacent_knowledge",
+      targetFitReasons: expect.arrayContaining([
+        "no distinctive query token matched."
+      ])
+    });
+
+    expect(classifyTargetFit({
+      query: "EKOLOGUS real client",
+      text: "EKOLOGUS project source decision"
+    }).targetFit).toBe("target_specific");
+  });
+
   it("summarizes selected knowledge target fit", () => {
     expect(summarizeTargetFit([]).verdict).toBe("no_selected_knowledge");
     expect(summarizeTargetFit([
