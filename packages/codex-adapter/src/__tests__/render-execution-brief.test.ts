@@ -314,7 +314,9 @@ describe("renderExecutionBrief", () => {
     expect(brief.antiMemoryWarnings).toEqual([
       "anti_memory_record:anti-1 | unsafe | Do not treat old markdown memory as runtime truth."
     ]);
-    expect(brief.stopCondition).toBe("Stop before Codex execution or hidden state mutation.");
+    expect(brief.stopCondition).toBe(
+      "Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation."
+    );
     expect(brief.rollbackExpectation).toBe(evidenceContract.rollbackPath);
     expect(brief.doesNotProve).toContain("Codex executed the work.");
 
@@ -519,7 +521,9 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
     expect(rendered).toContain(`Review burden: ${evidenceContract.reviewBurden}`);
-    expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
+    expect(rendered).toContain(
+      "Stop Condition: Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation."
+    );
     expect(rendered).toContain(`Rollback Expectation: ${evidenceContract.rollbackPath}`);
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");
     expect(rendered).toContain("What This Does Not Prove:");
@@ -547,7 +551,9 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Explicit Exclusions:");
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
-    expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
+    expect(rendered).toContain(
+      "Stop Condition: Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation."
+    );
     expect(rendered).toContain("What This Does Not Prove:");
 
     expect(rendered).not.toContain("Observation Prefix:");
@@ -847,6 +853,9 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Packet Status: weak_context");
     expect(rendered).toContain("Packet Readiness Reasons:");
     expect(rendered).toContain("- missing_rejected_path_evidence");
+    expect(rendered).toContain(
+      "Stop Condition: Proceed only with bounded Codex execution while preserving the packet readiness caveats; stop before hidden state mutation."
+    );
     expect(describeExecutionBriefProfile(brief).sections.find(
       (section) => section.id === "abstention_reasons"
     )).toMatchObject({
