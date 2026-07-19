@@ -1,0 +1,12 @@
+web_search = "disabled"
+
+[features]
+apps = false
+multi_agent = false
+plugins = false
+
+[mcp_servers.krn_decision_packet]
+command = "bash"
+args = ["-lc", "exec pnpm --silent --dir \"$KRN_SOURCE_ROOT\" --filter @krn/cli mcp:decision-packet"]
+startup_timeout_sec = 30
+tool_timeout_sec = 120

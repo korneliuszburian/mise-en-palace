@@ -1,0 +1,6 @@
+web_search = "disabled"
+
+[features]
+apps = false
+multi_agent = false
+plugins = false
