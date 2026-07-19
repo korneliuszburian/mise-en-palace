@@ -82,10 +82,62 @@ const adjacentKnowledgeTokens = new Set([
 const targetFitTokens = (text: string): readonly string[] =>
   [...text.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
 
+const explicitTargetIdentifierMatches = (
+  query: string,
+  text: string
+): readonly string[] => {
+  const textTokens = new Set(targetFitTokens(text));
+  const namedIdentifiers = [...query.matchAll(/[\p{L}\p{N}]+/gu)]
+    .map((match) => match[0])
+    .filter((identifier) => (
+      (identifier.length > 6 && identifier === identifier.toUpperCase()) ||
+      (
+        identifier.length >= 4 &&
+        identifier !== identifier.toUpperCase() &&
+        /\p{Lu}.*\p{Lu}/u.test(identifier)
+      )
+    ))
+    .map((identifier) => identifier.toLowerCase());
+  const matchingNamedIdentifiers = namedIdentifiers.filter((identifier) =>
+    textTokens.has(identifier)
+  );
+  const compoundIdentifiers = [...query.toLowerCase().matchAll(
+    /\b[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)+\b/gu
+  )].map((match) => match[0]);
+  const matchingCompoundIdentifiers = compoundIdentifiers.filter((identifier) =>
+    identifier.split("-")
+      .filter((token) => token.length >= 3)
+      .every((token) => textTokens.has(token))
+  );
+
+  return [...new Set([...matchingNamedIdentifiers, ...matchingCompoundIdentifiers])];
+};
+
 const distinctiveQueryTokens = (query: string): readonly string[] =>
   targetFitTokens(query).filter(
-    (token) => token.length >= 4 && !genericQueryTokens.has(token)
+    (token) => token.length >= 5 && !genericQueryTokens.has(token)
   );
+
+const targetSpecificClassification = (input: {
+  distinctiveMatches: readonly string[];
+  targetIdentifierMatches: readonly string[];
+}): TargetFitClassification | undefined => {
+  if (input.targetIdentifierMatches.length === 0 && input.distinctiveMatches.length < 2) {
+    return undefined;
+  }
+
+  return {
+    targetFit: "target_specific",
+    targetFitReasons: [
+      ...(input.targetIdentifierMatches.length === 0
+        ? []
+        : [`matched explicit target identifier(s): ${input.targetIdentifierMatches.join(", ")}.`]),
+      ...(input.distinctiveMatches.length < 2
+        ? []
+        : [`matched multiple distinctive query token(s): ${input.distinctiveMatches.join(", ")}.`])
+    ]
+  };
+};
 
 export const classifyTargetFit = (input: {
   query: string;
@@ -111,16 +163,16 @@ export const classifyTargetFit = (input: {
     };
   }
 
-  const distinctiveMatches = queryTokens.filter((token) => packetTokens.has(token));
+  const distinctiveMatches = [...new Set(
+    queryTokens.filter((token) => packetTokens.has(token))
+  )];
+  const targetIdentifierMatches = explicitTargetIdentifierMatches(input.query, input.text);
+  const targetSpecific = targetSpecificClassification({
+    distinctiveMatches,
+    targetIdentifierMatches
+  });
 
-  if (distinctiveMatches.length > 0) {
-    return {
-      targetFit: "target_specific",
-      targetFitReasons: [
-        `matched distinctive query token(s): ${distinctiveMatches.join(", ")}.`
-      ]
-    };
-  }
+  if (targetSpecific !== undefined) return targetSpecific;
 
   const allQueryTokenMatches = targetFitTokens(input.query).filter(
     (token) => token.length >= 4 && packetTokens.has(token)

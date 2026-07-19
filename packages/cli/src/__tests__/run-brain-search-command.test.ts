@@ -668,7 +668,7 @@ describe("runBrainSearchCommand", () => {
         ]
       }
     });
-    expect(JSON.stringify(parsed)).toContain("store-backed source/search evidence");
+    expect(JSON.stringify(parsed)).toContain("linked_evidence_exploration_candidate");
     expect(JSON.stringify(parsed)).not.toContain("memory_store");
   });
 
@@ -1134,7 +1134,7 @@ describe("runBrainSearchCommand", () => {
           expect.objectContaining({
             id: "target-claim",
             targetFit: "target_specific",
-            targetFitReasons: ["matched distinctive query token(s): ekologus."]
+            targetFitReasons: ["matched explicit target identifier(s): ekologus."]
           }),
           expect.objectContaining({
             id: "generic-claim",
@@ -1658,7 +1658,7 @@ describe("runBrainSearchCommand", () => {
     expect(result.stdout).toContain("missingEvidence: included SearchDocument evidence");
     expect(result.stdout).toContain("Activation utility:");
     expect(result.stdout).toContain("targetFit:");
-    expect(result.stdout).toContain("selectedKnowledge: useful");
+    expect(result.stdout).toContain("selectedKnowledge: missing");
     expect(result.stdout).toContain("sourceLinkGraph: useful");
   });
 

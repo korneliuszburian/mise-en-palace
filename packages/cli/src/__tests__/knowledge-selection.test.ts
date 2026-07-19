@@ -69,7 +69,7 @@ describe("knowledgeSelection", () => {
       ...validKnowledgeReadModel,
       knowledgeId: "ts-boundary-knowledge-parser-exemplar",
       targetFit: "target_specific",
-      targetFitReasons: ["matched distinctive query token(s): parser, exemplar."]
+      targetFitReasons: ["matched multiple distinctive query token(s): parser, exemplar."]
     }]);
     expect(result.targetFitSummary.verdict).toBe("target_specific_selected_knowledge");
     expect(result.recommendedNextAction).toContain("Use target-specific selectedKnowledge");
