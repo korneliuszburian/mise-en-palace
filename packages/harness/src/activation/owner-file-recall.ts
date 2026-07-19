@@ -44,11 +44,14 @@ export interface TargetActivationReadModel {
   localPathHints: readonly string[];
   sourceSeeds: readonly TargetActivationSourceSeed[];
   ownerFiles?: readonly TargetActivationOwnerFile[];
+  unavailableOwnerFilePaths?: readonly string[];
   trustExclusions: readonly TargetActivationTrustExclusion[];
 }
 
 export type TargetOwnerFileRecallStatus =
   | "owner_files_available"
+  | "owner_files_partially_available"
+  | "configured_owner_files_unavailable"
   | "missing_owner_file_read_model";
 
 export interface TargetOwnerFileRecallAssessment {
@@ -57,6 +60,7 @@ export interface TargetOwnerFileRecallAssessment {
   explanation: string;
   sourceSeedPaths: readonly string[];
   ownerFilePaths: readonly string[];
+  unavailableOwnerFilePaths?: readonly string[];
   doesNotProve: string;
 }
 
@@ -466,16 +470,40 @@ export const assessTargetOwnerFileRecall = (
   readModel: TargetActivationReadModel
 ): TargetOwnerFileRecallAssessment => {
   const ownerFilePaths = (readModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path);
+  const unavailableOwnerFilePaths = readModel.unavailableOwnerFilePaths ?? [];
   const sourceSeedPaths = readModel.sourceSeeds.map((seed) => seed.path);
 
   if (ownerFilePaths.length > 0) {
+    const partiallyAvailable = unavailableOwnerFilePaths.length > 0;
+
     return {
-      status: "owner_files_available",
-      reason: "target_read_model_provided_owner_files",
-      explanation: "Target read model can surface exact owner-file candidates below named source roots.",
+      status: partiallyAvailable
+        ? "owner_files_partially_available"
+        : "owner_files_available",
+      reason: partiallyAvailable
+        ? "configured_owner_files_partially_available"
+        : "target_read_model_provided_owner_files",
+      explanation: partiallyAvailable
+        ? "Target read model can surface current owner-file candidates and reports unavailable configured paths separately."
+        : "Target read model can surface exact owner-file candidates below named source roots.",
       sourceSeedPaths,
       ownerFilePaths,
-      doesNotProve: "Owner-file candidates do not prove the files are correct, complete, current, or sufficient for the task."
+      ...(partiallyAvailable ? { unavailableOwnerFilePaths } : {}),
+      doesNotProve: partiallyAvailable
+        ? "Owner-file availability does not prove the files are correct, complete, or sufficient for the task."
+        : "Owner-file candidates do not prove the files are correct, complete, current, or sufficient for the task."
+    };
+  }
+
+  if (unavailableOwnerFilePaths.length > 0) {
+    return {
+      status: "configured_owner_files_unavailable",
+      reason: "configured_owner_files_missing_from_connected_repo",
+      explanation: "Configured owner-file paths were checked against connected repo paths and are unavailable, so they cannot enter activation.",
+      sourceSeedPaths,
+      ownerFilePaths,
+      unavailableOwnerFilePaths,
+      doesNotProve: "Unavailable configured paths do not prove no replacement owner files exist; the current read model needs review."
     };
   }
 

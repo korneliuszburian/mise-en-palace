@@ -1,5 +1,6 @@
 import {
   access,
+  realpath,
   readFile
 } from "node:fs/promises";
 import path from "node:path";
@@ -8,6 +9,23 @@ export const pathExists = async (targetPath: string): Promise<boolean> => {
   try {
     await access(targetPath);
     return true;
+  } catch {
+    return false;
+  }
+};
+
+export const pathExistsWithin = async (
+  rootPath: string,
+  relativePath: string
+): Promise<boolean> => {
+  try {
+    const resolvedRoot = await realpath(rootPath);
+    const resolvedTarget = await realpath(path.resolve(resolvedRoot, relativePath));
+    const relativeTarget = path.relative(resolvedRoot, resolvedTarget);
+
+    return relativeTarget.length > 0 &&
+      !relativeTarget.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relativeTarget);
   } catch {
     return false;
   }
