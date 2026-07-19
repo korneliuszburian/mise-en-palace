@@ -126,12 +126,18 @@ differently when invoked through `pnpm` versus its direct package entrypoint.
 **Safe action:** Inspect `process.argv` at the real entrypoint and use the direct
 package command while diagnosing. Add explicit `--` normalization only to the
 owned entrypoint that needs it; do not treat argument forwarding as a Memory
-Core behavior failure.
+Core behavior failure. For tracked paired-live attempts, pass an absolute
+attempt directory or run the local `tsx` entrypoint from the repository root:
+package-scoped `pnpm exec` can leave relative attempt paths under the package
+cwd and fail before packet fetch or live Codex execution.
 
 **Evidence / non-proof:** The retained fixture prepare/cleanup entrypoints
 normalize pnpm's separator; the tracked runner currently requires direct
-entrypoint invocation for the same reason. This proves an invocation gotcha,
-not a need for a broad command wrapper.
+entrypoint invocation for the same reason. The 2026-07-19 async-job durable
+trial produced two pre-live blocked artifacts when the attempt path was parsed
+or resolved through the package invocation; the absolute-path retry produced a
+valid quality trial. This proves an invocation gotcha, not a need for a broad
+command wrapper and not a Memory Core quality result.
 
 **Retirement:** Retire after every supported package entrypoint has one focused
 argument-forwarding proof and no path can be interpreted as the separator.
