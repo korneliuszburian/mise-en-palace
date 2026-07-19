@@ -36,8 +36,12 @@ standard expired.
 
 KRN is being built to beat plain Codex plus notes plus grep on governance,
 temporal correctness, rejected-path recall, source fidelity, abstention, and
-task usefulness. That is not proven yet. The near-term work is to build the
-mechanisms and falsifiers that can measure it honestly. KRN does not need to
+task usefulness. A first matched three-case internal-alpha series now shows one
+bounded temporal-correctness win and two quality ties against plain Codex under
+the combined KRN MCP-plus-skill treatment. KRN used more model tokens in every case.
+This is evidence that governed context can change one relevant outcome, not yet
+evidence of repeatability, isolated MCP or skill causality, lower token cost,
+arbitrary-repository portability, or broad superiority. KRN does not need to
 win raw recall against a comprehensive notes dump.
 
 ## Product Shape
@@ -79,6 +83,10 @@ Built enough to keep:
   explicit memory/source non-promotion boundaries;
 - a minimal read-only `krn_decision_packet` MCP transport with one bounded
   target-repo consumer proof;
+- one real mutating dogfood loop whose checksum-bound usefulness feedback
+  changed the next DecisionPacket readback;
+- retained paired-live evidence for three matched Codex tasks across async-job,
+  temporal-policy, and weak-input failure families;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -86,16 +94,19 @@ Not product-ready:
 
 - no dashboard/API or broad MCP product surface beyond the minimal read-only
   `krn_decision_packet` wrapper;
-- no external operator/product proof beyond the bounded target-repo harness;
+- no external operator/product proof beyond bounded target-repo harnesses;
+- no replicated advantage claim: the first matched series produced one KRN
+  quality win and two ties, with higher KRN token use in all three cases;
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
 - no complete temporal consensus engine;
 - no markdown-backed runtime memory.
 
-The next phase is not a UI phase. It is the phase where KRN builds enough
-MemoryCoordinator, decision-packet, feedback, and temporal-consensus machinery
-to run honest comparisons against Codex plus notes plus grep.
+The next phase is not a UI or executor phase. It is repeated use on ordinary
+engineering tasks: strengthen task-standard activation and temporal consensus
+where observed failures demand it, then replicate matched comparisons without
+growing a benchmark platform.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
@@ -648,7 +659,7 @@ hallucinated basic repository facts. The explicit global
 tool-free from isolated context and binds findings to current local line hashes.
 It is still invalid when factual claims fail deterministic local validation.
 
-## Near-Term Roadmap
+## Milestone Roadmap
 
 ### Phase 1: Clean Authority Surface
 
@@ -673,6 +684,9 @@ Done when:
 
 ### Phase 2: Decision-Packet Falsifier
 
+Status: complete for the internal-alpha boundary; retain and extend only when a
+new product claim needs a distinct falsifier.
+
 Goal: create the first Global Workspace falsifier that can later prove or
 disprove whether KRN beats notes plus grep on engineering tasks.
 
@@ -694,6 +708,10 @@ Done when:
 
 ### Phase 3: Store-Backed Feedback Loop
 
+Status: complete for the internal-alpha boundary. A real mutating dogfood task
+returned checksum-bound usefulness, and the latest feedback changed subsequent
+selection/readback without promoting truth by side effect.
+
 Goal: stop using JSON/markdown ledgers for memory evolution.
 
 Work:
@@ -711,6 +729,10 @@ Done when:
 - KRN can explain why knowledge was demoted or retained.
 
 ### Phase 4: Task-Standard Activation
+
+Status: partially proven. The bounded public loop works and temporal context
+changed one held-out result; repeatability across ordinary repositories remains
+the next product risk.
 
 Goal: make KRN useful for normal coding work.
 
@@ -840,36 +862,56 @@ Rejected alternatives:
 
 ## Current Tranche Status
 
-The useful-kernel-before-surface tranche is complete:
+The useful-kernel-before-surface tranche has a usable internal-alpha loop, but
+remains below product proof:
 
 1. The notes-baseline DecisionPacket falsifier is hardened with explicit
    abstention coverage.
 2. Store-backed usefulness feedback can change later activation and
    DecisionPacket selection.
-3. Task-standard activation covers normal frontend, backend, and package
-   coding tasks with current standards, rejected paths, and verification
-   commands.
+3. Task-standard activation has internal behavior coverage for frontend,
+   backend, and package coding tasks with current standards, rejected paths, and
+   verification commands.
 4. The second-repo fixture proof runs across three target-repo corpora without
    KRN self-repo contamination.
 5. Broader MCP/API/dashboard expansion is rejected for now; the only product
    transport is the read-only `krn_decision_packet` wrapper.
 
-This proves a useful internal-alpha kernel loop, not broad product readiness,
-commercial validation, arbitrary repository portability, live Codex obedience,
-or complete temporal consensus.
+The first retained matched live series adds bounded outcome evidence:
 
-The current P1 hardening direction is Phase 5/6 cleanup:
+- async-job: tie, `7:7`;
+- temporal-policy with the current source hidden from the target repo: KRN win,
+  `7:6`;
+- weak JSON/input boundary: tie, `3:3`.
+
+All three used the same pinned model, Codex profile, sandbox policy, and
+checker revision. The baseline had no KRN capabilities; each KRN arm produced
+structured MCP and skill-use events plus observed decision application. One
+earlier async-job attempt was invalid because the fixture lacked a runnable
+local TypeScript compiler and is excluded from quality results. The valid
+artifacts were persisted before guarded fixture cleanup.
+
+This proves a useful internal-alpha kernel loop and one bounded combined-
+capability temporal-quality advantage. It does not prove repeatable advantage,
+isolated MCP-versus-skill causality, token efficiency, commercial validation,
+arbitrary-repository portability, broad Codex obedience, or complete temporal
+consensus. KRN consumed more model tokens in every valid case.
+
+The current P1 hardening direction is ordinary-task replication and Phase 5
+cleanup:
 
 1. Keep source and temporal consensus aligned with activation: accepted, stale,
    superseded, rejected, and unsupported claims must affect packets exactly as
    the roadmap says.
-2. Keep feedback-driven demotion, supersession, and rejection in store-backed
+2. Replicate the temporal-quality result on independently sourced ordinary
+   tasks and treat higher token use as a product cost to reduce, not hide.
+3. Keep feedback-driven demotion, supersession, and rejection in store-backed
    memory/source maintenance paths, with no direct truth mutation.
-3. Keep maintenance runtime truth explicit: per-record executor yes; daemon,
+4. Keep maintenance runtime truth explicit: per-record executor yes; daemon,
    scheduler, and autonomous promotion no.
-4. Close corpus/documentation slop by converting useful source-to-decision rows
+5. Close corpus/documentation slop by converting useful source-to-decision rows
    into store/eval inputs and deleting decorative files.
-5. Reconsider broader MCP/API only when a real consumer needs more than the
+6. Reconsider broader MCP/API only when a real consumer needs more than the
    current read-only packet fetch.
 
 Beads is the durable source for exact issue IDs, dependencies, and status.
