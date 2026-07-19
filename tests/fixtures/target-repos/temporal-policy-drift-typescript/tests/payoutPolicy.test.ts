@@ -13,6 +13,23 @@ const highRiskEu = decidePayoutPolicy({
 assert.equal(highRiskEu.action, "legacy_hold");
 assert.equal(highRiskEu.validFrom, "2025-01-01");
 
+const thresholdRiskEu = decidePayoutPolicy({
+  region: "EU",
+  riskScore: 80,
+  requestedAt: "2026-06-15"
+});
+
+assert.equal(thresholdRiskEu.action, "legacy_hold");
+assert.equal(thresholdRiskEu.validFrom, "2025-01-01");
+
+const belowThresholdEu = decidePayoutPolicy({
+  region: "EU",
+  riskScore: 79,
+  requestedAt: "2026-06-15"
+});
+
+assert.equal(belowThresholdEu.action, "manual_review");
+
 const highRiskUs = decidePayoutPolicy({
   region: "US",
   riskScore: 95,
@@ -21,7 +38,12 @@ const highRiskUs = decidePayoutPolicy({
 
 assert.equal(highRiskUs.action, "manual_review");
 
-const observedActions: readonly string[] = [highRiskEu.action, highRiskUs.action];
+const observedActions: readonly string[] = [
+  highRiskEu.action,
+  thresholdRiskEu.action,
+  belowThresholdEu.action,
+  highRiskUs.action
+];
 
 if (observedActions.includes("auto_approve")) {
   throw new Error("High-risk payout shortcut must not auto-approve.");

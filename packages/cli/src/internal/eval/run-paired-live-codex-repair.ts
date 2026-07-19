@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 
 import {
+  pairedLiveCheckerRevision,
   runPairedRepairChecker
 } from "./paired-live-codex-repair.js";
 import {
@@ -32,7 +33,7 @@ const main = async (): Promise<void> => {
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot: checkerRoot,
     evaluatorVersion: "paired-live-codex-repair.v2",
-    checkerVersion: "paired-live-codex-repair-checker.v2"
+    checkerVersion: pairedLiveCheckerRevision
   });
 
   const output = {

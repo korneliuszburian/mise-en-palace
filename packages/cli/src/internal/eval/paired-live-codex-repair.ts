@@ -13,7 +13,7 @@ import {
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
 /** Canonical held-out checker identity bound into every new tracked artifact. */
-export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v2" as const;
+export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v3" as const;
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;
@@ -28,6 +28,9 @@ export type HeldOutRuntimeObservations = {
   readonly redactionSafe?: boolean;
   readonly enqueueAccepted?: boolean;
   readonly temporalPolicyCurrent?: boolean;
+  readonly temporalPolicyThresholdCurrent?: boolean;
+  readonly temporalPolicyBelowThresholdDefault?: boolean;
+  readonly temporalPolicyNonEuDefault?: boolean;
   readonly validCreation?: boolean;
 };
 
@@ -421,7 +424,10 @@ const runtimeObservationPassed = (
     case "async-job":
       return observations.enqueueAccepted === true;
     case "temporal-policy-drift":
-      return observations.temporalPolicyCurrent === true;
+      return observations.temporalPolicyCurrent === true &&
+        observations.temporalPolicyThresholdCurrent === true &&
+        observations.temporalPolicyBelowThresholdDefault === true &&
+        observations.temporalPolicyNonEuDefault === true;
     case "weak-json":
       return observationPassed(observations.invalidJson) &&
         observationPassed(observations.missingEmail) &&
@@ -1146,24 +1152,56 @@ try {
     writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { enqueueAccepted } }) + "\\n");
   } else if (family === "temporal-policy-drift") {
     let temporalPolicyCurrent = false;
+    let temporalPolicyThresholdCurrent = false;
+    let temporalPolicyBelowThresholdDefault = false;
+    let temporalPolicyNonEuDefault = false;
     try {
       if (typeof service.decidePayoutPolicy === "function") {
-        const output = service.decidePayoutPolicy({
+        const actionIs = (output, expectedAction) => {
+          const record = isRecord(output) ? output : undefined;
+          const action = [record?.action, record?.status, record?.kind, record?.state]
+            .find((value) => value === expectedAction);
+          return action === expectedAction;
+        };
+        const decisionMatches = (output, expectedAction, expectedValidFrom) => {
+          const record = isRecord(output) ? output : undefined;
+          const validFrom = [record?.validFrom, record?.effectiveFrom]
+            .find((value) => value === expectedValidFrom);
+          return actionIs(output, expectedAction) && validFrom === expectedValidFrom;
+        };
+        temporalPolicyCurrent = decisionMatches(service.decidePayoutPolicy({
           region: "EU",
           riskScore: 95,
           requestedAt: "2026-06-15"
-        });
-        const record = isRecord(output) ? output : undefined;
-        const action = [record?.action, record?.status, record?.kind, record?.state]
-          .find((value) => value === "hold_for_policy_review");
-        const validFrom = [record?.validFrom, record?.effectiveFrom]
-          .find((value) => value === "2026-06-01");
-        temporalPolicyCurrent = action === "hold_for_policy_review" && validFrom === "2026-06-01";
+        }), "hold_for_policy_review", "2026-06-01");
+        temporalPolicyThresholdCurrent = decisionMatches(service.decidePayoutPolicy({
+          region: "EU",
+          riskScore: 80,
+          requestedAt: "2026-06-15"
+        }), "hold_for_policy_review", "2026-06-01");
+        temporalPolicyBelowThresholdDefault = actionIs(service.decidePayoutPolicy({
+          region: "EU",
+          riskScore: 79,
+          requestedAt: "2026-06-15"
+        }), "manual_review");
+        temporalPolicyNonEuDefault = actionIs(service.decidePayoutPolicy({
+          region: "US",
+          riskScore: 95,
+          requestedAt: "2026-06-15"
+        }), "manual_review");
       }
     } catch {
       // A target rejection is an observed contract failure, not an unavailable observer.
     }
-    writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { temporalPolicyCurrent } }) + "\\n");
+    writeSync(1, marker + JSON.stringify({
+      runtimeAvailable: true,
+      observations: {
+        temporalPolicyCurrent,
+        temporalPolicyThresholdCurrent,
+        temporalPolicyBelowThresholdDefault,
+        temporalPolicyNonEuDefault
+      }
+    }) + "\\n");
   } else {
   const createUser = service.createUserFromJson;
   const listUsers = service.listSavedUsers;
@@ -1210,7 +1248,10 @@ const unknownRuntimeObservations = (): HeldOutRuntimeObservations => ({
   invalidRole: unknownObservation(),
   redactionSafe: false,
   enqueueAccepted: false,
-  temporalPolicyCurrent: false
+  temporalPolicyCurrent: false,
+  temporalPolicyThresholdCurrent: false,
+  temporalPolicyBelowThresholdDefault: false,
+  temporalPolicyNonEuDefault: false
 });
 
 const runtimeModulePathFor = (family: PairedEvalFamily): string => {
@@ -1245,7 +1286,10 @@ const parseFamilyRuntimeObservations = (
     case "temporal-policy-drift":
       return {
         ...unknownRuntimeObservations(),
-        temporalPolicyCurrent: observations["temporalPolicyCurrent"] === true
+        temporalPolicyCurrent: observations["temporalPolicyCurrent"] === true,
+        temporalPolicyThresholdCurrent: observations["temporalPolicyThresholdCurrent"] === true,
+        temporalPolicyBelowThresholdDefault: observations["temporalPolicyBelowThresholdDefault"] === true,
+        temporalPolicyNonEuDefault: observations["temporalPolicyNonEuDefault"] === true
       };
     case "weak-json":
     case "user-create":
@@ -1256,6 +1300,9 @@ const parseFamilyRuntimeObservations = (
         redactionSafe: false,
         enqueueAccepted: false,
         temporalPolicyCurrent: false,
+        temporalPolicyThresholdCurrent: false,
+        temporalPolicyBelowThresholdDefault: false,
+        temporalPolicyNonEuDefault: false,
         ...(family === "user-create"
           ? { validCreation: observations["validCreation"] === true }
           : {})
