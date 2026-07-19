@@ -3,7 +3,7 @@ import type {
 } from "./parse-args.js";
 
 const defaultPlanUsage =
-  "Usage: krn plan [--project <project-id>] --task \"...\" [--persist] [--json]";
+  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--persist] [--json]";
 
 export const formatPlanUsage = (): string => `${defaultPlanUsage}\n`;
 
@@ -21,10 +21,11 @@ interface PlanArgsState {
   task?: string;
   persist: boolean;
   projectId?: string;
+  repo?: string;
   format: "text" | "json";
 }
 
-type PlanStringField = "projectId" | "task";
+type PlanStringField = "projectId" | "repo" | "task";
 
 type PlanParseStep =
   | {
@@ -51,6 +52,11 @@ const setPlanStringField = (
 ): void => {
   if (field === "projectId") {
     state.projectId = value;
+    return;
+  }
+
+  if (field === "repo") {
+    state.repo = value;
     return;
   }
 
@@ -118,6 +124,12 @@ const parsePlanArgStep = (
     return projectStep;
   }
 
+  const repoStep = parseStringOptionStep(rest, index, "--repo", "repo", state, usage);
+
+  if (repoStep.kind !== "unmatched") {
+    return repoStep;
+  }
+
   const taskStep = parseStringOptionStep(rest, index, "--task", "task", state, usage);
 
   return taskStep.kind === "unmatched" ? planParseError(usage) : taskStep;
@@ -164,6 +176,9 @@ export const parsePlanArgs = (
       error: usage
     };
   }
+  if (state.projectId !== undefined && state.repo !== undefined) {
+    return { error: usage };
+  }
 
   return {
     command: {
@@ -171,7 +186,8 @@ export const parsePlanArgs = (
       task: state.task,
       persist: state.persist,
       format: state.format,
-      ...(state.projectId === undefined ? {} : { projectId: state.projectId })
+      ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
+      ...(state.repo === undefined ? {} : { repo: state.repo })
     }
   };
 };

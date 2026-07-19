@@ -41,6 +41,22 @@ describe("parsePlanArgs", () => {
         }
       });
   });
+
+  it("parses an explicit target repo and rejects competing project identity", () => {
+    expect(parsePlanArgs(["--repo", " ../krn-seo ", "--task", "review target", "--persist"]))
+      .toEqual({
+        command: {
+          kind: "plan",
+          repo: "../krn-seo",
+          task: "review target",
+          persist: true,
+          format: "text"
+        }
+      });
+    expect(parsePlanArgs([
+      "--repo", "../krn-seo", "--project", "project-1", "--task", "review target", "--persist"
+    ]).error).toContain("Usage: krn plan");
+  });
   it("rejects plan commands without a task or with unsupported options", () => {
     expect(parsePlanArgs([]).error).toContain("Usage: krn plan");
     expect(parsePlanArgs(["--task", ""]).error).toContain("Usage: krn plan");

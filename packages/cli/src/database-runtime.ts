@@ -64,6 +64,7 @@ export interface DatabaseRuntimeInput {
   projectSlug: string;
   projectId?: string;
   repoPathHint?: string;
+  requireConnectedRepoPath?: boolean;
   requireProjectKernelForExplicitProject?: boolean;
   now(): string;
   createId(prefix: string): string;
@@ -346,6 +347,7 @@ const projectResolutionFor = (input: {
   explicitProject: ProjectRecord | undefined;
   connectedProject: ProjectRecord | undefined;
   repoPathHint: string | undefined;
+  requireConnectedRepoPath?: boolean;
 }): ProjectResolution => {
   if (input.explicitProject !== undefined) {
     return {
@@ -359,7 +361,9 @@ const projectResolutionFor = (input: {
   if (input.connectedProject !== undefined) {
     return {
       kind: "connected_repo_path",
-      reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+      reason: input.requireConnectedRepoPath === true
+        ? "Resolved explicit --repo from repo_installations.local_path_hint."
+        : "Resolved from repo_installations.local_path_hint matching the current repo root.",
       doesNotProve:
         "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
       ...(input.repoPathHint === undefined ? {} : { repoPathHint: input.repoPathHint })
@@ -448,6 +452,27 @@ const resolveWorkspaceSlugProject = async (
   return findOrCreateProject(repository, workspace.id, input.projectSlug);
 };
 
+const resolveProjectCandidates = async (
+  repository: ProjectRepository,
+  input: Pick<DatabaseRuntimeInput, "projectSlug" | "workspaceSlug">,
+  explicitProject: ProjectRecord | undefined,
+  connectedProject: ProjectRecord | undefined,
+  options: {
+    readonly createSlugFallback: boolean;
+    readonly requireConnectedRepoPath?: boolean;
+  }
+): Promise<ProjectRecord | undefined> => {
+  if (options.requireConnectedRepoPath === true) {
+    return connectedProject;
+  }
+
+  if (!options.createSlugFallback || explicitProject !== undefined || connectedProject !== undefined) {
+    return explicitProject ?? connectedProject;
+  }
+
+  return resolveWorkspaceSlugProject(repository, input);
+};
+
 const resolveRuntimeProject = async (
   repository: ProjectRepository,
   input: Pick<
@@ -459,6 +484,7 @@ const resolveRuntimeProject = async (
   >,
   options: {
     readonly createSlugFallback: boolean;
+    readonly requireConnectedRepoPath?: boolean;
   }
 ): Promise<RuntimeProjectResolution> => {
   const repoPathHint = trimmedValue(input.repoPathHint);
@@ -477,13 +503,13 @@ const resolveRuntimeProject = async (
     explicitProject,
     repoPathHint
   );
-  const fallbackProject =
-    !options.createSlugFallback ||
-    explicitProject !== undefined ||
-    connectedProject !== undefined
-      ? undefined
-      : await resolveWorkspaceSlugProject(repository, input);
-  const project = explicitProject ?? connectedProject ?? fallbackProject;
+  const project = await resolveProjectCandidates(
+    repository,
+    input,
+    explicitProject,
+    connectedProject,
+    options
+  );
 
   if (project === undefined) {
     return {
@@ -497,7 +523,10 @@ const resolveRuntimeProject = async (
     projectResolution: projectResolutionFor({
       explicitProject,
       connectedProject,
-      repoPathHint
+      repoPathHint,
+      ...(options.requireConnectedRepoPath === undefined
+        ? {}
+        : { requireConnectedRepoPath: options.requireConnectedRepoPath })
     }),
     shouldLoadProjectScopedMetadata:
       explicitLookup.explicitProjectId !== undefined || connectedProject !== undefined,
@@ -511,10 +540,16 @@ const resolveRuntimeProjectWithFallbackLock = async (
   input: DatabaseRuntimeInput
 ): Promise<RuntimeProjectResolution> => {
   const existingResolution = await resolveRuntimeProject(repository, input, {
-    createSlugFallback: false
+    createSlugFallback: false,
+    ...(input.requireConnectedRepoPath === undefined
+      ? {}
+      : { requireConnectedRepoPath: input.requireConnectedRepoPath })
   });
 
   if (existingResolution.kind !== "unresolved") {
+    return existingResolution;
+  }
+  if (input.requireConnectedRepoPath === true) {
     return existingResolution;
   }
 
@@ -529,6 +564,26 @@ const resolveRuntimeProjectWithFallbackLock = async (
       createSlugFallback: true
     });
   });
+};
+
+const unresolvedProjectError = (input: DatabaseRuntimeInput): Error =>
+  input.requireConnectedRepoPath === true
+    ? new Error(`No connected project found for repo path ${input.repoPathHint ?? "<missing>"}`)
+    : new Error("Unable to resolve project for database runtime");
+
+const requireResolvedRuntimeProject = (
+  resolution: RuntimeProjectResolution,
+  input: DatabaseRuntimeInput
+): ResolvedRuntimeProject => {
+  if (resolution.kind === "missing_explicit_project") {
+    throw new Error(`Project not found for --project ${resolution.explicitProjectId}`);
+  }
+
+  if (resolution.kind === "unresolved") {
+    throw unresolvedProjectError(input);
+  }
+
+  return resolution;
 };
 
 const loadProjectKernel = async (
@@ -625,19 +680,10 @@ const createDatabaseRuntimeForClient = async (
   const memoryRepository = new DrizzleMemoryRepository(db);
   const maintenanceQueueRepository = new DrizzleMaintenanceQueueRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
-  const runtimeProject = await resolveRuntimeProjectWithFallbackLock(
-    db,
-    projectRepository,
+  const runtimeProject = requireResolvedRuntimeProject(
+    await resolveRuntimeProjectWithFallbackLock(db, projectRepository, input),
     input
   );
-
-  if (runtimeProject.kind === "missing_explicit_project") {
-    throw new Error(`Project not found for --project ${runtimeProject.explicitProjectId}`);
-  }
-
-  if (runtimeProject.kind === "unresolved") {
-    throw new Error("Unable to resolve project for database runtime");
-  }
 
   const projectKernel = await loadProjectKernel(
     projectRepository,

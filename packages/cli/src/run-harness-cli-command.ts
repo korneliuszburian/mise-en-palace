@@ -149,6 +149,7 @@ const runPlanCliCommand = (
     persist: command.persist,
     format: command.format,
     ...(command.projectId === undefined ? {} : { projectId: command.projectId }),
+    ...(command.repo === undefined ? {} : { repo: command.repo }),
     ...databaseRuntimeOption(context)
   });
 

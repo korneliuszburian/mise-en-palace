@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import {
   renderExecutionBrief
 } from "@krn/codex-adapter";
@@ -47,6 +49,7 @@ import {
 } from "./no-store-repositories.js";
 import {
   findRepoRoot,
+  pathExists,
   pathExistsWithin
 } from "./cli-file-boundary.js";
 import {
@@ -86,6 +89,7 @@ export interface PlanCommandRuntime extends BaseCommandRuntime {
   persist: boolean;
   format?: "text" | "json";
   projectId?: string;
+  repo?: string;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
@@ -463,6 +467,10 @@ const commandLabelForRuntime = (runtime: PlanCommandRuntime): string => {
     return "krn plan --project --persist";
   }
 
+  if (runtime.repo !== undefined) {
+    return "krn plan --repo --persist";
+  }
+
   return runtime.persist ? "krn plan --persist" : "krn plan";
 };
 
@@ -497,6 +505,23 @@ const projectScopedMetadataFromRuntime = (
   };
 };
 
+const resolvePlanRepoPathHint = async (
+  runtime: Pick<PlanCommandRuntime, "cwd" | "projectId" | "repo">
+): Promise<string | undefined> => {
+  if (runtime.projectId !== undefined || runtime.cwd === undefined) {
+    return undefined;
+  }
+
+  const requestedRepoPath =
+    runtime.repo === undefined ? runtime.cwd : path.resolve(runtime.cwd, runtime.repo);
+
+  if (runtime.repo !== undefined && !(await pathExists(requestedRepoPath))) {
+    throw new Error(`Target repo does not exist: ${requestedRepoPath}`);
+  }
+
+  return findRepoRoot(requestedRepoPath);
+};
+
 const persistedCompilerRuntime = async (
   runtime: PlanCommandRuntime,
   workspaceSlug: string,
@@ -509,16 +534,14 @@ const persistedCompilerRuntime = async (
   }
 
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const repoPathHint =
-    runtime.projectId === undefined && runtime.cwd !== undefined
-      ? await findRepoRoot(runtime.cwd)
-      : undefined;
+  const repoPathHint = await resolvePlanRepoPathHint(runtime);
   const databaseRuntime = await createRuntime({
     databaseUrl,
     workspaceSlug,
     projectSlug,
     ...(runtime.projectId === undefined ? {} : { projectId: runtime.projectId }),
     ...(repoPathHint === undefined ? {} : { repoPathHint }),
+    ...(runtime.repo === undefined ? {} : { requireConnectedRepoPath: true }),
     now: runtime.now,
     createId: runtime.createId
   });
@@ -548,8 +571,8 @@ const resolveCompilerRuntime = async (
   workspaceSlug: string,
   projectSlug: string
 ): Promise<CompilerRuntimeResolution> => {
-  if (runtime.projectId !== undefined && !runtime.persist) {
-    throw new Error("krn plan --project requires --persist");
+  if ((runtime.projectId !== undefined || runtime.repo !== undefined) && !runtime.persist) {
+    throw new Error("krn plan --project or --repo requires --persist");
   }
 
   return runtime.persist
