@@ -46,7 +46,8 @@ import {
   createNoStoreCompilerDependencies
 } from "./no-store-repositories.js";
 import {
-  findRepoRoot
+  findRepoRoot,
+  pathExistsWithin
 } from "./cli-file-boundary.js";
 import {
   formatProjectResolutionKind
@@ -327,6 +328,40 @@ const uniqueSourceSeeds = (
   return [...seedsByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
 };
 
+interface OwnerFileAvailability {
+  ownerFiles: NonNullable<TargetActivationReadModel["ownerFiles"]>;
+  unavailableOwnerFilePaths: string[];
+}
+
+const ownerFileAvailability = async (
+  ownerFiles: NonNullable<TargetActivationReadModel["ownerFiles"]>,
+  localPathHints: readonly string[]
+): Promise<OwnerFileAvailability> => {
+  if (localPathHints.length === 0) {
+    return {
+      ownerFiles,
+      unavailableOwnerFilePaths: []
+    };
+  }
+
+  const availability = await Promise.all(ownerFiles.map(async (ownerFile) => {
+    const available = (await Promise.all(localPathHints.map(async (localPathHint) => {
+      return pathExistsWithin(localPathHint, ownerFile.path);
+    }))).some(Boolean);
+
+    return { ownerFile, available };
+  }));
+
+  return {
+    ownerFiles: availability.flatMap(({ ownerFile, available }) =>
+      available ? [ownerFile] : []
+    ),
+    unavailableOwnerFilePaths: availability.flatMap(({ ownerFile, available }) =>
+      available ? [] : [ownerFile.path]
+    )
+  };
+};
+
 const buildTargetActivationReadModel = async (
   metadata: ProjectScopedPlanMetadata | undefined
 ): Promise<TargetActivationReadModel | undefined> => {
@@ -360,18 +395,28 @@ const buildTargetActivationReadModel = async (
   const installationOwnerFiles = repoInstallations.flatMap((repoInstallation) =>
     ownerFilesFromMetadata(repoInstallation.metadata)
   );
-  const ownerFiles = uniqueOwnerFiles(
+  const configuredOwnerFiles = uniqueOwnerFiles(
     kernelOwnerFiles.length > 0 ? kernelOwnerFiles : installationOwnerFiles
+  );
+  const localPathHints = repoInstallations.flatMap((repoInstallation) =>
+    repoInstallation.localPathHint === undefined ? [] : [repoInstallation.localPathHint]
+  );
+  const ownerAvailability = await ownerFileAvailability(
+    configuredOwnerFiles,
+    localPathHints
   );
 
   return {
     ...(metadata.projectKernel === undefined ? {} : { projectKernelId: metadata.projectKernel.id }),
     repoInstallationIds: repoInstallations.map((repoInstallation) => repoInstallation.id),
-    localPathHints: repoInstallations.flatMap((repoInstallation) =>
-      repoInstallation.localPathHint === undefined ? [] : [repoInstallation.localPathHint]
-    ),
+    localPathHints,
     sourceSeeds,
-    ...(ownerFiles.length === 0 ? {} : { ownerFiles }),
+    ...(ownerAvailability.ownerFiles.length === 0
+      ? {}
+      : { ownerFiles: ownerAvailability.ownerFiles }),
+    ...(ownerAvailability.unavailableOwnerFilePaths.length === 0
+      ? {}
+      : { unavailableOwnerFilePaths: ownerAvailability.unavailableOwnerFilePaths }),
     trustExclusions: targetTrustExclusions
   };
 };
@@ -561,12 +606,15 @@ const formatTargetReadModelLines = (
     `Target owner-file reason: ${ownerFileRecall.reason}`,
     `Target owner-file explanation: ${ownerFileRecall.explanation}`,
     `Target owner-file does not prove: ${ownerFileRecall.doesNotProve}`,
-    formatTargetOwnerFilesLine(ownerFileRecall)
+    formatTargetOwnerFilesLine(ownerFileRecall),
+    ...((ownerFileRecall.unavailableOwnerFilePaths?.length ?? 0) === 0
+      ? []
+      : [`Target owner files unavailable: ${(ownerFileRecall.unavailableOwnerFilePaths ?? []).join(", ")}`])
   ];
 };
 
 const formatTargetOwnerFilesLine = (ownerFileRecall: TargetOwnerFileRecall): string => (
-  ownerFileRecall.status === "missing_owner_file_read_model"
+  ownerFileRecall.ownerFilePaths.length === 0
     ? "Target owner files: unavailable; using root-level source seeds only"
     : `Target owner files: ${ownerFileRecall.ownerFilePaths.join(", ")}`
 );
@@ -890,6 +938,7 @@ const targetReadModelMetadata = (
           trustExclusionCount: targetReadModel.trustExclusions.length,
           sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path),
           ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path),
+          unavailableOwnerFilePaths: targetReadModel.unavailableOwnerFilePaths ?? [],
           ...(targetOwnerFileRecall === undefined ? {} : { ownerFileRecall: targetOwnerFileRecall })
         }
       }

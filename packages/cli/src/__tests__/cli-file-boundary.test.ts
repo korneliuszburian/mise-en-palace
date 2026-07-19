@@ -1,6 +1,7 @@
 import {
   mkdtemp,
   mkdir,
+  symlink,
   writeFile
 } from "node:fs/promises";
 import os from "node:os";
@@ -14,6 +15,7 @@ import {
 import {
   findRepoRoot,
   pathExists,
+  pathExistsWithin,
   readJsonObject,
   readJsonObjectResult,
   resolveRepoInputFile
@@ -81,6 +83,20 @@ describe("cliFileBoundary", () => {
     await expect(pathExists(path.join(workspace, "missing.yaml"))).resolves.toBe(false);
     await expect(findRepoRoot(nested)).resolves.toBe(workspace);
     await expect(findRepoRoot(outside)).resolves.toBe(outside);
+  });
+
+  it("accepts only existing paths whose real target stays inside the repo root", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "krn-cli-contained-"));
+    const outside = await mkdtemp(path.join(os.tmpdir(), "krn-cli-outside-"));
+
+    await writeFile(path.join(workspace, "owner.ts"), "export {};\n");
+    await writeFile(path.join(outside, "outside.ts"), "export {};\n");
+    await symlink(path.join(outside, "outside.ts"), path.join(workspace, "linked.ts"));
+
+    await expect(pathExistsWithin(workspace, "owner.ts")).resolves.toBe(true);
+    await expect(pathExistsWithin(workspace, "missing.ts")).resolves.toBe(false);
+    await expect(pathExistsWithin(workspace, "../outside.ts")).resolves.toBe(false);
+    await expect(pathExistsWithin(workspace, "linked.ts")).resolves.toBe(false);
   });
 
   it("resolves input files from cwd first and then workspace root", async () => {

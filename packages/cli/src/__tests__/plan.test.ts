@@ -862,6 +862,12 @@ describe("runCli", () => {
                       root: "packages/cli/src",
                       kind: "cli_plan_rendering",
                       reason: "plan output owner"
+                    },
+                    {
+                      path: "packages/cli/src/runPlanCommand.ts",
+                      root: "packages/cli/src",
+                      kind: "cli_plan_rendering",
+                      reason: "stale plan output owner"
                     }
                   ]
                 },
@@ -899,10 +905,23 @@ describe("runCli", () => {
     expect(result.stdout).toContain("ProjectKernel: project-kernel-connected");
     expect(result.stdout).toContain("Repo installations: repo-installation-connected");
     expect(result.stdout).toContain("Target owner files: packages/cli/src/run-plan-command.ts");
+    expect(result.stdout).toContain("Target owner-file recall: owner_files_partially_available");
+    expect(result.stdout).toContain(
+      "Target owner files unavailable: packages/cli/src/runPlanCommand.ts"
+    );
     expect(executionRunMetadata).toMatchObject({
       projectResolution: {
         kind: "connected_repo_path",
         repoPathHint: repoRoot
+      },
+      targetReadModel: {
+        ownerFileCount: 1,
+        ownerFilePaths: ["packages/cli/src/run-plan-command.ts"],
+        unavailableOwnerFilePaths: ["packages/cli/src/runPlanCommand.ts"],
+        ownerFileRecall: {
+          status: "owner_files_partially_available",
+          unavailableOwnerFilePaths: ["packages/cli/src/runPlanCommand.ts"]
+        }
       }
     });
   });
