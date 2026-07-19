@@ -102,7 +102,7 @@ describe("store knowledge usefulness lifecycle selection", () => {
     expect(result.attachedReviewOnlyFeedback).toBe(expectedAttached);
   });
 
-  it("uses the newest non-rejected delta as a review caveat without suppression", () => {
+  it("uses the newest non-rejected delta and drops older caveats", () => {
     const result = applyStoreKnowledgeUsefulnessFeedback([knowledge()], [
       feedback({
         id: "feedback-new-candidate",
@@ -126,6 +126,7 @@ describe("store knowledge usefulness lifecycle selection", () => {
         feedbackLifecycleStatus: "candidate"
       }
     });
+    expect(result.reviewOnlyUsefulnessCaveats).toEqual([]);
   });
 
   it("does not weaken a pre-existing next action when candidate feedback adds a caveat", () => {

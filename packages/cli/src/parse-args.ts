@@ -660,7 +660,7 @@ const usage = [
   "krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
-  "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
+  "krn source decision link --source-claim-id <id> --source-decision-id <id> --target-type <type> --target-id <id> --support-type <type> --confidence <low|medium|high> --notes \"...\" [--persist]",
   "krn source decision reconcile --project <project-id> [--limit <n>] [--after <import-id>] [--json]",
   "krn source decision import --file source-decisions.json [--project <project-id>] [--persist] [--json]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
