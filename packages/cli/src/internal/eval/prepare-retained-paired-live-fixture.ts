@@ -15,7 +15,8 @@ import {
   materializeRetainedPairedLiveFixtureSource,
   parseRetainedPairedLiveFixtureArgs,
   retainedFamilyDecisionApplications,
-  retainedPairedLiveFixtureConfigFor
+  retainedPairedLiveFixtureConfigFor,
+  retainedTrialSourceDecisionSeedFor
 } from "./retained-paired-live-fixture-config.js";
 
 const requested = parseRetainedPairedLiveFixtureArgs(process.argv.slice(2));
@@ -38,6 +39,10 @@ const mcpServer = path.join(
   "packages/cli/src/internal/mcp/decision-packet-mcp-server.ts"
 );
 const fixtureConfig = retainedPairedLiveFixtureConfigFor(repoRoot, requested.family);
+const retainedTrialSourceSeed = retainedTrialSourceDecisionSeedFor(
+  repoRoot,
+  fixtureConfig.family
+);
 const materializedSourceDirectory = path.join(outputDirectory, "target-source");
 const materializedSourcePath = path.relative(repoRoot, materializedSourceDirectory);
 
@@ -111,7 +116,7 @@ const manifestFor = (
     heldOut: true,
     outcome: "win|tie|loss|invalid"
   },
-  packetReadiness: "weak_context",
+  packetReadiness: report.packetReadiness,
   checkerRevision: pairedLiveCheckerRevision,
   decisionApplications: retainedFamilyDecisionApplications(
     report.decisionApplications,
@@ -126,7 +131,8 @@ const report = await runDecisionPacketReturnLoopSmokeCheck({
   migrationsFolder,
   smokeId,
   retainFixture: true,
-  taskPrefix: fixtureConfig.taskPrefix
+  taskPrefix: fixtureConfig.taskPrefix,
+  ...(retainedTrialSourceSeed === undefined ? {} : { retainedTrialSourceSeed })
 });
 
 if (!report.retainedFixture || report.cleanedUp) {
@@ -154,10 +160,20 @@ process.stdout.write(`${JSON.stringify({
   taskId: report.taskId,
   runId: report.executionRunId,
   packetChecksum: report.packetChecksum,
+  packetReadiness: report.packetReadiness,
   retainedFixture: report.retainedFixture,
   sourcePath: materializedSourcePath,
   family: fixtureConfig.family,
   scenario: fixtureConfig.scenarioName,
+  retainedTrialSourceSeedFamily: report.retainedTrialSourceSeedFamily,
+  retainedTrialSourceSeedPacketGoverningDecisionIds:
+    report.retainedTrialSourceSeedPacketGoverningDecisionIds,
+  retainedTrialSourceSeedPacketSupersededPathIds:
+    report.retainedTrialSourceSeedPacketSupersededPathIds,
+  retainedTrialSourceSeedPacketRejectedPathIds:
+    report.retainedTrialSourceSeedPacketRejectedPathIds,
+  retainedTrialSourceSeedPacketSourceRejectionIds:
+    report.retainedTrialSourceSeedPacketSourceRejectionIds,
   semanticManifest: path.join(outputDirectory, "semantic-governed.json"),
   deferredTreatments: [{
     treatment: "procedural_skills",

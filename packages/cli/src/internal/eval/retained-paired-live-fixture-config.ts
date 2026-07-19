@@ -8,6 +8,9 @@ import path from "node:path";
 import type {
   PairedEvalFamily
 } from "./paired-live-codex-repair.js";
+import {
+  loadDecisionPacketEvalFixture
+} from "../../decision-packet-fixture.js";
 
 export type RetainedPairedLiveFixtureFamily = Extract<PairedEvalFamily, "weak-json" | "async-job">;
 
@@ -25,6 +28,24 @@ export type RetainedPairedLiveFixtureConfig = {
   readonly fixtureRoot: string;
   readonly sourceEntries: readonly string[];
   readonly scenarioOverlayRoot?: string;
+};
+
+export type RetainedTrialSourceDecisionStatus = "current" | "stale" | "rejected";
+
+export type RetainedTrialSourceDecisionSeedItem = {
+  readonly id: string;
+  readonly title: string;
+  readonly statement: string;
+  readonly status: RetainedTrialSourceDecisionStatus;
+  readonly evidenceRef: string;
+  readonly falsifier: string;
+  readonly doesNotProve: string;
+};
+
+export type RetainedTrialSourceDecisionSeed = {
+  readonly family: RetainedPairedLiveFixtureFamily;
+  readonly corpusName: string;
+  readonly decisions: readonly RetainedTrialSourceDecisionSeedItem[];
 };
 
 const retainedFamilies = new Set<RetainedPairedLiveFixtureFamily>([
@@ -155,6 +176,14 @@ const asyncJobDecisionApplicationMappings = [
   { check: "target_diff_check", changedFiles: ["docs/job-contract.md"] }
 ] as const;
 
+const asyncJobRetainedSourceSeedDecisionIds = [
+  "async-job-idempotency-key",
+  "async-job-retry-budget",
+  "async-job-lease-timeout",
+  "stale-async-job-forever-retry",
+  "rejected-async-job-no-idempotency"
+] as const;
+
 export const retainedFamilyDecisionApplications = (
   rules: readonly RetainedDecisionApplicationRule[],
   family: RetainedPairedLiveFixtureFamily
@@ -181,4 +210,55 @@ export const retainedFamilyDecisionApplications = (
       changedFiles: [...mapping.changedFiles]
     };
   });
+};
+
+const retainedSeedDecisionStatusFrom = (
+  value: string,
+  decisionId: string
+): RetainedTrialSourceDecisionStatus => {
+  if (value === "current" || value === "stale" || value === "rejected") {
+    return value;
+  }
+
+  throw new Error(
+    `Retained paired-live source seed decision ${decisionId} has unsupported status '${value}'`
+  );
+};
+
+export const retainedTrialSourceDecisionSeedFor = (
+  repoRoot: string,
+  family: RetainedPairedLiveFixtureFamily
+): RetainedTrialSourceDecisionSeed | undefined => {
+  if (family === "weak-json") {
+    return undefined;
+  }
+
+  const fixture = loadDecisionPacketEvalFixture(path.join(
+    repoRoot,
+    "tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json"
+  ));
+  const decisionsById = new Map(fixture.decisions.map((decision) => [decision.id, decision]));
+
+  return {
+    family,
+    corpusName: fixture.corpusName,
+    decisions: asyncJobRetainedSourceSeedDecisionIds.map((id) => {
+      const decision = decisionsById.get(id);
+      if (decision === undefined) {
+        throw new Error(
+          `Retained paired-live async-job source seed fixture is missing decision ${id}`
+        );
+      }
+
+      return {
+        id: decision.id,
+        title: decision.title,
+        statement: decision.statement,
+        status: retainedSeedDecisionStatusFrom(decision.status, decision.id),
+        evidenceRef: decision.evidenceRef,
+        falsifier: decision.falsifier,
+        doesNotProve: decision.doesNotProve
+      };
+    })
+  };
 };

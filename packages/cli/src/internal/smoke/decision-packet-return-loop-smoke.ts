@@ -135,9 +135,12 @@ const activationSourceRepositoryFor = (
   };
 };
 
+type DecisionPacketReadinessStatus = "ready" | "weak_context" | "abstain";
+
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
+  retainedTrialSourceSeed?: DecisionPacketReturnLoopRetainedSourceSeed;
   smokeId: string;
   retainFixture?: boolean;
   taskPrefix?: string;
@@ -152,6 +155,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   executionRunId: string;
   packetChecksum: string;
   packetEvidenceRef: string;
+  packetReadiness: DecisionPacketReadinessStatus;
   requiredDecisionIds: readonly string[];
   decisionApplications: readonly {
     governingDecisionId: string;
@@ -262,6 +266,18 @@ export interface DecisionPacketReturnLoopSmokeReport {
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
   retainedFixture: boolean;
+  retainedTrialSourceSeedCorpusName?: string;
+  retainedTrialSourceSeedCurrentDecisionIds?: readonly string[];
+  retainedTrialSourceSeedFamily?: string;
+  retainedTrialSourceSeedPacketGoverningDecisionIds?: readonly string[];
+  retainedTrialSourceSeedPacketRejectedPathIds?: readonly string[];
+  retainedTrialSourceSeedPacketSourceDecisionIds?: readonly string[];
+  retainedTrialSourceSeedPacketSourceRejectionIds?: readonly string[];
+  retainedTrialSourceSeedPacketSupersededPathIds?: readonly string[];
+  retainedTrialSourceSeedRejectedSourceClaimIds?: readonly string[];
+  retainedTrialSourceSeedSourceDecisionIds?: readonly string[];
+  retainedTrialSourceSeedSourceRejectionIds?: readonly string[];
+  retainedTrialSourceSeedStaleSourceClaimIds?: readonly string[];
 }
 
 const retainedTrialDecisionApplicationChecks = [
@@ -470,11 +486,76 @@ const selectMemoryApplicationAuthority = async (input: {
 
 type FeedbackSourceProof = "helped" | "stale";
 
+type RetainedTrialSourceDecisionStatus = "current" | "stale" | "rejected";
+
+interface DecisionPacketReturnLoopRetainedSourceSeedItem {
+  readonly id: string;
+  readonly title: string;
+  readonly statement: string;
+  readonly status: RetainedTrialSourceDecisionStatus;
+  readonly evidenceRef: string;
+  readonly falsifier: string;
+  readonly doesNotProve: string;
+}
+
+interface DecisionPacketReturnLoopRetainedSourceSeed {
+  readonly family: string;
+  readonly corpusName: string;
+  readonly decisions: readonly DecisionPacketReturnLoopRetainedSourceSeedItem[];
+}
+
 interface FeedbackSourceClaimProof {
   claimId: string;
   decisionId: string;
   decisionTargetId: string;
 }
+
+interface RetainedTrialCurrentSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionEdgeId: string;
+  sourceDecisionId: string;
+  targetId: string;
+}
+
+interface RetainedTrialHistoricalSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionId: string;
+  targetId: string;
+}
+
+interface RetainedTrialRejectedSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionId: string;
+  sourceRejectionId: string;
+}
+
+interface RetainedTrialSourceSeedProof {
+  corpusName: string;
+  currentDecisions: readonly RetainedTrialCurrentSourceDecisionProof[];
+  family: string;
+  rejectedDecisions: readonly RetainedTrialRejectedSourceDecisionProof[];
+  staleDecisions: readonly RetainedTrialHistoricalSourceDecisionProof[];
+}
+
+interface RetainedTrialSourceSeedReadback {
+  packetGoverningDecisionIds: readonly string[];
+  packetRejectedPathIds: readonly string[];
+  packetSourceDecisionIds: readonly string[];
+  packetSourceRejectionIds: readonly string[];
+  packetSupersededPathIds: readonly string[];
+}
+
+interface RetainedTrialRejectedSourceDecisionInput {
+  readonly claim: string;
+  readonly claimId: string;
+  readonly decisionId: string;
+  readonly title: string;
+}
+
+type RetainedTrialCreatedSourceDecision =
+  | { readonly status: "current"; readonly decision: RetainedTrialCurrentSourceDecisionProof }
+  | { readonly status: "stale"; readonly decision: RetainedTrialHistoricalSourceDecisionProof }
+  | { readonly status: "rejected"; readonly decision: RetainedTrialRejectedSourceDecisionInput };
 
 interface SourceConsensusProofResult {
   proofRunId: string;
@@ -751,6 +832,16 @@ const readPacketIdentity = (
     generatedAt: readRequiredString(packetIdentity, "generatedAt", "DecisionPacket smoke readback missed generatedAt"),
     sourceRunLifecycleRevision
   };
+};
+
+const decisionPacketReadinessStatusFrom = (
+  value: string
+): DecisionPacketReadinessStatus => {
+  if (value === "ready" || value === "weak_context" || value === "abstain") {
+    return value;
+  }
+
+  throw new Error(`DecisionPacket smoke readback has unsupported readiness status '${value}'`);
 };
 
 const readPacket = (
@@ -1099,6 +1190,281 @@ const createFeedbackSourceClaim = async (
     claimId: claim.id,
     decisionId: decision.id,
     decisionTargetId
+  };
+};
+
+const retainedTrialSeedClaimImplicationFor = (
+  family: string,
+  status: RetainedTrialSourceDecisionStatus
+): string => {
+  switch (status) {
+    case "current":
+      return `KRN should expose this ${family} decision as governing task guidance for the retained paired Codex trial.`;
+    case "stale":
+      return `KRN should preserve this older ${family} path as visible history without activating it as current guidance.`;
+    case "rejected":
+      return `KRN should expose this rejected ${family} shortcut as non-governing negative guidance.`;
+  }
+};
+
+const createRetainedTrialSeedDecision = async (
+  input: {
+    readonly artifactId: string;
+    readonly corpusName: string;
+    readonly decisionSeed: DecisionPacketReturnLoopRetainedSourceSeedItem;
+    readonly family: string;
+    readonly index: number;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly sourceRepository: SourceRepository;
+  }
+): Promise<RetainedTrialCreatedSourceDecision> => {
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    `retained-trial-source-seed-${input.family}`
+  );
+  const metadata = {
+    ...evidenceMetadata,
+    retainedTrialSourceSeed: input.family,
+    retainedTrialSourceSeedCorpusName: input.corpusName,
+    retainedTrialSourceSeedDecisionId: input.decisionSeed.id,
+    retainedTrialSourceSeedDecisionStatus: input.decisionSeed.status,
+    evidenceRef: input.decisionSeed.evidenceRef
+  };
+  const chunk = await input.sourceRepository.createSourceChunk({
+    sourceArtifactId: input.artifactId,
+    ordinal: input.index,
+    content: input.decisionSeed.statement,
+    contentHash:
+      `decision-packet-retained-trial-source-seed-${input.family}-${input.marker}-${input.index}`,
+    metadata
+  });
+  const claim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: input.artifactId,
+    sourceChunkId: chunk.id,
+    claim: input.decisionSeed.statement,
+    mechanism:
+      `A retained ${input.family} eval fixture source row is promoted into store-backed source authority before DecisionPacket issuance.`,
+    krnImplication: retainedTrialSeedClaimImplicationFor(
+      input.family,
+      input.decisionSeed.status
+    ),
+    doesNotProve: input.decisionSeed.doesNotProve,
+    sourceAuthority: "project-decision",
+    supportType: input.decisionSeed.status === "rejected" ? "rejection" : "decision",
+    consumer: "retained paired Codex trial",
+    falsifier: input.decisionSeed.falsifier,
+    status: "proposed",
+    metadata
+  });
+  const sourceDecision = await input.sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: claim.id,
+    status: input.decisionSeed.status === "rejected" ? "reject" : "adopt",
+    decision: input.decisionSeed.title,
+    rationale: `${input.decisionSeed.statement} Evidence: ${input.decisionSeed.evidenceRef}.`,
+    falsifier: input.decisionSeed.falsifier,
+    consumer: "retained paired Codex trial",
+    metadata
+  });
+
+  if (input.decisionSeed.status === "rejected") {
+    return {
+      status: "rejected",
+      decision: {
+        claim: claim.claim,
+        claimId: claim.id,
+        decisionId: sourceDecision.id,
+        title: input.decisionSeed.title
+      }
+    };
+  }
+
+  const edge = await input.sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: claim.id,
+    sourceDecisionId: sourceDecision.id,
+    targetType: "architecture_decision",
+    targetId: input.decisionSeed.id,
+    supportType: "decision",
+    confidence: "high",
+    notes:
+      `Retained ${input.family} paired-trial ${input.decisionSeed.status} source decision support.`,
+    metadata: {
+      ...metadata,
+      sourceDecisionId: sourceDecision.id
+    }
+  });
+
+  if (input.decisionSeed.status === "current") {
+    return {
+      status: "current",
+      decision: {
+        sourceClaimId: claim.id,
+        sourceDecisionEdgeId: edge.id,
+        sourceDecisionId: sourceDecision.id,
+        targetId: input.decisionSeed.id
+      }
+    };
+  }
+
+  return {
+    status: "stale",
+    decision: {
+      sourceClaimId: claim.id,
+      sourceDecisionId: sourceDecision.id,
+      targetId: input.decisionSeed.id
+    }
+  };
+};
+
+const createRetainedTrialSourceDecisionSeed = async (
+  input: {
+    readonly marker: string;
+    readonly projectId: string;
+    readonly seed: DecisionPacketReturnLoopRetainedSourceSeed;
+    readonly sourceRepository: SourceRepository;
+  }
+): Promise<RetainedTrialSourceSeedProof> => {
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    `retained-trial-source-seed-${input.seed.family}`
+  );
+  const artifact = await input.sourceRepository.createSourceArtifact({
+    projectId: input.projectId,
+    kind: "run",
+    uri: `operator://decision-packet-return-loop/${input.marker}/retained-trial-source-seed/${input.seed.family}`,
+    title: `Retained ${input.seed.family} paired-trial source-decision seed`,
+    contentHash: `decision-packet-retained-trial-source-seed-${input.seed.family}-${input.marker}`,
+    sourceAuthority: "project-decision",
+    metadata: {
+      ...evidenceMetadata,
+      retainedTrialSourceSeed: input.seed.family,
+      retainedTrialSourceSeedCorpusName: input.seed.corpusName
+    }
+  });
+  const currentDecisions: RetainedTrialCurrentSourceDecisionProof[] = [];
+  const staleDecisions: RetainedTrialHistoricalSourceDecisionProof[] = [];
+  const rejectedDecisionInputs: RetainedTrialRejectedSourceDecisionInput[] = [];
+
+  for (const [index, decisionSeed] of input.seed.decisions.entries()) {
+    const created = await createRetainedTrialSeedDecision({
+      artifactId: artifact.id,
+      corpusName: input.seed.corpusName,
+      decisionSeed,
+      family: input.seed.family,
+      index,
+      marker: input.marker,
+      projectId: input.projectId,
+      sourceRepository: input.sourceRepository
+    });
+
+    switch (created.status) {
+      case "current":
+        currentDecisions.push(created.decision);
+        break;
+      case "stale":
+        staleDecisions.push(created.decision);
+        break;
+      case "rejected":
+        rejectedDecisionInputs.push(created.decision);
+        break;
+    }
+  }
+
+  const firstCurrentDecision = currentDecisions[0];
+  if (firstCurrentDecision === undefined) {
+    throw new Error("Retained paired-trial source seed requires at least one current decision");
+  }
+
+  const supersedingDecision = currentDecisions.find((decision) =>
+    decision.targetId === "async-job-retry-budget"
+  ) ?? firstCurrentDecision;
+
+  for (const staleDecision of staleDecisions) {
+    await input.sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: supersedingDecision.sourceClaimId,
+      toSourceClaimId: staleDecision.sourceClaimId,
+      kind: "supersedes",
+      metadata: {
+        smokeId: input.marker,
+        consumer: "retained paired Codex trial",
+        evidenceRef: `retained-trial-source-seed:${input.seed.family}:${staleDecision.targetId}`,
+        sourceDecisionRef: supersedingDecision.sourceDecisionId,
+        doesNotProve:
+          "This retained trial supersession edge does not prove broad temporal source graph quality."
+      }
+    });
+  }
+
+  const rejectedDecisions: RetainedTrialRejectedSourceDecisionProof[] = [];
+  for (const rejectedDecision of rejectedDecisionInputs) {
+    const sourceRejection = await input.sourceRepository.createSourceRejection({
+      projectId: input.projectId,
+      sourceArtifactId: artifact.id,
+      sourceClaimId: rejectedDecision.claimId,
+      title: rejectedDecision.title,
+      attemptedClaim: rejectedDecision.claim,
+      rejectedBecause: "unsupported",
+      reason:
+        `The retained ${input.seed.family} trial fixture marks this source path as rejected negative guidance.`,
+      doesNotProve:
+        "This retained trial source rejection does not prove automated source-review quality.",
+      consumer: "retained paired Codex trial",
+      metadata: {
+        smokeId: input.marker,
+        retainedTrialSourceSeed: input.seed.family,
+        retainedTrialSourceSeedCorpusName: input.seed.corpusName,
+        sourceDecisionId: rejectedDecision.decisionId
+      }
+    });
+
+    rejectedDecisions.push({
+      sourceClaimId: rejectedDecision.claimId,
+      sourceDecisionId: rejectedDecision.decisionId,
+      sourceRejectionId: sourceRejection.id
+    });
+  }
+
+  return {
+    corpusName: input.seed.corpusName,
+    currentDecisions,
+    family: input.seed.family,
+    rejectedDecisions,
+    staleDecisions
+  };
+};
+
+const retainedTrialSourceDecisionSeedReadbackFor = (
+  input: {
+    readonly packet: DecisionPacketSmokeJson["packet"];
+    readonly proof: RetainedTrialSourceSeedProof;
+  }
+): RetainedTrialSourceSeedReadback => {
+  const packetCurrentDecisions = input.proof.currentDecisions.filter((decision) =>
+    input.packet.governingDecisionIds.includes(decision.targetId) &&
+    input.packet.sourceDecisionIds.includes(decision.sourceDecisionId)
+  );
+  const rejectedPathIds = [
+    ...input.packet.rejectedPathIds,
+    ...input.packet.sourceConsensus.rejectedPathIds
+  ];
+  const sourceRejectionIds = [
+    ...input.packet.sourceRejectionIds,
+    ...input.packet.sourceConsensus.sourceRejectionIds
+  ];
+
+  return {
+    packetGoverningDecisionIds: packetCurrentDecisions.map((decision) => decision.targetId),
+    packetSourceDecisionIds: packetCurrentDecisions.map((decision) => decision.sourceDecisionId),
+    packetSupersededPathIds: input.proof.staleDecisions
+      .map((decision) => decision.sourceClaimId)
+      .filter((id) => input.packet.sourceConsensus.supersededPathIds.includes(id)),
+    packetRejectedPathIds: input.proof.rejectedDecisions
+      .map((decision) => decision.sourceClaimId)
+      .filter((id) => rejectedPathIds.includes(id)),
+    packetSourceRejectionIds: input.proof.rejectedDecisions
+      .map((decision) => decision.sourceRejectionId)
+      .filter((id) => sourceRejectionIds.includes(id))
   };
 };
 
@@ -3224,6 +3590,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   let cleanedUp = false;
   let retainedFixture = false;
   let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
+  let retainedTrialSourceSeedProof: RetainedTrialSourceSeedProof | undefined;
   let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
   const targetRepo = await createReturnLoopTargetRepo();
   await writeFile(
@@ -3347,6 +3714,14 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           sourceRepository,
           proof: "stale"
         });
+        if (input.retainedTrialSourceSeed !== undefined) {
+          retainedTrialSourceSeedProof = await createRetainedTrialSourceDecisionSeed({
+            marker,
+            projectId: project.id,
+            seed: input.retainedTrialSourceSeed,
+            sourceRepository
+          });
+        }
       }
     });
     retrievalRunId = compiledRetrievalRunId;
@@ -3404,6 +3779,12 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     if (helpedFeedbackSource === undefined || staleFeedbackSource === undefined) {
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
     }
+    const retainedTrialSourceSeedReadback = retainedTrialSourceSeedProof === undefined
+      ? undefined
+      : retainedTrialSourceDecisionSeedReadbackFor({
+          packet: firstPacket.packet,
+          proof: retainedTrialSourceSeedProof
+        });
     if (input.retainFixture === true) {
       const rejectedArtifact = await sourceRepository.createSourceArtifact({
         projectId: project.id,
@@ -3918,6 +4299,38 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfIssuedPacket },
       { label: "issued packet retains activated decisions", passed: issuedPacketRetainsActivatedDecision },
       { label: "issued packet identity retained", passed: issuedPacketIdentityRetained },
+      ...(retainedTrialSourceSeedProof === undefined ||
+        retainedTrialSourceSeedReadback === undefined
+        ? []
+        : [{
+            label: "retained trial source seed current decisions selected",
+            passed:
+              retainedTrialSourceSeedReadback.packetGoverningDecisionIds.length ===
+                retainedTrialSourceSeedProof.currentDecisions.length &&
+              retainedTrialSourceSeedReadback.packetSourceDecisionIds.length ===
+                retainedTrialSourceSeedProof.currentDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `governingDecisionIds=${retainedTrialSourceSeedReadback.packetGoverningDecisionIds.join(",")}; ` +
+              `sourceDecisionIds=${retainedTrialSourceSeedReadback.packetSourceDecisionIds.join(",")}`
+          }, {
+            label: "retained trial source seed stale decisions stay superseded",
+            passed:
+              retainedTrialSourceSeedReadback.packetSupersededPathIds.length ===
+                retainedTrialSourceSeedProof.staleDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `supersededPathIds=${retainedTrialSourceSeedReadback.packetSupersededPathIds.join(",")}`
+          }, {
+            label: "retained trial source seed rejected decisions have formal source rejection",
+            passed:
+              retainedTrialSourceSeedReadback.packetSourceRejectionIds.length ===
+                retainedTrialSourceSeedProof.rejectedDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `rejectedPathIds=${retainedTrialSourceSeedReadback.packetRejectedPathIds.join(",")}; ` +
+              `sourceRejectionIds=${retainedTrialSourceSeedReadback.packetSourceRejectionIds.join(",")}`
+          }]),
       {
         label: "selector packet includes retained neutral control memory",
         passed: selectorProof.includesRetainedMemory
@@ -4083,10 +4496,15 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     ]);
 
+    const requiredDecisionIds = retainedTrialSourceSeedReadback?.packetGoverningDecisionIds ??
+      firstPacket.packet.governingDecisionIds;
     const decisionApplications = retainedTrialDecisionApplicationsFor({
-      governingDecisionIds: firstPacket.packet.governingDecisionIds,
-      sourceDecisionIds: firstPacket.packet.sourceDecisionIds,
-      preAppliedSourceDecisionIds: [helpedFeedbackSource.decisionId]
+      governingDecisionIds: requiredDecisionIds,
+      sourceDecisionIds: retainedTrialSourceSeedReadback?.packetSourceDecisionIds ??
+        firstPacket.packet.sourceDecisionIds,
+      preAppliedSourceDecisionIds: retainedTrialSourceSeedReadback === undefined
+        ? [helpedFeedbackSource.decisionId]
+        : []
     });
     const cleanupRemainingMarkerCount = input.retainFixture === true
       ? 0
@@ -4103,7 +4521,10 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       executionRunId: executionRun.id,
       packetChecksum: firstPacket.packetIdentity.checksum,
       packetEvidenceRef: firstPacket.packetIdentity.evidenceRef,
-      requiredDecisionIds: firstPacket.packet.governingDecisionIds,
+      packetReadiness: decisionPacketReadinessStatusFrom(
+        firstPacket.packet.abstentionScore.status
+      ),
+      requiredDecisionIds,
       decisionApplications,
       returnChannelHasChecksum,
       matchingFeedbackDeltaId: matchingFeedbackDelta.id,
@@ -4237,7 +4658,47 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
       cleanedUp: cleanupRemainingMarkerCount === 0 && !retainedFixture,
-      retainedFixture
+      retainedFixture,
+      ...(retainedTrialSourceSeedProof === undefined ||
+        retainedTrialSourceSeedReadback === undefined
+        ? {}
+        : {
+            retainedTrialSourceSeedCorpusName: retainedTrialSourceSeedProof.corpusName,
+            retainedTrialSourceSeedCurrentDecisionIds:
+              retainedTrialSourceSeedProof.currentDecisions.map((decision) => decision.targetId),
+            retainedTrialSourceSeedFamily: retainedTrialSourceSeedProof.family,
+            retainedTrialSourceSeedPacketGoverningDecisionIds:
+              retainedTrialSourceSeedReadback.packetGoverningDecisionIds,
+            retainedTrialSourceSeedPacketRejectedPathIds:
+              retainedTrialSourceSeedReadback.packetRejectedPathIds,
+            retainedTrialSourceSeedPacketSourceDecisionIds:
+              retainedTrialSourceSeedReadback.packetSourceDecisionIds,
+            retainedTrialSourceSeedPacketSourceRejectionIds:
+              retainedTrialSourceSeedReadback.packetSourceRejectionIds,
+            retainedTrialSourceSeedPacketSupersededPathIds:
+              retainedTrialSourceSeedReadback.packetSupersededPathIds,
+            retainedTrialSourceSeedRejectedSourceClaimIds:
+              retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceClaimId
+              ),
+            retainedTrialSourceSeedSourceDecisionIds: [
+              ...retainedTrialSourceSeedProof.currentDecisions.map(
+                (decision) => decision.sourceDecisionId
+              ),
+              ...retainedTrialSourceSeedProof.staleDecisions.map(
+                (decision) => decision.sourceDecisionId
+              ),
+              ...retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceDecisionId
+              )
+            ],
+            retainedTrialSourceSeedSourceRejectionIds:
+              retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceRejectionId
+              ),
+            retainedTrialSourceSeedStaleSourceClaimIds:
+              retainedTrialSourceSeedProof.staleDecisions.map((decision) => decision.sourceClaimId)
+          })
     };
   } finally {
     try {

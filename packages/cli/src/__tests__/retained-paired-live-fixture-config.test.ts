@@ -7,7 +7,8 @@ import {
   materializeRetainedPairedLiveFixtureSource,
   parseRetainedPairedLiveFixtureArgs,
   retainedFamilyDecisionApplications,
-  retainedPairedLiveFixtureConfigFor
+  retainedPairedLiveFixtureConfigFor,
+  retainedTrialSourceDecisionSeedFor
 } from "../internal/eval/retained-paired-live-fixture-config.js";
 
 const rules = [{
@@ -107,6 +108,41 @@ describe("retained paired-live fixture config", () => {
 
   it("preserves weak-json decision application rules", () => {
     expect(retainedFamilyDecisionApplications(rules, "weak-json")).toEqual(rules);
+  });
+
+  it("loads a target-specific async-job source seed from the decision corpus", () => {
+    const seed = retainedTrialSourceDecisionSeedFor(resolve("../.."), "async-job");
+
+    expect(seed).toMatchObject({
+      family: "async-job",
+      corpusName: "async-job-boundary-typescript-fourth-repo"
+    });
+    expect(seed?.decisions.map((decision) => ({
+      id: decision.id,
+      status: decision.status
+    }))).toEqual([{
+      id: "async-job-idempotency-key",
+      status: "current"
+    }, {
+      id: "async-job-retry-budget",
+      status: "current"
+    }, {
+      id: "async-job-lease-timeout",
+      status: "current"
+    }, {
+      id: "stale-async-job-forever-retry",
+      status: "stale"
+    }, {
+      id: "rejected-async-job-no-idempotency",
+      status: "rejected"
+    }]);
+    expect(seed?.decisions.map((decision) => decision.evidenceRef)).toContain(
+      "tests/fixtures/target-repos/async-job-boundary-typescript/docs/job-contract.md"
+    );
+  });
+
+  it("does not seed target-specific source decisions for weak-json retained fixtures", () => {
+    expect(retainedTrialSourceDecisionSeedFor(resolve("../.."), "weak-json")).toBeUndefined();
   });
 
   it("materializes the async-job target source without weak-json files", async () => {
