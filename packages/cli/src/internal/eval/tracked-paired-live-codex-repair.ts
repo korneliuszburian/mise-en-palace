@@ -660,23 +660,47 @@ export const extractLiveCodexObedienceOutput = (
   return undefined;
 };
 
+const codexJsonEventText = (line: string): string | undefined => {
+  try {
+    const event: unknown = JSON.parse(line);
+    if (
+      !isRecord(event) ||
+      event.type !== "item.completed" ||
+      !isRecord(event.item) ||
+      event.item.type !== "agent_message" ||
+      typeof event.item.text !== "string"
+    ) {
+      return undefined;
+    }
+    return event.item.text;
+  } catch {
+    return undefined;
+  }
+};
+
+const markedLiveCodexObediencePayloads = (stdout: string): readonly string[] =>
+  stdout
+    .split(/\r?\n/)
+    .flatMap((line) => [line, codexJsonEventText(line)].filter((candidate): candidate is string =>
+      candidate !== undefined
+    ))
+    .flatMap((text) => text.split(/\r?\n/))
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(liveCodexObedienceMarker))
+    .map((line) => line.slice(liveCodexObedienceMarker.length).trim());
+
 /** Classify only the explicit machine line; ordinary Codex prose is not an envelope. */
 export const inspectLiveCodexObedienceOutput = (
   stdout: string
 ): LiveCodexObedienceCapture => {
-  const markerLines = stdout
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith(liveCodexObedienceMarker));
-  if (markerLines.length === 0) return { status: "missing" };
-  const markerLine = markerLines.at(-1);
-  if (markerLine === undefined) return { status: "missing" };
+  const markerPayloads = markedLiveCodexObediencePayloads(stdout);
+  if (markerPayloads.length === 0) return { status: "missing" };
+  const markerPayload = markerPayloads.at(-1);
+  if (markerPayload === undefined) return { status: "missing" };
   try {
     return {
       status: "valid",
-      output: parseLiveCodexObedienceOutputJson(
-        markerLine.slice(liveCodexObedienceMarker.length).trim()
-      )
+      output: parseLiveCodexObedienceOutputJson(markerPayload)
     };
   } catch {
     return { status: "malformed" };

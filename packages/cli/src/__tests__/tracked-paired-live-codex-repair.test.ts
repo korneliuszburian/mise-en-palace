@@ -612,6 +612,25 @@ describe("tracked paired live Codex repair", () => {
         action: "a"
       }
     });
+    expect(inspectLiveCodexObedienceOutput(JSON.stringify({
+      type: "item.completed",
+      item: {
+        type: "agent_message",
+        text: [
+          "Repair report wrapped by Codex JSON output.",
+          "KRN_OBEDIENCE_JSON:{\"decisionId\":\"event-d\",\"rejectedPath\":\"event-r\",\"staleBoundary\":\"event-s\",\"nonProof\":\"event-n\",\"action\":\"event-a\"}"
+        ].join("\n")
+      }
+    }))).toEqual({
+      status: "valid",
+      output: {
+        decisionId: "event-d",
+        rejectedPath: "event-r",
+        staleBoundary: "event-s",
+        nonProof: "event-n",
+        action: "event-a"
+      }
+    });
   });
 
   it("accepts only a run-, project-, task-, and authority-bound packet", () => {
