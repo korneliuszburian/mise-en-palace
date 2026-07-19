@@ -55,6 +55,25 @@ containment for that fixture shape, not every future schema migration.
 **Retirement:** Retire only when the default runner itself has an equivalent,
 verified retention/cleanup path and the separate command is no longer needed.
 
+## Explicit capability overrides
+
+**Trigger:** A matched Codex trial assigns MCP servers or skills per arm.
+
+**Safe action:** Materialize the preregistered profile for audit identity, but
+also pass its MCP and skill configuration as explicit `--config` overrides to
+the pinned Codex invocation. Falsify baseline leakage and KRN exposure before a
+quality run, then require structured capability-use events in the artifact.
+
+**Evidence / non-proof:** The 2026-07-19 combined replication profile named a
+KRN MCP server and skill, yet the live arm exposed neither and the artifact was
+correctly invalid. Rendering the same manifest as explicit overrides produced
+zero MCP servers for baseline and exactly `krn_decision_packet` for KRN. This
+proves configuration exposure at the CLI boundary, not model use or quality.
+
+**Retirement:** Retire when the pinned Codex profile path is itself observed to
+load arm capabilities and a focused regression signal rejects missing or
+leaked capability configuration.
+
 ## Trial interpretation
 
 **Trigger:** A tracked artifact is `invalid`, `blocked`, or `unverified`, or an

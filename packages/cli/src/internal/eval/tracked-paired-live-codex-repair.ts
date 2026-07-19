@@ -49,6 +49,7 @@ import {
   capabilityProfileHash,
   capabilityProfileName,
   capabilityUseFalsifierReasons,
+  codexCapabilityConfigArgs,
   codexCapabilityProfileConfig,
   hasPacketTransportCapability,
   observeCodexCapabilityUse,
@@ -63,6 +64,12 @@ import {
   type PairedMemoryTreatment,
   type PairedTrialManifest
 } from "./tracked-paired-trial-manifest.js";
+import {
+  isModelUsageObservation,
+  observeModelUsage,
+  unavailableModelUsageObservation,
+  type ModelUsageObservation
+} from "./tracked-paired-trial-model-usage.js";
 
 export {
   parseTrackedTrialManifest,
@@ -86,11 +93,7 @@ export type DecisionApplicationObservation =
   | "observed"
   | "persistence_failed";
 
-export type ModelUsageObservation = {
-  readonly tokenUsage: "unavailable";
-  readonly reason: string;
-  readonly latencySource: "arm_command_duration_ms";
-};
+export type { ModelUsageObservation } from "./tracked-paired-trial-model-usage.js";
 
 
 export type TrialPacketValidation = {
@@ -369,13 +372,19 @@ const decisionValidationReasons = (
     : [];
 };
 
+const explicitlyNamesNoRejectedPath = (value: string): boolean =>
+  /\b(?:no|none)\b(?:\s+[\p{L}\p{N}_-]+){0,4}\s+rejected paths?\b/iu.test(value);
+
+const explicitlyNamesNoStaleBoundary = (value: string): boolean =>
+  /\b(?:no|none)\b(?:\s+[\p{L}\p{N}_-]+){0,4}\s+stale\b/iu.test(value);
+
 const rejectedPathValidationReasons = (
   output: LiveCodexObedienceOutput,
   rejected: readonly string[] | undefined
 ): readonly string[] => {
   if (rejected === undefined) return ["packet rejected-path ids are unavailable"];
   if (rejected.length === 0) {
-    return /no rejected|none rejected|no rejected path/i.test(output.rejectedPath)
+    return explicitlyNamesNoRejectedPath(output.rejectedPath)
       ? []
       : ["live output does not preserve the packet's explicit no-rejected-path boundary"];
   }
@@ -396,6 +405,9 @@ const staleBoundaryValidationReasons = (
   const uuidTokens = output.staleBoundary.match(/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi) ?? [];
   if (uuidTokens.some((id) => !stale.includes(id))) {
     reasons.push("live output invents a stale boundary id outside packet authority");
+  }
+  if (stale.length === 0 && uuidTokens.length === 0 && !explicitlyNamesNoStaleBoundary(output.staleBoundary)) {
+    reasons.push("live output does not preserve the packet's explicit no-stale boundary");
   }
   return reasons;
 };
@@ -1255,12 +1267,6 @@ const isTrialPromptDelta = (value: unknown): boolean =>
   Number.isFinite(value["deltaBytes"]) &&
   value["packetOnlyByConstruction"] === true;
 
-const isModelUsageObservation = (value: unknown): value is ModelUsageObservation =>
-  isRecord(value) &&
-  value["tokenUsage"] === "unavailable" &&
-  readString(value["reason"]) !== undefined &&
-  value["latencySource"] === "arm_command_duration_ms";
-
 const isTrialExecutionFields = (value: JsonRecord): boolean =>
   optionalValue(value, "environmentProfileHash", isPresentString) &&
   optionalValue(value, "attempt", isTrialAttempt) &&
@@ -1619,12 +1625,6 @@ const trialProof = (status: TrackedTrialStatus): TrackedTrialArtifact["proof"] =
         "product readiness"
       ]
     };
-
-const unavailableModelUsageObservation = (): ModelUsageObservation => ({
-  tokenUsage: "unavailable",
-  reason: "Codex structured trial output does not expose model token usage; command durationMs is the recorded latency proxy.",
-  latencySource: "arm_command_duration_ms"
-});
 
 const trialExecution = (
   context: TrialContext,
@@ -2165,10 +2165,16 @@ const runComparableTrialArm = async (input: {
   // profile must remain visible instead of being suppressed with host config.
   const args = capabilityProfile === undefined
     ? configuredArgs
-    : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
+    : [
+        ...codexCapabilityConfigArgs(capabilityProfile),
+        ...configuredArgs.filter((argument) => argument !== "--ignore-user-config")
+      ];
   return runProcess(input.execution.containmentExecutable, [
     "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
     "--tmpfs", "/tmp", "--dir", "/tmp/.git",
+    // The checker owns the pinned MCP implementation and project-local skills.
+    // Rebind it read-only after tmpfs so worktrees below /tmp remain executable.
+    "--ro-bind", input.execution.checkerRoot, input.execution.checkerRoot,
     "--bind", input.target.root, input.target.root,
     "--bind", input.execution.sandboxRoot, input.execution.sandboxRoot,
     "--", input.execution.codexExecutable, ...args
@@ -2307,6 +2313,7 @@ const comparableExecutionEvidence = (
       promptDelta: arms.prompts.delta,
       baseline: arms.baselineResult,
       krn: arms.krnResult,
+      modelUsageObservation: observeModelUsage(arms.baselineResult, arms.krnResult),
       ...(capabilityProfiles === undefined ? {} : { capabilityUseObservation }),
       ...(input.recordDecisionApplications === undefined
         ? {}

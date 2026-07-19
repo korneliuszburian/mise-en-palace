@@ -17,6 +17,7 @@ this index stays short so it can be read every session.
 | Workflow | Read before acting | Core boundary |
 | --- | --- | --- |
 | Live Codex evaluation | [Auth and invocation](docs/CONTEXT_GOTCHAS.md#live-codex-auth-and-invocation) | Use the active Codex profile; a copied fixture auth file is not proof of current auth. |
+| Codex capability arms | [Explicit capability overrides](docs/CONTEXT_GOTCHAS.md#explicit-capability-overrides) | Verify arm MCP/skill configuration through explicit CLI overrides and structured runtime events. |
 | Retained paired fixtures | [Fixture lifecycle](docs/CONTEXT_GOTCHAS.md#retained-fixture-lifecycle) | Retain only for capture, then run the guarded cleanup and verify zero owned rows. |
 | Trial interpretation | [Invalid versus quality outcome](docs/CONTEXT_GOTCHAS.md#trial-interpretation) | Missing obedience, capability, packet, or auth evidence is not a win/loss/tie. |
 | Trial chronology | [First trial versus rerun](docs/CONTEXT_GOTCHAS.md#first-trial-versus-rerun) | Report the original trial separately from reruns and harness debugging. |
