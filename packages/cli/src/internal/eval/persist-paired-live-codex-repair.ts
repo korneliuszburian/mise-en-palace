@@ -267,6 +267,13 @@ const patchIdentityFields = (
     : { patchIdentity: `sha256:${sha256(`${baseline}:${krn}`)}` };
 };
 
+const checkerEvidenceRef = (artifact: TrackedTrialArtifact): string =>
+  artifact.checkerRevision === undefined
+    ? artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
+      ? "checker:paired-live-codex-repair.v2"
+      : "checker:paired-live-codex-repair.v1"
+    : `checker:${artifact.checkerRevision}`;
+
 const targetChangedFilesFor = (
   score: TrackedTrialArtifact["score"]
 ): NonNullable<TargetEvidenceInput["changedFiles"]> => score === undefined
@@ -279,9 +286,7 @@ const artifactEvidenceRefs = (
   `packet:${artifact.packet.checksum ?? "unknown"}`,
   `artifact:sha256:${artifact.artifactHash}`,
   `manifest:sha256:${artifact.manifestHash}`,
-  artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
-    ? "checker:paired-live-codex-repair.v2"
-    : "checker:paired-live-codex-repair.v1",
+  checkerEvidenceRef(artifact),
   `environment:sha256:${artifact.execution.environmentProfileHash ?? "unknown"}`,
   ...(artifact.execution.targets?.baseline.after?.patchHash === undefined
     ? []

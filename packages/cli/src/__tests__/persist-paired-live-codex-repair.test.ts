@@ -244,7 +244,15 @@ describe("paired live Codex repair persistence", () => {
     });
   });
 
-  it("attributes mutation-backed v2 artifacts to the v2 checker", () => {
+  it("attributes artifacts to exact checker revisions before legacy kind fallback", () => {
+    const exact = prepare(artifact({
+      kind: "krn.pairedLiveCodexRepairArtifact.v2",
+      checkerRevision: "paired-live-codex-repair-checker.v3"
+    }));
+
+    expect(exact.evidenceRefs).toContain("checker:paired-live-codex-repair-checker.v3");
+    expect(exact.evidenceRefs).not.toContain("checker:paired-live-codex-repair.v2");
+
     const prepared = prepare(artifact({ kind: "krn.pairedLiveCodexRepairArtifact.v2" }));
 
     expect(prepared.evidenceRefs).toContain("checker:paired-live-codex-repair.v2");
