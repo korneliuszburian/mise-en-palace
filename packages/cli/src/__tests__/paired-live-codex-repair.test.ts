@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPairedRepairPrompts,
+  liveCodexObedienceMarker,
   pairedRepairEvalCandidate,
   pairedRepairUsefulnessOutcome,
   scorePairedRepairs,
@@ -599,8 +600,8 @@ describe("paired live Codex repair eval", () => {
       decisionPacket: { packetIdentity: { checksum: "abc" } }
     });
 
-    expect(prompts.baseline).not.toContain("emit one final line of JSON");
-    expect(prompts.krn).toContain("emit one final line of JSON");
+    expect(prompts.baseline).not.toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain(liveCodexObedienceMarker);
     expect(prompts.krn).toContain("decisionId");
     expect(prompts.krn).toContain("nonProof");
     expect(prompts.krn).toContain("Treat packet.rejectedPathIds as the complete rejected-path authority");
@@ -619,16 +620,24 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.delta.deltaBytes).toBe(0);
   });
 
-  it("keeps capability-tool discovery instructions identical across arms", () => {
+  it("keeps capability-tool discovery identical while requiring KRN measurement output", () => {
     const prompts = buildPairedRepairPrompts({
       task: "repair the boundary",
       decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
       includeDecisionPacket: false,
       contextToolRunId: "run-123"
     });
-    expect(prompts.krn).toBe(prompts.baseline);
+    expect(prompts.krn).not.toBe(prompts.baseline);
     expect(prompts.baseline).toContain("krn_decision_packet tool is available");
+    expect(prompts.krn).toContain("krn_decision_packet tool is available");
     expect(prompts.baseline).toContain("run-123");
+    expect(prompts.krn).toContain("run-123");
+    expect(prompts.baseline).not.toContain("private-packet-marker");
+    expect(prompts.krn).not.toContain("private-packet-marker");
+    expect(prompts.baseline).not.toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain("use only that returned packet");
+    expect(prompts.delta.deltaBytes).toBeGreaterThan(0);
   });
 
   it("keeps private repair mechanisms out of baseline participant inputs", async () => {

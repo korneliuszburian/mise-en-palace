@@ -284,6 +284,18 @@ const basePrompt = (task: string, contextToolRunId?: string): string => [
   `Task: ${task}`
 ].join("\n");
 
+const obedienceEnvelopeInstruction =
+  `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper. The object must have exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not emit an array for staleBoundary and do not invent ids or claims outside the packet.`;
+
+const krnCapabilityObedienceContract = (contextToolRunId: string | undefined): readonly string[] =>
+  contextToolRunId === undefined
+    ? []
+    : [
+      "KRN arm measurement contract: if the krn_decision_packet tool returns a DecisionPacket, use only that returned packet for the final bounded obedience line. This line is measurement evidence, not new authority.",
+      "If the tool or packet is unavailable, do not invent packet ids or substitute target docs; report the failure normally. The tracked runner will keep the trial invalid until a bounded packet-derived obedience line is present.",
+      obedienceEnvelopeInstruction
+    ];
+
 const sha256 = (value: string): string =>
   createHash("sha256").update(value).digest("hex");
 
@@ -304,9 +316,12 @@ export const buildPairedRepairPrompts = (input: {
       JSON.stringify(input.decisionPacket),
       "END KRN DECISION PACKET",
       "Treat packet.rejectedPathIds as the complete rejected-path authority. If that array is empty, emit an explicit no-rejected-path statement even when context exclusions or source rejection records contain rejected material; do not promote those records into a rejected path. Treat the union of packet.staleDecisionIds and packet.staleKnowledgeIds as the complete stale boundary; if both arrays are empty, emit an explicit no-stale statement.",
-      `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper. The object must have exactly these non-empty fields: decisionId (one governing decision id or an array of them), rejectedPath (the packet rejected path or an explicit no-rejected-path statement), staleBoundary (a string that names every id in the union of packet.staleDecisionIds and packet.staleKnowledgeIds, or an explicit no-stale statement), nonProof (what this run does not prove), and action (the bounded next action). Do not emit an array for staleBoundary and do not invent ids or claims outside the packet.`
+      obedienceEnvelopeInstruction
     ].join("\n")
-    : baseline;
+    : [
+      baseline,
+      ...krnCapabilityObedienceContract(input.contextToolRunId)
+    ].join("\n");
 
   return {
     baseline,

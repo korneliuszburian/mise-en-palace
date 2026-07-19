@@ -28,10 +28,11 @@ import {
 import {
   parseRetainedFixtureReport
 } from "../internal/eval/cleanup-retained-paired-live-fixture.js";
-import type {
-  CommandResult,
-  HeldOutArmScore,
-  PairedRepairScore
+import {
+  liveCodexObedienceMarker,
+  type CommandResult,
+  type HeldOutArmScore,
+  type PairedRepairScore
 } from "../internal/eval/paired-live-codex-repair.js";
 
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
@@ -1026,6 +1027,95 @@ describe("tracked paired live Codex repair", () => {
       expect(failedPersistence.execution.decisionApplicationObservation).toBe("persistence_failed");
       expect(await readTrackedTrialArtifact(join(root, "failed-persistence-attempt")))
         .toEqual(failedPersistence);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("passes the capability KRN arm a packet-derived obedience contract without prompt-injecting the packet", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-capability-envelope-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    const baselinePromptPath = join(root, "baseline-prompt.txt");
+    const krnPromptPath = join(root, "krn-prompt.txt");
+    const capabilityUseEvent = JSON.stringify({ type: "mcp_tool_call", server: "krn_decision_packet" });
+    const obedienceLine = `${liveCodexObedienceMarker}${JSON.stringify({
+      decisionId: ["decision-1", "decision-2"],
+      rejectedPath: "rejected-path-1",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove live execution",
+      action: "validate"
+    })}`;
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'trial-baseline'; then",
+      `  printf '%s\\n' "$@" > "${baselinePromptPath}"`,
+      "  exit 0",
+      "fi",
+      "if printf '%s\\n' \"$@\" | grep -q 'trial-krn'; then",
+      `  printf '%s\\n' "$@" > "${krnPromptPath}"`,
+      `  printf '%s\\n' '${capabilityUseEvent}'`,
+      `  if printf '%s\\n' "$@" | grep -q '${liveCodexObedienceMarker}'; then printf '%s\\n' '${obedienceLine}'; fi`,
+      "  exit 0",
+      "fi",
+      "exit 2"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const baseManifest = runnableManifest(binRoot, 1_000);
+      const capabilityManifest: PairedTrialManifest = {
+        ...baseManifest,
+        codex: {
+          ...baseManifest.codex,
+          args: [
+            ...baseManifest.codex.args.slice(0, 3),
+            "--json",
+            ...baseManifest.codex.args.slice(3)
+          ]
+        },
+        capabilities: {
+          baseline: { mode: "baseline", mcpServers: [], skillPaths: [] },
+          krn: {
+            mode: "krn",
+            mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio"] }],
+            skillPaths: []
+          }
+        }
+      };
+      const privatePacketMarker = "private-packet-marker";
+      const trialPacket = {
+        ...packet,
+        request: { runId: capabilityManifest.runId },
+        packet: { ...packet.packet, privatePacketMarker }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: capabilityManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: trialPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+      expect(result.execution.liveObedienceStatus).toBe("valid");
+      expect(result.execution.capabilityUseObservation).toMatchObject({
+        baseline: { mcpToolCallEvents: 0, skillEvents: 0 },
+        krn: { mcpToolCallEvents: 1, skillEvents: 0 }
+      });
+
+      const baselinePrompt = await readFile(baselinePromptPath, "utf8");
+      const krnPrompt = await readFile(krnPromptPath, "utf8");
+      expect(baselinePrompt).toContain("runId replayed-run");
+      expect(krnPrompt).toContain("runId replayed-run");
+      expect(baselinePrompt).not.toContain(liveCodexObedienceMarker);
+      expect(krnPrompt).toContain(liveCodexObedienceMarker);
+      expect(baselinePrompt).not.toContain(privatePacketMarker);
+      expect(krnPrompt).not.toContain(privatePacketMarker);
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(source, { recursive: true, force: true });
