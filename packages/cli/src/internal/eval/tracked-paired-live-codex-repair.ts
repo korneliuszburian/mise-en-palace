@@ -2846,3 +2846,18 @@ export const runTrackedTrialCommand = async (
     })
   });
 };
+
+export const parseTrackedTrialCommandArguments = (
+  rawArgs: readonly string[]
+): {
+  readonly manifestPath?: string;
+  readonly attemptDirectory?: string;
+} => {
+  const args = rawArgs[0] === "--" ? rawArgs.slice(1) : rawArgs;
+  const [manifestPath, attemptDirectory] = args;
+
+  return {
+    ...(manifestPath === undefined ? {} : { manifestPath }),
+    ...(attemptDirectory === undefined ? {} : { attemptDirectory })
+  };
+};

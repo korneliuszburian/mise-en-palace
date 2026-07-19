@@ -1,8 +1,9 @@
 import {
+  parseTrackedTrialCommandArguments,
   runTrackedTrialCommand
 } from "./tracked-paired-live-codex-repair.js";
 
-const [manifestPath, attemptDirectory] = process.argv.slice(2);
+const { manifestPath, attemptDirectory } = parseTrackedTrialCommandArguments(process.argv.slice(2));
 if (manifestPath === undefined) {
   throw new Error(
     "Usage: run-tracked-paired-live-codex-repair <bound-manifest-path> [attempt-directory]"

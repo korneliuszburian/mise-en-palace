@@ -18,6 +18,7 @@ import {
   parseTrackedTrialManifest,
   observeSourceCommands,
   promptPacketForContext,
+  parseTrackedTrialCommandArguments,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
   runTrackedTrialCommand,
@@ -138,6 +139,19 @@ describe("MCP packet readback", () => {
     const stdout = `\u001b[1;32m${JSON.stringify({ jsonrpc: "2.0", id: 2, result: { structuredContent: packet } })}`;
 
     expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
+  });
+});
+
+describe("tracked trial command arguments", () => {
+  it("accepts direct args and pnpm separator args at the entrypoint boundary", () => {
+    expect(parseTrackedTrialCommandArguments(["manifests/trial.json", ".local-lab/attempt-1"])).toEqual({
+      manifestPath: "manifests/trial.json",
+      attemptDirectory: ".local-lab/attempt-1"
+    });
+    expect(parseTrackedTrialCommandArguments(["--", "manifests/trial.json", ".local-lab/attempt-1"])).toEqual({
+      manifestPath: "manifests/trial.json",
+      attemptDirectory: ".local-lab/attempt-1"
+    });
   });
 });
 
