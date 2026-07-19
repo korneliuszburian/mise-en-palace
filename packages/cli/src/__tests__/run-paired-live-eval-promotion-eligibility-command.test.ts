@@ -241,6 +241,77 @@ describe("runPairedLiveEvalPromotionEligibilityCommand", () => {
     }));
   });
 
+  it("requires a new review when durable helped eval evidence outlives retained feedback cleanup", async () => {
+    const checked: GetReviewedHelpedMemoryProposalEligibilityInput[] = [];
+
+    const result = await runPairedLiveEvalPromotionEligibilityCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        projectId,
+        runId,
+        candidateId: `paired-target-repair:${runId}`,
+        format: "json"
+      },
+      createEligibilityRuntime: async () => ({
+        async listPairedLiveEvalEvidence() {
+          return [pairedEvidence({
+            scenario: "temporal-policy-hidden-source-typescript",
+            family: "temporal-policy-hidden-source",
+            evidenceRefs: [
+              `packet:${"a".repeat(64)}`,
+              `artifact:sha256:${"b".repeat(64)}`,
+              `manifest:sha256:${"c".repeat(64)}`,
+              "checker:paired-live-codex-repair-checker.v3",
+              `environment:sha256:${"d".repeat(64)}`,
+              "target:baseline-patch:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "target:krn-patch:sha256:691cca5a0fe6aed603d33d433d43cf2ec1a648bf9a6974dcaa48166c2cb48855"
+            ],
+            metadata: {
+              evaluationKind: "paired_live_codex_repair",
+              decisionApplications: [{
+                sourceDecisionId,
+                applicationId: "paired-source-decision:run:source",
+                outcome: "used",
+                appliedAt: now
+              }]
+            }
+          })];
+        },
+        async getReviewedHelpedMemoryProposalEligibility(input) {
+          checked.push(input);
+          return {
+            status: "blocked_authority",
+            projectId,
+            feedbackDeltaId: input.feedbackDeltaId,
+            reason: "feedback_delta_not_found"
+          };
+        },
+        async close() {}
+      })
+    });
+
+    const parsed = JSON.parse(result.stdout) as {
+      candidates: readonly [{
+        status: string;
+        feedbackDeltaId: string;
+        reason: string;
+        proposeCommand?: string;
+      }];
+    };
+
+    expect(checked).toEqual([{ projectId, feedbackDeltaId }]);
+    expect(parsed.candidates[0]).toEqual(expect.objectContaining({
+      status: "missing_review",
+      feedbackDeltaId,
+      reason: "review_assessment_not_found"
+    }));
+    expect(parsed.candidates[0]?.proposeCommand).toBeUndefined();
+  });
+
   it("fails closed when the database URL is missing", async () => {
     await expect(runPairedLiveEvalPromotionEligibilityCommand({
       env: {},

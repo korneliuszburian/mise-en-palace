@@ -184,61 +184,6 @@ const baseCandidateFields = (record: PairedLiveEvalEvidenceRecord) => ({
   usefulnessOutcome: record.usefulnessOutcome
 });
 
-const candidateFromEligibility = (
-  record: PairedLiveEvalEvidenceRecord,
-  eligibility: ReviewedHelpedMemoryProposalEligibility
-): PromotionEligibilityCandidate => {
-  const base = baseCandidateFields(record);
-
-  if (eligibility.status === "ready_to_propose") {
-    const args = proposalCommandArgs(eligibility);
-
-    return {
-      ...base,
-      feedbackDeltaId: eligibility.feedbackDeltaId,
-      status: "ready_to_propose",
-      reviewAssessmentId: eligibility.reviewAssessmentId,
-      sourceDecisionId: eligibility.sourceDecisionId,
-      sourceClaimId: eligibility.sourceClaimId,
-      evidenceBundleId: eligibility.evidenceBundleId,
-      usefulnessApplicationId: eligibility.usefulnessApplicationId,
-      packetChecksum: eligibility.packetChecksum,
-      ...(eligibility.existingCandidateId === undefined
-        ? {}
-        : { existingCandidateId: eligibility.existingCandidateId }),
-      proposeCommand: args.join(" "),
-      proposeCommandArgs: args
-    };
-  }
-
-  if (eligibility.status === "missing_review") {
-    return {
-      ...base,
-      feedbackDeltaId: eligibility.feedbackDeltaId,
-      status: "missing_review",
-      reason: eligibility.reason,
-      ...(eligibility.sourceDecisionId === undefined
-        ? {}
-        : { sourceDecisionId: eligibility.sourceDecisionId }),
-      ...(eligibility.evidenceBundleId === undefined
-        ? {}
-        : { evidenceBundleId: eligibility.evidenceBundleId }),
-      ...(eligibility.usefulnessApplicationId === undefined
-        ? {}
-        : { usefulnessApplicationId: eligibility.usefulnessApplicationId })
-    };
-  }
-
-  return {
-    ...base,
-    status: "blocked_authority",
-    reason: eligibility.reason,
-    ...(eligibility.sourceDecisionId === undefined
-      ? {}
-      : { sourceDecisionId: eligibility.sourceDecisionId })
-  };
-};
-
 const blockedMissingFeedbackCandidate = (
   record: PairedLiveEvalEvidenceRecord
 ): PromotionEligibilityCandidate => ({
@@ -246,6 +191,98 @@ const blockedMissingFeedbackCandidate = (
   status: "blocked_authority",
   reason: "feedback_delta_not_found"
 });
+
+const readyToProposeCandidate = (
+  record: PairedLiveEvalEvidenceRecord,
+  eligibility: Extract<ReviewedHelpedMemoryProposalEligibility, { status: "ready_to_propose" }>
+): PromotionEligibilityCandidate => {
+  const args = proposalCommandArgs(eligibility);
+
+  return {
+    ...baseCandidateFields(record),
+    feedbackDeltaId: eligibility.feedbackDeltaId,
+    status: "ready_to_propose",
+    reviewAssessmentId: eligibility.reviewAssessmentId,
+    sourceDecisionId: eligibility.sourceDecisionId,
+    sourceClaimId: eligibility.sourceClaimId,
+    evidenceBundleId: eligibility.evidenceBundleId,
+    usefulnessApplicationId: eligibility.usefulnessApplicationId,
+    packetChecksum: eligibility.packetChecksum,
+    ...(eligibility.existingCandidateId === undefined
+      ? {}
+      : { existingCandidateId: eligibility.existingCandidateId }),
+    proposeCommand: args.join(" "),
+    proposeCommandArgs: args
+  };
+};
+
+const missingReviewCandidate = (
+  record: PairedLiveEvalEvidenceRecord,
+  eligibility: Extract<ReviewedHelpedMemoryProposalEligibility, { status: "missing_review" }>
+): PromotionEligibilityCandidate => ({
+  ...baseCandidateFields(record),
+  feedbackDeltaId: eligibility.feedbackDeltaId,
+  status: "missing_review",
+  reason: eligibility.reason,
+  ...(eligibility.sourceDecisionId === undefined
+    ? {}
+    : { sourceDecisionId: eligibility.sourceDecisionId }),
+  ...(eligibility.evidenceBundleId === undefined
+    ? {}
+    : { evidenceBundleId: eligibility.evidenceBundleId }),
+  ...(eligibility.usefulnessApplicationId === undefined
+    ? {}
+    : { usefulnessApplicationId: eligibility.usefulnessApplicationId })
+});
+
+const retainedCleanupMissingReviewCandidate = (
+  record: PairedLiveEvalEvidenceRecord,
+  eligibility: Extract<ReviewedHelpedMemoryProposalEligibility, { status: "blocked_authority" }>
+): PromotionEligibilityCandidate | undefined => {
+  if (
+    eligibility.reason !== "feedback_delta_not_found" ||
+    record.feedbackDeltaId === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    ...baseCandidateFields(record),
+    feedbackDeltaId: record.feedbackDeltaId,
+    status: "missing_review",
+    reason: "review_assessment_not_found",
+    ...(eligibility.sourceDecisionId === undefined
+      ? {}
+      : { sourceDecisionId: eligibility.sourceDecisionId })
+  };
+};
+
+const blockedAuthorityCandidate = (
+  record: PairedLiveEvalEvidenceRecord,
+  eligibility: Extract<ReviewedHelpedMemoryProposalEligibility, { status: "blocked_authority" }>
+): PromotionEligibilityCandidate => ({
+  ...baseCandidateFields(record),
+  status: "blocked_authority",
+  reason: eligibility.reason,
+  ...(eligibility.sourceDecisionId === undefined
+    ? {}
+    : { sourceDecisionId: eligibility.sourceDecisionId })
+});
+
+const candidateFromEligibility = (
+  record: PairedLiveEvalEvidenceRecord,
+  eligibility: ReviewedHelpedMemoryProposalEligibility
+): PromotionEligibilityCandidate => {
+  switch (eligibility.status) {
+    case "ready_to_propose":
+      return readyToProposeCandidate(record, eligibility);
+    case "missing_review":
+      return missingReviewCandidate(record, eligibility);
+    case "blocked_authority":
+      return retainedCleanupMissingReviewCandidate(record, eligibility) ??
+        blockedAuthorityCandidate(record, eligibility);
+  }
+};
 
 const eligibilityForRecord = async (
   runtime: PairedLiveEvalPromotionEligibilityDatabaseRuntime,
