@@ -43,12 +43,16 @@ more model tokens in every KRN arm. After removing duplicate DecisionPacket
 text at the MCP boundary, one independently sourced historical repair produced
 an equal-quality result (7:7) while the KRN arm used 12.51% fewer input tokens,
 13.59% fewer cached-input tokens, 15.56% fewer output tokens, 27.34% fewer
-reasoning-output tokens, and completed 21.99% faster in that run. This is
-evidence that governed context can change one relevant outcome and can deliver
-the same result at lower observed cost on one ordinary task. It is not yet
-evidence of repeatability, isolated MCP or skill causality,
-arbitrary-repository portability, or broad superiority. KRN does not need to
-win raw recall against a comprehensive notes dump.
+reasoning-output tokens, and completed 21.99% faster in that run. A second
+independently sourced historical repair from a different repository and failure
+family produced a KRN quality win (7:6) with 37.85% fewer input and 39.11% fewer
+cached-input tokens, but 3.59% more output, 51.08% more reasoning output, and
+19.68% more wall time. Across these two independent tasks KRN has one quality
+win, one tie, no losses, and repeated lower input usage; output and latency are
+mixed. This is bounded evidence of useful combined KRN capability, not isolated
+MCP or skill causality, arbitrary-repository portability, total-cost advantage,
+or broad superiority. KRN does not need to win raw recall against a
+comprehensive notes dump.
 
 ## Product Shape
 
@@ -96,6 +100,9 @@ Built enough to keep:
 - one preregistered, independently sourced historical `krn-search` repair in
   which plain Codex and KRN both scored 7:7 while KRN used fewer observed
   tokens and less wall time;
+- one preregistered, independently sourced historical `krn-llm-wiki` CLI input
+  repair in which KRN won 7:6 with lower input usage but higher output,
+  reasoning, and wall time;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -104,9 +111,9 @@ Not product-ready:
 - no dashboard/API or broad MCP product surface beyond the minimal read-only
   `krn_decision_packet` wrapper;
 - no external operator/product proof beyond bounded target-repo harnesses;
-- no replicated quality-advantage claim: the authored matched series produced
-  one KRN quality win and two ties, while the first independently sourced task
-  tied on quality and supplied only a one-run efficiency signal;
+- no broad quality-advantage claim: the authored matched series produced one
+  KRN quality win and two ties, while the two independently sourced tasks
+  produced one KRN win and one tie with mixed cost signals;
 - no broad benchmark suite;
 - no autonomous maintenance daemon or scheduler;
 - no large-scale ingest pipeline;
@@ -117,17 +124,25 @@ The next phase is not a UI or executor phase. It is repeated use on ordinary
 engineering tasks: strengthen task-standard activation and temporal consensus
 where observed failures demand it, then replicate the independently sourced
 quality and efficiency measurements without growing a benchmark platform. The
-retained independent result is paired-live evidence
+first retained independent result is paired-live evidence
 `393cf6af-80cf-482a-bb57-d7c413a1cd27`, bound to DecisionPacket checksum
 `ea9bb76b10db7d6f6698d12344804124e1bffd0cb875eefd16598b5798a70014`
 and immutable artifact SHA-256
 `4ccbd05d065d2efdeeaccd0162d704cd0fbbeb2f676b9706eec1278ee8ae9f60`.
 Two earlier attempts were excluded before scoring because their invocation or
-timeout contract prevented a comparable completed pair. The valid attempt was
-read back after persistence and its retained fixture was removed through the
-guarded cleanup with zero owned rows remaining and unrelated project count
-unchanged. This provenance makes the result auditable; it does not make one
-stochastic task a causal or general advantage claim.
+timeout contract prevented a comparable completed pair. The second retained
+independent result is paired-live evidence
+`6123c8d4-fe4b-4c94-864b-05d8b9386b9e`, bound to DecisionPacket checksum
+`9bec2232834066129759ba73d359d484ad0cf4c67afb54298bfe5cace65bf4ac`
+and immutable artifact SHA-256
+`4b64a39ef6c12a5023ae53d0cd2effdb426ff834afe899b064e185513f43e463`.
+Its first attempt was excluded because the KRN arm timed out before a usage
+event. Both valid attempts were read back after persistence and their retained
+fixtures were removed through guarded cleanup with zero owned rows remaining
+and unrelated project counts unchanged. The second cleanup also exposed and
+falsified an incomplete project-owned retrieval deletion, repaired at the
+production cleanup seam. This provenance makes the two results auditable; it
+does not turn two stochastic tasks into a causal or general advantage claim.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
