@@ -766,6 +766,10 @@ describe("tracked paired live Codex repair", () => {
       }
     };
     expect(parseTrackedTrialManifest({ ...manifest, capabilities })).toMatchObject({ capabilities });
+    expect(parseTrackedTrialManifest({
+      ...manifest,
+      decisionApplications: [manifest.decisionApplications[0]!]
+    }).decisionApplications).toHaveLength(1);
     expect(() => parseTrackedTrialManifest({
       ...manifest,
       capabilities: { ...capabilities, baseline: { ...capabilities.baseline, skillPaths: ["/tmp/leak"] } }

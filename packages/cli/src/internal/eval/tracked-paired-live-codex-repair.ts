@@ -473,12 +473,13 @@ const hasCompleteDecisionApplicationRules = (value: JsonRecord): boolean => {
   if (!Array.isArray(requiredDecisionIds) || !Array.isArray(rules) || !rules.every(isDecisionApplicationRule)) {
     return false;
   }
+  const requiredDecisionIdSet = new Set(requiredDecisionIds);
   const governingDecisionIds = rules.map((rule) => rule.governingDecisionId);
-  return new Set(requiredDecisionIds).size === requiredDecisionIds.length &&
+  return requiredDecisionIds.every((id) => typeof id === "string") &&
+    requiredDecisionIdSet.size === requiredDecisionIds.length &&
     hasUnambiguousDecisionApplicationProofs(rules) &&
-    requiredDecisionIds.length === governingDecisionIds.length &&
-    requiredDecisionIds.every((id) =>
-      typeof id === "string" && governingDecisionIds.includes(id)
+    governingDecisionIds.every((id) =>
+      requiredDecisionIdSet.has(id)
     );
 };
 
