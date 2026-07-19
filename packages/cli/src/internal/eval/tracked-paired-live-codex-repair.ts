@@ -2131,7 +2131,7 @@ export const promptPacketForContext = (
   return { ...packet, packet: body };
 };
 
-const executeComparableTrial = async (input: {
+type ComparableTrialExecutionInput = {
   readonly trial: ComparableTrial;
   readonly packet: unknown;
   readonly checkerRoot: string;
@@ -2140,136 +2140,243 @@ const executeComparableTrial = async (input: {
   readonly containmentExecutable: string;
   readonly codexExecutable: string;
   readonly recordDecisionApplications: PairedDecisionApplicationRecorder | undefined;
-}, checker: PairedTrialChecker): Promise<TrialArtifactInput> => {
-  const runArm = async (
-    arm: "baseline" | "krn",
-    target: MaterializedTrialTarget,
-    prompt: string,
-    environment: NodeJS.ProcessEnv
-  ): Promise<CommandResult> => {
-    const capabilityProfile = input.trial.context.manifest.capabilities?.[arm];
-    const profileName = capabilityProfile === undefined
-      ? input.trial.context.manifest.codex.profile.name
-      : capabilityProfileName(input.trial.context.manifest.codex.profile.name, arm);
-    const configuredArgs = input.trial.context.manifest.codex.args.map((argument) =>
-      replaceArgument(argument, {
-        "{prompt}": prompt,
-        "{targetRoot}": target.root,
-        [input.trial.context.manifest.codex.profile.name]: profileName
-      })
-    );
-    // `--ignore-user-config` also suppresses the isolated CODEX_HOME profile;
-    // capability trials have no host config to protect because the sandbox
-    // home contains only the materialized auth/profile files.
-    const baseArgs = capabilityProfile === undefined
-      ? configuredArgs
-      : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
-    const capabilityArgs: readonly string[] = [];
-    const promptIndex = baseArgs.indexOf(prompt);
-    const args = promptIndex < 0
-      ? [...baseArgs, ...capabilityArgs]
-      : [...baseArgs.slice(0, promptIndex), ...capabilityArgs, ...baseArgs.slice(promptIndex)];
-    return runProcess(input.containmentExecutable, [
-      "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
-      "--tmpfs", "/tmp", "--dir", "/tmp/.git",
-      "--bind", target.root, target.root,
-      "--bind", input.sandboxRoot, input.sandboxRoot, "--", input.codexExecutable, ...args
-    ], {
-      cwd: target.root,
-      env: environment,
-      timeoutMs: input.trial.context.manifest.codex.budget.timeoutMs
-    });
-  };
-  const promptPacket = promptPacketForContext(
-    input.packet,
-    input.trial.context.manifest.packetContextMode ?? "full"
+};
+
+const runComparableTrialArm = async (input: {
+  readonly execution: ComparableTrialExecutionInput;
+  readonly arm: "baseline" | "krn";
+  readonly target: MaterializedTrialTarget;
+  readonly prompt: string;
+  readonly environment: NodeJS.ProcessEnv;
+}): Promise<CommandResult> => {
+  const manifest = input.execution.trial.context.manifest;
+  const capabilityProfile = manifest.capabilities?.[input.arm];
+  const profileName = capabilityProfile === undefined
+    ? manifest.codex.profile.name
+    : capabilityProfileName(manifest.codex.profile.name, input.arm);
+  const configuredArgs = manifest.codex.args.map((argument) =>
+    replaceArgument(argument, {
+      "{prompt}": input.prompt,
+      "{targetRoot}": input.target.root,
+      [manifest.codex.profile.name]: profileName
+    })
   );
-  const family = resolvePairedEvalFamily(input.trial.context.manifest.scenario);
-  const prompts = buildPairedRepairPrompts({
-    task: input.trial.context.manifest.task,
-    decisionPacket: promptPacket,
-    family,
-    includeDecisionPacket: input.trial.context.manifest.capabilities === undefined,
-    ...(input.trial.context.manifest.capabilities === undefined
-      ? {}
-      : { contextToolRunId: input.trial.context.manifest.runId })
+  // Capability trials use only the isolated sandbox home, so the arm-specific
+  // profile must remain visible instead of being suppressed with host config.
+  const args = capabilityProfile === undefined
+    ? configuredArgs
+    : configuredArgs.filter((argument) => argument !== "--ignore-user-config");
+  return runProcess(input.execution.containmentExecutable, [
+    "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
+    "--tmpfs", "/tmp", "--dir", "/tmp/.git",
+    "--bind", input.target.root, input.target.root,
+    "--bind", input.execution.sandboxRoot, input.execution.sandboxRoot,
+    "--", input.execution.codexExecutable, ...args
+  ], {
+    cwd: input.target.root,
+    env: input.environment,
+    timeoutMs: manifest.codex.budget.timeoutMs
   });
-  const baselineResult = await runArm("baseline", input.trial.baseline, prompts.baseline, input.trial.baselineArmEnvironment);
+};
+
+type ExecutedComparableArms = {
+  readonly prompts: ReturnType<typeof buildPairedRepairPrompts>;
+  readonly baselineResult: CommandResult;
+  readonly krnResult: CommandResult;
+  readonly baselineAfter: TrialTargetState;
+  readonly krnAfter: TrialTargetState;
+};
+
+const executeComparableArms = async (
+  input: ComparableTrialExecutionInput
+): Promise<ExecutedComparableArms> => {
+  const manifest = input.trial.context.manifest;
+  const prompts = buildPairedRepairPrompts({
+    task: manifest.task,
+    decisionPacket: promptPacketForContext(input.packet, manifest.packetContextMode ?? "full"),
+    family: resolvePairedEvalFamily(manifest.scenario),
+    includeDecisionPacket: manifest.capabilities === undefined,
+    ...(manifest.capabilities === undefined ? {} : { contextToolRunId: manifest.runId })
+  });
+  const baselineResult = await runComparableTrialArm({
+    execution: input,
+    arm: "baseline",
+    target: input.trial.baseline,
+    prompt: prompts.baseline,
+    environment: input.trial.baselineArmEnvironment
+  });
   const baselineAfter = await captureTargetState({
     targetRoot: input.trial.baseline.root,
     initialCommit: input.trial.baseline.commit,
     environment: input.trial.baselineObservationEnvironment
   });
-  await input.journal.phase("baseline_executed", { result: baselineResult, before: input.trial.baselineBefore, after: baselineAfter });
-  const krnResult = await runArm("krn", input.trial.krn, prompts.krn, input.trial.krnArmEnvironment);
+  await input.journal.phase("baseline_executed", {
+    result: baselineResult,
+    before: input.trial.baselineBefore,
+    after: baselineAfter
+  });
+  const krnResult = await runComparableTrialArm({
+    execution: input,
+    arm: "krn",
+    target: input.trial.krn,
+    prompt: prompts.krn,
+    environment: input.trial.krnArmEnvironment
+  });
   const krnAfter = await captureTargetState({
     targetRoot: input.trial.krn.root,
     initialCommit: input.trial.krn.commit,
     environment: input.trial.krnObservationEnvironment
   });
-  await input.journal.phase("krn_executed", { result: krnResult, before: input.trial.krnBefore, after: krnAfter });
-  const liveOutputCapture = inspectLiveCodexObedienceOutput(krnResult.stdout);
-  const capabilityProfiles = input.trial.context.manifest.capabilities;
-  const capabilityUseObservation = {
+  await input.journal.phase("krn_executed", {
+    result: krnResult,
+    before: input.trial.krnBefore,
+    after: krnAfter
+  });
+  return { prompts, baselineResult, krnResult, baselineAfter, krnAfter };
+};
+
+const observeComparableCapabilities = (
+  manifest: PairedTrialManifest,
+  arms: Pick<ExecutedComparableArms, "baselineResult" | "krnResult">
+): { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation } => {
+  const profiles = manifest.capabilities;
+  return {
     baseline: observeCodexCapabilityUse(
-      baselineResult,
-      capabilityProfiles?.baseline.mcpServers.map((server) => server.name),
-      capabilityProfiles === undefined ? undefined : capabilityProfiles.baseline.skillPaths.length > 0
+      arms.baselineResult,
+      profiles?.baseline.mcpServers.map((server) => server.name),
+      profiles === undefined ? undefined : profiles.baseline.skillPaths.length > 0
     ),
     krn: observeCodexCapabilityUse(
-      krnResult,
-      capabilityProfiles?.krn.mcpServers.map((server) => server.name),
-      capabilityProfiles === undefined ? undefined : capabilityProfiles.krn.skillPaths.length > 0
+      arms.krnResult,
+      profiles?.krn.mcpServers.map((server) => server.name),
+      profiles === undefined ? undefined : profiles.krn.skillPaths.length > 0
     )
   };
-  let decisionApplicationObservation: DecisionApplicationObservation | undefined;
-  const execution = {
-    environmentProfileHash: input.trial.environmentHash,
-    promptDelta: prompts.delta,
-    baseline: baselineResult,
-    krn: krnResult,
-    ...(input.trial.context.manifest.capabilities === undefined ? {} : { capabilityUseObservation }),
-    ...(input.recordDecisionApplications === undefined
-      ? {}
-      : { decisionApplicationObservation: "not_attempted" as const }),
-    targets: {
-      baseline: { before: input.trial.baselineBefore, after: baselineAfter },
-      krn: { before: input.trial.krnBefore, after: krnAfter }
-    },
-    liveObedienceStatus: liveOutputCapture.status,
-    ...optionalField("liveOutput", liveOutputCapture.output)
-  };
-  const liveOutputValidation = execution.liveOutput === undefined
-    ? {
+};
+
+const validateComparableLiveOutput = (
+  capture: LiveCodexObedienceCapture,
+  packet: unknown
+): { readonly validation: LiveCodexObedienceValidation; readonly status: LiveCodexObedienceStatus } => {
+  if (capture.output === undefined) {
+    return {
+      status: capture.status,
+      validation: {
         valid: false,
-        reasons: [liveOutputCapture.status === "malformed"
+        reasons: [capture.status === "malformed"
           ? "KRN arm emitted a malformed bounded live obedience JSON"
           : "KRN arm did not emit the bounded live obedience JSON"]
       }
-    : validateLiveCodexObedienceOutputAgainstPacket(execution.liveOutput, input.packet);
-  const liveObedienceStatus: LiveCodexObedienceStatus =
-    liveOutputCapture.output === undefined
-      ? liveOutputCapture.status
-      : liveOutputValidation.valid ? "valid" : "packet_mismatch";
-  const executionWithLiveValidation = { ...execution, liveOutputValidation };
-  const executionWithStatus = { ...executionWithLiveValidation, liveObedienceStatus };
-  const armReasons = [
-    armFailureReason("baseline", baselineResult),
-    armFailureReason("krn", krnResult),
-    targetStateReason("baseline", "after", baselineAfter),
-    targetStateReason("krn", "after", krnAfter)
-  ].filter((reason): reason is string => reason !== undefined);
-  if (krnResult.exitCode === 0) armReasons.push(...liveOutputValidation.reasons);
-  if (input.trial.context.manifest.capabilities !== undefined) {
-    armReasons.push(...capabilityUseFalsifierReasons(capabilityUseObservation));
+    };
   }
-  if (armReasons.length > 0) {
+  const validation = validateLiveCodexObedienceOutputAgainstPacket(capture.output, packet);
+  return { validation, status: validation.valid ? "valid" : "packet_mismatch" };
+};
+
+const comparableInvalidReasons = (input: {
+  readonly arms: ExecutedComparableArms;
+  readonly liveValidation: LiveCodexObedienceValidation;
+  readonly capabilityUse: { readonly baseline: CodexCapabilityUseObservation; readonly krn: CodexCapabilityUseObservation };
+  readonly capabilitiesDeclared: boolean;
+}): readonly string[] => [
+  armFailureReason("baseline", input.arms.baselineResult),
+  armFailureReason("krn", input.arms.krnResult),
+  targetStateReason("baseline", "after", input.arms.baselineAfter),
+  targetStateReason("krn", "after", input.arms.krnAfter),
+  ...(input.arms.krnResult.exitCode === 0 ? input.liveValidation.reasons : []),
+  ...(input.capabilitiesDeclared ? capabilityUseFalsifierReasons(input.capabilityUse) : [])
+].filter((reason): reason is string => reason !== undefined);
+
+const comparableExecutionEvidence = (
+  input: ComparableTrialExecutionInput,
+  arms: ExecutedComparableArms
+): { readonly execution: TrialExecutionDetails; readonly invalidReasons: readonly string[] } => {
+  const liveOutputCapture = inspectLiveCodexObedienceOutput(arms.krnResult.stdout);
+  const capabilityProfiles = input.trial.context.manifest.capabilities;
+  const capabilityUseObservation = observeComparableCapabilities(input.trial.context.manifest, arms);
+  const liveOutput = validateComparableLiveOutput(liveOutputCapture, input.packet);
+  return {
+    invalidReasons: comparableInvalidReasons({
+      arms,
+      liveValidation: liveOutput.validation,
+      capabilityUse: capabilityUseObservation,
+      capabilitiesDeclared: capabilityProfiles !== undefined
+    }),
+    execution: {
+      environmentProfileHash: input.trial.environmentHash,
+      promptDelta: arms.prompts.delta,
+      baseline: arms.baselineResult,
+      krn: arms.krnResult,
+      ...(capabilityProfiles === undefined ? {} : { capabilityUseObservation }),
+      ...(input.recordDecisionApplications === undefined
+        ? {}
+        : { decisionApplicationObservation: "not_attempted" as const }),
+      targets: {
+        baseline: { before: input.trial.baselineBefore, after: arms.baselineAfter },
+        krn: { before: input.trial.krnBefore, after: arms.krnAfter }
+      },
+      liveObedienceStatus: liveOutput.status,
+      liveOutputValidation: liveOutput.validation,
+      ...optionalField("liveOutput", liveOutputCapture.output)
+    }
+  };
+};
+
+type DecisionApplicationPersistence =
+  | { readonly kind: "skipped" }
+  | { readonly kind: "observed"; readonly observation: "observed" }
+  | {
+      readonly kind: "unverified";
+      readonly observation: "none_observed" | "persistence_failed";
+      readonly reason: string;
+    };
+
+const persistDecisionApplications = async (input: {
+  readonly execution: ComparableTrialExecutionInput;
+  readonly score: PairedRepairScore;
+}): Promise<DecisionApplicationPersistence> => {
+  const recorder = input.execution.recordDecisionApplications;
+  if (recorder === undefined || input.score.outcome === "invalid") return { kind: "skipped" };
+  try {
+    const applications = await recorder({
+      runId: input.execution.trial.context.manifest.runId,
+      packet: input.execution.packet,
+      score: input.score,
+      rules: input.execution.trial.context.manifest.decisionApplications,
+      krnTarget: {
+        targetRoot: input.execution.trial.krn.root,
+        checkerRoot: input.execution.checkerRoot,
+        initialCommit: input.execution.trial.krn.commit
+      }
+    });
+    return applications.length > 0
+      ? { kind: "observed", observation: "observed" }
+      : {
+          kind: "unverified",
+          observation: "none_observed",
+          reason: "decision application persistence produced no observed applications"
+        };
+  } catch (error) {
+    const reason = error instanceof Error && error.message.trim().length > 0
+      ? `decision application persistence failed: ${error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/giu, "postgres://<redacted>")}`
+      : "decision application persistence failed";
+    return { kind: "unverified", observation: "persistence_failed", reason };
+  }
+};
+
+const executeComparableTrial = async (
+  input: ComparableTrialExecutionInput,
+  checker: PairedTrialChecker
+): Promise<TrialArtifactInput> => {
+  const arms = await executeComparableArms(input);
+  const evidence = comparableExecutionEvidence(input, arms);
+  if (evidence.invalidReasons.length > 0) {
     return {
       status: "invalid",
-      invalidReasons: armReasons,
+      invalidReasons: evidence.invalidReasons,
       baselineTreeHash: input.trial.baseline.treeHash,
       krnTreeHash: input.trial.krn.treeHash,
-      execution: executionWithStatus
+      execution: evidence.execution
     };
   }
   const score = await checker({
@@ -2277,50 +2384,26 @@ const executeComparableTrial = async (input: {
     krn: { targetRoot: input.trial.krn.root, checkerRoot: input.checkerRoot, initialCommit: input.trial.krn.commit, family: resolvePairedEvalFamily(input.trial.context.manifest.scenario) }
   });
   await input.journal.phase("checker_scored", { outcome: score.outcome, reason: score.reason });
-  if (input.recordDecisionApplications !== undefined && score.outcome !== "invalid") {
-    try {
-      const applications = await input.recordDecisionApplications({
-        runId: input.trial.context.manifest.runId,
-        packet: input.packet,
-        score,
-        rules: input.trial.context.manifest.decisionApplications,
-        krnTarget: {
-          targetRoot: input.trial.krn.root,
-          checkerRoot: input.checkerRoot,
-          initialCommit: input.trial.krn.commit
-        }
-      });
-      decisionApplicationObservation = applications.length === 0 ? "none_observed" : "observed";
-      if (applications.length === 0) {
-        return {
-          status: "unverified",
-          invalidReasons: ["decision application persistence produced no observed applications"],
-          baselineTreeHash: input.trial.baseline.treeHash,
-          krnTreeHash: input.trial.krn.treeHash,
-          execution: { ...executionWithStatus, decisionApplicationObservation }
-        };
-      }
-    } catch (error) {
-      decisionApplicationObservation = "persistence_failed";
-      const persistenceReason = error instanceof Error && error.message.trim().length > 0
-        ? `decision application persistence failed: ${error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/giu, "postgres://<redacted>")}`
-        : "decision application persistence failed";
-      return {
-        status: "unverified",
-        invalidReasons: [persistenceReason],
-        baselineTreeHash: input.trial.baseline.treeHash,
-        krnTreeHash: input.trial.krn.treeHash,
-        execution: { ...executionWithStatus, decisionApplicationObservation },
-        score
-      };
-    }
+  const persistence = await persistDecisionApplications({ execution: input, score });
+  if (persistence.kind === "unverified") {
+    return {
+      status: "unverified",
+      invalidReasons: [persistence.reason],
+      baselineTreeHash: input.trial.baseline.treeHash,
+      krnTreeHash: input.trial.krn.treeHash,
+      execution: { ...evidence.execution, decisionApplicationObservation: persistence.observation },
+      ...(persistence.observation === "persistence_failed" ? { score } : {})
+    };
   }
+  const decisionApplicationObservation = persistence.kind === "observed"
+    ? persistence.observation
+    : undefined;
   return {
     status: score.outcome === "invalid" ? "invalid" : "passed",
     ...optionalField("invalidReasons", score.outcome === "invalid" ? ["held-out checker invalidated the pair"] : undefined),
     baselineTreeHash: input.trial.baseline.treeHash,
     krnTreeHash: input.trial.krn.treeHash,
-    execution: { ...executionWithStatus, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
+    execution: { ...evidence.execution, ...(decisionApplicationObservation === undefined ? {} : { decisionApplicationObservation }) },
     score
   };
 };
