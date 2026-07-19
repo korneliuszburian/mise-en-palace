@@ -141,10 +141,13 @@ describe("paired live Codex repair eval", () => {
     expect(resolvePairedEvalFamily("env-config-contract-typescript held-out")).toBe("env-config");
     expect(resolvePairedEvalFamily("async-job-boundary-typescript held-out")).toBe("async-job");
     expect(resolvePairedEvalFamily("temporal-policy-drift-typescript held-out")).toBe("temporal-policy-drift");
+    expect(resolvePairedEvalFamily("temporal-policy-hidden-source-typescript held-out")).toBe("temporal-policy-hidden-source");
     expect(resolvePairedEvalFamily("user-create-boundary-typescript held-out")).toBe("user-create");
     expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
     expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
     expect(pairedEvalFamilyContract("temporal-policy-drift").sourcePaths).toContain("src/payoutPolicy.ts");
+    expect(pairedEvalFamilyContract("temporal-policy-hidden-source").requiredChecks)
+      .toContain("held_out_runtime");
     expect(pairedEvalFamilyContract("user-create").sourcePaths).toContain("src/userService.ts");
   });
 
@@ -392,6 +395,31 @@ describe("paired live Codex repair eval", () => {
       name: "held_out_runtime",
       passed: true,
       details: expect.stringContaining("contract failure")
+    }));
+  });
+
+  it("keeps target-hidden temporal policy scoring separate while reusing the held-out contract", () => {
+    const score = scoreTargetRepair({
+      family: "temporal-policy-hidden-source",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'hold_for_policy_review' | 'manual_review';",
+          "export const validFrom = '2026-06-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "hold_for_policy_review 2026-06-01",
+        "docs/payout-policy-contract.md": "local docs are stale when current authority is supplied"
+      },
+      changedFiles: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: temporalPolicyObservations()
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.checks).toContainEqual(expect.objectContaining({
+      name: "family_contract",
+      passed: true,
+      details: expect.stringContaining("temporal-policy-hidden-source")
     }));
   });
 
@@ -812,6 +840,28 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.baseline).not.toContain("user-creation boundary");
     expect(prompts.baseline).not.toContain("malformed-JSON");
     expect(prompts.baseline).not.toContain("unsupported-role");
+  });
+
+  it("keeps target-hidden temporal update details out of the baseline prompt", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "Repair the target-hidden temporal payout policy without inventing current authority.",
+      decisionPacket: {
+        packetIdentity: { checksum: "abc" },
+        packet: {
+          governingStatements: [
+            "EU high-risk payouts use hold_for_policy_review from 2026-06-01."
+          ]
+        }
+      },
+      family: "temporal-policy-hidden-source"
+    });
+
+    expect(prompts.baseline).toContain("target-hidden temporal payout-policy boundary");
+    expect(prompts.baseline).toContain("cannot be inferred");
+    expect(prompts.baseline).not.toContain("hold_for_policy_review");
+    expect(prompts.baseline).not.toContain("2026-06-01");
+    expect(prompts.krn).toContain("hold_for_policy_review");
+    expect(prompts.krn).toContain("2026-06-01");
   });
 
   it("can remove packet injection when capabilities are the experiment variable", () => {

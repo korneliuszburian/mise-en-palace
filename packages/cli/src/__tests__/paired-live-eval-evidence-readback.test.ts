@@ -150,4 +150,22 @@ describe("paired-live eval evidence readback", () => {
       "paired-target-repair:00000000-0000-4000-8000-000000000103"
     );
   });
+
+  it("preserves target-hidden temporal family and checker identity in durable readback", () => {
+    const record = evidence({
+      scenario: "temporal-policy-hidden-source-typescript",
+      family: "temporal-policy-hidden-source"
+    });
+    const readback = buildPairedLiveEvalEvidenceReadback({
+      projectId: record.projectId,
+      records: [record]
+    });
+
+    expect(readback.candidates[0]).toMatchObject({
+      scenario: "temporal-policy-hidden-source-typescript",
+      family: "temporal-policy-hidden-source",
+      checkerRevision: "paired-live-codex-repair-checker.v3",
+      checkerEvidenceRef: "checker:paired-live-codex-repair-checker.v3"
+    });
+  });
 });

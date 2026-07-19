@@ -85,7 +85,8 @@ export const pairedEvalFamilies = [
   "async-job",
   "weak-json",
   "user-create",
-  "temporal-policy-drift"
+  "temporal-policy-drift",
+  "temporal-policy-hidden-source"
 ] as const;
 
 export type PairedEvalFamily = typeof pairedEvalFamilies[number];
@@ -101,6 +102,12 @@ export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
   const normalized = scenario.toLowerCase();
   if (normalized.includes("env-config")) return "env-config";
   if (normalized.includes("async-job")) return "async-job";
+  if (
+    normalized.includes("temporal-policy-hidden") ||
+    (normalized.includes("temporal-policy") && normalized.includes("hidden-source"))
+  ) {
+    return "temporal-policy-hidden-source";
+  }
   if (normalized.includes("temporal-policy")) return "temporal-policy-drift";
   if (normalized.includes("user-create")) return "user-create";
   return "weak-json";
@@ -123,6 +130,7 @@ export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamil
         requiredChecks: ["target_test", "target_typecheck", "target_diff_check"]
       };
     case "temporal-policy-drift":
+    case "temporal-policy-hidden-source":
       return {
         family,
         sourcePaths: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts", "docs/payout-policy-contract.md"],
@@ -319,6 +327,12 @@ const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance =>
         "Use the target docs plus any supplied current org/source authority to make the smallest surgical repair. Local target docs may be stale when a bounded current authority is supplied. Preserve the existing package shape; do not add workflow engines, dashboards, schedulers, external services, or unrelated cleanup.",
         "Preserve existing focused tests and add coverage only when it strengthens the payout-policy boundary: EU high-risk policy-review action, valid-from readback, stale legacy action absence, and rejected shortcut absence. Do not invent current policy text when no current authority is supplied."
       ];
+    case "temporal-policy-hidden-source":
+      return [
+        "Repair the externally observable target-hidden temporal payout-policy boundary in this controlled TypeScript target.",
+        "Treat local target docs as potentially stale. Use a current org/source authority only when it is supplied through bounded KRN context; without that authority, report that the current policy cannot be inferred instead of inventing a new action or effective date. Preserve the existing package shape; do not add workflow engines, dashboards, schedulers, external services, or unrelated cleanup.",
+        "Preserve existing focused tests and add coverage only when it strengthens the payout-policy boundary: current authority application, stale legacy action rejection, threshold behavior, default fallback behavior, and rejected shortcut absence. Do not leak or guess the hidden current policy from the prompt."
+      ];
     case "weak-json":
       return [
         "Repair the externally observable weak JSON/user-creation boundary in this controlled TypeScript target.",
@@ -427,6 +441,7 @@ const runtimeObservationPassed = (
     case "async-job":
       return observations.enqueueAccepted === true;
     case "temporal-policy-drift":
+    case "temporal-policy-hidden-source":
       return observations.temporalPolicyCurrent === true &&
         observations.temporalPolicyThresholdCurrent === true &&
         observations.temporalPolicyBelowThresholdDefault === true &&
@@ -488,6 +503,7 @@ const familySourceContractPassed = (
     case "async-job":
       return asyncJobSourceContractPassed(source(files, "src/jobQueue.ts"));
     case "temporal-policy-drift":
+    case "temporal-policy-hidden-source":
       return temporalPolicyDriftSourceContractPassed(source(files, "src/payoutPolicy.ts"));
     case "user-create":
       return userCreateSourceContractPassed(source(files, "src/userService.ts"));
@@ -1153,7 +1169,7 @@ try {
       // A target rejection is an observed contract failure, not an unavailable observer.
     }
     writeSync(1, marker + JSON.stringify({ runtimeAvailable: true, observations: { enqueueAccepted } }) + "\\n");
-  } else if (family === "temporal-policy-drift") {
+  } else if (family === "temporal-policy-drift" || family === "temporal-policy-hidden-source") {
     let temporalPolicyCurrent = false;
     let temporalPolicyThresholdCurrent = false;
     let temporalPolicyBelowThresholdDefault = false;
@@ -1264,6 +1280,7 @@ const runtimeModulePathFor = (family: PairedEvalFamily): string => {
     case "async-job":
       return "src/jobQueue.js";
     case "temporal-policy-drift":
+    case "temporal-policy-hidden-source":
       return "src/payoutPolicy.js";
     case "weak-json":
     case "user-create":
@@ -1287,6 +1304,7 @@ const parseFamilyRuntimeObservations = (
         enqueueAccepted: observations["enqueueAccepted"] === true
       };
     case "temporal-policy-drift":
+    case "temporal-policy-hidden-source":
       return {
         ...unknownRuntimeObservations(),
         temporalPolicyCurrent: observations["temporalPolicyCurrent"] === true,

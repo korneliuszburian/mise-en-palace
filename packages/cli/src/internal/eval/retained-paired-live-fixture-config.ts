@@ -14,7 +14,7 @@ import {
 
 export type RetainedPairedLiveFixtureFamily = Extract<
   PairedEvalFamily,
-  "weak-json" | "async-job" | "temporal-policy-drift"
+  "weak-json" | "async-job" | "temporal-policy-drift" | "temporal-policy-hidden-source"
 >;
 
 export type RetainedDecisionApplicationRule = {
@@ -54,7 +54,8 @@ export type RetainedTrialSourceDecisionSeed = {
 const retainedFamilies = new Set<RetainedPairedLiveFixtureFamily>([
   "weak-json",
   "async-job",
-  "temporal-policy-drift"
+  "temporal-policy-drift",
+  "temporal-policy-hidden-source"
 ]);
 
 const defaultFamily: RetainedPairedLiveFixtureFamily = "weak-json";
@@ -138,6 +139,19 @@ export const retainedPairedLiveFixtureConfigFor = (
         sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
       };
     }
+    case "temporal-policy-hidden-source": {
+      const fixtureRoot = path.join(
+        repoRoot,
+        "tests/fixtures/target-repos/temporal-policy-drift-typescript"
+      );
+      return {
+        family,
+        scenarioName: "temporal-policy-hidden-source-typescript",
+        taskPrefix: "target-hidden temporal policy repair",
+        fixtureRoot,
+        sourceEntries: ["AGENTS.md", "docs", "package.json", "src", "tests", "tsconfig.json"]
+      };
+    }
     case "weak-json": {
       const fixtureRoot = path.join(
         repoRoot,
@@ -197,6 +211,11 @@ const retainedFamilyDecisionApplicationMappings = {
     { check: "target_test", changedFiles: ["src/payoutPolicy.ts"] },
     { check: "target_typecheck", changedFiles: ["tests/payoutPolicy.test.ts"] },
     { check: "target_diff_check", changedFiles: ["docs/payout-policy-contract.md"] }
+  ],
+  "temporal-policy-hidden-source": [
+    { check: "target_test", changedFiles: ["src/payoutPolicy.ts"] },
+    { check: "target_typecheck", changedFiles: ["tests/payoutPolicy.test.ts"] },
+    { check: "target_diff_check", changedFiles: ["docs/payout-policy-contract.md"] }
   ]
 } as const satisfies Record<
   Exclude<RetainedPairedLiveFixtureFamily, "weak-json">,
@@ -215,6 +234,13 @@ const retainedFamilySourceSeedDecisionIds = {
     "rejected-async-job-no-idempotency"
   ],
   "temporal-policy-drift": [
+    "temporal-policy-review-action",
+    "temporal-policy-valid-from",
+    "temporal-policy-high-risk-scope",
+    "stale-temporal-policy-legacy-hold",
+    "rejected-temporal-policy-auto-approve"
+  ],
+  "temporal-policy-hidden-source": [
     "temporal-policy-review-action",
     "temporal-policy-valid-from",
     "temporal-policy-high-risk-scope",

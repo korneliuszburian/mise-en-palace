@@ -43,7 +43,8 @@ describe("paired live eval aggregation", () => {
       { family: "env-config", artifact: artifact("env-win", "passed", "win") },
       { family: "env-config", artifact: artifact("env-tie", "passed", "tie") },
       { family: "async-job", artifact: artifact("async-loss", "passed", "loss") },
-      { family: "temporal-policy-drift", artifact: artifact("temporal-win", "passed", "win") }
+      { family: "temporal-policy-drift", artifact: artifact("temporal-win", "passed", "win") },
+      { family: "temporal-policy-hidden-source", artifact: artifact("hidden-temporal-win", "passed", "win") }
     ]);
 
     expect(report.families.find((family) => family.family === "env-config")).toMatchObject({
@@ -62,13 +63,21 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: 1
     });
+    expect(report.families.find((family) => family.family === "temporal-policy-hidden-source")).toMatchObject({
+      wins: 1,
+      ties: 0,
+      losses: 0,
+      qualityTrials: 1,
+      invalidTrials: 0,
+      winRateAmongQuality: 1
+    });
     expect(report.overall).toMatchObject({
-      wins: 2,
+      wins: 3,
       ties: 1,
       losses: 1,
-      qualityTrials: 4,
+      qualityTrials: 5,
       invalidTrials: 0,
-      winRateAmongQuality: 0.5
+      winRateAmongQuality: 0.6
     });
   });
 
@@ -171,7 +180,7 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: null
     });
-    expect(report.families).toHaveLength(5);
+    expect(report.families).toHaveLength(6);
     expect(report.comparison).toEqual({
       outcomeLevel: "cross-family",
       scoreLevel: "family-local-only",
@@ -188,6 +197,12 @@ describe("paired live eval aggregation", () => {
       winRateAmongQuality: null
     });
     expect(report.families.find((family) => family.family === "temporal-policy-drift")).toMatchObject({
+      qualityTrials: 0,
+      invalidTrials: 0,
+      totalInputs: 0,
+      winRateAmongQuality: null
+    });
+    expect(report.families.find((family) => family.family === "temporal-policy-hidden-source")).toMatchObject({
       qualityTrials: 0,
       invalidTrials: 0,
       totalInputs: 0,

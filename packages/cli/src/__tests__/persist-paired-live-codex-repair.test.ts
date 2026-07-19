@@ -295,6 +295,27 @@ describe("paired live Codex repair persistence", () => {
       `packet:${checksum}`,
       "checker:paired-live-codex-repair-checker.v3"
     ]));
+    const hiddenSourceEvidenceInput = pairedLiveEvalEvidenceInputForPersistence({
+      manifest: {
+        ...manifest,
+        scenario: "temporal-policy-hidden-source-typescript"
+      },
+      artifact: exactArtifact,
+      candidate: {
+        ...prepared.candidate,
+        scenario: "temporal-policy-hidden-source-typescript"
+      },
+      packetChecksum: checksum,
+      evidenceRefs: prepared.evidenceRefs,
+      feedbackDeltaId: "feedback-hidden-source",
+      decisionApplications: prepared.decisionApplications
+    });
+
+    expect(hiddenSourceEvidenceInput).toMatchObject({
+      scenario: "temporal-policy-hidden-source-typescript",
+      family: "temporal-policy-hidden-source",
+      checkerRevision: "paired-live-codex-repair-checker.v3"
+    });
 
     const invalidArtifact = artifact({
       status: "invalid",

@@ -1220,6 +1220,59 @@ describe("tracked paired live Codex repair", () => {
     }
   });
 
+  it("passes the target-hidden temporal family identity from the manifest into live arm prompts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-hidden-temporal-prompt-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'user-creation boundary'; then exit 11; fi",
+      "if ! printf '%s\\n' \"$@\" | grep -q 'target-hidden temporal payout-policy boundary'; then exit 12; fi",
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
+      "exit 0"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const hiddenManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        scenario: "temporal-policy-hidden-source-typescript",
+        projectId: "temporal-policy-hidden-source-typescript",
+        taskId: "temporal-policy-hidden-source-repair",
+        task: "Repair temporal-policy-hidden-source-typescript without inventing current policy authority.",
+        treatment: "semantic_governed" as const
+      };
+      const hiddenPacket = {
+        ...packet,
+        request: { runId: hiddenManifest.runId },
+        packet: {
+          ...packet.packet,
+          task: {
+            id: hiddenManifest.taskId,
+            projectId: hiddenManifest.projectId,
+            objective: "Repair temporal-policy-hidden-source-typescript without inventing current policy authority."
+          }
+        }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: hiddenManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: hiddenPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+      expect(result.execution.treatment).toBe("semantic_governed");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
   it("passes the capability KRN arm a packet-derived obedience contract without prompt-injecting the packet", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-capability-envelope-"));
     const source = await makeRunnableTargetSource();
