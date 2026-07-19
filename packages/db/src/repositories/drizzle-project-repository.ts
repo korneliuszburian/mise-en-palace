@@ -95,13 +95,20 @@ export class DrizzleProjectRepository implements ProjectRepository {
   private async getProjectByRepoInstallationWhere(
     where: SQL
   ): Promise<ProjectRecord | undefined> {
-    const row = await this.db
+    const rows = await this.db
       .select({ project: projects })
       .from(repoInstallations)
       .innerJoin(projects, eq(repoInstallations.projectId, projects.id))
-      .where(where)
-      .limit(1);
-    const project = row[0]?.project;
+      .where(where);
+    const projectsById = new Map<string, typeof rows[number]["project"]>();
+
+    for (const row of rows) {
+      projectsById.set(row.project.id, row.project);
+    }
+
+    const project = projectsById.size === 1
+      ? projectsById.values().next().value
+      : undefined;
 
     return project === undefined ? undefined : mapProject(project);
   }

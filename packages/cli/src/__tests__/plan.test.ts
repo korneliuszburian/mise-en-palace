@@ -742,6 +742,27 @@ describe("runCli", () => {
     });
   });
 
+  it("keeps the current repo root hint advisory for default persisted planning", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    let observedRepoPathHint: string | undefined;
+    let observedRequireConnectedRepoPath: boolean | undefined;
+
+    const { result } = await runPersistedPlanWithCapturedMetadata(
+      "use connected current repo project",
+      {
+        onCreateDatabaseRuntimeInput(input) {
+          observedRepoPathHint = input.repoPathHint;
+          observedRequireConnectedRepoPath = input.requireConnectedRepoPath;
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(observedRepoPathHint).toBe(repoRoot);
+    expect(observedRequireConnectedRepoPath).toBeUndefined();
+  });
+
   it("selects reference implementation recipe knowledge for exemplar tasks", async () => {
     const { result, executionRunMetadata } = await runPersistedPlanWithCapturedMetadata(
       "Prove the retained reference-implementation recipe through one executable/readback brain surface so future KRN work can retrieve and apply a local code exemplar without building a clone runtime or more markdown instructions"
@@ -761,13 +782,14 @@ describe("runCli", () => {
     });
   });
 
-  it("passes the current repo root hint for default persisted planning", async () => {
+  it("passes an explicit target repo root as required connected identity", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     let observedRepoPathHint: string | undefined;
+    let observedRequireConnectedRepoPath: boolean | undefined;
     let executionRunMetadata: Record<string, unknown> | undefined;
 
     const result = await runCli(
-      ["plan", "--task", "use connected current repo project", "--persist"],
+      ["plan", "--repo", repoRoot, "--task", "use connected target repo project", "--persist"],
       {
         cwd: path.join(repoRoot, "packages", "cli"),
         env: {
@@ -777,6 +799,7 @@ describe("runCli", () => {
         createId: (prefix) => `${prefix}-1`,
         createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
           observedRepoPathHint = input.repoPathHint;
+          observedRequireConnectedRepoPath = input.requireConnectedRepoPath;
           const dependencies = createNoStoreCompilerDependencies(input);
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
@@ -837,7 +860,7 @@ describe("runCli", () => {
             projectId: "project-connected",
             projectResolution: {
               kind: "connected_repo_path",
-              reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+              reason: "Resolved explicit --repo from repo_installations.local_path_hint.",
               doesNotProve:
                 "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
               repoPathHint: repoRoot
@@ -899,10 +922,11 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(observedRepoPathHint).toBe(repoRoot);
+    expect(observedRequireConnectedRepoPath).toBe(true);
     expect(result.stdout).toContain("Project ID: project-connected");
     expect(result.stdout).toContain("Project resolution: connected_repo_path (connected repo path)");
     expect(result.stdout).toContain(
-      "Project resolution reason: Resolved from repo_installations.local_path_hint matching the current repo root."
+      "Project resolution reason: Resolved explicit --repo from repo_installations.local_path_hint."
     );
     expect(result.stdout).toContain(`Project resolution repoPathHint: ${repoRoot}`);
     expect(result.stdout).toContain(
@@ -1621,6 +1645,18 @@ describe("runCli", () => {
     );
   });
 
+  it("requires persistence for explicit target repo plans", async () => {
+    const result = await runCli(["plan", "--repo", ".", "--task", "review target"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("krn plan --project or --repo requires --persist");
+  });
+
   it("returns exit 2 for invalid plan args", async () => {
     const result = await runCli(["plan"], {
       env: {},
@@ -1630,6 +1666,8 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("Usage: krn plan [--project <project-id>] --task");
+    expect(result.stderr).toContain(
+      "Usage: krn plan [--project <project-id>|--repo <path>] --task"
+    );
   });
 });

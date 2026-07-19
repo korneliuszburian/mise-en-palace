@@ -51,6 +51,7 @@ interface PersistedPlanOptions {
   format?: "text" | "json";
   memoryRecords?: readonly MemoryRecord[];
   omitDecisionPacketIssuance?: boolean;
+  onCreateDatabaseRuntimeInput?: (input: DatabaseRuntimeInput) => void;
   onListActiveMemory?: (limit: number) => void;
 }
 
@@ -187,6 +188,7 @@ export const runPersistedPlanWithCapturedMetadata = async (
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+        options.onCreateDatabaseRuntimeInput?.(input);
         const dependencies = createNoStoreCompilerDependencies(input);
         const suppliedMemoryRecords = options.memoryRecords;
         const memoryRepository = suppliedMemoryRecords === undefined

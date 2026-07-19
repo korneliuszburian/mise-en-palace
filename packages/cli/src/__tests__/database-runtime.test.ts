@@ -157,6 +157,24 @@ describe("createDatabaseRuntime", () => {
     await runtime.close();
   });
 
+  it("fails closed instead of creating a slug fallback for an explicitly targeted repo", async () => {
+    const { createDatabaseRuntime } = await import("../database-runtime.js");
+
+    await expect(createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      repoPathHint: "/unconnected/repo",
+      requireConnectedRepoPath: true,
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    })).rejects.toThrow("No connected project found for repo path /unconnected/repo");
+
+    expect(mocks.database.transaction).not.toHaveBeenCalled();
+    expect(mocks.projectRepository.findWorkspaceBySlug).not.toHaveBeenCalled();
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
   it("closes the database client when runtime initialization fails after project resolution", async () => {
     const { createDatabaseRuntime } = await import("../database-runtime.js");
     mocks.projectRepository.getProject.mockResolvedValue(project);
