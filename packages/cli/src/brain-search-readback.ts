@@ -551,10 +551,11 @@ export const buildBrainSearchPreviewResource = (
     supportingClaims,
     query: input.query
   });
+  const targetFitSummary = summarizeTargetFit(selectedKnowledge);
   const answerUsefulness = stringValue(answerPackage["answerUsefulness"], "unknown");
   const linkedSearchDocuments = linkedSearchDocumentCount(sourceClaimDocumentLinks);
   const activationUtility = buildActivationUtilityLabReadback({
-    selectedKnowledgeCount: selectedKnowledge.length,
+    targetSpecificKnowledgeCount: targetFitSummary.targetSpecific,
     answerUsefulness: activationUtilityAnswerUsefulness(answerUsefulness),
     supportingClaims: supportingClaims.length,
     supportingDocuments: supportingDocuments.length,
@@ -562,7 +563,6 @@ export const buildBrainSearchPreviewResource = (
     linkedSearchDocuments,
     relationSupport: relationSupport.length
   });
-  const targetFitSummary = summarizeTargetFit(selectedKnowledge);
   const resource: BrainSearchPreviewResource = {
     kind: "krn.memorySearch.preview.v1",
     access: "read_only",

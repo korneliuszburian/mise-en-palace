@@ -45,6 +45,7 @@ const genericQueryTokens = new Set([
   "knowledge",
   "practice",
   "practices",
+  "real",
   "standard",
   "standards"
 ]);

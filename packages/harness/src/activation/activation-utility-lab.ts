@@ -15,7 +15,7 @@ export type ActivationUtilityVerdict =
   | "insufficient_evidence";
 
 export interface ActivationUtilityLabInput {
-  selectedKnowledgeCount: number;
+  targetSpecificKnowledgeCount: number;
   answerUsefulness: ActivationUtilityAnswerUsefulness;
   supportingClaims: number;
   supportingDocuments: number;
@@ -53,16 +53,18 @@ const usefulAnswerStatuses = new Set<ActivationUtilityAnswerUsefulness>([
 
 const selectedKnowledgeSignal = (
   input: ActivationUtilityLabInput
-): ActivationUtilitySignalReadback => input.selectedKnowledgeCount > 0
+): ActivationUtilitySignalReadback => input.targetSpecificKnowledgeCount > 0
   ? {
       signal: "selected_knowledge",
       strength: "useful",
-      reasons: [`selectedKnowledge returned ${input.selectedKnowledgeCount} packet(s).`]
+      reasons: [
+        `selectedKnowledge returned ${input.targetSpecificKnowledgeCount} target-specific packet(s).`
+      ]
     }
   : {
       signal: "selected_knowledge",
       strength: "missing",
-      reasons: ["selectedKnowledge returned no packets."]
+      reasons: ["selectedKnowledge returned no target-specific packets."]
     };
 
 const sourceLinkGraphSignal = (
