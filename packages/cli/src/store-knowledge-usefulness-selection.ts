@@ -34,23 +34,30 @@ const usefulnessFeedbackByKnowledgeId = (
   feedbackDeltas: readonly FeedbackDelta[],
   include: (feedbackDelta: FeedbackDelta) => boolean
 ) => {
-  const feedbackByKnowledgeId = new Map<string, KnowledgeUsefulnessFeedback>();
+  const feedbackByKnowledgeId = new Map<string, {
+    feedback: KnowledgeUsefulnessFeedback;
+    feedbackDelta: FeedbackDelta;
+  }>();
 
   for (const feedbackDelta of [...feedbackDeltas].sort(newestFeedbackFirst)) {
     if (!include(feedbackDelta)) {
       continue;
     }
 
+    const persistedOutcomes = knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata);
     const outcomes = knowledgeUsefulnessFromKnowledgeOutcomes(
-      knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata),
+      persistedOutcomes,
       feedbackDelta.createdAt
     );
 
     for (const outcome of outcomes) {
       if (!feedbackByKnowledgeId.has(outcome.knowledgeId)) {
         feedbackByKnowledgeId.set(outcome.knowledgeId, {
-          ...outcome,
-          feedbackLifecycleStatus: feedbackDelta.status
+          feedback: {
+            ...outcome,
+            feedbackLifecycleStatus: feedbackDelta.status
+          },
+          feedbackDelta
         });
       }
     }
@@ -109,31 +116,31 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
   );
   const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
     readModels,
-    [...visibleFeedback.values()]
+    [...visibleFeedback.values()].map(({ feedback }) => feedback)
   );
   const knownKnowledgeIds = new Set(readModels.map((readModel) => readModel.id));
-  const reviewOnlyUsefulnessCaveats = feedbackDeltas
-    .filter((feedbackDelta) => feedbackDelta.status !== "rejected")
-    .flatMap((feedbackDelta) => knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
-      .flatMap((outcome) => {
-        if (
-          !knownKnowledgeIds.has(outcome.knowledgeId) ||
-          !isSourceUsefulnessOutcome(outcome.outcome) ||
-          !["noise", "stale", "hurt", "rejected", "unknown"].includes(outcome.outcome)
-        ) {
-          return [];
-        }
-        return [{
-          feedbackDeltaId: feedbackDelta.id,
-          subjectType: "knowledge" as const,
-          subjectId: outcome.knowledgeId,
-          feedbackStatus: feedbackDelta.status,
-          outcome: outcome.outcome,
-          reason: outcome.reason,
-          doesNotProve:
-            "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
-        }];
-      }));
+  const reviewOnlyUsefulnessCaveats = [...visibleFeedback.values()]
+    .flatMap(({ feedback, feedbackDelta }) => {
+      const outcome = feedback;
+
+      if (
+        !knownKnowledgeIds.has(outcome.knowledgeId) ||
+        !isSourceUsefulnessOutcome(outcome.outcome) ||
+        !["noise", "stale", "hurt", "rejected", "unknown"].includes(outcome.outcome)
+      ) {
+        return [];
+      }
+      return [{
+        feedbackDeltaId: feedbackDelta.id,
+        subjectType: "knowledge" as const,
+        subjectId: outcome.knowledgeId,
+        feedbackStatus: feedbackDelta.status,
+        outcome: outcome.outcome,
+        reason: outcome.summary,
+        doesNotProve:
+          "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+      }];
+    });
 
   return {
     readModels: readModelsWithFeedback
