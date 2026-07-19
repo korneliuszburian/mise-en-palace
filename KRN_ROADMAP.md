@@ -110,6 +110,11 @@ Built enough to keep:
 - one preregistered, independently sourced historical `seo` performance-
   authority repair in which both arms scored 8:8 and KRN used more tokens and
   wall time while structurally consuming current and rejected authority;
+- one post-trial ordinary `krn-seo` working-tree review dogfood in which an
+  initial false target-fit match on the generic token `real` was reproduced and
+  repaired; the subsequent checksum-bound packet correctly abstained without a
+  governing decision, and repository authority—not KRN context—produced two
+  review findings while five included memories were recorded as noise;
 - deterministic behavior gates and DB smokes;
 - Beads task graph for durable implementation planning.
 
@@ -155,6 +160,13 @@ and unrelated project counts unchanged. The second cleanup also exposed and
 falsified an incomplete project-owned retrieval deletion, repaired at the
 production cleanup seam. This provenance makes the three results auditable; it
 does not turn three stochastic tasks into a causal or general advantage claim.
+The first post-trial ordinary-work dogfood is execution run
+`6cc50181-009a-44b3-bf94-8e017ca0eb9d`, bound to DecisionPacket checksum
+`a488d8590f33e2e9b90cd78508e26f440daf4acfbbae6c2b900be16e824a56ad`
+and evidence bundle `5f622125-52c3-407e-beee-6f1af33b7be0`. It proves that the
+feedback loop exposed a real selection defect and that the repaired packet
+abstained; it does not prove KRN improved the substantive review, target-project
+resolution was correct, or context overhead is acceptable.
 The existing DB-backed source/memory/evidence/review paths are the minimum
 store-backed proof surface; retrieval and feedback must strengthen that surface,
 not become a second authority model.
