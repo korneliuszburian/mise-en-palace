@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -11,15 +11,18 @@ import {
 import {
   resolvePairedLiveRepoRoot
 } from "./paired-live-repo-root.js";
+import {
+  materializeRetainedPairedLiveFixtureSource,
+  parseRetainedPairedLiveFixtureArgs,
+  retainedFamilyDecisionApplications,
+  retainedPairedLiveFixtureConfigFor
+} from "./retained-paired-live-fixture-config.js";
 
-const requestedArguments = process.argv.slice(2);
-const requestedDirectory = requestedArguments[0] === "--"
-  ? requestedArguments[1]
-  : requestedArguments[0];
+const requested = parseRetainedPairedLiveFixtureArgs(process.argv.slice(2));
 const repoRoot = resolvePairedLiveRepoRoot();
 const outputDirectory = path.resolve(
   repoRoot,
-  requestedDirectory ?? `.local-lab/paired-live/retained-memory-treatment-${Date.now()}`
+  requested.requestedDirectory ?? `.local-lab/paired-live/retained-memory-treatment-${Date.now()}`
 );
 const databaseUrl = process.env.KRN_DATABASE_URL ??
   "postgres://krn:krn@localhost:54329/krn";
@@ -34,9 +37,7 @@ const mcpServer = path.join(
   repoRoot,
   "packages/cli/src/internal/mcp/decision-packet-mcp-server.ts"
 );
-const fixtureRoot = path.join(repoRoot, "tests/fixtures/target-repos/weak-json-boundary-typescript");
-const scenarioName = "weak-json-boundary";
-const scenarioRoot = path.join(fixtureRoot, "scenarios", scenarioName, "files");
+const fixtureConfig = retainedPairedLiveFixtureConfigFor(repoRoot, requested.family);
 const materializedSourceDirectory = path.join(outputDirectory, "target-source");
 const materializedSourcePath = path.relative(repoRoot, materializedSourceDirectory);
 
@@ -82,33 +83,11 @@ const commonCapabilities = {
   }
 } as const;
 
-const materializeWeakJsonScenario = async (): Promise<void> => {
-  await rm(materializedSourceDirectory, { force: true, recursive: true });
-  await mkdir(materializedSourceDirectory, { recursive: true });
-
-  for (const entry of [
-    ".gitignore",
-    "AGENTS.md",
-    "README.md",
-    "docs",
-    "package.json",
-    "src",
-    "tests",
-    "tsconfig.json"
-  ]) {
-    await cp(path.join(fixtureRoot, entry), path.join(materializedSourceDirectory, entry), {
-      recursive: true
-    });
-  }
-
-  await cp(scenarioRoot, materializedSourceDirectory, { recursive: true });
-};
-
 const manifestFor = (
   report: Awaited<ReturnType<typeof runDecisionPacketReturnLoopSmokeCheck>>
 ) => ({
   kind: "krn.pairedLiveCodexRepairManifest.v1",
-  scenario: "weak-json-boundary",
+  scenario: fixtureConfig.scenarioName,
   sourcePath: materializedSourcePath,
   projectId: report.projectId,
   taskId: report.taskId,
@@ -134,7 +113,10 @@ const manifestFor = (
   },
   packetReadiness: "weak_context",
   checkerRevision: pairedLiveCheckerRevision,
-  decisionApplications: report.decisionApplications,
+  decisionApplications: retainedFamilyDecisionApplications(
+    report.decisionApplications,
+    fixtureConfig.family
+  ),
   timeoutMs: 180_000
 });
 
@@ -144,14 +126,17 @@ const report = await runDecisionPacketReturnLoopSmokeCheck({
   migrationsFolder,
   smokeId,
   retainFixture: true,
-  taskPrefix: "weak json boundary repair"
+  taskPrefix: fixtureConfig.taskPrefix
 });
 
 if (!report.retainedFixture || report.cleanedUp) {
   throw new Error("Retained fixture smoke did not preserve the seeded database rows");
 }
 
-await materializeWeakJsonScenario();
+await materializeRetainedPairedLiveFixtureSource({
+  config: fixtureConfig,
+  materializedSourceDirectory
+});
 
 await writeFile(
   path.join(outputDirectory, "fixture-report.json"),
@@ -171,6 +156,8 @@ process.stdout.write(`${JSON.stringify({
   packetChecksum: report.packetChecksum,
   retainedFixture: report.retainedFixture,
   sourcePath: materializedSourcePath,
+  family: fixtureConfig.family,
+  scenario: fixtureConfig.scenarioName,
   semanticManifest: path.join(outputDirectory, "semantic-governed.json"),
   deferredTreatments: [{
     treatment: "procedural_skills",

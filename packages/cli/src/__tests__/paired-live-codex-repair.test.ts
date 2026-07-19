@@ -614,6 +614,22 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.krn).toContain("Do not emit an array for staleBoundary");
   });
 
+  it("generates async-job family prompt guidance without weak-json repair language", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the async job boundary",
+      decisionPacket: { packetIdentity: { checksum: "abc" } },
+      family: "async-job"
+    });
+
+    expect(prompts.baseline).toContain("async job enqueue and lease boundary");
+    expect(prompts.baseline).toContain("idempotency key");
+    expect(prompts.baseline).toContain("retry budget");
+    expect(prompts.baseline).toContain("injected-clock lease behavior");
+    expect(prompts.baseline).not.toContain("user-creation boundary");
+    expect(prompts.baseline).not.toContain("malformed-JSON");
+    expect(prompts.baseline).not.toContain("unsupported-role");
+  });
+
   it("can remove packet injection when capabilities are the experiment variable", () => {
     const prompts = buildPairedRepairPrompts({
       task: "repair the boundary",
@@ -1466,6 +1482,7 @@ describe("paired live Codex repair eval", () => {
     expect(candidate).toMatchObject({
       id: "paired-target-repair:run-1",
       status: "candidate",
+      scenario: "weak-json-boundary-typescript current-shell Codex repair",
       metadata: {
         outcome: "tie",
         usefulnessOutcome: "neutral",
@@ -1475,5 +1492,31 @@ describe("paired live Codex repair eval", () => {
     expect(candidate.metadata.doesNotProve).toEqual(expect.arrayContaining([
       expect.stringContaining("does not mutate MemoryRecord")
     ]));
+  });
+
+  it("keeps the manifest scenario when creating persisted paired eval candidates", () => {
+    const score = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      },
+      family: "async-job"
+    });
+    const candidate = pairedRepairEvalCandidate({
+      score: scorePairedRepairs({ baseline: score, krn: score }),
+      runId: "run-async",
+      packetChecksum: "a".repeat(64),
+      evidenceRefs: ["packet:" + "a".repeat(64), "checker:live-score"],
+      createdAt: "2026-07-10T00:00:00.000Z",
+      scenario: "async-job-boundary"
+    });
+
+    expect(candidate.scenario).toBe("async-job-boundary");
   });
 });

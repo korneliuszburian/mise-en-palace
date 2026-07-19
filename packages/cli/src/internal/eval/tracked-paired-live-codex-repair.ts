@@ -2464,9 +2464,11 @@ const executeComparableTrial = async (input: {
     input.packet,
     input.trial.context.manifest.packetContextMode ?? "full"
   );
+  const family = resolvePairedEvalFamily(input.trial.context.manifest.scenario);
   const prompts = buildPairedRepairPrompts({
     task: input.trial.context.manifest.task,
     decisionPacket: promptPacket,
+    family,
     includeDecisionPacket: input.trial.context.manifest.capabilities === undefined,
     ...(input.trial.context.manifest.capabilities === undefined
       ? {}

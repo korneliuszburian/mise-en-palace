@@ -1164,6 +1164,58 @@ describe("tracked paired live Codex repair", () => {
     }
   });
 
+  it("passes the resolved async-job family into live arm prompts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-async-prompt-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'user-creation boundary'; then exit 11; fi",
+      "if ! printf '%s\\n' \"$@\" | grep -q 'async job enqueue and lease boundary'; then exit 12; fi",
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
+      "exit 0"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const asyncManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        scenario: "async-job-boundary",
+        projectId: "async-job-boundary-typescript",
+        taskId: "async-job-repair",
+        task: "Repair async-job-boundary with bounded job enqueue and lease behavior.",
+        treatment: "semantic_governed" as const
+      };
+      const asyncPacket = {
+        ...packet,
+        request: { runId: asyncManifest.runId },
+        packet: {
+          ...packet.packet,
+          task: {
+            id: asyncManifest.taskId,
+            projectId: asyncManifest.projectId,
+            objective: "Repair async-job-boundary with bounded job enqueue and lease behavior."
+          }
+        }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: asyncManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: asyncPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
   it("passes the capability KRN arm a packet-derived obedience contract without prompt-injecting the packet", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-capability-envelope-"));
     const source = await makeRunnableTargetSource();

@@ -330,6 +330,7 @@ const observationCandidate = (input: {
       score: input.artifact.score,
       runId: input.artifact.runId,
       projectId: input.manifest.projectId,
+      scenario: input.manifest.scenario,
       packetChecksum: input.artifact.packet.checksum ?? "unknown",
       evidenceRefs: input.evidenceRefs,
       createdAt: input.createdAt,

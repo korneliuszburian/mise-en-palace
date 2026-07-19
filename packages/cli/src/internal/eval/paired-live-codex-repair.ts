@@ -185,6 +185,7 @@ export const pairedRepairEvalCandidate = (input: {
   readonly packetChecksum: string;
   readonly evidenceRefs: readonly string[];
   readonly createdAt: string;
+  readonly scenario?: string;
   readonly projectId?: string;
   readonly liveOutput?: {
     readonly decisionId: string | readonly string[];
@@ -202,7 +203,7 @@ export const pairedRepairEvalCandidate = (input: {
   ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
   status: "candidate",
   title: `Paired target repair outcome: ${input.score.outcome}`,
-  scenario: "weak-json-boundary-typescript current-shell Codex repair",
+  scenario: input.scenario ?? "weak-json-boundary-typescript current-shell Codex repair",
   expectedSignal: "Only a predeclared KRN win may be classified as helped.",
   sourceEvidence: [...input.evidenceRefs],
   metadata: {
@@ -270,19 +271,57 @@ export type HeldOutCheckerInput = {
   readonly family?: PairedEvalFamily;
 };
 
-const basePrompt = (task: string, contextToolRunId?: string): string => [
-  "Repair the externally observable user-creation boundary in this controlled TypeScript target.",
-  "Read AGENTS.md and the contract documentation present in the target first. Do not assume a filename that is not present. Work only in the allowed target files and do not touch the parent repository, other repos, generated caches, secrets, or network.",
-  "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
-  "Preserve existing focused tests and their distinct invalid-input vectors; do not weaken, replace, or collapse a missing-property, malformed-JSON, or unsupported-role assertion. Add coverage only when it strengthens the existing contract.",
-  "If the runtime offers a read-only context tool, inspect it before editing; do not assume its presence or invent one, and never treat tool availability as authority by itself.",
-  ...(contextToolRunId === undefined
-    ? []
-    : [`If the krn_decision_packet tool is available, call it with runId ${contextToolRunId} before editing; if it is unavailable, continue without inventing a substitute.`]),
-  "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.",
-  "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
-  `Task: ${task}`
-].join("\n");
+type FamilyPromptGuidance = readonly [string, string, string];
+
+const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance => {
+  switch (family) {
+    case "async-job":
+      return [
+        "Repair the externally observable async job enqueue and lease boundary in this controlled TypeScript target.",
+        "Use the task and target job contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks, schedulers, daemons, dashboards, queue services, or unrelated cleanup.",
+        "Preserve existing focused tests and add coverage only when it strengthens the job boundary contract: unknown input narrowing, non-empty idempotency key, finite retry budget, explicit lease timeout, finite job states, and injected-clock lease behavior."
+      ];
+    case "env-config":
+      return [
+        "Repair the externally observable environment configuration boundary in this controlled TypeScript target.",
+        "Use the task and target config contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks, network calls, secret stores, or unrelated cleanup.",
+        "Preserve existing focused tests and add coverage only when it strengthens the config boundary contract: supported runtime modes, explicit invalid-config behavior, and secret-safe readback."
+      ];
+    case "user-create":
+      return [
+        "Repair the externally observable user-creation boundary in this controlled TypeScript target.",
+        "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
+        "Preserve existing focused tests and their distinct invalid-input vectors; do not weaken, replace, or collapse a missing-property, malformed-JSON, or unsupported-role assertion. Add coverage only when it strengthens the existing contract."
+      ];
+    case "weak-json":
+      return [
+        "Repair the externally observable weak JSON/user-creation boundary in this controlled TypeScript target.",
+        "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
+        "Preserve existing focused tests and their distinct invalid-input vectors; do not weaken, replace, or collapse a missing-property, malformed-JSON, or unsupported-role assertion. Add coverage only when it strengthens the existing contract."
+      ];
+  }
+};
+
+const basePrompt = (
+  task: string,
+  contextToolRunId?: string,
+  family: PairedEvalFamily = "weak-json"
+): string => {
+  const familyGuidance = familyPromptGuidance(family);
+  return [
+    familyGuidance[0],
+    "Read AGENTS.md and the contract documentation present in the target first. Do not assume a filename that is not present. Work only in the allowed target files and do not touch the parent repository, other repos, generated caches, secrets, or network.",
+    familyGuidance[1],
+    familyGuidance[2],
+    "If the runtime offers a read-only context tool, inspect it before editing; do not assume its presence or invent one, and never treat tool availability as authority by itself.",
+    ...(contextToolRunId === undefined
+      ? []
+      : [`If the krn_decision_packet tool is available, call it with runId ${contextToolRunId} before editing; if it is unavailable, continue without inventing a substitute.`]),
+    "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.",
+    "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
+    `Task: ${task}`
+  ].join("\n");
+};
 
 const obedienceEnvelopeInstruction = [
   `After the repair report, emit one final machine line beginning with ${liveCodexObedienceMarker} followed immediately by a JSON object and no markdown wrapper.`,
@@ -309,8 +348,9 @@ export const buildPairedRepairPrompts = (input: {
   readonly decisionPacket: unknown;
   readonly includeDecisionPacket?: boolean;
   readonly contextToolRunId?: string;
+  readonly family?: PairedEvalFamily;
 }): PairedRepairPrompts => {
-  const baseline = basePrompt(input.task, input.contextToolRunId);
+  const baseline = basePrompt(input.task, input.contextToolRunId, input.family ?? "weak-json");
   const includeDecisionPacket = input.includeDecisionPacket ?? true;
   const krn = includeDecisionPacket
     ? [
