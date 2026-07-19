@@ -25,6 +25,7 @@ import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
   buildDecisionPacketFromReadModel,
+  buildDecisionPacketIssuance,
   createCommandOutputArtifact,
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
@@ -2346,6 +2347,174 @@ describe("runCli", () => {
       currentAggregate.executionRun.lifecycleRevision
     );
     expect(capture.maintenanceQueueInputs).toBeUndefined();
+  });
+
+  it("authorizes evidence usefulness against an issued packet after feedback changes the current read model", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const sourceDecisionId = "source-decision-issued-1";
+    const applicationPath = "src/config.ts";
+    const issuedAggregate = withSelectedSourceDecision(
+      createEvidencePersistenceAggregate(),
+      sourceDecisionId
+    );
+    const issuance = buildDecisionPacketIssuance({
+      aggregate: issuedAggregate,
+      packetGeneratedAt: now,
+      sha256Hex
+    });
+    const currentAggregate: HarnessRunAggregate = {
+      ...issuedAggregate,
+      feedbackDeltas: [{
+        id: "feedback-delta-after-issuance",
+        reviewAssessmentId: "review-assessment-after-issuance",
+        status: "accepted",
+        memoryCandidates: [],
+        sourceDecisions: [],
+        evalCandidates: [],
+        metadata: {
+          decisionPacketAuthorityAdmission: "current_v1",
+          decisionPacketBindingState: "bound_current",
+          decisionPacketChecksum: issuance.packetIdentity.checksum,
+          decisionPacketEvidenceRef: issuance.packetIdentity.evidenceRef,
+          decisionPacketGeneratedAt: issuance.packetIdentity.generatedAt,
+          decisionPacketSourceRunLifecycleRevision:
+            issuance.packetIdentity.sourceRunLifecycleRevision,
+          sourceUsefulnessOutcomes: [{
+            sourceDecisionId,
+            outcome: "unknown",
+            reason:
+              "Later return-channel feedback changed the reconstructed packet review caveats.",
+            evidenceRefs: ["feedback:after-issued-packet"],
+            doesNotProve:
+              "Later feedback does not invalidate exact subjects selected by the issued packet."
+          }]
+        },
+        createdAt: now,
+        updatedAt: now
+      }]
+    };
+    const currentBinding = currentDecisionPacketBindingForAggregate(currentAggregate, now);
+    const baseRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      currentAggregate,
+      capture
+    );
+    const harnessRunRepository = {
+      ...baseRepository,
+      async getIssuedDecisionPacketForExecutionRun(runId: string) {
+        expect(runId).toBe(issuedAggregate.executionRun.id);
+
+        return issuance;
+      }
+    } satisfies EvidenceHarnessRunRepository;
+
+    expect(issuance.packet.sourceDecisionIds).toContain(sourceDecisionId);
+    expect(currentBinding.packetChecksum).not.toBe(issuance.packetIdentity.checksum);
+
+    const result = await runEvidenceCaptureCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      cwd: path.resolve(process.cwd(), "../.."),
+      persist: true,
+      runId: currentAggregate.executionRun.id,
+      decisionPacketChecksum: issuance.packetIdentity.checksum,
+      decisionPacketGeneratedAt: issuance.packetIdentity.generatedAt,
+      intendedFiles: [applicationPath],
+      targetEvidence: {
+        targetRepo: ".",
+        mode: "headless-repair",
+        dirtyBefore: "clean",
+        dirtyAfter: "dirty",
+        ownedChanges: "owned-by-current-krn-run",
+        targetStatusFreshness: "fresh-current-task",
+        changedFiles: [{
+          status: "M",
+          path: applicationPath,
+          ownership: "owned-by-current-krn-run"
+        }],
+        commands: []
+      },
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId,
+        applicationId: "application:issued-source-decision",
+        outcome: "selected",
+        reason: "Issued packet selected the SourceDecision applied to the target.",
+        evidenceRefs: [issuance.packetIdentity.evidenceRef, applicationPath],
+        doesNotProve: "Does not prove the SourceDecision is true or future-useful."
+      }],
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ` M ${applicationPath}\n`,
+      readTargetStateSnapshot: async () => ({
+        ...targetSnapshot,
+        changedPaths: [applicationPath]
+      }),
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {
+          ...dependencies,
+          harnessRunRepository
+        },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(result.stdout).toContain(
+      `DecisionPacket: checksum=${issuance.packetIdentity.checksum} | evidenceRef=${issuance.packetIdentity.evidenceRef}`
+    );
+    expect(result.stdout).not.toContain("packetBinding: unbound");
+    expect(capture.decisionPacketClaim).toEqual({
+      checksum: issuance.packetIdentity.checksum,
+      generatedAt: issuance.packetIdentity.generatedAt
+    });
+    expect(capture.sourceRunLifecycleRevision).toBe(
+      issuance.packetIdentity.sourceRunLifecycleRevision
+    );
+    expect(capture.evidenceBundle?.metadata).toMatchObject({
+      decisionPacketBindingState: "bound_current",
+      decisionPacketChecksum: issuance.packetIdentity.checksum,
+      decisionPacketEvidenceRef: issuance.packetIdentity.evidenceRef,
+      decisionPacketGeneratedAt: issuance.packetIdentity.generatedAt,
+      decisionPacketSourceRunLifecycleRevision:
+        issuance.packetIdentity.sourceRunLifecycleRevision
+    });
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceDecisionId,
+        applicationId: "application:issued-source-decision",
+        outcome: "selected",
+        evidenceRefs: [issuance.packetIdentity.evidenceRef, applicationPath]
+      }]
+    });
+    expect(capture.usefulnessApplications).toEqual([
+      expect.objectContaining({
+        applicationId: "application:issued-source-decision",
+        subjectKind: "source_decision",
+        subjectId: sourceDecisionId,
+        packetChecksum: issuance.packetIdentity.checksum,
+        packetGeneratedAt: issuance.packetIdentity.generatedAt,
+        sourceRunLifecycleRevision: issuance.packetIdentity.sourceRunLifecycleRevision,
+        targetState: expect.objectContaining({
+          targetRepo: path.resolve(process.cwd(), "../.."),
+          changedFiles: [applicationPath]
+        })
+      })
+    ]);
+    expect(result.stdout).toContain(
+      "usefulnessApplication: application:issued-source-decision"
+    );
   });
 
   it("does not persist usefulness or enqueue maintenance without a packet claim", async () => {

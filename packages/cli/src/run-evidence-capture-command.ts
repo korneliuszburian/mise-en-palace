@@ -11,6 +11,7 @@ import {
 import type {
   DecisionPacketAuthorization,
   DecisionPacketBinding,
+  DecisionPacketContractReadback,
   CommandOutputArtifact,
   DiffRisk,
   EvalCandidateProposal,
@@ -30,6 +31,7 @@ import type {
 import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
+  authorizeIssuedDecisionPacketUsefulness,
   assessCurrentDecisionPacketHelpedProof,
   assessCandidateReviewability,
   canonicalTargetRepoPath,
@@ -1356,32 +1358,125 @@ interface EvidenceCapturePacketBinding {
   readonly binding: DecisionPacketBinding | undefined;
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuedPacket: DecisionPacketContractReadback | undefined;
 }
 
-const packetBindingForEvidenceCapture = (input: {
+const issuedDecisionPacketForEvidenceCapture = async (input: {
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+  readonly repository: DatabaseRuntime["harnessRunRepository"];
+  readonly runId: string;
+}): Promise<DecisionPacketContractReadback | undefined> => {
+  if (input.callerPacketChecksum === undefined && input.callerPacketGeneratedAt === undefined) {
+    return undefined;
+  }
+
+  const getIssuedPacket = input.repository.getIssuedDecisionPacketForExecutionRun;
+
+  if (getIssuedPacket === undefined) {
+    return undefined;
+  }
+
+  return getIssuedPacket.call(input.repository, input.runId);
+};
+
+const issuedPacketAuthorizationForEvidenceCapture = (input: {
+  readonly aggregate: HarnessRunAggregate;
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuance: DecisionPacketContractReadback | undefined;
+  readonly runId: string;
+  readonly runtimeProjectId: string;
+}): DecisionPacketAuthorization | undefined => input.issuance === undefined
+  ? undefined
+  : authorizeIssuedDecisionPacketUsefulness({
+      aggregate: input.aggregate,
+      issuance: input.issuance,
+      runId: input.runId,
+      runtimeProjectId: input.runtimeProjectId,
+      ...callerPacketBinding(input),
+      callerSourceRunLifecycleRevision:
+        input.issuance.packetIdentity.sourceRunLifecycleRevision,
+      subjects: []
+    });
+
+const selectEvidenceCaptureAuthorization = (input: {
+  readonly currentAuthorization: DecisionPacketAuthorization | undefined;
+  readonly issuedAuthorization: DecisionPacketAuthorization | undefined;
+}): DecisionPacketAuthorization | undefined => {
+  if (input.currentAuthorization?.authorized === true) {
+    return input.currentAuthorization;
+  }
+
+  if (input.issuedAuthorization?.authorized === true) {
+    return input.issuedAuthorization;
+  }
+
+  return input.currentAuthorization ?? input.issuedAuthorization;
+};
+
+const selectedIssuedPacketForEvidenceCapture = (input: {
+  readonly authorization: DecisionPacketAuthorization | undefined;
+  readonly issuedAuthorization: DecisionPacketAuthorization | undefined;
+  readonly issuance: DecisionPacketContractReadback | undefined;
+}): DecisionPacketContractReadback | undefined => {
+  if (input.authorization !== input.issuedAuthorization) {
+    return undefined;
+  }
+
+  return input.issuedAuthorization?.authorized === true ? input.issuance : undefined;
+};
+
+const packetBindingForEvidenceCapture = async (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly decisionPacketChecksum: string | undefined;
   readonly decisionPacketGeneratedAt: string | undefined;
+  readonly repository: DatabaseRuntime["harnessRunRepository"];
   readonly runId: string;
   readonly runtimeProjectId: string;
-}): EvidenceCapturePacketBinding => {
+}): Promise<EvidenceCapturePacketBinding> => {
   const callerPacketChecksum = normalizeDecisionPacketChecksum(input.decisionPacketChecksum);
   const callerPacketGeneratedAt = normalizeDecisionPacketGeneratedAt(
     input.decisionPacketGeneratedAt
   );
-  const authorization = packetAuthorizationForEvidenceCapture({
+  const currentAuthorization = packetAuthorizationForEvidenceCapture({
     aggregate: input.aggregate,
     callerPacketChecksum,
     callerPacketGeneratedAt,
     runId: input.runId,
     runtimeProjectId: input.runtimeProjectId
   });
+  const issuance = currentAuthorization?.authorized === true
+    ? undefined
+    : await issuedDecisionPacketForEvidenceCapture({
+        callerPacketChecksum,
+        callerPacketGeneratedAt,
+        repository: input.repository,
+        runId: input.runId
+      });
+  const issuedAuthorization = issuedPacketAuthorizationForEvidenceCapture({
+    aggregate: input.aggregate,
+    callerPacketChecksum,
+    callerPacketGeneratedAt,
+    issuance,
+    runId: input.runId,
+    runtimeProjectId: input.runtimeProjectId
+  });
+  const authorization = selectEvidenceCaptureAuthorization({
+    currentAuthorization,
+    issuedAuthorization
+  });
 
   return {
     authorization,
     binding: authorization?.authorized === true ? authorization : undefined,
     callerPacketChecksum,
-    callerPacketGeneratedAt
+    callerPacketGeneratedAt,
+    issuedPacket: selectedIssuedPacketForEvidenceCapture({
+      authorization,
+      issuedAuthorization,
+      issuance
+    })
   };
 };
 
@@ -1441,6 +1536,7 @@ const prepareUsefulnessOutcomes = (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuedPacket: DecisionPacketContractReadback | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly packetAuthorization: DecisionPacketAuthorization | undefined;
   readonly runId: string;
@@ -1453,14 +1549,25 @@ const prepareUsefulnessOutcomes = (input: {
   });
   const authorization = input.packetAuthorization?.authorized === false || usefulnessSubjects.length === 0
     ? input.packetAuthorization
-    : authorizeDecisionPacketUsefulness({
-        aggregate: input.aggregate,
-        runId: input.runId,
-        runtimeProjectId: input.runtimeProjectId,
-        sha256Hex,
-        ...callerPacketBinding(input),
-        subjects: usefulnessSubjects
-      });
+    : input.issuedPacket === undefined
+      ? authorizeDecisionPacketUsefulness({
+          aggregate: input.aggregate,
+          runId: input.runId,
+          runtimeProjectId: input.runtimeProjectId,
+          sha256Hex,
+          ...callerPacketBinding(input),
+          subjects: usefulnessSubjects
+        })
+      : authorizeIssuedDecisionPacketUsefulness({
+          aggregate: input.aggregate,
+          issuance: input.issuedPacket,
+          runId: input.runId,
+          runtimeProjectId: input.runtimeProjectId,
+          ...callerPacketBinding(input),
+          callerSourceRunLifecycleRevision:
+            input.issuedPacket.packetIdentity.sourceRunLifecycleRevision,
+          subjects: usefulnessSubjects
+        });
   const downgradeUnauthorized = <T extends {
     readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
     readonly reason: string;
@@ -1984,7 +2091,7 @@ const evidenceFeedbackOnceInputForCapture = (input: {
   readonly evidence: CreateEvidenceBundleInput;
   readonly evalCandidateProposals: readonly EvalCandidateProposal[];
   readonly memoryCandidates: readonly MemoryCandidate[];
-  readonly packet: ReturnType<typeof packetBindingForEvidenceCapture>;
+  readonly packet: EvidenceCapturePacketBinding;
   readonly persistedSourceDecisionCandidates: readonly SourceDecision[];
   readonly projectId: string;
   readonly runId: string;
@@ -2088,10 +2195,11 @@ const persistEvidenceCapture = async (
       memoryCandidateProposals,
       evalCandidateProposals
     });
-    const packet = packetBindingForEvidenceCapture({
+    const packet = await packetBindingForEvidenceCapture({
       aggregate,
       decisionPacketChecksum: runtime.decisionPacketChecksum,
       decisionPacketGeneratedAt: runtime.decisionPacketGeneratedAt,
+      repository: databaseRuntime.harnessRunRepository,
       runId,
       runtimeProjectId: projectId
     });
@@ -2127,6 +2235,7 @@ const persistEvidenceCapture = async (
       aggregate,
       callerPacketChecksum: packet.callerPacketChecksum,
       callerPacketGeneratedAt: packet.callerPacketGeneratedAt,
+      issuedPacket: packet.issuedPacket,
       knowledgeUsefulnessOutcomes,
       packetAuthorization: packet.authorization,
       runId,
@@ -2198,7 +2307,8 @@ const persistEvidenceCapture = async (
         persistedSourceDecisionCandidates,
         projectId,
         runId,
-        sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
+        sourceRunLifecycleRevision:
+          packet.binding?.sourceRunLifecycleRevision ?? aggregate.executionRun.lifecycleRevision,
         sourceUsefulnessOutcomes,
         knowledgeUsefulnessOutcomes,
         environmentFingerprint
