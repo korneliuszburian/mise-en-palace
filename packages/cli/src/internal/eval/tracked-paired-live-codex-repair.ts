@@ -18,6 +18,7 @@ import { tmpdir } from "node:os";
 import {
   basename,
   delimiter,
+  dirname,
   isAbsolute,
   join,
   relative,
@@ -85,6 +86,7 @@ export {
 } from "./tracked-paired-trial-capabilities.js";
 
 type JsonRecord = Record<string, unknown>;
+type TrialCapabilityProfile = NonNullable<PairedTrialManifest["capabilities"]>["krn"];
 
 export type TrackedTrialStatus = "passed" | "invalid" | "blocked" | "unverified";
 export type DecisionApplicationObservation =
@@ -2128,6 +2130,117 @@ export const promptPacketForContext = (
   return { ...packet, packet: body };
 };
 
+const materializedDecisionPacketMcpServerSource = (input: {
+  readonly packet: unknown;
+  readonly runId: string;
+}): string => {
+  const packetBase64 = Buffer.from(serializedJson(input.packet), "utf8").toString("base64");
+  const runId = JSON.stringify(input.runId);
+  const toolName = JSON.stringify("krn_decision_packet");
+  return [
+    "const parseJson = JSON[\"parse\"].bind(JSON);",
+    "const packet = parseJson(Buffer.from(",
+    JSON.stringify(packetBase64),
+    ", \"base64\").toString(\"utf8\"));",
+    `const expectedRunId = ${runId};`,
+    `const toolName = ${toolName};`,
+    "const protocolVersion = \"2025-06-18\";",
+    "const write = (message) => process.stdout.write(`${JSON.stringify(message)}\\n`);",
+    "const response = (id, result) => ({ jsonrpc: \"2.0\", id: id ?? null, result });",
+    "const error = (id, code, message) => ({ jsonrpc: \"2.0\", id: id ?? null, error: { code, message } });",
+    "const tool = { name: toolName, title: \"KRN DecisionPacket\", description: \"Return the read-only KRN DecisionPacket contract for the configured trial run.\", inputSchema: { type: \"object\", properties: { runId: { type: \"string\" } }, required: [\"runId\"], additionalProperties: false }, annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } };",
+    "const handle = (message) => {",
+    "  const id = message && Object.hasOwn(message, \"id\") ? message.id : null;",
+    "  if (!message || typeof message !== \"object\") return error(id, -32600, \"Invalid request\");",
+    "  if (message.method === \"initialize\") return response(id, { protocolVersion, capabilities: { tools: { listChanged: false } }, serverInfo: { name: \"krn_decision_packet\", title: \"KRN DecisionPacket MCP\", version: \"sandbox-materialized\" }, instructions: \"Use krn_decision_packet to fetch the read-only DecisionPacket for this retained paired-live KRN arm.\" });",
+    "  if (message.method === \"notifications/initialized\") return undefined;",
+    "  if (message.method === \"ping\") return response(id, {});",
+    "  if (message.method === \"tools/list\") return response(id, { tools: [tool] });",
+    "  if (message.method !== \"tools/call\") return error(id, -32601, `Method not found: ${String(message.method)}`);",
+    "  const params = message.params;",
+    "  if (!params || typeof params !== \"object\" || params.name !== toolName) return error(id, -32602, \"Unknown tool\");",
+    "  const args = params.arguments;",
+    "  if (!args || typeof args !== \"object\" || args.runId !== expectedRunId) return error(id, -32602, \"runId does not match the configured retained trial\");",
+    "  return response(id, { content: [{ type: \"text\", text: JSON.stringify(packet) }], structuredContent: packet });",
+    "};",
+    "let buffer = \"\";",
+    "process.stdin.setEncoding(\"utf8\");",
+    "process.stdin.on(\"data\", (chunk) => {",
+    "  buffer += chunk;",
+    "  for (;;) {",
+    "    const index = buffer.indexOf(\"\\n\");",
+    "    if (index < 0) break;",
+    "    const line = buffer.slice(0, index).trim();",
+    "    buffer = buffer.slice(index + 1);",
+    "    if (line.length === 0) continue;",
+    "    try {",
+    "      const parsed = parseJson(line);",
+    "      const reply = handle(parsed);",
+    "      if (reply !== undefined) write(reply);",
+    "    } catch {",
+    "      write(error(null, -32700, \"Parse error\"));",
+    "    }",
+    "  }",
+    "});"
+  ].join("\n");
+};
+
+const materializeDecisionPacketMcpServer = async (input: {
+  readonly sandboxRoot: string;
+  readonly packet: unknown;
+  readonly runId: string;
+}): Promise<string> => {
+  const capabilityRoot = join(input.sandboxRoot, "capabilities");
+  await mkdir(capabilityRoot, { recursive: true });
+  const serverPath = join(capabilityRoot, "krn-decision-packet-mcp.mjs");
+  await writeFile(serverPath, materializedDecisionPacketMcpServerSource(input), {
+    encoding: "utf8",
+    flag: "wx"
+  });
+  await chmod(serverPath, 0o600);
+  return serverPath;
+};
+
+const materializeSkillPath = async (
+  sandboxRoot: string,
+  skillPath: string
+): Promise<string> => {
+  const sourceRoot = dirname(skillPath);
+  const destinationRoot = join(sandboxRoot, "skills", basename(sourceRoot));
+  await cp(sourceRoot, destinationRoot, {
+    recursive: true,
+    force: true
+  });
+  return join(destinationRoot, "SKILL.md");
+};
+
+const materializeRuntimeCapabilityProfile = async (input: {
+  readonly profile: TrialCapabilityProfile;
+  readonly arm: "baseline" | "krn";
+  readonly sandboxRoot: string;
+  readonly packet: unknown;
+  readonly runId: string;
+}): Promise<TrialCapabilityProfile> => {
+  if (input.arm !== "krn") return input.profile;
+  const mcpServers = await Promise.all(input.profile.mcpServers.map(async (server) =>
+    server.name === "krn_decision_packet"
+      ? {
+          ...server,
+          command: process.execPath,
+          args: [await materializeDecisionPacketMcpServer({
+            sandboxRoot: input.sandboxRoot,
+            packet: input.packet,
+            runId: input.runId
+          })]
+        }
+      : server
+  ));
+  const skillPaths = await Promise.all(input.profile.skillPaths.map((skillPath) =>
+    materializeSkillPath(input.sandboxRoot, skillPath)
+  ));
+  return { ...input.profile, mcpServers, skillPaths };
+};
+
 type ComparableTrialExecutionInput = {
   readonly trial: ComparableTrial;
   readonly packet: unknown;
@@ -2158,20 +2271,26 @@ const runComparableTrialArm = async (input: {
       [manifest.codex.profile.name]: profileName
     })
   );
+  const runtimeCapabilityProfile = capabilityProfile === undefined
+    ? undefined
+    : await materializeRuntimeCapabilityProfile({
+        profile: capabilityProfile,
+        arm: input.arm,
+        sandboxRoot: input.execution.sandboxRoot,
+        packet: input.execution.packet,
+        runId: manifest.runId
+      });
   // Capability trials use only the isolated sandbox home, so the arm-specific
   // profile must remain visible instead of being suppressed with host config.
   const args = capabilityProfile === undefined
     ? configuredArgs
     : [
-        ...codexCapabilityConfigArgs(capabilityProfile),
+        ...codexCapabilityConfigArgs(runtimeCapabilityProfile),
         ...configuredArgs.filter((argument) => argument !== "--ignore-user-config")
       ];
   return runProcess(input.execution.containmentExecutable, [
     "--die-with-parent", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
     "--tmpfs", "/tmp", "--dir", "/tmp/.git",
-    // The checker owns the pinned MCP implementation and project-local skills.
-    // Rebind it read-only after tmpfs so worktrees below /tmp remain executable.
-    "--ro-bind", input.execution.checkerRoot, input.execution.checkerRoot,
     "--bind", input.target.root, input.target.root,
     "--bind", input.execution.sandboxRoot, input.execution.sandboxRoot,
     "--", input.execution.codexExecutable, ...args
@@ -2247,12 +2366,12 @@ const observeComparableCapabilities = (
     baseline: observeCodexCapabilityUse(
       arms.baselineResult,
       profiles?.baseline.mcpServers.map((server) => server.name),
-      profiles === undefined ? undefined : profiles.baseline.skillPaths.length > 0
+      profiles?.baseline.skillPaths
     ),
     krn: observeCodexCapabilityUse(
       arms.krnResult,
       profiles?.krn.mcpServers.map((server) => server.name),
-      profiles === undefined ? undefined : profiles.krn.skillPaths.length > 0
+      profiles?.krn.skillPaths
     )
   };
 };

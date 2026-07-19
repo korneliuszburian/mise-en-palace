@@ -11,5 +11,10 @@ if (manifestPath === undefined) {
 }
 const artifact = await runTrackedTrialCommand(manifestPath, attemptDirectory);
 
-process.stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
-if (artifact.status !== "passed") process.exitCode = 2;
+await new Promise<void>((resolve, reject) => {
+  process.stdout.write(`${JSON.stringify(artifact, null, 2)}\n`, (error) => {
+    if (error) reject(error);
+    else resolve();
+  });
+});
+process.exit(artifact.status === "passed" ? 0 : 2);

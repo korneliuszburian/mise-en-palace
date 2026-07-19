@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { basename, dirname } from "node:path";
 
 import type { CommandResult } from "./paired-live-codex-repair.js";
 import {
@@ -8,6 +9,11 @@ import {
 } from "./tracked-paired-trial-manifest.js";
 
 type JsonRecord = Record<string, unknown>;
+type ExpectedSkills = boolean | readonly string[] | undefined;
+type ExpectedSkillMode =
+  | { readonly kind: "any" }
+  | { readonly kind: "none" }
+  | { readonly kind: "named"; readonly names: readonly string[] };
 
 export type CodexCapabilityUseObservation = {
   readonly mcpToolCallEvents: number;
@@ -31,6 +37,7 @@ export const codexCapabilityConfigArgs = (
     args.push("--config", `mcp_servers.${server.name}.command=${tomlString(server.command)}`);
     args.push("--config", `mcp_servers.${server.name}.args=${JSON.stringify(server.args)}`);
     args.push("--config", `mcp_servers.${server.name}.enabled=true`);
+    args.push("--config", `mcp_servers.${server.name}.required=true`);
     if (server.envVars !== undefined) {
       args.push("--config", `mcp_servers.${server.name}.env_vars=${JSON.stringify(server.envVars)}`);
     }
@@ -50,6 +57,7 @@ export const codexCapabilityProfileConfig = (
     `command = ${tomlString(server.command)}`,
     `args = ${JSON.stringify(server.args)}`,
     "enabled = true",
+    "required = true",
     ...(server.envVars === undefined ? [] : [`env_vars = ${JSON.stringify(server.envVars)}`])
   ].join("\n")).join("\n\n");
   const skillConfig = profile.skillPaths.map((path) => [
@@ -94,6 +102,31 @@ const capabilityEventName = (record: JsonRecord): string | undefined =>
     ? record["server"]
     : typeof record["name"] === "string" ? record["name"] : undefined;
 
+const expectedSkillNames = (skillPaths: readonly string[]): readonly string[] =>
+  [...new Set(skillPaths.map((skillPath) => {
+    const normalizedPath = skillPath.replaceAll("\\", "/");
+    return basename(normalizedPath) === "SKILL.md"
+      ? basename(dirname(normalizedPath))
+      : basename(normalizedPath);
+  }).filter((name) => name.length > 0))];
+
+const skillEventName = (record: JsonRecord): string | undefined => {
+  const name = capabilityEventName(record);
+  if (name !== undefined) return name;
+  if (typeof record["path"] !== "string") return undefined;
+  const normalizedPath = record["path"].replaceAll("\\", "/");
+  return basename(normalizedPath) === "SKILL.md"
+    ? basename(dirname(normalizedPath))
+    : basename(normalizedPath);
+};
+
+const expectedSkillMode = (expectedSkills: ExpectedSkills): ExpectedSkillMode => {
+  if (expectedSkills === undefined || expectedSkills === true) return { kind: "any" };
+  if (expectedSkills === false) return { kind: "none" };
+  const names = expectedSkillNames(expectedSkills);
+  return names.length === 0 ? { kind: "none" } : { kind: "named", names };
+};
+
 const classifyMcpEvent = (
   record: JsonRecord,
   expectedMcpServers: readonly string[] | undefined
@@ -105,19 +138,45 @@ const classifyMcpEvent = (
     (name !== undefined && expectedMcpServers.includes(name)) ? "configured" : "generic";
 };
 
+const classifyDeclaredSkillEvent = (
+  record: JsonRecord,
+  mode: ExpectedSkillMode
+): "configured" | "generic" => {
+  if (mode.kind === "any") return "configured";
+  if (mode.kind === "none") return "generic";
+  const name = skillEventName(record);
+  return name === undefined || mode.names.includes(name) ? "configured" : "generic";
+};
+
+const commandMentionsExpectedSkill = (
+  record: JsonRecord,
+  mode: ExpectedSkillMode
+): boolean => {
+  if (mode.kind !== "named") return false;
+  const command = typeof record["command"] === "string" ? record["command"].replaceAll("\\", "/") : "";
+  return command.length > 0 && mode.names.some((name) =>
+    command.includes(`/skills/${name}/SKILL.md`) ||
+    command.includes(`/skills/${name}/references/`)
+  );
+};
+
 const classifySkillEvent = (
   record: JsonRecord,
-  expectedSkills: boolean | undefined
+  expectedSkills: ExpectedSkills
 ): "configured" | "generic" | undefined => {
   const eventType = record["type"];
-  if (eventType !== "skill" && eventType !== "skill_loaded") return undefined;
-  return expectedSkills === undefined || expectedSkills ? "configured" : "generic";
+  if (eventType === "skill" || eventType === "skill_loaded") {
+    return classifyDeclaredSkillEvent(record, expectedSkillMode(expectedSkills));
+  }
+  return eventType === "command_execution" && commandMentionsExpectedSkill(record, expectedSkillMode(expectedSkills))
+    ? "configured"
+    : undefined;
 };
 
 export const observeCodexCapabilityUse = (
   result: Pick<CommandResult, "stdout">,
   expectedMcpServers?: readonly string[],
-  expectedSkills?: boolean
+  expectedSkills?: boolean | readonly string[]
 ): CodexCapabilityUseObservation => {
   let mcpToolCallEvents = 0;
   let skillEvents = 0;

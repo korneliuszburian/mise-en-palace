@@ -875,7 +875,7 @@ describe("paired live Codex repair eval", () => {
     expect(prompts.delta.deltaBytes).toBe(0);
   });
 
-  it("keeps capability-tool discovery identical while requiring KRN measurement output", () => {
+  it("keeps the baseline capability-blind while requiring KRN capability use", () => {
     const prompts = buildPairedRepairPrompts({
       task: "repair the boundary",
       decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
@@ -883,9 +883,9 @@ describe("paired live Codex repair eval", () => {
       contextToolRunId: "run-123"
     });
     expect(prompts.krn).not.toBe(prompts.baseline);
-    expect(prompts.baseline).toContain("krn_decision_packet tool is available");
-    expect(prompts.krn).toContain("krn_decision_packet tool is available");
-    expect(prompts.baseline).toContain("run-123");
+    expect(prompts.baseline).not.toContain("krn_decision_packet");
+    expect(prompts.krn).toContain("call the krn_decision_packet MCP tool directly");
+    expect(prompts.baseline).not.toContain("run-123");
     expect(prompts.krn).toContain("run-123");
     expect(prompts.baseline).not.toContain("private-packet-marker");
     expect(prompts.krn).not.toContain("private-packet-marker");

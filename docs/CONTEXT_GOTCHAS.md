@@ -161,6 +161,40 @@ command wrapper and not a Memory Core quality result.
 **Retirement:** Retire after every supported package entrypoint has one focused
 argument-forwarding proof and no path can be interpreted as the separator.
 
+## Sandboxed capability paths
+
+**Trigger:** A Codex trial arm should use a repo-local MCP server, skill, or
+other capability path while the arm runs inside `bwrap` with `--tmpfs /tmp`, or
+structured capability evidence is missing even though the prompt configured the
+capability.
+
+**Safe action:** Materialize the capability inside the bound sandbox root before
+launching Codex. For the DecisionPacket MCP server, write a self-contained
+read-only stdio server into the sandbox and mark it `required = true` so startup
+fails closed when the command is invisible. For project-local skills, copy the
+skill directory under the sandbox `CODEX_HOME/skills/<skill>/SKILL.md` and pass
+that materialized path through explicit per-arm config. Count capability use
+only from structured Codex JSONL events: configured MCP tool calls or actual
+`command_execution` reads of the materialized skill file/reference path, not
+prose claims.
+
+**Evidence / non-proof:** The 2026-07-19 retained combined-capability trial
+first exposed a hidden `/tmp` worktree path when `required = true` caused the
+KRN arm to fail with `No such file or directory` for the repo-local MCP command.
+After sandbox materialization, final fresh run
+`fdf0174e-0a19-4605-8994-02eb9c97974c` passed checker-v3 with KRN outcome
+`win`, baseline configured events `0/0`, KRN configured events `2` MCP and `2`
+skill reads, valid obedience, observed decision application, persisted
+paired-live evidence `0a9b958a-c443-404d-ac6c-5a97cbfcf70f`, and guarded
+cleanup with `remainingRows=0`. This proves the configured capabilities were
+visible and observed for that sandbox shape; it does not prove causal KRN
+advantage, source truth, broad Codex obedience, or product readiness.
+
+**Retirement:** Retire only when the Codex runner has a schema-owned capability
+materialization layer with focused tests for hidden source paths, required MCP
+startup failure, project-local skill loading, and structured evidence
+classification.
+
 ## Memory Core boundary
 
 **Trigger:** A missing eval result suggests adding more operator, executor,
