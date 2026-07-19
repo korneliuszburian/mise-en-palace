@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -34,7 +34,11 @@ const mcpServer = path.join(
   repoRoot,
   "packages/cli/src/internal/mcp/decision-packet-mcp-server.ts"
 );
-const memoryCoreSkill = path.join(repoRoot, ".agents/skills/krn-memory-core/SKILL.md");
+const fixtureRoot = path.join(repoRoot, "tests/fixtures/target-repos/weak-json-boundary-typescript");
+const scenarioName = "weak-json-boundary";
+const scenarioRoot = path.join(fixtureRoot, "scenarios", scenarioName, "files");
+const materializedSourceDirectory = path.join(outputDirectory, "target-source");
+const materializedSourcePath = path.relative(repoRoot, materializedSourceDirectory);
 
 const commonCodex = {
   command: codexCommand,
@@ -75,33 +79,47 @@ const commonCapabilities = {
       envVars: ["KRN_DATABASE_URL"]
     }],
     skillPaths: []
-  },
-  procedural: {
-    mode: "krn",
-    mcpServers: [],
-    skillPaths: [memoryCoreSkill]
   }
 } as const;
 
+const materializeWeakJsonScenario = async (): Promise<void> => {
+  await rm(materializedSourceDirectory, { force: true, recursive: true });
+  await mkdir(materializedSourceDirectory, { recursive: true });
+
+  for (const entry of [
+    ".gitignore",
+    "AGENTS.md",
+    "README.md",
+    "docs",
+    "package.json",
+    "src",
+    "tests",
+    "tsconfig.json"
+  ]) {
+    await cp(path.join(fixtureRoot, entry), path.join(materializedSourceDirectory, entry), {
+      recursive: true
+    });
+  }
+
+  await cp(scenarioRoot, materializedSourceDirectory, { recursive: true });
+};
+
 const manifestFor = (
-  report: Awaited<ReturnType<typeof runDecisionPacketReturnLoopSmokeCheck>>,
-  treatment: "semantic_governed" | "procedural_skills"
+  report: Awaited<ReturnType<typeof runDecisionPacketReturnLoopSmokeCheck>>
 ) => ({
   kind: "krn.pairedLiveCodexRepairManifest.v1",
   scenario: "weak-json-boundary",
-  sourcePath: "tests/fixtures/target-repos/weak-json-boundary-typescript",
+  sourcePath: materializedSourcePath,
   projectId: report.projectId,
   taskId: report.taskId,
   task: report.task,
   requiredDecisionIds: report.requiredDecisionIds,
   runId: report.executionRunId,
-  treatment,
+  treatment: "semantic_governed",
   codex: commonCodex,
   capabilities: {
     baseline: commonCapabilities.baseline,
-    krn: treatment === "semantic_governed"
-      ? commonCapabilities.semantic
-      : commonCapabilities.procedural
+    krn: commonCapabilities.semantic
   },
   containment: {
     command: "bwrap",
@@ -133,17 +151,15 @@ if (!report.retainedFixture || report.cleanedUp) {
   throw new Error("Retained fixture smoke did not preserve the seeded database rows");
 }
 
+await materializeWeakJsonScenario();
+
 await writeFile(
   path.join(outputDirectory, "fixture-report.json"),
   `${JSON.stringify({ smokeId, databaseUrl: "configured", report }, null, 2)}\n`
 );
 await writeFile(
   path.join(outputDirectory, "semantic-governed.json"),
-  `${JSON.stringify(manifestFor(report, "semantic_governed"), null, 2)}\n`
-);
-await writeFile(
-  path.join(outputDirectory, "procedural-skills.json"),
-  `${JSON.stringify(manifestFor(report, "procedural_skills"), null, 2)}\n`
+  `${JSON.stringify(manifestFor(report), null, 2)}\n`
 );
 
 process.stdout.write(`${JSON.stringify({
@@ -154,6 +170,10 @@ process.stdout.write(`${JSON.stringify({
   runId: report.executionRunId,
   packetChecksum: report.packetChecksum,
   retainedFixture: report.retainedFixture,
+  sourcePath: materializedSourcePath,
   semanticManifest: path.join(outputDirectory, "semantic-governed.json"),
-  proceduralManifest: path.join(outputDirectory, "procedural-skills.json")
+  deferredTreatments: [{
+    treatment: "procedural_skills",
+    reason: "Deferred until its capability contract has a packet-readable or non-packet evidence model distinct from semantic_governed."
+  }]
 }, null, 2)}\n`);
