@@ -1786,16 +1786,27 @@ export const observeSourceCommands = async (
   }
 };
 
-const prepareTrackedTrial = async (input: {
+type TrialPreparationObservations = {
+  readonly conditions: TrialConditions;
+  readonly containment: TrialToolObservation;
+  readonly codex: TrialToolObservation;
+  readonly authentication: CommandResult;
+  readonly runtimePermissionFlag: HeldOutRuntimePermissionFlag | undefined;
+  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean };
+  readonly checkerRuntime: {
+    readonly nodeVersion: string;
+    readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
+  };
+};
+
+const observeTrialPreparation = async (input: {
   readonly context: TrialContext;
   readonly sourceRoot: string;
-  readonly trialRoot: string;
   readonly sandboxRoot: string;
-  readonly journal: TrialJournal;
-  readonly enforceSourceCommands?: boolean;
-}): Promise<TrialPreparation> => {
+  readonly trialRoot: string;
+}): Promise<TrialPreparationObservations> => {
   const probeEnvironment = allowlistedEnvironment(input.sandboxRoot, input.trialRoot);
-  const [containment, codex, authentication] = await Promise.all([
+  const [containment, codex, authentication, sourceCommands] = await Promise.all([
     observeTool({
       command: input.context.manifest.containment.command,
       cwd: input.sourceRoot,
@@ -1810,82 +1821,131 @@ const prepareTrackedTrial = async (input: {
       cwd: input.sourceRoot,
       env: probeEnvironment,
       timeoutMs: 10_000
-    })
+    }),
+    observeSourceCommands(input.sourceRoot)
   ]);
   const runtimePermissionFlag = selectHeldOutRuntimePermissionFlag();
   const checkerRuntime = {
     nodeVersion: process.version,
     permissionFlag: runtimePermissionFlag ?? "unsupported"
   } as const;
-  let conditions: TrialConditions = {
-    ...input.context.conditions,
-    observed: {
-      containment,
-      codex,
-      authentication,
-      capabilityProfileHashes: {
-        baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
-        krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
-      },
-      environmentVariableNames: Object.keys(probeEnvironment).sort(),
-      credentialProvided: hasChatGptAuthentication(authentication),
-      environmentAvailability: {
-        databaseConfigured: typeof process.env.KRN_DATABASE_URL === "string" && process.env.KRN_DATABASE_URL.trim().length > 0,
-        codexHomeConfigured: typeof process.env.KRN_TRIAL_CODEX_HOME === "string" && process.env.KRN_TRIAL_CODEX_HOME.trim().length > 0
-      },
-      sourceCommands: await observeSourceCommands(input.sourceRoot),
-      checkerRuntime
-    }
-  };
-  const sourceCommands = conditions.observed?.sourceCommands;
-  const prerequisite = trialPrerequisiteFailure({
+  return {
     containment,
     codex,
-    manifest: input.context.manifest,
-    runtimePermissionFlag
-  });
+    authentication,
+    runtimePermissionFlag,
+    sourceCommands,
+    checkerRuntime,
+    conditions: {
+      ...input.context.conditions,
+      observed: {
+        containment,
+        codex,
+        authentication,
+        capabilityProfileHashes: {
+          baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
+          krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
+        },
+        environmentVariableNames: Object.keys(probeEnvironment).sort(),
+        credentialProvided: hasChatGptAuthentication(authentication),
+        environmentAvailability: {
+          databaseConfigured: typeof process.env.KRN_DATABASE_URL === "string" && process.env.KRN_DATABASE_URL.trim().length > 0,
+          codexHomeConfigured: typeof process.env.KRN_TRIAL_CODEX_HOME === "string" && process.env.KRN_TRIAL_CODEX_HOME.trim().length > 0
+        },
+        sourceCommands,
+        checkerRuntime
+      }
+    }
+  };
+};
+
+const trialPreparationRejection = (input: {
+  readonly observations: TrialPreparationObservations;
+  readonly manifest: PairedTrialManifest;
+  readonly enforceSourceCommands?: boolean;
+}): Extract<TrialPreparation, { readonly kind: "rejected" }> | undefined => {
+  const { authentication, containment, codex, runtimePermissionFlag, sourceCommands, conditions } = input.observations;
+  if (!hasChatGptAuthentication(authentication)) {
+    return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
+  }
+  if (input.enforceSourceCommands === true && (!sourceCommands.test || !sourceCommands.typecheck)) {
+    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
+  }
+  const prerequisite = trialPrerequisiteFailure({ containment, codex, manifest: input.manifest, runtimePermissionFlag });
+  return prerequisite === undefined ? undefined : { kind: "rejected", ...prerequisite, conditions };
+};
+
+const materializeTrialProfiles = async (input: {
+  readonly manifest: PairedTrialManifest;
+  readonly sandboxRoot: string;
+}): Promise<{
+  readonly profileHash: string;
+  readonly capabilityProfileHashes: { readonly baseline: string; readonly krn: string };
+}> => {
+  const profilePath = join(input.sandboxRoot, `${input.manifest.codex.profile.name}.config.toml`);
+  await writeFile(profilePath, input.manifest.codex.profile.config, { encoding: "utf8", flag: "wx" });
+  if (input.manifest.capabilities !== undefined) {
+    await Promise.all((["baseline", "krn"] as const).map(async (arm) => {
+      const capabilityPath = join(
+        input.sandboxRoot,
+        `${capabilityProfileName(input.manifest.codex.profile.name, arm)}.config.toml`
+      );
+      await writeFile(
+        capabilityPath,
+        codexCapabilityProfileConfig(input.manifest.codex.profile.config, input.manifest.capabilities?.[arm]),
+        { encoding: "utf8", flag: "wx" }
+      );
+    }));
+  }
+  return {
+    profileHash: sha256(await readFile(profilePath, "utf8")),
+    capabilityProfileHashes: {
+      baseline: capabilityProfileHash(input.manifest.capabilities?.baseline),
+      krn: capabilityProfileHash(input.manifest.capabilities?.krn)
+    }
+  };
+};
+
+const prepareTrackedTrial = async (input: {
+  readonly context: TrialContext;
+  readonly sourceRoot: string;
+  readonly trialRoot: string;
+  readonly sandboxRoot: string;
+  readonly journal: TrialJournal;
+  readonly enforceSourceCommands?: boolean;
+}): Promise<TrialPreparation> => {
+  const observations = await observeTrialPreparation(input);
+  const { authentication, checkerRuntime, codex, containment, sourceCommands } = observations;
   await input.journal.phase("conditions_observed", {
     containment,
     codex,
     authentication: authentication.exitCode === 0 ? "chatgpt" : "unavailable",
-    environmentAvailability: conditions.observed?.environmentAvailability,
+    environmentAvailability: observations.conditions.observed?.environmentAvailability,
     sourceCommands,
     checkerRuntime,
-    prerequisite: prerequisite?.reason
+    prerequisite: trialPrerequisiteFailure({
+      containment,
+      codex,
+      manifest: input.context.manifest,
+      runtimePermissionFlag: observations.runtimePermissionFlag
+    })?.reason
   });
-  if (!hasChatGptAuthentication(authentication)) {
-    return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
-  }
-  if (input.enforceSourceCommands === true && (sourceCommands?.test !== true || sourceCommands?.typecheck !== true)) {
-    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
-  }
-  if (prerequisite !== undefined) return { kind: "rejected", ...prerequisite, conditions };
+  const rejection = trialPreparationRejection({
+    observations,
+    manifest: input.context.manifest,
+    ...(input.enforceSourceCommands === undefined ? {} : { enforceSourceCommands: input.enforceSourceCommands })
+  });
+  if (rejection !== undefined) return rejection;
 
-  const profilePath = join(input.sandboxRoot, `${input.context.manifest.codex.profile.name}.config.toml`);
-  await writeFile(profilePath, input.context.manifest.codex.profile.config, { encoding: "utf8", flag: "wx" });
-  const observedProfileHash = sha256(await readFile(profilePath, "utf8"));
-  const capabilityProfileHashes = {
-    baseline: capabilityProfileHash(input.context.manifest.capabilities?.baseline),
-    krn: capabilityProfileHash(input.context.manifest.capabilities?.krn)
+  const materializedProfiles = await materializeTrialProfiles({
+    manifest: input.context.manifest,
+    sandboxRoot: input.sandboxRoot
+  });
+  const conditions: TrialConditions = {
+    ...observations.conditions,
+    observed: { ...observations.conditions.observed, ...materializedProfiles }
   };
-  if (input.context.manifest.capabilities !== undefined) {
-    for (const arm of ["baseline", "krn"] as const) {
-      const capabilityPath = join(
-        input.sandboxRoot,
-        `${capabilityProfileName(input.context.manifest.codex.profile.name, arm)}.config.toml`
-      );
-      const capabilityConfig = codexCapabilityProfileConfig(
-        input.context.manifest.codex.profile.config,
-        input.context.manifest.capabilities[arm]
-      );
-      await writeFile(capabilityPath, capabilityConfig, { encoding: "utf8", flag: "wx" });
-    }
-  }
-  conditions = {
-    ...conditions,
-    observed: { ...conditions.observed, profileHash: observedProfileHash, capabilityProfileHashes }
-  };
-  if (observedProfileHash !== input.context.manifest.codex.profile.hash) {
+  if (materializedProfiles.profileHash !== input.context.manifest.codex.profile.hash) {
     return { kind: "rejected", status: "invalid", reason: "materialized Codex profile does not match the manifest", conditions };
   }
   return {
