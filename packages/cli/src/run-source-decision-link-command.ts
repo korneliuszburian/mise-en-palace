@@ -6,6 +6,7 @@ import {
   defaultProjectSlug,
   createDatabaseRuntime
 } from "./database-runtime.js";
+import { findRepoRoot } from "./cli-file-boundary.js";
 import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
@@ -20,6 +21,7 @@ import type {
 export type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
 
 export interface SourceDecisionLinkCommandRuntime extends BaseCommandRuntime {
+  cwd: string;
   command: SourceDecisionLinkCommand;
   createDatabaseRuntime?: CreateSourceDecisionLinkDatabaseRuntime;
 }
@@ -105,6 +107,7 @@ export const runSourceDecisionLinkCommand = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
+    repoPathHint: await findRepoRoot(runtime.cwd),
     now: runtime.now,
     createId: runtime.createId
   });

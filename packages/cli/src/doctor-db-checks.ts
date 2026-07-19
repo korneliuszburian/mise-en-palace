@@ -1,11 +1,14 @@
 import path from "node:path";
+import postgres from "postgres";
 import {
   inspectActivationReadiness,
   inspectHarnessPersistenceReadiness,
   inspectMemoryGovernanceReadiness,
   inspectMigrationReadiness,
   inspectRetrievalSubstrateReadiness,
-  inspectSourceGraphReadiness
+  inspectSourceGraphReadiness,
+  postgresStoreIdentity,
+  readCurrentCodexAdapterRuntimeProof
 } from "@krn/db/dev";
 
 import type {
@@ -697,7 +700,8 @@ export const checkRetrievalSubstrate = async (
 export const checkActivation = async (
   repoRoot: string,
   databaseUrl: string | undefined,
-  postgresChecks: readonly DoctorCheck[]
+  postgresChecks: readonly DoctorCheck[],
+  environmentFingerprintId?: string
 ): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const smokeCheck = {
@@ -740,9 +744,9 @@ export const checkActivation = async (
   const activationEnginePresent =
     activationEngineText.includes("retrieveActivationCandidates") &&
     activationEngineText.includes("persistActivationTrace") &&
-    activationIndexText.includes("./conflictFilter") &&
-    activationIndexText.includes("./contextRoi") &&
-    activationIndexText.includes("./assembleContext");
+    activationIndexText.includes("./conflict-filter") &&
+    activationIndexText.includes("./context-roi") &&
+    activationIndexText.includes("./assemble-context");
   const broadContextDumpPresent =
     cliText.includes("rag-dump") ||
     cliText.includes("rag dump") ||
@@ -784,7 +788,8 @@ export const checkActivation = async (
 
   try {
     const report = await inspectActivationReadiness({
-      databaseUrl: gate.databaseUrl
+      databaseUrl: gate.databaseUrl,
+      ...(environmentFingerprintId === undefined ? {} : { environmentFingerprintId })
     });
 
     return [
@@ -816,12 +821,62 @@ export const checkActivation = async (
 export const checkCodexAdapterRuntimeProof = async (
   _repoRoot: string,
   databaseUrl: string | undefined,
-  postgresChecks: readonly DoctorCheck[]
+  postgresChecks: readonly DoctorCheck[],
+  environmentFingerprintId?: string
 ): Promise<DoctorCheck[]> => {
   const gate = brainStoreGate(databaseUrl, postgresChecks);
 
   if (gate.kind === "skipped") {
     return [skippedCheck("Codex adapter runtime proof", gate)];
+  }
+
+  if (databaseUrl !== undefined && environmentFingerprintId !== undefined) {
+    const client = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+    try {
+      const proof = await readCurrentCodexAdapterRuntimeProof(client, {
+        databaseUrl,
+        environmentFingerprintId
+      });
+      if (proof !== undefined) {
+        const report = proof.report;
+        const boundaryChecks = Array.isArray(report.boundaryChecks)
+          ? report.boundaryChecks.filter((check): check is string => typeof check === "string")
+          : [];
+        const proofValid = report.commandStatus === "passed" &&
+          report.observationOnly === true &&
+          report.sourceReadback === true &&
+          report.memoryReadback === true &&
+          report.nonMutatingBoundary === true &&
+          report.codexInvocationCount === 0 &&
+          [
+            "persisted-readback",
+            "rendered-contract",
+            "bounded-selected-context",
+            "stale-memory-exclusion",
+            "no-codex-invocation"
+          ].every((check) => boundaryChecks.includes(check));
+        if (proofValid) {
+          return [{
+            label: "Codex adapter runtime proof",
+            status: `ready (command pnpm db:smoke:codex-adapter; captured ${proof.capturedAt}; store ${postgresStoreIdentity(databaseUrl)})`,
+            outcome: "proven",
+            severity: "pass",
+            proof: {
+              command: "pnpm db:smoke:codex-adapter",
+              status: "passed",
+              capturedAt: proof.capturedAt,
+              freshness: "current",
+              storeIdentity: proof.storeIdentity,
+              environmentFingerprintId: proof.environmentFingerprintId
+            }
+          }];
+        }
+      }
+    } catch {
+      // A read-only doctor must fail closed when the proof store is unavailable.
+    } finally {
+      await client.end();
+    }
   }
 
   return [{

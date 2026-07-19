@@ -18,8 +18,10 @@ import {
   ReviewedHelpedLearningBlockedError
 } from "@krn/core/repositories/internal";
 import type {
+  GetReviewedHelpedMemoryProposalEligibilityInput,
   ProposeReviewedHelpedMemoryCandidateInput,
-  ProposeReviewedHelpedMemoryCandidateResult
+  ProposeReviewedHelpedMemoryCandidateResult,
+  ReviewedHelpedMemoryProposalEligibility
 } from "@krn/core/repositories/internal";
 
 import type {
@@ -83,7 +85,9 @@ const postPromotionMetadataKeys = new Set([
   "createdFromCandidateId",
   "sourceClaimIds",
   "reviewGate",
-  "promotionBasis"
+  "promotionBasis",
+  "memoryRevision",
+  "revisionReview"
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -100,9 +104,16 @@ const reviewGateMetadataMatches = (
   }
   const candidateEvidence = expected.metadata["reflectionCandidateEvidence"];
   const untrustedSourceClaimIds = reviewGate["untrustedSourceClaimIds"];
+  const evidenceReviewedRef = reviewGate["evidenceReviewedRef"];
+  const hasAuthorityRevision = candidate.metadata["memoryRevision"] !== undefined ||
+    candidate.metadata["revisionReview"] !== undefined;
+  const expectedEvidenceReviewedRef = hasAuthorityRevision
+    ? candidate.revisionReviewAssessmentId === null
+      ? undefined
+      : `review-assessment:${candidate.revisionReviewAssessmentId}`
+    : `review-assessment:${expected.reviewAssessmentId}`;
 
-  return reviewGate["evidenceReviewedRef"] ===
-      `review-assessment:${expected.reviewAssessmentId}` &&
+  return evidenceReviewedRef === expectedEvidenceReviewedRef &&
     jsonEquals(reviewGate["candidateEvidence"], candidateEvidence) &&
     jsonEquals(reviewGate["sourceClaimIds"], expected.sourceClaimIds) &&
     jsonEquals(reviewGate["reviewedSourceClaimIds"], expected.sourceClaimIds) &&
@@ -115,7 +126,47 @@ const reviewGateMetadataMatches = (
         reviewGate["untrustedSourceReviewRef"].trim().length > 0));
 };
 
-// fallow-ignore-next-line complexity -- accepted candidates permit only four named promotion-owned metadata additions with explicit shape checks
+// fallow-ignore-next-line complexity -- accepted authority upgrades must bind every revision and review coordinate before idempotent readback
+const authorityRevisionMetadataMatches = (
+  candidate: typeof memoryCandidates.$inferSelect,
+  expected: typeof memoryCandidates.$inferInsert
+): boolean => {
+  const revision = candidate.metadata["memoryRevision"];
+  const revisionReview = candidate.metadata["revisionReview"];
+  const reviewGate = candidate.metadata["reviewGate"];
+
+  if (revision === undefined && revisionReview === undefined) {
+    return true;
+  }
+  if (!isRecord(revision) || !isRecord(revisionReview) || !isRecord(reviewGate)) {
+    return false;
+  }
+
+  const sourceMemoryRecordId = revision["sourceMemoryRecordId"];
+  const reason = revision["reason"];
+  const evidenceRefs = revision["evidenceRefs"];
+  const evidenceReviewedRef = reviewGate["evidenceReviewedRef"];
+
+  return revision["action"] === "merge_duplicate" &&
+    typeof sourceMemoryRecordId === "string" &&
+    sourceMemoryRecordId.trim().length > 0 &&
+    typeof reason === "string" &&
+    reason.trim().length > 0 &&
+    Array.isArray(evidenceRefs) &&
+    typeof evidenceReviewedRef === "string" &&
+    candidate.revisionReviewAssessmentId !== null &&
+    evidenceReviewedRef === `review-assessment:${candidate.revisionReviewAssessmentId}` &&
+    evidenceReviewedRef !== `review-assessment:${expected.reviewAssessmentId}` &&
+    evidenceRefs.includes(evidenceReviewedRef) &&
+    candidate.sourceClaimIds.every((id) => evidenceRefs.includes(id)) &&
+    revision["doesNotProve"] ===
+      "Reviewed authority upgrade preserves legacy history; it does not prove the replacement is broadly useful." &&
+    revisionReview["reviewer"] === candidate.reviewer &&
+    revisionReview["reason"] === reason &&
+    revisionReview["sourceMemoryRecordId"] === sourceMemoryRecordId;
+};
+
+// fallow-ignore-next-line complexity -- accepted candidates permit only named gate/revision metadata additions with explicit shape checks
 const canonicalCandidateMetadataMatches = (
   candidate: typeof memoryCandidates.$inferSelect,
   expected: typeof memoryCandidates.$inferInsert
@@ -131,6 +182,7 @@ const canonicalCandidateMetadataMatches = (
     candidate.metadata["createdFromCandidateId"] === candidate.id &&
     jsonEquals(candidate.metadata["sourceClaimIds"], candidate.sourceClaimIds) &&
     reviewGateMetadataMatches(candidate.metadata["reviewGate"], candidate, expected) &&
+    authorityRevisionMetadataMatches(candidate, expected) &&
     (candidate.metadata["promotionBasis"] === undefined ||
       typeof candidate.metadata["promotionBasis"] === "string");
 };
@@ -145,10 +197,10 @@ interface HelpedSourceDecisionOutcome {
   doesNotProve: string;
 }
 
-// fallow-ignore-next-line complexity -- fail-closed guards preserve each independent feedback, bundle, and review authority rejection reason
-const requireFeedbackChain = async (
+// fallow-ignore-next-line complexity -- fail-closed guards preserve each independent feedback and bundle authority rejection reason
+const requireFeedbackAuthorityChain = async (
   tx: KrnDatabaseTransaction,
-  input: ProposeReviewedHelpedMemoryCandidateInput
+  input: Pick<ProposeReviewedHelpedMemoryCandidateInput, "feedbackDeltaId">
 ) => {
   const feedbackDelta = await tx.query.feedbackDeltas.findFirst({
     where: eq(feedbackDeltas.id, input.feedbackDeltaId)
@@ -198,6 +250,17 @@ const requireFeedbackChain = async (
     return blocked("packet_binding_mismatch");
   }
 
+  return {
+    feedbackDelta,
+    evidenceBundle
+  };
+};
+
+const requireAcceptedReview = async (
+  tx: KrnDatabaseTransaction,
+  input: Pick<ProposeReviewedHelpedMemoryCandidateInput, "reviewAssessmentId">,
+  evidenceBundleId: string
+) => {
   const acceptedReview = await tx.query.reviewAssessments.findFirst({
     where: eq(reviewAssessments.id, input.reviewAssessmentId)
   });
@@ -210,13 +273,27 @@ const requireFeedbackChain = async (
   ) {
     return blocked("review_assessment_not_accepted");
   }
-  if (acceptedReview.evidenceBundleId !== evidenceBundle.id) {
+  if (acceptedReview.evidenceBundleId !== evidenceBundleId) {
     return blocked("review_evidence_bundle_mismatch");
   }
 
+  return acceptedReview;
+};
+
+const requireFeedbackChain = async (
+  tx: KrnDatabaseTransaction,
+  input: ProposeReviewedHelpedMemoryCandidateInput
+) => {
+  const authority = await requireFeedbackAuthorityChain(tx, input);
+  const acceptedReview = await requireAcceptedReview(
+    tx,
+    input,
+    authority.evidenceBundle.id
+  );
+
   return {
-    feedbackDelta,
-    evidenceBundle,
+    feedbackDelta: authority.feedbackDelta,
+    evidenceBundle: authority.evidenceBundle,
     acceptedReview
   };
 };
@@ -260,7 +337,7 @@ const requireHelpedOutcome = (
 // fallow-ignore-next-line complexity -- one application identity guard compares every persisted packet, run, project, task, and timestamp coordinate
 const requireCanonicalApplication = async (
   tx: KrnDatabaseTransaction,
-  input: ProposeReviewedHelpedMemoryCandidateInput,
+  input: Pick<ProposeReviewedHelpedMemoryCandidateInput, "projectId" | "sourceDecisionId">,
   feedbackDelta: typeof feedbackDeltas.$inferSelect,
   evidenceBundle: typeof evidenceBundles.$inferSelect,
   outcome: ReturnType<typeof requireHelpedOutcome>
@@ -314,7 +391,7 @@ const requireCanonicalApplication = async (
 
 const requireSourceDecision = async (
   tx: KrnDatabaseTransaction,
-  input: ProposeReviewedHelpedMemoryCandidateInput
+  input: Pick<ProposeReviewedHelpedMemoryCandidateInput, "projectId" | "sourceDecisionId">
 ) => {
   const rows = await tx
     .select({
@@ -390,10 +467,18 @@ const requireMatchingExistingCandidate = (
   return mapMemoryCandidate(candidate);
 };
 
-export const proposeReviewedHelpedMemoryCandidateOnce = async (
-  db: KrnDatabase,
+interface ReviewedHelpedProposalPlan {
+  candidateValues: typeof memoryCandidates.$inferInsert;
+  sourceClaimId: string;
+  evidenceBundleId: string;
+  usefulnessApplicationId: string;
+  packetChecksum: string;
+}
+
+const buildReviewedHelpedProposalPlan = async (
+  tx: KrnDatabaseTransaction,
   input: ProposeReviewedHelpedMemoryCandidateInput
-): Promise<ProposeReviewedHelpedMemoryCandidateResult> => db.transaction(async (tx) => {
+): Promise<ReviewedHelpedProposalPlan> => {
   const feedback = await requireFeedbackChain(tx, input);
   const outcome = requireHelpedOutcome(feedback.feedbackDelta.metadata, input.sourceDecisionId);
   const application = await requireCanonicalApplication(
@@ -481,30 +566,229 @@ export const proposeReviewedHelpedMemoryCandidateOnce = async (
     metadata
   };
 
-  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`reviewed-helped:${application.applicationId}`}, 0))`);
+  return {
+    candidateValues,
+    sourceClaimId: source.sourceClaim.id,
+    evidenceBundleId: feedback.evidenceBundle.id,
+    usefulnessApplicationId: application.applicationId,
+    packetChecksum: application.packetChecksum
+  };
+};
+
+const isReviewedHelpedLearningBlockedError = (
+  error: unknown
+): error is ReviewedHelpedLearningBlockedError =>
+  error instanceof ReviewedHelpedLearningBlockedError;
+
+const reviewMissingReasons: ReadonlySet<ReviewedHelpedLearningBlockedError["reason"]> = new Set([
+  "review_assessment_not_found",
+  "review_assessment_not_accepted"
+]);
+
+const sourceDecisionIdFromFeedback = (
+  input: GetReviewedHelpedMemoryProposalEligibilityInput,
+  metadata: Record<string, unknown>
+): string => {
+  if (input.sourceDecisionId !== undefined) {
+    return input.sourceDecisionId;
+  }
+
+  const helpedOutcomes = sourceUsefulnessOutcomesFromMetadata(metadata)
+    .filter((outcome) => outcome.outcome === "helped");
+  if (helpedOutcomes.length === 0) {
+    return blocked("source_outcome_missing");
+  }
+  if (helpedOutcomes.length !== 1) {
+    return blocked("source_outcome_ambiguous");
+  }
+
+  const sourceDecisionId = helpedOutcomes[0]?.sourceDecisionId;
+  if (sourceDecisionId === undefined || sourceDecisionId.trim().length === 0) {
+    return blocked("source_outcome_missing");
+  }
+
+  return sourceDecisionId;
+};
+
+const acceptedReviewSubjectMatches = (
+  review: typeof reviewAssessments.$inferSelect,
+  input: {
+    readonly sourceDecisionId: string;
+    readonly sourceClaimId: string;
+    readonly applicationId: string;
+  }
+): boolean =>
+  review.metadata["sourceDecisionId"] === input.sourceDecisionId &&
+  review.metadata["sourceClaimId"] === input.sourceClaimId &&
+  review.metadata["applicationId"] === input.applicationId;
+
+const findAcceptedReviewForProposal = async (
+  tx: KrnDatabaseTransaction,
+  input: {
+    readonly evidenceBundleId: string;
+    readonly sourceDecisionId: string;
+    readonly sourceClaimId: string;
+    readonly applicationId: string;
+  }
+) => {
+  const reviews = await tx
+    .select()
+    .from(reviewAssessments)
+    .where(and(
+      eq(reviewAssessments.evidenceBundleId, input.evidenceBundleId),
+      eq(reviewAssessments.captureChannel, "review_assess_v1"),
+      eq(reviewAssessments.status, "accepted")
+    ))
+    .orderBy(desc(reviewAssessments.createdAt), asc(reviewAssessments.id));
+
+  return reviews.find((review) => acceptedReviewSubjectMatches(review, input));
+};
+
+const reviewAssessmentIdForEligibility = async (
+  tx: KrnDatabaseTransaction,
+  input: GetReviewedHelpedMemoryProposalEligibilityInput,
+  resolved: {
+    readonly evidenceBundleId: string;
+    readonly sourceDecisionId: string;
+    readonly sourceClaimId: string;
+    readonly applicationId: string;
+  }
+): Promise<string> => {
+  if (input.reviewAssessmentId !== undefined) {
+    const review = await requireAcceptedReview(
+      tx,
+      { reviewAssessmentId: input.reviewAssessmentId },
+      resolved.evidenceBundleId
+    );
+    if (!acceptedReviewSubjectMatches(review, resolved)) {
+      return blocked("review_subject_mismatch");
+    }
+
+    return input.reviewAssessmentId;
+  }
+
+  const discovered = await findAcceptedReviewForProposal(tx, resolved);
+  if (discovered === undefined) {
+    return blocked("review_assessment_not_found");
+  }
+
+  return discovered.id;
+};
+
+export const getReviewedHelpedMemoryProposalEligibility = async (
+  db: KrnDatabase,
+  input: GetReviewedHelpedMemoryProposalEligibilityInput
+): Promise<ReviewedHelpedMemoryProposalEligibility> => db.transaction(async (tx) => {
+  let resolvedSourceDecisionId = input.sourceDecisionId;
+
+  try {
+    const authority = await requireFeedbackAuthorityChain(tx, input);
+    resolvedSourceDecisionId = sourceDecisionIdFromFeedback(input, authority.feedbackDelta.metadata);
+    const outcome = requireHelpedOutcome(
+      authority.feedbackDelta.metadata,
+      resolvedSourceDecisionId
+    );
+    const application = await requireCanonicalApplication(
+      tx,
+      {
+        projectId: input.projectId,
+        sourceDecisionId: resolvedSourceDecisionId
+      },
+      authority.feedbackDelta,
+      authority.evidenceBundle,
+      outcome
+    );
+    const source = await requireSourceDecision(tx, {
+      projectId: input.projectId,
+      sourceDecisionId: resolvedSourceDecisionId
+    });
+    const reviewAssessmentId = await reviewAssessmentIdForEligibility(tx, input, {
+      evidenceBundleId: authority.evidenceBundle.id,
+      sourceDecisionId: resolvedSourceDecisionId,
+      sourceClaimId: source.sourceClaim.id,
+      applicationId: application.applicationId
+    });
+    const proposalInput = {
+      projectId: input.projectId,
+      feedbackDeltaId: input.feedbackDeltaId,
+      reviewAssessmentId,
+      sourceDecisionId: resolvedSourceDecisionId
+    };
+    const plan = await buildReviewedHelpedProposalPlan(tx, proposalInput);
+    const existing = await tx.query.memoryCandidates.findFirst({
+      where: eq(memoryCandidates.usefulnessApplicationId, plan.usefulnessApplicationId)
+    });
+    if (
+      existing !== undefined &&
+      !existingCandidateMatches(existing, proposalInput, plan.candidateValues)
+    ) {
+      return blocked("existing_candidate_identity_conflict");
+    }
+
+    return {
+      status: "ready_to_propose",
+      projectId: input.projectId,
+      feedbackDeltaId: input.feedbackDeltaId,
+      reviewAssessmentId,
+      sourceDecisionId: resolvedSourceDecisionId,
+      sourceClaimId: plan.sourceClaimId,
+      evidenceBundleId: plan.evidenceBundleId,
+      usefulnessApplicationId: plan.usefulnessApplicationId,
+      packetChecksum: plan.packetChecksum,
+      ...(existing === undefined ? {} : { existingCandidateId: existing.id })
+    };
+  } catch (error) {
+    if (!isReviewedHelpedLearningBlockedError(error)) {
+      throw error;
+    }
+
+    const base = {
+      projectId: input.projectId,
+      feedbackDeltaId: input.feedbackDeltaId,
+      ...(resolvedSourceDecisionId === undefined
+        ? {}
+        : { sourceDecisionId: resolvedSourceDecisionId })
+    };
+
+    return reviewMissingReasons.has(error.reason)
+      ? { status: "missing_review", ...base, reason: error.reason }
+      : { status: "blocked_authority", ...base, reason: error.reason };
+  }
+}, {
+  accessMode: "read only",
+  isolationLevel: "repeatable read"
+});
+
+export const proposeReviewedHelpedMemoryCandidateOnce = async (
+  db: KrnDatabase,
+  input: ProposeReviewedHelpedMemoryCandidateInput
+): Promise<ProposeReviewedHelpedMemoryCandidateResult> => db.transaction(async (tx) => {
+  const plan = await buildReviewedHelpedProposalPlan(tx, input);
+
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`reviewed-helped:${plan.usefulnessApplicationId}`}, 0))`);
 
   const existing = await tx.query.memoryCandidates.findFirst({
-    where: eq(memoryCandidates.usefulnessApplicationId, application.applicationId)
+    where: eq(memoryCandidates.usefulnessApplicationId, plan.usefulnessApplicationId)
   });
   if (existing !== undefined) {
     return {
-      candidate: requireMatchingExistingCandidate(existing, input, candidateValues),
+      candidate: requireMatchingExistingCandidate(existing, input, plan.candidateValues),
       created: false,
-      sourceClaimId: source.sourceClaim.id,
-      evidenceBundleId: feedback.evidenceBundle.id,
-      usefulnessApplicationId: application.applicationId,
-      packetChecksum: application.packetChecksum
+      sourceClaimId: plan.sourceClaimId,
+      evidenceBundleId: plan.evidenceBundleId,
+      usefulnessApplicationId: plan.usefulnessApplicationId,
+      packetChecksum: plan.packetChecksum
     };
   }
 
   const [inserted] = await tx
     .insert(memoryCandidates)
-    .values(candidateValues)
+    .values(plan.candidateValues)
     .onConflictDoNothing({ target: memoryCandidates.usefulnessApplicationId })
     .returning();
 
   const resolved = inserted ?? await tx.query.memoryCandidates.findFirst({
-    where: eq(memoryCandidates.usefulnessApplicationId, application.applicationId)
+    where: eq(memoryCandidates.usefulnessApplicationId, plan.usefulnessApplicationId)
   });
   if (resolved === undefined) {
     return blocked("existing_candidate_identity_conflict");
@@ -512,7 +796,7 @@ export const proposeReviewedHelpedMemoryCandidateOnce = async (
   const candidate = requireMatchingExistingCandidate(
     resolved,
     input,
-    candidateValues
+    plan.candidateValues
   );
 
   if (inserted !== undefined) {
@@ -521,7 +805,7 @@ export const proposeReviewedHelpedMemoryCandidateOnce = async (
       payload: {
         memoryCandidateId: inserted.id,
         projectId: inserted.projectId,
-        reviewedHelpedApplicationId: application.applicationId
+        reviewedHelpedApplicationId: plan.usefulnessApplicationId
       }
     });
   }
@@ -529,9 +813,9 @@ export const proposeReviewedHelpedMemoryCandidateOnce = async (
   return {
     candidate,
     created: inserted !== undefined,
-    sourceClaimId: source.sourceClaim.id,
-    evidenceBundleId: feedback.evidenceBundle.id,
-    usefulnessApplicationId: application.applicationId,
-    packetChecksum: application.packetChecksum
+    sourceClaimId: plan.sourceClaimId,
+    evidenceBundleId: plan.evidenceBundleId,
+    usefulnessApplicationId: plan.usefulnessApplicationId,
+    packetChecksum: plan.packetChecksum
   };
 });

@@ -131,6 +131,10 @@ describe("parseMemoryArgs", () => {
       "review-1",
       "--untrusted-source-review-ref",
       "security-review:source-lineage-1",
+      "--source-memory-id",
+      "memory-legacy-1",
+      "--reason",
+      "Replace legacy helped memory with first-class authority bindings",
       "--metadata",
       "gate=memory-review",
       "--persist"
@@ -143,11 +147,26 @@ describe("parseMemoryArgs", () => {
         decision: "accepted",
         evidenceReviewedRef: "review-1",
         untrustedSourceReviewRef: "security-review:source-lineage-1",
+        sourceMemoryRecordId: "memory-legacy-1",
+        reason: "Replace legacy helped memory with first-class authority bindings",
         metadata: {
           gate: "memory-review"
         }
       }
     });
+
+    expect(parseMemoryArgs([
+      "candidate",
+      "promote",
+      "--candidate-id",
+      "candidate-1",
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--source-memory-id",
+      "memory-legacy-1"
+    ])).toMatchObject({ error: expect.stringContaining("--source-memory-id") });
 
     expect(parseMemoryArgs([
       "candidate",
@@ -181,6 +200,8 @@ describe("parseMemoryArgs", () => {
       "add",
       "--run-id",
       "run-1",
+      "--project",
+      "project-1",
       "--rejected-claim",
       "Markdown is runtime memory",
       "--invalidated-by-source-claim-id",
@@ -189,6 +210,7 @@ describe("parseMemoryArgs", () => {
       command: {
         kind: "memoryAntiAdd",
         persist: false,
+        projectId: "project-1",
         runId: "run-1",
         rejectedClaim: "Markdown is runtime memory",
         invalidatedBySourceClaimId: "source-claim-1",

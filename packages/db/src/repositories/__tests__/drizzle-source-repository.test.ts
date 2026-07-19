@@ -4,6 +4,7 @@ import type {
   SourceDecision,
   SourceSupportType
 } from "@krn/core";
+import type { CreateSourceClaimEdgeInput } from "@krn/core/repositories";
 
 import {
   DrizzleSourceRepository,
@@ -279,8 +280,29 @@ describe("DrizzleSourceRepository", () => {
         scope: "source graph temporal read model"
       }
     } as const;
+    const pluralEvidenceInput: CreateSourceClaimEdgeInput = {
+      fromSourceClaimId: "source-claim-new",
+      toSourceClaimId: "source-claim-old",
+      kind: "invalidates",
+      metadata: {
+        consumer: valid.metadata.consumer,
+        doesNotProve: valid.metadata.doesNotProve,
+        evidenceRefs: ["source-artifact:temporal-edge#L1-L4", "review:edge-1"],
+        scope: valid.metadata.scope
+      }
+    };
 
     expect(() => assertSourceClaimEdgeGovernance(valid)).not.toThrow();
+    expect(() => assertSourceClaimEdgeGovernance(pluralEvidenceInput)).not.toThrow();
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      metadata: {
+        consumer: valid.metadata.consumer,
+        doesNotProve: valid.metadata.doesNotProve,
+        evidenceRefs: ["source-artifact:temporal-edge#L1-L4", "review:edge-1"],
+        scope: valid.metadata.scope
+      }
+    })).not.toThrow();
     expect(() => assertSourceClaimEdgeGovernance({
       ...valid,
       metadata: {
@@ -288,7 +310,7 @@ describe("DrizzleSourceRepository", () => {
         doesNotProve: valid.metadata.doesNotProve,
         scope: valid.metadata.scope
       }
-    })).toThrow("SourceClaimEdge invalidates requires metadata.evidenceRef or metadata.sourceDecisionRef");
+    })).toThrow("SourceClaimEdge invalidates requires metadata.evidenceRef, metadata.evidenceRefs, or metadata.sourceDecisionRef");
     expect(() => assertSourceClaimEdgeGovernance({
       ...valid,
       kind: "supersedes",

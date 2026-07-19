@@ -7,6 +7,7 @@ import type {
   SourceClaimEdge,
   SourceAuthorityLabel,
   SourceConsensusTimelineEntry,
+  SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
   TaskContract
@@ -16,6 +17,7 @@ import {
   assessSourceClaimReviewSignals,
   assessSourceMetadataTemporalValidity,
   activationExclusionReasons,
+  buildMemorySupersessionTimelineReadback,
   buildSourceConsensusTimelineReadback
 } from "@krn/core";
 
@@ -92,11 +94,13 @@ export interface ActivationCandidateRepositories {
     "listClaimsForProject" | "listSourceClaimEdgesForProject" | "listSourceDecisionEdgesForClaim"
   >> & Partial<Pick<
     SourceRepository,
-    | "getSourceClaimForProject"
+    "getSourceClaimForProject"
     | "getSourceDecisionForProject"
     | "listSourceRejectionsForClaim"
     | "listHistoricalClaimWarningsForProject"
-  >>;
+  >> & {
+    listSourceDecisionsForClaim?: (sourceClaimId: string) => Promise<readonly SourceDecision[]>;
+  };
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -117,6 +121,8 @@ export interface RetrieveActivationCandidatesResult {
   antiMemoryRecords: readonly AntiMemoryRecord[];
   antiMemoryCandidates: readonly AntiMemoryCandidate[];
   diagnostics: ActivationRetrievalDiagnostics;
+  sourceConsensusTimeline: ReturnType<typeof buildSourceConsensusTimelineReadback>;
+  memorySupersessionTimeline?: ReturnType<typeof buildMemorySupersessionTimelineReadback>;
 }
 
 export interface PersistActivationTraceInput {
@@ -655,6 +661,19 @@ const sourceDecisionEdgesForClaims = async (
   return edgesBySourceClaimId;
 };
 
+const staleSourceDecisionsForClaims = async (
+  listSourceDecisionsForClaim: (sourceClaimId: string) => Promise<readonly SourceDecision[]>,
+  sourceClaims: readonly { id: string }[]
+): Promise<ReadonlyMap<string, readonly SourceDecision[]>> => {
+  const decisionsBySourceClaimId = new Map<string, readonly SourceDecision[]>();
+
+  await Promise.all(sourceClaims.map(async (claim) => {
+    decisionsBySourceClaimId.set(claim.id, await listSourceDecisionsForClaim(claim.id));
+  }));
+
+  return decisionsBySourceClaimId;
+};
+
 const sourceDecisionSupportBoostMetadata = (
   edges: readonly SourceDecisionEdge[]
 ): Record<string, unknown> => {
@@ -711,6 +730,14 @@ export const retrieveActivationCandidates = async (
       candidates: [],
       antiMemoryRecords: [],
       antiMemoryCandidates: [],
+      sourceConsensusTimeline: buildSourceConsensusTimelineReadback({
+        sourceClaims: [],
+        sourceClaimEdges: [],
+        sourceDecisionEdges: [],
+        sourceRejections: [],
+        now: activationNow
+      }),
+      memorySupersessionTimeline: buildMemorySupersessionTimelineReadback({ records: [] }),
       diagnostics: buildActivationRetrievalDiagnostics({
         projectScoped: false,
         memoryRecordCount: 0,
@@ -772,6 +799,9 @@ export const retrieveActivationCandidates = async (
       )
       .map((resolution) => resolution.subject)
   );
+  const memorySupersessionTimeline = buildMemorySupersessionTimelineReadback({
+    records: memoryRecords
+  });
   const seedSourceClaims = appendUniqueById(
     initialSourceClaims,
     searchDocumentResolutions
@@ -817,6 +847,12 @@ export const retrieveActivationCandidates = async (
     input.repositories.sourceRepository,
     expandedSourceClaims
   );
+  const staleSourceDecisionsByClaimId = input.repositories.sourceRepository.listSourceDecisionsForClaim === undefined
+    ? new Map<string, readonly SourceDecision[]>()
+    : await staleSourceDecisionsForClaims(
+      (sourceClaimId) => input.repositories.sourceRepository.listSourceDecisionsForClaim!(sourceClaimId),
+      sourceClaims
+    );
   const sourceDecisionEdgesByClaimId = new Map([
     ...seedSourceDecisionEdgesByClaimId,
     ...expandedSourceDecisionEdgesByClaimId
@@ -857,6 +893,9 @@ export const retrieveActivationCandidates = async (
     applySourceClaimEdgeRankDown(
       applySourceClaimEdgeInfluence(sourceClaims.map((claim) => {
         const sourceDecisionEdges = sourceDecisionEdgesByClaimId.get(claim.id) ?? [];
+        const staleSourceDecisionIds = (staleSourceDecisionsByClaimId.get(claim.id) ?? [])
+          .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
+          .map((decision) => decision.id);
         const sourceConsensusEntry = sourceConsensusEntriesByClaimId.get(claim.id);
         const decisionSupportEdgeIds =
           sourceConsensusEntry?.decisionSupportEdgeIds ??
@@ -894,6 +933,7 @@ export const retrieveActivationCandidates = async (
           sourceClaimReviewSignals,
           metadata: {
             ...candidate.metadata,
+            ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
             ...sourceDecisionSupportBoostMetadata(sourceDecisionEdges),
             sourceClaimAuthority: {
               status: authorityAssessment.status,
@@ -971,6 +1011,8 @@ export const retrieveActivationCandidates = async (
     candidates,
     antiMemoryRecords,
     antiMemoryCandidates,
+    sourceConsensusTimeline: sourceConsensus,
+    memorySupersessionTimeline,
     diagnostics: buildActivationRetrievalDiagnostics({
       projectScoped: true,
       memoryRecordCount: memoryRecords.length,

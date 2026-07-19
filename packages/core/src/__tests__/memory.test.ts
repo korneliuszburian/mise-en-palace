@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   assessMemoryRecordReviewSignals,
+  buildMemorySupersessionTimelineReadback,
   type MemoryCandidateCreateStatus,
   type MemoryCandidateLifecycleStatus,
   type MemoryRecord
@@ -71,5 +72,31 @@ describe("memory review signals", () => {
 
   it("does not emit review signals for a useful active memory record", () => {
     expect(assessMemoryRecordReviewSignals(memoryRecord({}))).toEqual([]);
+  });
+
+  it("keeps missing supersession evidence explicitly incomplete", () => {
+    const timeline = buildMemorySupersessionTimelineReadback({
+      records: [
+        memoryRecord({
+          id: "memory-predecessor",
+          status: "superseded",
+          metadata: {
+            supersessionReview: {
+              reviewer: "operator",
+              reason: "Reviewed replacement is active.",
+              supersededAt: now,
+              supersededByMemoryRecordId: "memory-replacement"
+            }
+          }
+        }),
+        memoryRecord({ id: "memory-replacement", status: "active" })
+      ]
+    });
+
+    expect(timeline.entries[0]?.evidence).toEqual({
+      sourceClaimIds: [],
+      evidenceRefs: [],
+      status: "incomplete"
+    });
   });
 });

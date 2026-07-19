@@ -135,18 +135,34 @@ const activationSourceRepositoryFor = (
   };
 };
 
+type DecisionPacketReadinessStatus = "ready" | "weak_context" | "abstain";
+
 export interface DecisionPacketReturnLoopSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
+  retainedTrialSourceSeed?: DecisionPacketReturnLoopRetainedSourceSeed;
   smokeId: string;
+  retainFixture?: boolean;
+  taskPrefix?: string;
 }
 
 export interface DecisionPacketReturnLoopSmokeReport {
   workspaceSlug: string;
   projectSlug: string;
+  projectId: string;
+  taskId: string;
+  task: string;
   executionRunId: string;
   packetChecksum: string;
   packetEvidenceRef: string;
+  packetReadiness: DecisionPacketReadinessStatus;
+  requiredDecisionIds: readonly string[];
+  decisionApplications: readonly {
+    governingDecisionId: string;
+    sourceDecisionId: string;
+    check: "preflight" | "target_test" | "target_typecheck" | "target_diff_check";
+    changedFiles: readonly string[];
+  }[];
   returnChannelHasChecksum: boolean;
   matchingFeedbackDeltaId: string;
   matchingFeedbackOutcome: string;
@@ -176,6 +192,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   selectorPacketMemoryRefs: readonly string[];
   selectorPacketIncludesRetainedMemory: boolean;
   selectorPacketExcludesStaleMemory: boolean;
+  selectorLegacyMemoryApplicationsPacketStable: boolean;
   selectorMaintenanceCandidateId: string;
   selectorMaintenanceAntiMemoryCandidateId: string;
   selectorMaintenanceFeedbackEventId: string;
@@ -210,6 +227,12 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceConsensusNoFormalRejectionKeepsTypedState: boolean;
   sourceConsensusSupersededClaimIsNonGoverning: boolean;
   sourceConsensusRejectedClaimHasFormalRejection: boolean;
+  sourceConsensusTemporalExplanationPresent: boolean;
+  sourceConsensusTemporalExplanationHasEvidence: boolean;
+  sourceConsensusUnsupportedRelationClaimId: string;
+  sourceConsensusUnsupportedRelationEdgeId: string;
+  sourceConsensusUnsupportedRelationStayedCurrent: boolean;
+  sourceConsensusUnsupportedRelationVisibleAsGap: boolean;
   sourceDissentProofRunId: string;
   sourceDissentCandidateClaimId: string;
   sourceDissentDissentingClaimId: string;
@@ -217,6 +240,7 @@ export interface DecisionPacketReturnLoopSmokeReport {
   sourceDissentPacketSourceClaimIds: readonly string[];
   sourceDissentPacketConflictingSourceClaimIds: readonly string[];
   sourceDissentPacketDecisionLinkedSourceClaimIds: readonly string[];
+  sourceDissentPacketMemoryRefs: readonly string[];
   sourceDissentPacketGoverningDecisionIds: readonly string[];
   sourceDissentPacketSourceDecisionEdgeIds: readonly string[];
   sourceDissentPacketStatus: string;
@@ -241,7 +265,66 @@ export interface DecisionPacketReturnLoopSmokeReport {
   feedbackMaintenanceDirectMutationDelta: number;
   cleanupRemainingMarkerCount: number;
   cleanedUp: boolean;
+  retainedFixture: boolean;
+  retainedTrialSourceSeedCorpusName?: string;
+  retainedTrialSourceSeedCurrentDecisionIds?: readonly string[];
+  retainedTrialSourceSeedFamily?: string;
+  retainedTrialSourceSeedPacketGoverningDecisionIds?: readonly string[];
+  retainedTrialSourceSeedPacketRejectedPathIds?: readonly string[];
+  retainedTrialSourceSeedPacketSourceDecisionIds?: readonly string[];
+  retainedTrialSourceSeedPacketSourceRejectionIds?: readonly string[];
+  retainedTrialSourceSeedPacketSupersededPathIds?: readonly string[];
+  retainedTrialSourceSeedRejectedSourceClaimIds?: readonly string[];
+  retainedTrialSourceSeedSourceDecisionIds?: readonly string[];
+  retainedTrialSourceSeedSourceRejectionIds?: readonly string[];
+  retainedTrialSourceSeedStaleSourceClaimIds?: readonly string[];
 }
+
+const retainedTrialDecisionApplicationChecks = [
+  "target_test",
+  "target_typecheck",
+  "target_diff_check"
+] as const;
+const retainedTrialDecisionApplicationFiles = [
+  "src/config.ts",
+  "src/userService.ts",
+  "tests/userService.test.ts"
+] as const;
+
+export const retainedTrialDecisionApplicationsFor = (input: {
+  readonly governingDecisionIds: readonly string[];
+  readonly preAppliedSourceDecisionIds: readonly string[];
+  readonly sourceDecisionIds: readonly string[];
+}): DecisionPacketReturnLoopSmokeReport["decisionApplications"] => {
+  const preAppliedSourceDecisionIds = new Set(input.preAppliedSourceDecisionIds);
+
+  return input.governingDecisionIds.flatMap((governingDecisionId, index) => {
+    const sourceDecisionId = input.sourceDecisionIds[index];
+    const check = retainedTrialDecisionApplicationChecks[index];
+    const changedFile = retainedTrialDecisionApplicationFiles[index];
+
+    if (sourceDecisionId === undefined) {
+      throw new Error(
+        "DecisionPacket return-loop smoke cannot retain a fixture without one source decision per governing decision"
+      );
+    }
+    if (check === undefined || changedFile === undefined) {
+      throw new Error(
+        "DecisionPacket return-loop smoke cannot retain more than three governing decisions"
+      );
+    }
+    if (preAppliedSourceDecisionIds.has(sourceDecisionId)) {
+      return [];
+    }
+
+    return [{
+      governingDecisionId,
+      sourceDecisionId,
+      check,
+      changedFiles: [changedFile]
+    }];
+  });
+};
 
 interface DecisionPacketSmokeExclusion {
   subjectType: string;
@@ -275,6 +358,7 @@ interface DecisionPacketSmokeJson {
       rejectedPathIds: readonly string[];
       sourceRejectionIds: readonly string[];
       evidenceGapIds: readonly string[];
+      timeline?: Record<string, unknown>;
     };
     staleDecisionIds: readonly string[];
     abstentionScore: {
@@ -307,6 +391,7 @@ interface SelectorFeedbackProofResult {
   packetMemoryRefs: readonly string[];
   includesRetainedMemory: boolean;
   excludesStaleMemory: boolean;
+  legacyMemoryApplicationsPacketStable: boolean;
   maintenanceCandidateId: string;
   maintenanceAntiMemoryCandidateId: string;
   maintenanceFeedbackEventId: string;
@@ -401,11 +486,76 @@ const selectMemoryApplicationAuthority = async (input: {
 
 type FeedbackSourceProof = "helped" | "stale";
 
+type RetainedTrialSourceDecisionStatus = "current" | "stale" | "rejected";
+
+interface DecisionPacketReturnLoopRetainedSourceSeedItem {
+  readonly id: string;
+  readonly title: string;
+  readonly statement: string;
+  readonly status: RetainedTrialSourceDecisionStatus;
+  readonly evidenceRef: string;
+  readonly falsifier: string;
+  readonly doesNotProve: string;
+}
+
+interface DecisionPacketReturnLoopRetainedSourceSeed {
+  readonly family: string;
+  readonly corpusName: string;
+  readonly decisions: readonly DecisionPacketReturnLoopRetainedSourceSeedItem[];
+}
+
 interface FeedbackSourceClaimProof {
   claimId: string;
   decisionId: string;
   decisionTargetId: string;
 }
+
+interface RetainedTrialCurrentSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionEdgeId: string;
+  sourceDecisionId: string;
+  targetId: string;
+}
+
+interface RetainedTrialHistoricalSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionId: string;
+  targetId: string;
+}
+
+interface RetainedTrialRejectedSourceDecisionProof {
+  sourceClaimId: string;
+  sourceDecisionId: string;
+  sourceRejectionId: string;
+}
+
+interface RetainedTrialSourceSeedProof {
+  corpusName: string;
+  currentDecisions: readonly RetainedTrialCurrentSourceDecisionProof[];
+  family: string;
+  rejectedDecisions: readonly RetainedTrialRejectedSourceDecisionProof[];
+  staleDecisions: readonly RetainedTrialHistoricalSourceDecisionProof[];
+}
+
+interface RetainedTrialSourceSeedReadback {
+  packetGoverningDecisionIds: readonly string[];
+  packetRejectedPathIds: readonly string[];
+  packetSourceDecisionIds: readonly string[];
+  packetSourceRejectionIds: readonly string[];
+  packetSupersededPathIds: readonly string[];
+}
+
+interface RetainedTrialRejectedSourceDecisionInput {
+  readonly claim: string;
+  readonly claimId: string;
+  readonly decisionId: string;
+  readonly title: string;
+}
+
+type RetainedTrialCreatedSourceDecision =
+  | { readonly status: "current"; readonly decision: RetainedTrialCurrentSourceDecisionProof }
+  | { readonly status: "stale"; readonly decision: RetainedTrialHistoricalSourceDecisionProof }
+  | { readonly status: "rejected"; readonly decision: RetainedTrialRejectedSourceDecisionInput };
 
 interface SourceConsensusProofResult {
   proofRunId: string;
@@ -433,7 +583,39 @@ interface SourceConsensusProofResult {
   noFormalRejectionKeepsTypedState: boolean;
   supersededClaimIsNonGoverning: boolean;
   rejectedClaimHasFormalRejection: boolean;
+  temporalExplanationPresent: boolean;
+  temporalExplanationHasEvidence: boolean;
+  unsupportedRelationClaimId: string;
+  unsupportedRelationEdgeId: string;
+  unsupportedRelationStayedCurrent: boolean;
+  unsupportedRelationVisibleAsGap: boolean;
 }
+
+const unsupportedRelationReadbackFor = (input: {
+  readonly timelineEntries: readonly Record<string, unknown>[];
+  readonly claimId: string;
+  readonly edgeId: string;
+}): Pick<
+  SourceConsensusProofResult,
+  "unsupportedRelationStayedCurrent" | "unsupportedRelationVisibleAsGap"
+> => {
+  const entry = input.timelineEntries.find((candidate) =>
+    readString(candidate, "sourceClaimId") === input.claimId
+  );
+  const relationEvidence = entry === undefined
+    ? []
+    : readRecordArray(entry, "relationEvidence");
+
+  return {
+    unsupportedRelationStayedCurrent: entry !== undefined &&
+      readString(entry, "state") === "current_authority" &&
+      readStringArray(entry, "supersededBySourceClaimIds").length === 0,
+    unsupportedRelationVisibleAsGap: relationEvidence.some((evidence) =>
+      readString(evidence, "sourceClaimEdgeId") === input.edgeId &&
+      readStringArray(evidence, "evidenceGaps").includes("missing_relation_support_ref")
+    )
+  };
+};
 
 interface SourcePacketProofRepositories {
   readonly harnessRunRepository: HarnessRunRepository;
@@ -572,6 +754,10 @@ const createReturnLoopTargetRepo = async (): Promise<string> => {
 
 interface SourceDissentProofInput extends SourcePacketProofInput {
   readonly client: Sql;
+  readonly memoryRecordId: string;
+  readonly repositories: SourcePacketProofRepositories & {
+    readonly memoryRepository: MemoryRepository;
+  };
 }
 
 interface SourceDissentProofResult {
@@ -583,6 +769,7 @@ interface SourceDissentProofResult {
   packetSourceClaimIds: readonly string[];
   packetConflictingSourceClaimIds: readonly string[];
   packetDecisionLinkedSourceClaimIds: readonly string[];
+  packetMemoryRefs: readonly string[];
   packetGoverningDecisionIds: readonly string[];
   packetSourceDecisionEdgeIds: readonly string[];
   packetStatus: string;
@@ -647,6 +834,16 @@ const readPacketIdentity = (
   };
 };
 
+const decisionPacketReadinessStatusFrom = (
+  value: string
+): DecisionPacketReadinessStatus => {
+  if (value === "ready" || value === "weak_context" || value === "abstain") {
+    return value;
+  }
+
+  throw new Error(`DecisionPacket smoke readback has unsupported readiness status '${value}'`);
+};
+
 const readPacket = (
   parsed: Record<string, unknown>
 ): DecisionPacketSmokeJson["packet"] => {
@@ -684,7 +881,8 @@ const readPacket = (
       supersededPathIds: readStringArray(sourceConsensus, "supersededPathIds"),
       rejectedPathIds: readStringArray(sourceConsensus, "rejectedPathIds"),
       sourceRejectionIds: readStringArray(sourceConsensus, "sourceRejectionIds"),
-      evidenceGapIds: readStringArray(sourceConsensus, "evidenceGapIds")
+      evidenceGapIds: readStringArray(sourceConsensus, "evidenceGapIds"),
+      ...(isRecord(sourceConsensus.timeline) ? { timeline: sourceConsensus.timeline } : {})
     },
     staleDecisionIds: readStringArray(packet, "staleDecisionIds"),
     abstentionScore: {
@@ -872,12 +1070,14 @@ const hasNoFormalRejectionTypedState = (input: {
     input.packet.governingDecisionIds.includes(input.currentDecisionId),
     hasExplicitSourceExclusion,
     input.packet.sourceConsensus.supersededPathIds.includes(input.supersededClaimId),
-    input.packet.sourceRejectionIds.length === 0,
-    input.packet.sourceConsensus.sourceRejectionIds.length === 0,
-    input.packet.rejectedPathIds.length === 0,
-    input.packet.sourceConsensus.rejectedPathIds.length === 0,
+    !input.packet.sourceConsensus.rejectedPathIds.includes(input.supersededClaimId),
+    !input.packet.rejectedPathIds.includes(input.supersededClaimId),
     ["weak_context", "abstain"].includes(input.packet.abstentionScore.status),
-    input.packet.abstentionScore.reasons.includes("missing_rejected_path_evidence")
+    input.packet.abstentionScore.reasons.some((reason) => [
+      "missing_rejected_path_evidence",
+      "caveated_source_authority",
+      "evidence_gap"
+    ].includes(reason))
   ].every(Boolean);
 };
 
@@ -990,6 +1190,281 @@ const createFeedbackSourceClaim = async (
     claimId: claim.id,
     decisionId: decision.id,
     decisionTargetId
+  };
+};
+
+const retainedTrialSeedClaimImplicationFor = (
+  family: string,
+  status: RetainedTrialSourceDecisionStatus
+): string => {
+  switch (status) {
+    case "current":
+      return `KRN should expose this ${family} decision as governing task guidance for the retained paired Codex trial.`;
+    case "stale":
+      return `KRN should preserve this older ${family} path as visible history without activating it as current guidance.`;
+    case "rejected":
+      return `KRN should expose this rejected ${family} shortcut as non-governing negative guidance.`;
+  }
+};
+
+const createRetainedTrialSeedDecision = async (
+  input: {
+    readonly artifactId: string;
+    readonly corpusName: string;
+    readonly decisionSeed: DecisionPacketReturnLoopRetainedSourceSeedItem;
+    readonly family: string;
+    readonly index: number;
+    readonly marker: string;
+    readonly projectId: string;
+    readonly sourceRepository: SourceRepository;
+  }
+): Promise<RetainedTrialCreatedSourceDecision> => {
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    `retained-trial-source-seed-${input.family}`
+  );
+  const metadata = {
+    ...evidenceMetadata,
+    retainedTrialSourceSeed: input.family,
+    retainedTrialSourceSeedCorpusName: input.corpusName,
+    retainedTrialSourceSeedDecisionId: input.decisionSeed.id,
+    retainedTrialSourceSeedDecisionStatus: input.decisionSeed.status,
+    evidenceRef: input.decisionSeed.evidenceRef
+  };
+  const chunk = await input.sourceRepository.createSourceChunk({
+    sourceArtifactId: input.artifactId,
+    ordinal: input.index,
+    content: input.decisionSeed.statement,
+    contentHash:
+      `decision-packet-retained-trial-source-seed-${input.family}-${input.marker}-${input.index}`,
+    metadata
+  });
+  const claim = await input.sourceRepository.createSourceClaim({
+    sourceArtifactId: input.artifactId,
+    sourceChunkId: chunk.id,
+    claim: input.decisionSeed.statement,
+    mechanism:
+      `A retained ${input.family} eval fixture source row is promoted into store-backed source authority before DecisionPacket issuance.`,
+    krnImplication: retainedTrialSeedClaimImplicationFor(
+      input.family,
+      input.decisionSeed.status
+    ),
+    doesNotProve: input.decisionSeed.doesNotProve,
+    sourceAuthority: "project-decision",
+    supportType: input.decisionSeed.status === "rejected" ? "rejection" : "decision",
+    consumer: "retained paired Codex trial",
+    falsifier: input.decisionSeed.falsifier,
+    status: "proposed",
+    metadata
+  });
+  const sourceDecision = await input.sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: claim.id,
+    status: input.decisionSeed.status === "rejected" ? "reject" : "adopt",
+    decision: input.decisionSeed.title,
+    rationale: `${input.decisionSeed.statement} Evidence: ${input.decisionSeed.evidenceRef}.`,
+    falsifier: input.decisionSeed.falsifier,
+    consumer: "retained paired Codex trial",
+    metadata
+  });
+
+  if (input.decisionSeed.status === "rejected") {
+    return {
+      status: "rejected",
+      decision: {
+        claim: claim.claim,
+        claimId: claim.id,
+        decisionId: sourceDecision.id,
+        title: input.decisionSeed.title
+      }
+    };
+  }
+
+  const edge = await input.sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: claim.id,
+    sourceDecisionId: sourceDecision.id,
+    targetType: "architecture_decision",
+    targetId: input.decisionSeed.id,
+    supportType: "decision",
+    confidence: "high",
+    notes:
+      `Retained ${input.family} paired-trial ${input.decisionSeed.status} source decision support.`,
+    metadata: {
+      ...metadata,
+      sourceDecisionId: sourceDecision.id
+    }
+  });
+
+  if (input.decisionSeed.status === "current") {
+    return {
+      status: "current",
+      decision: {
+        sourceClaimId: claim.id,
+        sourceDecisionEdgeId: edge.id,
+        sourceDecisionId: sourceDecision.id,
+        targetId: input.decisionSeed.id
+      }
+    };
+  }
+
+  return {
+    status: "stale",
+    decision: {
+      sourceClaimId: claim.id,
+      sourceDecisionId: sourceDecision.id,
+      targetId: input.decisionSeed.id
+    }
+  };
+};
+
+const createRetainedTrialSourceDecisionSeed = async (
+  input: {
+    readonly marker: string;
+    readonly projectId: string;
+    readonly seed: DecisionPacketReturnLoopRetainedSourceSeed;
+    readonly sourceRepository: SourceRepository;
+  }
+): Promise<RetainedTrialSourceSeedProof> => {
+  const evidenceMetadata = capturedCurrentEvidenceMetadata(
+    input.marker,
+    `retained-trial-source-seed-${input.seed.family}`
+  );
+  const artifact = await input.sourceRepository.createSourceArtifact({
+    projectId: input.projectId,
+    kind: "run",
+    uri: `operator://decision-packet-return-loop/${input.marker}/retained-trial-source-seed/${input.seed.family}`,
+    title: `Retained ${input.seed.family} paired-trial source-decision seed`,
+    contentHash: `decision-packet-retained-trial-source-seed-${input.seed.family}-${input.marker}`,
+    sourceAuthority: "project-decision",
+    metadata: {
+      ...evidenceMetadata,
+      retainedTrialSourceSeed: input.seed.family,
+      retainedTrialSourceSeedCorpusName: input.seed.corpusName
+    }
+  });
+  const currentDecisions: RetainedTrialCurrentSourceDecisionProof[] = [];
+  const staleDecisions: RetainedTrialHistoricalSourceDecisionProof[] = [];
+  const rejectedDecisionInputs: RetainedTrialRejectedSourceDecisionInput[] = [];
+
+  for (const [index, decisionSeed] of input.seed.decisions.entries()) {
+    const created = await createRetainedTrialSeedDecision({
+      artifactId: artifact.id,
+      corpusName: input.seed.corpusName,
+      decisionSeed,
+      family: input.seed.family,
+      index,
+      marker: input.marker,
+      projectId: input.projectId,
+      sourceRepository: input.sourceRepository
+    });
+
+    switch (created.status) {
+      case "current":
+        currentDecisions.push(created.decision);
+        break;
+      case "stale":
+        staleDecisions.push(created.decision);
+        break;
+      case "rejected":
+        rejectedDecisionInputs.push(created.decision);
+        break;
+    }
+  }
+
+  const firstCurrentDecision = currentDecisions[0];
+  if (firstCurrentDecision === undefined) {
+    throw new Error("Retained paired-trial source seed requires at least one current decision");
+  }
+
+  const supersedingDecision = currentDecisions.find((decision) =>
+    decision.targetId === "async-job-retry-budget"
+  ) ?? firstCurrentDecision;
+
+  for (const staleDecision of staleDecisions) {
+    await input.sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: supersedingDecision.sourceClaimId,
+      toSourceClaimId: staleDecision.sourceClaimId,
+      kind: "supersedes",
+      metadata: {
+        smokeId: input.marker,
+        consumer: "retained paired Codex trial",
+        evidenceRef: `retained-trial-source-seed:${input.seed.family}:${staleDecision.targetId}`,
+        sourceDecisionRef: supersedingDecision.sourceDecisionId,
+        doesNotProve:
+          "This retained trial supersession edge does not prove broad temporal source graph quality."
+      }
+    });
+  }
+
+  const rejectedDecisions: RetainedTrialRejectedSourceDecisionProof[] = [];
+  for (const rejectedDecision of rejectedDecisionInputs) {
+    const sourceRejection = await input.sourceRepository.createSourceRejection({
+      projectId: input.projectId,
+      sourceArtifactId: artifact.id,
+      sourceClaimId: rejectedDecision.claimId,
+      title: rejectedDecision.title,
+      attemptedClaim: rejectedDecision.claim,
+      rejectedBecause: "unsupported",
+      reason:
+        `The retained ${input.seed.family} trial fixture marks this source path as rejected negative guidance.`,
+      doesNotProve:
+        "This retained trial source rejection does not prove automated source-review quality.",
+      consumer: "retained paired Codex trial",
+      metadata: {
+        smokeId: input.marker,
+        retainedTrialSourceSeed: input.seed.family,
+        retainedTrialSourceSeedCorpusName: input.seed.corpusName,
+        sourceDecisionId: rejectedDecision.decisionId
+      }
+    });
+
+    rejectedDecisions.push({
+      sourceClaimId: rejectedDecision.claimId,
+      sourceDecisionId: rejectedDecision.decisionId,
+      sourceRejectionId: sourceRejection.id
+    });
+  }
+
+  return {
+    corpusName: input.seed.corpusName,
+    currentDecisions,
+    family: input.seed.family,
+    rejectedDecisions,
+    staleDecisions
+  };
+};
+
+const retainedTrialSourceDecisionSeedReadbackFor = (
+  input: {
+    readonly packet: DecisionPacketSmokeJson["packet"];
+    readonly proof: RetainedTrialSourceSeedProof;
+  }
+): RetainedTrialSourceSeedReadback => {
+  const packetCurrentDecisions = input.proof.currentDecisions.filter((decision) =>
+    input.packet.governingDecisionIds.includes(decision.targetId) &&
+    input.packet.sourceDecisionIds.includes(decision.sourceDecisionId)
+  );
+  const rejectedPathIds = [
+    ...input.packet.rejectedPathIds,
+    ...input.packet.sourceConsensus.rejectedPathIds
+  ];
+  const sourceRejectionIds = [
+    ...input.packet.sourceRejectionIds,
+    ...input.packet.sourceConsensus.sourceRejectionIds
+  ];
+
+  return {
+    packetGoverningDecisionIds: packetCurrentDecisions.map((decision) => decision.targetId),
+    packetSourceDecisionIds: packetCurrentDecisions.map((decision) => decision.sourceDecisionId),
+    packetSupersededPathIds: input.proof.staleDecisions
+      .map((decision) => decision.sourceClaimId)
+      .filter((id) => input.packet.sourceConsensus.supersededPathIds.includes(id)),
+    packetRejectedPathIds: input.proof.rejectedDecisions
+      .map((decision) => decision.sourceClaimId)
+      .filter((id) => rejectedPathIds.includes(id)),
+    packetSourceRejectionIds: input.proof.rejectedDecisions
+      .map((decision) => decision.sourceRejectionId)
+      .filter((id) => sourceRejectionIds.includes(id))
   };
 };
 
@@ -1854,6 +2329,28 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  const unsupportedRelationClaim = await sourceRepository.createSourceClaim({
+    sourceArtifactId: sourceArtifact.id,
+    sourceChunkId: sourceChunk.id,
+    executionRunId: input.executionRunId,
+    claim: "DecisionPacket source consensus relation evidence must be present before supersession.",
+    mechanism:
+      "This decision-supported claim is linked by an intentionally unsupported graph relation.",
+    krnImplication:
+      "KRN must retain the claim as current while exposing the unsupported relation as a gap.",
+    doesNotProve:
+      "This smoke does not prove repository-wide relation evidence completeness.",
+    sourceAuthority: "project-decision",
+    supportType: "decision",
+    consumer: "DecisionPacket source consensus smoke",
+    falsifier:
+      "An unsupported current relation demotes or supersedes this decision-supported claim.",
+    status: "proposed",
+    metadata: {
+      ...evidenceMetadata,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
   const rejectedClaim = await sourceRepository.createSourceClaim({
     sourceArtifactId: sourceArtifact.id,
     executionRunId: input.executionRunId,
@@ -1905,6 +2402,21 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  const unsupportedRelationDecision = await sourceRepository.createSourceDecision({
+    projectId: input.projectId,
+    sourceClaimId: unsupportedRelationClaim.id,
+    status: "adopt",
+    decision: "Adopt the unsupported-relation target as independently decision-supported.",
+    rationale:
+      "The target remains supported even when a relation lacks inspectable support metadata.",
+    falsifier:
+      "The target becomes historical solely because of the unsupported relation.",
+    consumer: "DecisionPacket source consensus smoke",
+    metadata: {
+      smokeId: input.marker,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
   await sourceRepository.createSourceDecision({
     projectId: input.projectId,
     sourceClaimId: rejectedClaim.id,
@@ -1948,6 +2460,19 @@ const runSourceConsensusProof = async (
       sourceConsensusProof: "superseded"
     }
   });
+  await sourceRepository.createSourceDecisionEdge({
+    sourceClaimId: unsupportedRelationClaim.id,
+    sourceDecisionId: unsupportedRelationDecision.id,
+    targetType: "architecture_decision",
+    targetId: `architecture-decision:source-consensus:${input.marker}:unsupported-relation-target`,
+    supportType: "decision",
+    confidence: "high",
+    notes: "DecisionPacket source consensus smoke unsupported relation target support.",
+    metadata: {
+      smokeId: input.marker,
+      sourceConsensusProof: "unsupported-relation-target"
+    }
+  });
 
   await sourceRepository.createSourceClaimEdge({
     fromSourceClaimId: currentClaim.id,
@@ -1959,6 +2484,17 @@ const runSourceConsensusProof = async (
       sourceDecisionRef: currentDecision.id,
       doesNotProve:
         "This source graph edge does not prove broad consensus quality or all temporal source graph behavior."
+    }
+  });
+  const unsupportedRelationEdge = await sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: currentClaim.id,
+    toSourceClaimId: unsupportedRelationClaim.id,
+    kind: "narrows",
+    metadata: {
+      smokeId: input.marker,
+      consumer: "DecisionPacket source consensus smoke",
+      doesNotProve:
+        "This intentionally unsupported relation does not prove supersession."
     }
   });
 
@@ -2112,6 +2648,21 @@ const runSourceConsensusProof = async (
     rejectedClaimId: rejectedClaim.id,
     sourceRejectionId: sourceRejection.id
   });
+  const timeline = packet.packet.sourceConsensus.timeline;
+  const timelineEntries = isRecord(timeline) ? readRecordArray(timeline, "entries") : [];
+  const currentTimelineEntry = timelineEntries.find((entry) =>
+    readString(entry, "sourceClaimId") === currentClaim.id
+  );
+  const unsupportedRelationReadback = unsupportedRelationReadbackFor({
+    timelineEntries,
+    claimId: unsupportedRelationClaim.id,
+    edgeId: unsupportedRelationEdge.id
+  });
+  const temporalExplanationPresent = currentTimelineEntry !== undefined &&
+    readString(currentTimelineEntry, "createdAt") !== undefined &&
+    readStringArray(currentTimelineEntry, "supersedesSourceClaimIds").includes(supersededClaim.id);
+  const temporalExplanationHasEvidence = temporalExplanationPresent &&
+    readStringArray(currentTimelineEntry, "evidenceRefs").length > 0;
 
   return {
     proofRunId: proofRun.id,
@@ -2141,7 +2692,12 @@ const runSourceConsensusProof = async (
     noFormalRejectionSourceRejectionIds: noFormalRejectionPacket.packet.sourceRejectionIds,
     noFormalRejectionKeepsTypedState,
     supersededClaimIsNonGoverning,
-    rejectedClaimHasFormalRejection
+    rejectedClaimHasFormalRejection,
+    temporalExplanationPresent,
+    temporalExplanationHasEvidence,
+    unsupportedRelationClaimId: unsupportedRelationClaim.id,
+    unsupportedRelationEdgeId: unsupportedRelationEdge.id,
+    ...unsupportedRelationReadback
   };
 };
 
@@ -2150,9 +2706,14 @@ const runUnresolvedAcceptedSourceDissentProof = async (
 ): Promise<SourceDissentProofResult> => {
   const {
     harnessRunRepository,
+    memoryRepository,
     retrievalRepository,
     sourceRepository
   } = input.repositories;
+  const memoryRecord = await memoryRepository.getMemoryRecordById(input.memoryRecordId);
+  if (memoryRecord === undefined) {
+    throw new Error("DecisionPacket source dissent proof lost its selected memory record");
+  }
   const evidenceMetadata = capturedCurrentEvidenceMetadata(
     input.marker,
     "unresolved-source-dissent"
@@ -2367,17 +2928,50 @@ const runUnresolvedAcceptedSourceDissentProof = async (
       reason: "Persisted packet readback includes the accepted contradictory peer.",
       expectedUse: "Expose unresolved accepted dissent before execution.",
       sourceAuthority: "project-decision"
+    }, {
+      subjectType: "memory_record",
+      subjectId: input.memoryRecordId,
+      reason: "Retain selected memory context while its supporting source authority is unresolved.",
+      expectedUse: "Prove memory guidance cannot bypass contradictory source review.",
+      sourceAuthority: "project-decision"
     }],
     exclusions: [],
     metadata: {
       ...smokeMetadata,
       retrievalRunId: retrievalRun.id,
-      canonicalRevisionTokens: [currentGoverningClaim, currentDissentingClaim].map((claim) => ({
-        subjectType: "source_claim",
-        subjectId: claim.id,
-        updatedAt: claim.updatedAt,
-        status: claim.status
-      }))
+      canonicalRevisionTokens: [
+        ...[currentGoverningClaim, currentDissentingClaim].map((claim) => ({
+          subjectType: "source_claim",
+          subjectId: claim.id,
+          updatedAt: claim.updatedAt,
+          status: claim.status
+        })),
+        {
+          subjectType: "memory_record",
+          subjectId: memoryRecord.id,
+          updatedAt: memoryRecord.updatedAt,
+          status: memoryRecord.status,
+          currentVersionId: memoryRecord.currentVersionId
+        }
+      ]
+    }
+  });
+  await retrievalRepository.addCandidate({
+    retrievalRunId: retrievalRun.id,
+    kind: "memory",
+    subjectType: "memory_record",
+    subjectId: input.memoryRecordId,
+    sourceAuthority: "project-decision",
+    lexicalScore: 98,
+    totalScore: 98,
+    score: 98,
+    status: "included",
+    reason: "Persisted memory guidance is selected alongside unresolved contradictory source authority.",
+    metadata: {
+      ...smokeMetadata,
+      memorySourceConflictProof: true,
+      doesNotProve:
+        "Memory selection does not override unresolved source conflict or prove source truth."
     }
   });
   await retrievalRepository.addCandidate({
@@ -2479,6 +3073,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   const mcpPreservesDissentAndGap = [
     mcpPacket.sourceClaimIds.includes(governingClaim.id),
     mcpPacket.sourceClaimIds.includes(dissentingClaim.id),
+    mcpPacket.memoryRefs.includes(input.memoryRecordId),
     mcpPacket.sourceConsensus.conflictingSourceClaimIds.includes(governingClaim.id),
     mcpPacket.sourceConsensus.evidenceGapIds.includes(unresolvedAcceptedDissentEvidenceGapId),
     mcpPacket.abstentionScore.status === "abstain",
@@ -2499,6 +3094,7 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     packetConflictingSourceClaimIds: packet.packet.sourceConsensus.conflictingSourceClaimIds,
     packetDecisionLinkedSourceClaimIds:
       packet.packet.sourceConsensus.decisionLinkedSourceClaimIds,
+    packetMemoryRefs: packet.packet.memoryRefs,
     packetGoverningDecisionIds: packet.packet.governingDecisionIds,
     packetSourceDecisionEdgeIds: packet.packet.sourceDecisionEdgeIds,
     packetStatus: packet.packet.abstentionScore.status,
@@ -2518,6 +3114,72 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   };
 };
 
+const legacyMemoryApplicationsPacketStabilityProof = async (input: {
+  readonly baseRuntime: {
+    readonly cwd: string;
+    readonly env: { readonly KRN_DATABASE_URL: string };
+    readonly now: () => string;
+    readonly createId: (prefix: string) => string;
+  };
+  readonly client: Sql;
+  readonly commandRuntime: DatabaseRuntime;
+  readonly marker: string;
+  readonly memoryRepository: MemoryRepository;
+  readonly retainedMemoryId: string;
+  readonly staleMemoryId: string;
+  readonly selectorPacket: ReturnType<typeof parseDecisionPacket>;
+  readonly selectorExecutionRunId: string;
+}): Promise<boolean> => {
+  await input.client`
+    insert into memory_applications (
+      memory_record_id,
+      execution_run_id,
+      decision_packet_checksum,
+      expected_use,
+      outcome,
+      notes,
+      metadata
+    ) values
+      (
+        ${input.retainedMemoryId},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'hurt',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      ),
+      (
+        ${input.staleMemoryId},
+        null,
+        null,
+        'Unbound legacy packet-selection falsifier.',
+        'helped',
+        'This row has no packet identity and must remain historical.',
+        ${JSON.stringify({ smokeId: input.marker, legacyPacketSelectionProbe: true })}::jsonb
+      )
+  `;
+
+  const rebuildMemoryApplicationCounters = input.memoryRepository.rebuildMemoryApplicationCounters;
+  if (rebuildMemoryApplicationCounters === undefined) {
+    throw new Error(
+      "DecisionPacket return-loop smoke requires memory application counter rebuild readback"
+    );
+  }
+  await rebuildMemoryApplicationCounters.call(input.memoryRepository);
+  const selectorPacketAfterLegacyRows = await readDecisionPacketForSmokeRun({
+    baseRuntime: input.baseRuntime,
+    commandRuntime: input.commandRuntime,
+    runId: input.selectorExecutionRunId
+  });
+
+  return selectorPacketAfterLegacyRows.packetIdentity.checksum === input.selectorPacket.packetIdentity.checksum &&
+    JSON.stringify(selectorPacketAfterLegacyRows.packet.memoryRefs) ===
+      JSON.stringify(input.selectorPacket.packet.memoryRefs) &&
+    JSON.stringify(selectorPacketAfterLegacyRows.readModel.context.exclusionDetails) ===
+      JSON.stringify(input.selectorPacket.readModel.context.exclusionDetails);
+};
+
 const runSelectorFeedbackProof = async (
   input: {
     readonly baseRuntime: {
@@ -2526,6 +3188,7 @@ const runSelectorFeedbackProof = async (
       readonly now: () => string;
       readonly createId: (prefix: string) => string;
     };
+    readonly client: Sql;
     readonly commandRuntime: DatabaseRuntime;
     readonly executionRunId: string;
     readonly feedbackDeltaId: string;
@@ -2870,6 +3533,18 @@ const runSelectorFeedbackProof = async (
       exclusion.explanation.includes("unresolved_negative_feedback")
     );
 
+  const legacyMemoryApplicationsPacketStable = await legacyMemoryApplicationsPacketStabilityProof({
+    baseRuntime: input.baseRuntime,
+    client: input.client,
+    commandRuntime: input.commandRuntime,
+    marker: input.marker,
+    memoryRepository,
+    retainedMemoryId: selectorRetainedMemory.id,
+    selectorExecutionRunId: selectorExecutionRun.id,
+    selectorPacket,
+    staleMemoryId: selectorStaleMemory.id
+  });
+
   return {
     proofRunId: selectorExecutionRun.id,
     retrievalRunId:
@@ -2883,6 +3558,7 @@ const runSelectorFeedbackProof = async (
     packetMemoryRefs: selectorPacket.packet.memoryRefs,
     includesRetainedMemory,
     excludesStaleMemory,
+    legacyMemoryApplicationsPacketStable,
     maintenanceCandidateId: maintenanceCandidate.id,
     maintenanceAntiMemoryCandidateId: maintenanceProposal.antiMemoryCandidate.id,
     maintenanceFeedbackEventId: maintenanceProposal.feedbackEvent.id,
@@ -2902,7 +3578,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       smokeName: "decision packet return-loop smoke",
       workspacePrefix: "krn-decision-packet-smoke",
       projectSlug: "decision-packet-return-loop",
-      taskPrefix: "decision packet return loop smoke"
+      taskPrefix: input.taskPrefix ?? "decision packet return loop smoke"
     });
   let retrievalRunId: string | undefined;
   let selectorRetrievalRunId: string | undefined;
@@ -2912,7 +3588,9 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
   const feedbackDeltaIds: string[] = [];
   const maintenanceQueueIds: string[] = [];
   let cleanedUp = false;
+  let retainedFixture = false;
   let helpedFeedbackSource: FeedbackSourceClaimProof | undefined;
+  let retainedTrialSourceSeedProof: RetainedTrialSourceSeedProof | undefined;
   let staleFeedbackSource: FeedbackSourceClaimProof | undefined;
   const targetRepo = await createReturnLoopTargetRepo();
   await writeFile(
@@ -3036,6 +3714,14 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           sourceRepository,
           proof: "stale"
         });
+        if (input.retainedTrialSourceSeed !== undefined) {
+          retainedTrialSourceSeedProof = await createRetainedTrialSourceDecisionSeed({
+            marker,
+            projectId: project.id,
+            seed: input.retainedTrialSourceSeed,
+            sourceRepository
+          });
+        }
       }
     });
     retrievalRunId = compiledRetrievalRunId;
@@ -3092,6 +3778,82 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
     });
     if (helpedFeedbackSource === undefined || staleFeedbackSource === undefined) {
       throw new Error("DecisionPacket return-loop smoke did not prepare canonical feedback source claims");
+    }
+    const retainedTrialSourceSeedReadback = retainedTrialSourceSeedProof === undefined
+      ? undefined
+      : retainedTrialSourceDecisionSeedReadbackFor({
+          packet: firstPacket.packet,
+          proof: retainedTrialSourceSeedProof
+        });
+    if (input.retainFixture === true) {
+      const rejectedArtifact = await sourceRepository.createSourceArtifact({
+        projectId: project.id,
+        kind: "run",
+        uri: `operator://decision-packet-return-loop/${marker}/retained-trial-rejected-path`,
+        title: "Retained paired-trial rejected path",
+        contentHash: `decision-packet-retained-trial-rejected-path-${marker}`,
+        sourceAuthority: "project-decision",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      const rejectedChunk = await sourceRepository.createSourceChunk({
+        sourceArtifactId: rejectedArtifact.id,
+        ordinal: 0,
+        content: "A deliberately rejected alternative path for the retained paired trial.",
+        contentHash: `decision-packet-retained-trial-rejected-path-chunk-${marker}`,
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      const rejectedClaim = await sourceRepository.createSourceClaim({
+        sourceArtifactId: rejectedArtifact.id,
+        sourceChunkId: rejectedChunk.id,
+        executionRunId: executionRun.id,
+        claim: "The deliberately rejected alternative path should not govern this trial.",
+        mechanism: "The retained trial must preserve a rejected path as non-governing evidence.",
+        krnImplication: "KRN should expose rejected context without selecting it as current guidance.",
+        doesNotProve: "This fixture does not prove source truth or trial outcome.",
+        sourceAuthority: "project-decision",
+        supportType: "decision",
+        consumer: "retained paired Codex trial",
+        falsifier: "The rejected path becomes a governing DecisionPacket decision.",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      await sourceRepository.createSourceDecision({
+        projectId: project.id,
+        sourceClaimId: rejectedClaim.id,
+        status: "reject",
+        decision: "Reject the deliberately unsupported alternative path.",
+        rationale: "The paired trial requires an explicit rejected path to remain non-governing evidence.",
+        falsifier: "The rejected alternative is selected as current DecisionPacket guidance.",
+        consumer: "retained paired Codex trial",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
+      await sourceRepository.createSourceRejection({
+        projectId: project.id,
+        executionRunId: executionRun.id,
+        sourceArtifactId: rejectedArtifact.id,
+        sourceClaimId: rejectedClaim.id,
+        title: "Retained paired-trial rejected path",
+        attemptedClaim: rejectedClaim.claim,
+        rejectedBecause: "unsupported",
+        reason: "The path is seeded solely to make rejection handling observable in the paired trial.",
+        doesNotProve: "This fixture does not prove source-review quality.",
+        consumer: "retained paired Codex trial",
+        metadata: {
+          smokeId: marker,
+          retainedTrialRejectedPath: true
+        }
+      });
     }
     const unseenDecisionId = `source-decision-unseen:${marker}`;
     const packetSelectedCanonicalDecisions =
@@ -3438,6 +4200,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
 
     const selectorProof = await runSelectorFeedbackProof({
       baseRuntime,
+      client,
       commandRuntime,
       executionRunId: executionRun.id,
       feedbackDeltaId: staleFeedbackDelta.id,
@@ -3473,9 +4236,11 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       commandRuntime,
       executionRunId: executionRun.id,
       marker,
+      memoryRecordId: selectorProof.retainedMemoryRecordId,
       projectId: project.id,
       repositories: {
         harnessRunRepository,
+        memoryRepository,
         sourceRepository,
         retrievalRepository
       },
@@ -3534,11 +4299,47 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       { label: "mismatched feedback excluded", passed: mismatchedFeedbackStayedOutOfIssuedPacket },
       { label: "issued packet retains activated decisions", passed: issuedPacketRetainsActivatedDecision },
       { label: "issued packet identity retained", passed: issuedPacketIdentityRetained },
+      ...(retainedTrialSourceSeedProof === undefined ||
+        retainedTrialSourceSeedReadback === undefined
+        ? []
+        : [{
+            label: "retained trial source seed current decisions selected",
+            passed:
+              retainedTrialSourceSeedReadback.packetGoverningDecisionIds.length ===
+                retainedTrialSourceSeedProof.currentDecisions.length &&
+              retainedTrialSourceSeedReadback.packetSourceDecisionIds.length ===
+                retainedTrialSourceSeedProof.currentDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `governingDecisionIds=${retainedTrialSourceSeedReadback.packetGoverningDecisionIds.join(",")}; ` +
+              `sourceDecisionIds=${retainedTrialSourceSeedReadback.packetSourceDecisionIds.join(",")}`
+          }, {
+            label: "retained trial source seed stale decisions stay superseded",
+            passed:
+              retainedTrialSourceSeedReadback.packetSupersededPathIds.length ===
+                retainedTrialSourceSeedProof.staleDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `supersededPathIds=${retainedTrialSourceSeedReadback.packetSupersededPathIds.join(",")}`
+          }, {
+            label: "retained trial source seed rejected decisions have formal source rejection",
+            passed:
+              retainedTrialSourceSeedReadback.packetSourceRejectionIds.length ===
+                retainedTrialSourceSeedProof.rejectedDecisions.length,
+            detail:
+              `family=${retainedTrialSourceSeedProof.family}; ` +
+              `rejectedPathIds=${retainedTrialSourceSeedReadback.packetRejectedPathIds.join(",")}; ` +
+              `sourceRejectionIds=${retainedTrialSourceSeedReadback.packetSourceRejectionIds.join(",")}`
+          }]),
       {
         label: "selector packet includes retained neutral control memory",
         passed: selectorProof.includesRetainedMemory
       },
       { label: "selector packet excludes stale memory", passed: selectorProof.excludesStaleMemory },
+      {
+        label: "unbound legacy memory applications cannot alter DecisionPacket selection",
+        passed: selectorProof.legacyMemoryApplicationsPacketStable
+      },
       {
         label: "feedback maintenance queue succeeded",
         passed: feedbackMaintenanceProof.queueStatus === "succeeded"
@@ -3629,13 +4430,34 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `sourceRejectionIds=${sourceConsensusProof.packetSourceRejectionIds.join(",")}`
       },
       {
-        label: "unresolved accepted source dissent abstains without governing guidance",
+        label: "source consensus temporal explanation binds transition and evidence",
+        passed:
+          sourceConsensusProof.temporalExplanationPresent &&
+          sourceConsensusProof.temporalExplanationHasEvidence,
+        detail:
+          `present=${sourceConsensusProof.temporalExplanationPresent}; ` +
+          `hasEvidence=${sourceConsensusProof.temporalExplanationHasEvidence}`
+      },
+      {
+        label: "unsupported source relation stays non-governing in DB activation",
+        passed:
+          sourceConsensusProof.unsupportedRelationStayedCurrent &&
+          sourceConsensusProof.unsupportedRelationVisibleAsGap,
+        detail:
+          `claimId=${sourceConsensusProof.unsupportedRelationClaimId}; ` +
+          `edgeId=${sourceConsensusProof.unsupportedRelationEdgeId}; ` +
+          `stayedCurrent=${sourceConsensusProof.unsupportedRelationStayedCurrent}; ` +
+          `visibleAsGap=${sourceConsensusProof.unsupportedRelationVisibleAsGap}`
+      },
+      {
+        label: "selected memory plus unresolved source dissent abstains without governing guidance",
         passed:
           sourceDissentProof.packetStatus === "abstain" &&
           sourceDissentProof.packetReasons.includes("conflicting_authority") &&
           sourceDissentProof.packetReasons.includes("unresolved_accepted_source_dissent") &&
           sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.candidateClaimId) &&
           sourceDissentProof.packetSourceClaimIds.includes(sourceDissentProof.dissentingClaimId) &&
+          sourceDissentProof.packetMemoryRefs.includes(selectorProof.retainedMemoryRecordId) &&
           sourceDissentProof.packetConflictingSourceClaimIds.includes(
             sourceDissentProof.candidateClaimId
           ) &&
@@ -3650,6 +4472,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
           `candidateClaimId=${sourceDissentProof.candidateClaimId}; ` +
           `dissentingClaimId=${sourceDissentProof.dissentingClaimId}; ` +
           `sourceClaimIds=${sourceDissentProof.packetSourceClaimIds.join(",")}; ` +
+          `memoryRefs=${sourceDissentProof.packetMemoryRefs.join(",")}; ` +
           `conflictingSourceClaimIds=${sourceDissentProof.packetConflictingSourceClaimIds.join(",")}; ` +
           `decisionLinkedSourceClaimIds=${sourceDissentProof.packetDecisionLinkedSourceClaimIds.join(",")}; ` +
           `governingDecisionIds=${sourceDissentProof.packetGoverningDecisionIds.join(",")}; ` +
@@ -3673,15 +4496,36 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       }
     ]);
 
-    const cleanupRemainingMarkerCount = await cleanup();
-    cleanedUp = true;
+    const requiredDecisionIds = retainedTrialSourceSeedReadback?.packetGoverningDecisionIds ??
+      firstPacket.packet.governingDecisionIds;
+    const decisionApplications = retainedTrialDecisionApplicationsFor({
+      governingDecisionIds: requiredDecisionIds,
+      sourceDecisionIds: retainedTrialSourceSeedReadback?.packetSourceDecisionIds ??
+        firstPacket.packet.sourceDecisionIds,
+      preAppliedSourceDecisionIds: retainedTrialSourceSeedReadback === undefined
+        ? [helpedFeedbackSource.decisionId]
+        : []
+    });
+    const cleanupRemainingMarkerCount = input.retainFixture === true
+      ? 0
+      : await cleanup();
+    retainedFixture = input.retainFixture === true;
+    cleanedUp = !retainedFixture;
 
     return {
       workspaceSlug,
       projectSlug,
+      projectId: project.id,
+      taskId: result.taskContract.id,
+      task,
       executionRunId: executionRun.id,
       packetChecksum: firstPacket.packetIdentity.checksum,
       packetEvidenceRef: firstPacket.packetIdentity.evidenceRef,
+      packetReadiness: decisionPacketReadinessStatusFrom(
+        firstPacket.packet.abstentionScore.status
+      ),
+      requiredDecisionIds,
+      decisionApplications,
       returnChannelHasChecksum,
       matchingFeedbackDeltaId: matchingFeedbackDelta.id,
       matchingFeedbackOutcome: matchingFeedbackOutcome ?? "missing",
@@ -3712,6 +4556,8 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
       selectorPacketMemoryRefs: selectorProof.packetMemoryRefs,
       selectorPacketIncludesRetainedMemory: selectorProof.includesRetainedMemory,
       selectorPacketExcludesStaleMemory: selectorProof.excludesStaleMemory,
+      selectorLegacyMemoryApplicationsPacketStable:
+        selectorProof.legacyMemoryApplicationsPacketStable,
       selectorMaintenanceCandidateId: selectorProof.maintenanceCandidateId,
       selectorMaintenanceAntiMemoryCandidateId: selectorProof.maintenanceAntiMemoryCandidateId,
       selectorMaintenanceFeedbackEventId: selectorProof.maintenanceFeedbackEventId,
@@ -3755,6 +4601,18 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceConsensusProof.supersededClaimIsNonGoverning,
       sourceConsensusRejectedClaimHasFormalRejection:
         sourceConsensusProof.rejectedClaimHasFormalRejection,
+      sourceConsensusTemporalExplanationPresent:
+        sourceConsensusProof.temporalExplanationPresent,
+      sourceConsensusTemporalExplanationHasEvidence:
+        sourceConsensusProof.temporalExplanationHasEvidence,
+      sourceConsensusUnsupportedRelationClaimId:
+        sourceConsensusProof.unsupportedRelationClaimId,
+      sourceConsensusUnsupportedRelationEdgeId:
+        sourceConsensusProof.unsupportedRelationEdgeId,
+      sourceConsensusUnsupportedRelationStayedCurrent:
+        sourceConsensusProof.unsupportedRelationStayedCurrent,
+      sourceConsensusUnsupportedRelationVisibleAsGap:
+        sourceConsensusProof.unsupportedRelationVisibleAsGap,
       sourceDissentProofRunId: sourceDissentProof.proofRunId,
       sourceDissentCandidateClaimId: sourceDissentProof.candidateClaimId,
       sourceDissentDissentingClaimId: sourceDissentProof.dissentingClaimId,
@@ -3764,6 +4622,7 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         sourceDissentProof.packetConflictingSourceClaimIds,
       sourceDissentPacketDecisionLinkedSourceClaimIds:
         sourceDissentProof.packetDecisionLinkedSourceClaimIds,
+      sourceDissentPacketMemoryRefs: sourceDissentProof.packetMemoryRefs,
       sourceDissentPacketGoverningDecisionIds:
         sourceDissentProof.packetGoverningDecisionIds,
       sourceDissentPacketSourceDecisionEdgeIds:
@@ -3798,11 +4657,52 @@ export const runDecisionPacketReturnLoopSmokeCheck = async (
         feedbackMaintenanceProof.exactReplayIdempotent,
       feedbackMaintenanceDirectMutationDelta: feedbackMaintenanceProof.directMutationDelta,
       cleanupRemainingMarkerCount,
-      cleanedUp: cleanupRemainingMarkerCount === 0
+      cleanedUp: cleanupRemainingMarkerCount === 0 && !retainedFixture,
+      retainedFixture,
+      ...(retainedTrialSourceSeedProof === undefined ||
+        retainedTrialSourceSeedReadback === undefined
+        ? {}
+        : {
+            retainedTrialSourceSeedCorpusName: retainedTrialSourceSeedProof.corpusName,
+            retainedTrialSourceSeedCurrentDecisionIds:
+              retainedTrialSourceSeedProof.currentDecisions.map((decision) => decision.targetId),
+            retainedTrialSourceSeedFamily: retainedTrialSourceSeedProof.family,
+            retainedTrialSourceSeedPacketGoverningDecisionIds:
+              retainedTrialSourceSeedReadback.packetGoverningDecisionIds,
+            retainedTrialSourceSeedPacketRejectedPathIds:
+              retainedTrialSourceSeedReadback.packetRejectedPathIds,
+            retainedTrialSourceSeedPacketSourceDecisionIds:
+              retainedTrialSourceSeedReadback.packetSourceDecisionIds,
+            retainedTrialSourceSeedPacketSourceRejectionIds:
+              retainedTrialSourceSeedReadback.packetSourceRejectionIds,
+            retainedTrialSourceSeedPacketSupersededPathIds:
+              retainedTrialSourceSeedReadback.packetSupersededPathIds,
+            retainedTrialSourceSeedRejectedSourceClaimIds:
+              retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceClaimId
+              ),
+            retainedTrialSourceSeedSourceDecisionIds: [
+              ...retainedTrialSourceSeedProof.currentDecisions.map(
+                (decision) => decision.sourceDecisionId
+              ),
+              ...retainedTrialSourceSeedProof.staleDecisions.map(
+                (decision) => decision.sourceDecisionId
+              ),
+              ...retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceDecisionId
+              )
+            ],
+            retainedTrialSourceSeedSourceRejectionIds:
+              retainedTrialSourceSeedProof.rejectedDecisions.map(
+                (decision) => decision.sourceRejectionId
+              ),
+            retainedTrialSourceSeedStaleSourceClaimIds:
+              retainedTrialSourceSeedProof.staleDecisions.map((decision) => decision.sourceClaimId)
+          })
     };
   } finally {
     try {
-      if (!cleanedUp) {
+      if (!cleanedUp && !retainedFixture) {
         await cleanup();
       }
     } finally {

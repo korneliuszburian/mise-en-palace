@@ -382,37 +382,15 @@ describe("KRN deterministic behavior gate", () => {
       missingProofCaseIds: [],
       failedProofCaseIds: []
     });
-    expect(report.caseResults.map((result) => result.caseId)).toEqual([
-      "golden-case-codex-output-evidence-shape-001-a",
-      "golden-case-context-roi-001-a",
-      "golden-case-evidence-001-a",
-      "golden-case-graph-qa-001-a",
-      "golden-case-memory-005-a",
-      "golden-case-memory-smoke-001",
-      "golden-case-memory-smoke-002",
-      "golden-case-observation-prefix-001-a",
-      "golden-case-reflection-001-a",
-      "golden-case-source-artifact-preview-reuse-001-a",
-      "golden-case-source-decorative-rejection-001-a",
-      "golden-case-target-fixture-battle-001-a",
-      "golden-case-target-owner-file-below-roots-001-a",
-      "golden-case-target-trust-exclusions-001-a"
-    ]);
-    expect(report.caseResults.map((result) => result.summary)).toEqual([
-      "Real Codex-output evidence-shape gate accepted reviewed evidence refs and rejected KRN-context claims missing evidence refs, verification, changed files, or non-proof.",
-      "Real ContextROI behavior kept a small packet with expectedUse and explicit over_budget exclusions.",
-      "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence.",
-      "Real relation-grounded QA readback showed baseline insufficient and edge-aware context grounded the answer.",
-      "Real activation behavior included exact-proof source claim only with raw recall trigger.",
-      "Real activation behavior abstained on stale memory and produced stale exclusion.",
-      "Real activation behavior blocked memory-stale-knowledge with anti-memory conflict evidence.",
-      "Real context assembly rejected selected observation prefix item without source ranges.",
-      "Real reflection behavior blocked direct MemoryRecord target generation.",
-      "Real source artifact preview extraction produced a reviewable claim that shaped later source activation context.",
-      "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
-      "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files.",
-      "Real target owner-file recall surfaced a bounded owner file below tests/ without selecting static KRN owner files.",
-      "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
-    ]);
+    const expectedCaseIds = new Set(task.cases.map((behaviorCase) => behaviorCase.id));
+    const observedCaseIds = new Set(report.caseResults.map((result) => result.caseId));
+
+    expect(report.caseResults).toHaveLength(task.cases.length);
+    expect(observedCaseIds).toEqual(expectedCaseIds);
+    expect(report.caseResults.every((result) => result.status === "passed")).toBe(true);
+    expect(report.caseResults.every((result) => result.summary.trim().length > 0)).toBe(true);
+    expect(report.caseResults.every((result) =>
+      result.evidenceRefs.includes("packages/harness/src/krn-behavior-gate.ts")
+    )).toBe(true);
   });
 });

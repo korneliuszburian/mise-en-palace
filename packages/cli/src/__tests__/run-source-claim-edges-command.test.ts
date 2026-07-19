@@ -60,7 +60,10 @@ const sourceClaimEdge: SourceClaimEdge = {
   metadata: {
     consumer: " graph brain v0 ",
     doesNotProve: " This edge does not prove claim truth. ",
-    evidenceRef: " docs/example.md:1-3 ",
+    evidenceRefs: [
+      " docs/example.md:1-3 ",
+      " docs/review.md:4-5 "
+    ],
     sourceDecisionRef: " decision-1 ",
     scope: " bounded preview ",
     validFrom: " 2026-06-01T00:00:00.000Z ",
@@ -157,7 +160,9 @@ describe("runSourceClaimEdgesCommand", () => {
     expect(result.stdout).toContain("kind: narrows");
     expect(result.stdout).toContain("consumer: graph brain v0");
     expect(result.stdout).toContain("doesNotProve: This edge does not prove claim truth.");
-    expect(result.stdout).toContain("evidenceRef: docs/example.md:1-3");
+    expect(result.stdout).toContain("evidenceRefs:");
+    expect(result.stdout).toContain("  - docs/example.md:1-3");
+    expect(result.stdout).toContain("  - docs/review.md:4-5");
     expect(result.stdout).toContain("sourceDecisionRef: decision-1");
     expect(result.stdout).toContain("scope: bounded preview");
     expect(result.stdout).toContain("validFrom: 2026-06-01T00:00:00.000Z");

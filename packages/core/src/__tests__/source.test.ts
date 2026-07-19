@@ -364,6 +364,89 @@ describe("source review signals", () => {
   );
 
   test.each(nonCurrentTemporalCases)(
+    "does not let %s SourceDecisionEdges support current source authority",
+    (_description, metadata, temporalValidity) => {
+      const claim = sourceClaim({
+        id: "source-claim-decision-edge-temporal-boundary"
+      });
+      const timeline = buildSourceConsensusTimelineReadback({
+        sourceClaims: [claim],
+        sourceClaimEdges: [],
+        sourceDecisionEdges: [sourceDecisionEdge({
+          id: "source-decision-edge-non-current",
+          sourceClaimId: claim.id,
+          metadata
+        })],
+        now
+      });
+      const entry = timeline.entries[0];
+
+      expect(entry).toMatchObject({
+        state: "caveated_authority",
+        authorityState: "unsupported",
+        decisionSupportEdgeIds: []
+      });
+      expect(entry.temporalValidity).toEqual({ status: "current" });
+      expect(temporalValidity.status).not.toBe("current");
+    }
+  );
+
+  test("does not expose missing relation endpoints as semantic source claims", () => {
+    const currentClaim = sourceClaim({ id: "source-claim-known-endpoint" });
+    const timeline = buildSourceConsensusTimelineReadback({
+      sourceClaims: [currentClaim],
+      sourceClaimEdges: [sourceClaimEdge({
+        id: "source-claim-edge-missing-endpoint",
+        fromSourceClaimId: "source-claim-missing-endpoint",
+        toSourceClaimId: currentClaim.id,
+        kind: "supports",
+        metadata: {
+          consumer: "source consensus endpoint boundary",
+          doesNotProve: "A missing endpoint does not prove source support.",
+          evidenceRef: "source-artifact:missing-endpoint"
+        }
+      })],
+      sourceDecisionEdges: [sourceDecisionEdge({
+        sourceClaimId: currentClaim.id
+      })],
+      now
+    });
+
+    expect(timeline.entries[0]?.supportingSourceClaimIds).toEqual([]);
+    expect(timeline.entries[0]?.relationEvidence[0]?.relatedSourceClaimId)
+      .toBe("source-claim-missing-endpoint");
+  });
+
+  test("does not let an unsupported current supersession edge demote history", () => {
+    const currentClaim = sourceClaim({ id: "source-claim-unsupported-current" });
+    const historicalClaim = sourceClaim({ id: "source-claim-unsupported-history" });
+    const timeline = buildSourceConsensusTimelineReadback({
+      sourceClaims: [currentClaim, historicalClaim],
+      sourceClaimEdges: [sourceClaimEdge({
+        id: "source-claim-edge-unsupported-supersession",
+        fromSourceClaimId: currentClaim.id,
+        toSourceClaimId: historicalClaim.id,
+        kind: "supersedes"
+      })],
+      sourceDecisionEdges: [sourceDecisionEdge({
+        sourceClaimId: currentClaim.id
+      }), sourceDecisionEdge({
+        sourceClaimId: historicalClaim.id
+      })],
+      now
+    });
+
+    expect(timeline.supersededSourceClaimIds).toEqual([]);
+    expect(timeline.entries.find((entry) => entry.sourceClaimId === historicalClaim.id))
+      .toMatchObject({
+        state: "current_authority",
+        supersededBySourceClaimIds: []
+      });
+    expect(timeline.entries.find((entry) => entry.sourceClaimId === historicalClaim.id)
+      ?.relationEvidence[0]?.evidenceGaps).toEqual(["missing_relation_support_ref"]);
+  });
+
+  test.each(nonCurrentTemporalCases)(
     "keeps %s dissent relations out of current semantic endpoint summaries",
     (_description, metadata, temporalValidity) => {
       const dissentingClaim = sourceClaim({
@@ -552,6 +635,18 @@ describe("source review signals", () => {
     });
 
     expect(assessSourceClaimAuthority({
+      claim: sourceClaim({
+        status: "rejected",
+        metadata: { decisionCorpusStatus: "stale" }
+      }),
+      now,
+      decisionSupportEdgeIds: ["source-decision-edge-1"]
+    })).toMatchObject({
+      status: "stale",
+      reasons: ["stale"]
+    });
+
+    expect(assessSourceClaimAuthority({
       claim: sourceClaim({}),
       now,
       decisionSupportEdgeIds: []
@@ -680,7 +775,10 @@ describe("source review signals", () => {
           id: "edge-rejected-contradicts-current",
           fromSourceClaimId: rejectedClaim.id,
           toSourceClaimId: currentStandard.id,
-          kind: "contradicts"
+          kind: "contradicts",
+          metadata: {
+            evidenceRef: "source-artifact:rejected-contradiction"
+          }
         }),
         sourceClaimEdge({
           id: "edge-rejected-supersedes-current",
@@ -860,7 +958,10 @@ describe("source review signals", () => {
           id: "edge-dissenting-contradicts-current",
           fromSourceClaimId: dissentingClaim.id,
           toSourceClaimId: currentStandard.id,
-          kind: "contradicts"
+          kind: "contradicts",
+          metadata: {
+            evidenceRef: "source-artifact:dissenting-contradiction"
+          }
         })
       ],
       sourceDecisionEdges: [

@@ -6,6 +6,12 @@ import type {
   DecisionPacketContractReadback,
   DecisionPacketTaskStandard
 } from "./decision-packet.js";
+import { memoryRecordStatuses } from "./memory.js";
+import type {
+  MemorySupersessionTimelineEntry,
+  MemorySupersessionTimelineReadback
+} from "./memory.js";
+import type { SourceConsensusTimelineReadback } from "./source-consensus-timeline.js";
 import {
   decisionPacketAbstentionReasons,
   decisionPacketChecksum
@@ -14,6 +20,11 @@ import {
   SourceAuthorityLabelSchema,
   SourceDecisionTargetTypeSchema
 } from "./parsing/source-claim.js";
+import {
+  sourceAuthorityLabels,
+  sourceClaimEdgeKinds,
+  sourceClaimStatuses
+} from "./source-model.js";
 import { isIsoTimestamp } from "./time.js";
 
 const stringArraySchema = z.array(z.string());
@@ -46,6 +57,16 @@ const contextExclusionSchema = z.strictObject({
   sourceAuthority: SourceAuthorityLabelSchema
 });
 
+const reviewOnlyUsefulnessCaveatSchema = z.strictObject({
+  feedbackDeltaId: z.string().optional(),
+  subjectType: z.enum(["source_claim", "source_decision", "knowledge"]),
+  subjectId: z.string(),
+  feedbackStatus: z.enum(["candidate", "accepted", "rejected", "applied"]),
+  outcome: z.enum(["selected", "used", "helped", "neutral", "noise", "stale", "hurt", "rejected", "unknown"]),
+  reason: z.string(),
+  doesNotProve: z.string()
+});
+
 const taskStandardSchema = z.strictObject({
   memoryRecordId: z.string(),
   key: z.string(),
@@ -66,6 +87,145 @@ const sourceDecisionTargetSchema = z.strictObject({
   targetId: z.string(),
   sourceDecisionEdgeIds: stringArraySchema
 });
+
+const relationTemporalValiditySchema = z.union([
+  z.strictObject({ status: z.literal("current") }),
+  z.strictObject({
+    status: z.literal("historical"),
+    reason: z.enum(["before_valid_from", "valid_until_elapsed", "invalidated"])
+  }),
+  z.strictObject({
+    status: z.literal("invalid"),
+    reason: z.enum(["invalid_now", "invalid_valid_from", "invalid_valid_until", "invalid_invalidated_at"])
+  })
+]);
+
+const temporalValiditySchema = z.union([
+  relationTemporalValiditySchema,
+  z.strictObject({ status: z.literal("historical"), reason: z.literal("revisit_when_elapsed") }),
+  z.strictObject({ status: z.literal("invalid"), reason: z.literal("invalid_revisit_when") }),
+  z.strictObject({ status: z.literal("inactive"), reason: z.literal("rejected_or_deprecated") })
+]);
+
+const sourceConsensusRelationEvidenceSchema = z.strictObject({
+  sourceClaimEdgeId: z.string(),
+  direction: z.enum(["incoming", "outgoing"]),
+  kind: z.enum(sourceClaimEdgeKinds),
+  relatedSourceClaimId: z.string(),
+  metadataEvidenceRefs: stringArraySchema,
+  metadataSourceDecisionRef: z.string().optional(),
+  sourceRanges: stringArraySchema,
+  evidenceGaps: z.array(z.literal("missing_relation_support_ref")),
+  temporalValidity: relationTemporalValiditySchema
+});
+
+const sourceConsensusTimelineEntrySchema = z.strictObject({
+  sourceClaimId: z.string(),
+  claim: z.string(),
+  status: z.enum(sourceClaimStatuses),
+  createdAt: isoTimestampSchema,
+  sourceAuthority: z.enum(sourceAuthorityLabels),
+  authorityRank: z.number(),
+  temporalValidity: temporalValiditySchema,
+  authorityState: z.enum(["accepted", "stale", "superseded", "rejected", "unsupported", "conflicting", "unknown"]),
+  state: z.enum(["current_authority", "caveated_authority", "historical", "rejected"]),
+  blockedByCurrentSourceClaimId: z.string().optional(),
+  decisionSupportEdgeIds: stringArraySchema,
+  evidenceRefs: stringArraySchema,
+  rawEvidenceCitationRefs: stringArraySchema,
+  sourceRanges: stringArraySchema,
+  relationEvidence: z.array(sourceConsensusRelationEvidenceSchema),
+  supportingSourceClaimIds: stringArraySchema,
+  dissentingSourceClaimIds: stringArraySchema,
+  supersededBySourceClaimIds: stringArraySchema,
+  supersedesSourceClaimIds: stringArraySchema,
+  rejectionIds: stringArraySchema,
+  caveats: stringArraySchema
+});
+
+const sourceConsensusTimelineSchema = z.strictObject({
+  currentSourceClaimIds: stringArraySchema,
+  caveatedSourceClaimIds: stringArraySchema,
+  historicalSourceClaimIds: stringArraySchema,
+  staleSourceClaimIds: stringArraySchema,
+  supersededSourceClaimIds: stringArraySchema,
+  unknownSourceClaimIds: stringArraySchema,
+  rejectedSourceClaimIds: stringArraySchema,
+  entries: z.array(sourceConsensusTimelineEntrySchema),
+  doesNotProve: z.string()
+});
+
+const memorySupersessionTimelineSchema = z.strictObject({
+  activeMemoryRecordIds: stringArraySchema,
+  historicalMemoryRecordIds: stringArraySchema,
+  entries: z.array(z.strictObject({
+    predecessorMemoryRecordId: z.string(),
+    predecessorStatus: z.literal("superseded"),
+    replacementMemoryRecordId: z.string(),
+    replacementStatus: z.union([
+      z.enum(memoryRecordStatuses),
+      z.literal("unknown")
+    ]),
+    transition: z.strictObject({
+      reviewer: z.string(),
+      reason: z.string(),
+      supersededAt: isoTimestampSchema
+    }),
+    evidence: z.strictObject({
+      sourceClaimIds: stringArraySchema,
+      evidenceRefs: stringArraySchema,
+      status: z.enum(["complete", "incomplete"])
+    }).optional()
+  })),
+  doesNotProve: z.string()
+});
+
+export const parseMemorySupersessionTimelineReadback = (
+  value: unknown
+): MemorySupersessionTimelineReadback | undefined => {
+  const parsed = memorySupersessionTimelineSchema.safeParse(value);
+  if (!parsed.success) return undefined;
+  return {
+    ...parsed.data,
+    entries: parsed.data.entries.map(({ evidence, ...entry }): MemorySupersessionTimelineEntry => ({
+      ...entry,
+      evidence: evidence ?? {
+        sourceClaimIds: [],
+        evidenceRefs: [],
+        status: "incomplete" as const
+      }
+    }))
+  };
+};
+
+type ParsedSourceConsensusTimeline = z.infer<typeof sourceConsensusTimelineSchema>;
+
+const normalizeSourceConsensusTimeline = (
+  timeline: ParsedSourceConsensusTimeline
+): SourceConsensusTimelineReadback => ({
+  ...timeline,
+  entries: timeline.entries.map((entry) => {
+    const { blockedByCurrentSourceClaimId, relationEvidence, ...entryFields } = entry;
+    return {
+      ...entryFields,
+      relationEvidence: relationEvidence.map((relation) => {
+        const { metadataSourceDecisionRef, ...relationFields } = relation;
+        return {
+          ...relationFields,
+          ...(metadataSourceDecisionRef === undefined ? {} : { metadataSourceDecisionRef })
+        };
+      }),
+      ...(blockedByCurrentSourceClaimId === undefined ? {} : { blockedByCurrentSourceClaimId })
+    };
+  })
+});
+
+export const parseSourceConsensusTimelineReadback = (
+  value: unknown
+): SourceConsensusTimelineReadback | undefined => {
+  const parsed = sourceConsensusTimelineSchema.safeParse(value);
+  return parsed.success ? normalizeSourceConsensusTimeline(parsed.data) : undefined;
+};
 
 const evidenceGapSchema = z.strictObject({
   id: z.string(),
@@ -97,6 +257,7 @@ const sourceConsensusSchema = z.strictObject({
   sourceRejectionIds: stringArraySchema,
   conflictedDecisionIds: stringArraySchema,
   evidenceGapIds: stringArraySchema,
+  timeline: sourceConsensusTimelineSchema.optional(),
   doesNotProve: z.string()
 });
 
@@ -141,6 +302,7 @@ const decisionPacketSchema = z.strictObject({
   sourceRejectionIds: stringArraySchema,
   memoryRefs: stringArraySchema,
   caveatedMemoryRefs: stringArraySchema,
+  reviewOnlyUsefulnessCaveats: z.array(reviewOnlyUsefulnessCaveatSchema).optional(),
   staleDecisionIds: stringArraySchema,
   staleKnowledgeIds: stringArraySchema,
   noiseKnowledgeIds: stringArraySchema,
@@ -151,6 +313,7 @@ const decisionPacketSchema = z.strictObject({
   verificationCommands: stringArraySchema,
   evidenceGaps: z.array(evidenceGapSchema),
   sourceConsensus: sourceConsensusSchema,
+  memorySupersessionTimeline: memorySupersessionTimelineSchema.optional(),
   abstentionScore: abstentionScoreSchema,
   doesNotProve: stringArraySchema,
   nonProofs: stringArraySchema,
@@ -239,10 +402,32 @@ const normalizeTaskStandard = (
   doesNotProve: standard.doesNotProve
 });
 
+const normalizeReviewOnlyUsefulnessCaveat = (
+  caveat: NonNullable<ParsedDecisionPacketContractReadback["packet"]["reviewOnlyUsefulnessCaveats"]>[number]
+) => {
+  const { feedbackDeltaId, ...fields } = caveat;
+  return {
+    ...fields,
+    ...(feedbackDeltaId === undefined ? {} : { feedbackDeltaId })
+  };
+};
+
 const normalizePacket = (
   packet: ParsedDecisionPacketContractReadback["packet"]
 ): DecisionPacket => {
-  const { evidenceContract, task, taskStandardDecisions, ...packetFields } = packet;
+  const {
+    evidenceContract,
+    task,
+    taskStandardDecisions,
+    sourceConsensus,
+    memorySupersessionTimeline,
+    reviewOnlyUsefulnessCaveats,
+    ...packetFields
+  } = packet;
+  const { timeline, ...sourceConsensusFields } = sourceConsensus;
+  const normalizedMemorySupersessionTimeline = memorySupersessionTimeline === undefined
+    ? undefined
+    : parseMemorySupersessionTimelineReadback(memorySupersessionTimeline);
 
   return {
     ...packetFields,
@@ -257,7 +442,20 @@ const normalizePacket = (
       ...(task.status === undefined ? {} : { status: task.status })
     },
     ...(evidenceContract === undefined ? {} : { evidenceContract }),
-    taskStandardDecisions: taskStandardDecisions.map(normalizeTaskStandard)
+    ...(reviewOnlyUsefulnessCaveats === undefined
+      ? {}
+      : {
+          reviewOnlyUsefulnessCaveats:
+            reviewOnlyUsefulnessCaveats.map(normalizeReviewOnlyUsefulnessCaveat)
+        }),
+    taskStandardDecisions: taskStandardDecisions.map(normalizeTaskStandard),
+    sourceConsensus: {
+      ...sourceConsensusFields,
+      ...(timeline === undefined ? {} : { timeline: normalizeSourceConsensusTimeline(timeline) })
+    },
+    ...(normalizedMemorySupersessionTimeline === undefined
+      ? {}
+      : { memorySupersessionTimeline: normalizedMemorySupersessionTimeline })
   };
 };
 

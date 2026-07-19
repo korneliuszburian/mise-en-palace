@@ -6,6 +6,8 @@ import type {
 } from "postgres";
 import {
   inspectMigrationReadiness,
+  persistActivationRuntimeProof,
+  postgresStoreIdentity,
   smokeFixtureClocks
 } from "@krn/db/dev";
 import {
@@ -17,6 +19,7 @@ import type {
 import type {
   CommandOutputArtifact,
   EvidenceCommand,
+  EvalCandidateProposal,
   MemoryRecord
 } from "@krn/core";
 import {
@@ -68,6 +71,7 @@ export interface TargetRepoHarnessSmokeInput {
   repoRoot: string;
   smokeId: string;
   targetRepoPath: string;
+  environmentFingerprintId?: string;
 }
 
 export interface TargetRepoHarnessSmokeReport {
@@ -118,6 +122,7 @@ export interface TargetRepoHarnessSmokeReport {
   memoryPositiveFeedbackCount: number;
   automaticMemoryRecordMutation: "none";
   targetProjectLinked: boolean;
+  crossProjectLeakageProof: boolean;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -929,6 +934,7 @@ const capturePacketBoundTargetEvidence = async (input: {
   readonly harnessRunRepository: DatabaseRuntime["harnessRunRepository"];
   readonly memoryRecordId: string;
   readonly marker: string;
+  readonly projectId: string;
   readonly now: string;
   readonly targetRepoPath: string;
 }): Promise<PacketBoundTargetEvidenceProof> => {
@@ -1007,6 +1013,153 @@ const capturePacketBoundTargetEvidence = async (input: {
     throw new Error("Target repo harness smoke evidence output did not bind to the DecisionPacket checksum");
   }
 
+  const liveOutput = {
+    decisionId: "validate-unknown-json-boundary",
+    rejectedPath: "cast JSON directly",
+    staleBoundary: "markdown notes are not runtime authority",
+    nonProof: "does not prove live product readiness",
+    action: "validate before domain use"
+  } as const;
+  const liveCandidate: EvalCandidateProposal = {
+    id: `target-repo-live-output:${input.marker}`,
+    projectId: input.projectId,
+    status: "candidate",
+    title: "Target repo live obedience output readback",
+    scenario: "target-repo-harness live output persistence",
+    expectedSignal: "liveOutput metadata survives PostgreSQL readback",
+    sourceEvidence: [input.decisionPacketProof.evidenceRef],
+    metadata: { liveOutput },
+    createdAt: input.now
+  };
+  await runEvidenceCaptureCommand({
+    env: { KRN_DATABASE_URL: input.databaseUrl },
+    cwd: process.cwd(),
+    now: () => input.now,
+    createId: input.createId,
+    persist: true,
+    runId: input.executionRunId,
+    decisionPacketChecksum: input.decisionPacketProof.checksum,
+    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+    commandOutcomes: [targetCommandProof.evidenceCommand],
+    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+    evalCandidateProposals: [liveCandidate],
+    readGitStatus: async () => "",
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+  const liveReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const liveCandidates = liveReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates) ?? [];
+  const readBackLiveCandidate = liveCandidates.find((candidate) => candidate.id === liveCandidate.id);
+  const readBackLiveOutput = isRecord(readBackLiveCandidate?.metadata)
+    ? readBackLiveCandidate.metadata["liveOutput"]
+    : undefined;
+  const liveOutputMatches = isRecord(readBackLiveOutput) &&
+    Object.entries(liveOutput).every(([key, value]) => readBackLiveOutput[key] === value);
+  if (!liveOutputMatches) {
+    throw new Error(`Target repo harness smoke lost liveOutput metadata in PostgreSQL readback (candidate=${JSON.stringify(readBackLiveCandidate)})`);
+  }
+  if (readBackLiveCandidate?.projectId !== input.projectId) {
+    throw new Error("Target repo harness smoke lost live evidence project scope in PostgreSQL readback");
+  }
+  const liveFeedbackDelta = liveReadback?.feedbackDeltas.find((delta) =>
+    delta.evalCandidates.some((candidate) => candidate.id === liveCandidate.id)
+  );
+  if (liveFeedbackDelta === undefined || liveFeedbackDelta.memoryCandidates.length !== 0 ||
+      liveFeedbackDelta.sourceDecisions.length !== 0) {
+    throw new Error("Target repo harness smoke allowed live obedience evidence to mutate memory or source decisions");
+  }
+  await runEvidenceCaptureCommand({
+    env: { KRN_DATABASE_URL: input.databaseUrl },
+    cwd: process.cwd(),
+    now: () => input.now,
+    createId: input.createId,
+    persist: true,
+    runId: input.executionRunId,
+    decisionPacketChecksum: input.decisionPacketProof.checksum,
+    decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+    commandOutcomes: [targetCommandProof.evidenceCommand],
+    commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+    evalCandidateProposals: [liveCandidate],
+    readGitStatus: async () => "",
+    createDatabaseRuntime: async () => input.decisionRuntime
+  });
+  const replayReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const replayCandidates = replayReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (replayCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke duplicated live obedience candidate on replay (count=${replayCandidates.length})`);
+  }
+  const foreignCandidate: EvalCandidateProposal = {
+    ...liveCandidate,
+    id: `target-repo-live-output-foreign:${input.marker}`,
+    projectId: `foreign-project:${input.marker}`
+  };
+  let foreignRejected = false;
+  try {
+    await runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl },
+      cwd: process.cwd(),
+      now: () => input.now,
+      createId: input.createId,
+      persist: true,
+      runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [liveCandidate, foreignCandidate],
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    });
+  } catch {
+    foreignRejected = true;
+  }
+  if (!foreignRejected) {
+    throw new Error("Target repo harness smoke accepted a cross-project live evidence candidate");
+  }
+  const atomicReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const atomicCandidates = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (atomicCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke partially persisted mixed cross-project batch (count=${atomicCandidates.length})`);
+  }
+  const foreignReadback = atomicReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === foreignCandidate.id) ?? [];
+  if (foreignReadback.length !== 0) {
+    throw new Error("Target repo harness smoke persisted a rejected foreign candidate");
+  }
+  const concurrentResults = await Promise.allSettled([
+    runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
+      createId: input.createId, persist: true, runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [liveCandidate], readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    }),
+    runEvidenceCaptureCommand({
+      env: { KRN_DATABASE_URL: input.databaseUrl }, cwd: process.cwd(), now: () => input.now,
+      createId: input.createId, persist: true, runId: input.executionRunId,
+      decisionPacketChecksum: input.decisionPacketProof.checksum,
+      decisionPacketGeneratedAt: input.decisionPacketProof.generatedAt,
+      commandOutcomes: [targetCommandProof.evidenceCommand],
+      commandOutputArtifacts: [targetCommandProof.commandOutputArtifact],
+      evalCandidateProposals: [foreignCandidate], readGitStatus: async () => "",
+      createDatabaseRuntime: async () => input.decisionRuntime
+    })
+  ]);
+  if (concurrentResults.filter((result) => result.status === "fulfilled").length !== 1 ||
+      concurrentResults.filter((result) => result.status === "rejected").length !== 1) {
+    throw new Error("Target repo harness smoke did not isolate concurrent project captures");
+  }
+  const concurrentReadback = await input.harnessRunRepository.getHarnessRunByExecutionRunId(input.executionRunId);
+  const concurrentCandidates = concurrentReadback?.feedbackDeltas.flatMap((delta) => delta.evalCandidates)
+    .filter((candidate) => candidate.id === liveCandidate.id) ?? [];
+  if (concurrentCandidates.length !== 1) {
+    throw new Error(`Target repo harness smoke duplicated concurrent live evidence (count=${concurrentCandidates.length})`);
+  }
+
   return {
     ...proof,
     consumerEvidenceBoundToPacket,
@@ -1062,6 +1215,7 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Memory positive feedback count: ${report.memoryPositiveFeedbackCount}`,
   `Automatic MemoryRecord mutation: ${report.automaticMemoryRecordMutation}`,
   `Target project linked: ${yesNo(report.targetProjectLinked)}`,
+  `Cross-project leakage proof: ${yesNo(report.crossProjectLeakageProof)}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
   `Cleanup: ${completedOrNot(report.cleanedUp)}`,
   `Target repo harness smoke: ${passedOrFailed(report.cleanedUp)}`
@@ -1587,13 +1741,14 @@ export const runTargetRepoHarnessSmokeCheck = async (
       harnessRunRepository,
       memoryRecordId: memoryRecord.id,
       marker,
+      projectId: project.id,
       now,
       targetRepoPath: input.targetRepoPath
     });
 
     const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunIds);
 
-    return {
+    const report: TargetRepoHarnessSmokeReport = {
       workspaceSlug,
       projectId: project.id,
       repoInstallationId: repoInstallation.id,
@@ -1642,9 +1797,26 @@ export const runTargetRepoHarnessSmokeCheck = async (
       memoryPositiveFeedbackCount: readBackMemoryRecord.positiveFeedbackCount,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: planProof.targetProjectLinked,
+      crossProjectLeakageProof: true,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };
+
+    if (input.environmentFingerprintId !== undefined) {
+      await persistActivationRuntimeProof(client, {
+        proofKind: "target_repo_harness",
+        scopeKey: input.targetRepoPath,
+        projectId: report.projectId,
+        environmentFingerprintId: input.environmentFingerprintId,
+        storeIdentity: postgresStoreIdentity(input.databaseUrl),
+        status: report.cleanedUp ? "passed" : "failed",
+        capturedAt: new Date(),
+        cleanupRemainingMarkerCount: report.remainingMarkerCount,
+        report
+      });
+    }
+
+    return report;
   } catch (error) {
     await cleanupMarkerRows(client, marker, retrievalRunIds);
     throw error;

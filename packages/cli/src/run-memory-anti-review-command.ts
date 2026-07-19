@@ -7,6 +7,7 @@ import {
 import {
   buildRejectedMemoryPromotionInput,
   createMemoryCommandDatabaseRuntime,
+  assertAntiMemoryCandidateProject,
   requireMemoryReviewRejectionReason,
   toReviewedSourceClaimIds
 } from "./memory-command-support.js";
@@ -144,7 +145,8 @@ const runPromote = async (
 
   const databaseRuntime = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory anti promote --persist"
+    "KRN_DATABASE_URL is required for krn memory anti promote --persist",
+    command.projectId
   );
 
   try {
@@ -156,6 +158,12 @@ const runPromote = async (
         "Project-scoped SourceClaim lookup is required before promoting anti-memory candidates. No AntiMemoryRecord created."
       );
     }
+
+    await assertAntiMemoryCandidateProject(
+      databaseRuntime,
+      reviewInput.candidateId,
+      command.projectId
+    );
 
     const result = await promoteAntiMemoryCandidateThroughGate({
       memoryRepository: databaseRuntime.memoryRepository,
@@ -200,11 +208,18 @@ const runReject = async (
 
   const databaseRuntime = await createMemoryCommandDatabaseRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory anti reject --persist"
+    "KRN_DATABASE_URL is required for krn memory anti reject --persist",
+    command.projectId
   );
   const reason = requireMemoryReviewRejectionReason(reviewInput);
 
   try {
+    await assertAntiMemoryCandidateProject(
+      databaseRuntime,
+      reviewInput.candidateId,
+      command.projectId
+    );
+
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.rejectAntiMemoryCandidate({
       candidateId: reviewInput.candidateId,
       reviewer: reviewInput.reviewer,

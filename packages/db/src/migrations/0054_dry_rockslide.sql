@@ -1,0 +1,3 @@
+ALTER TABLE "memory_candidates" ADD COLUMN "revision_review_assessment_id" uuid;--> statement-breakpoint
+ALTER TABLE "memory_candidates" ADD CONSTRAINT "memory_candidates_revision_review_assessment_id_review_assessments_id_fk" FOREIGN KEY ("revision_review_assessment_id") REFERENCES "public"."review_assessments"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "memory_candidates_revision_review_assessment_id_idx" ON "memory_candidates" USING btree ("revision_review_assessment_id");

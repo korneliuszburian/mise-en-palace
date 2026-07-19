@@ -101,6 +101,7 @@ interface DbSmokeCommandContext {
   migrationsFolder: string;
   relativeMigrationsFolder: string;
   databaseUrl: string;
+  environmentFingerprintId: string;
 }
 
 type DbSmokeTarget = DbSmokeRuntime["target"];
@@ -512,7 +513,8 @@ const runActivationSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runActivationSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("activation-smoke")
+    smokeId: runtime.createId("activation-smoke"),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -692,6 +694,11 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
       `Revision-run included replacement decisions: ${report.revisionRunIncludedReplacementDecisionCount}`,
       `Revision-run source memory inclusions: ${report.revisionRunSourceMemoryInclusionCount}`,
       `Revision-run superseded source excluded: ${report.revisionRunSupersededSourceExcluded ? "yes" : "no"}`,
+      `Revision DecisionPacket replacement memory refs: ${report.revisionPacketReplacementMemoryRefCount}`,
+      `Revision DecisionPacket superseded memory refs: ${report.revisionPacketSupersededMemoryRefCount}`,
+      `Revision DecisionPacket explains supersession: ${report.revisionPacketSupersessionExplanation ? "yes" : "no"}`,
+      `Revision supersession evidence: ${report.revisionPacketSupersessionEvidenceStatus} refs=${report.revisionPacketSupersessionEvidenceRefCount} source_claims=${report.revisionPacketSupersessionSourceClaimCount}`,
+      `Revision Codex brief preserves supersession: ${report.revisionBriefIncludesSupersession ? "yes" : "no"}`,
       `Run events: ${report.runEventCount}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Memory loop smoke")
@@ -863,6 +870,9 @@ const formatDecisionPacketReturnLoopSmokeLines = (
 ): string[] => [
   `Workspace smoke row: ${report.workspaceSlug}`,
   `Project smoke row: ${report.projectSlug}`,
+  `Project id: ${report.projectId}`,
+  `Task id: ${report.taskId}`,
+  `Task: ${report.task}`,
   `Execution run: ${report.executionRunId}`,
   `Packet checksum: ${report.packetChecksum}`,
   `Packet evidence ref: ${report.packetEvidenceRef}`,
@@ -894,6 +904,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Unresolved source dissent packet source claims: ${report.sourceDissentPacketSourceClaimIds.join(", ")}`,
   `Unresolved source dissent conflicting claims: ${report.sourceDissentPacketConflictingSourceClaimIds.join(", ")}`,
   `Unresolved source dissent decision-linked claims: ${report.sourceDissentPacketDecisionLinkedSourceClaimIds.join(", ")}`,
+  `Unresolved source dissent packet memory refs: ${report.sourceDissentPacketMemoryRefs.join(", ")}`,
   `Unresolved source dissent governing decisions: ${report.sourceDissentPacketGoverningDecisionIds.join(", ")}`,
   `Unresolved source dissent source decision edges: ${report.sourceDissentPacketSourceDecisionEdgeIds.join(", ")}`,
   `Unresolved source dissent packet status: ${report.sourceDissentPacketStatus}`,
@@ -948,6 +959,7 @@ const formatDecisionPacketReturnLoopSmokeLines = (
   `Feedback maintenance exact replay idempotent: ${yesNo(report.feedbackMaintenanceExactReplayIdempotent)}`,
   `Feedback maintenance direct mutation delta: ${report.feedbackMaintenanceDirectMutationDelta}`,
   `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
+  `Retained fixture: ${yesNo(report.retainedFixture)}`,
   ...cleanupStatusLines(report.cleanedUp, "DecisionPacket return-loop smoke")
 ];
 
@@ -1053,7 +1065,8 @@ const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
   const report = await runCodexAdapterSmokeCheck({
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
-    smokeId: runtime.createId("codex-adapter-smoke")
+    smokeId: runtime.createId("codex-adapter-smoke"),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -1099,7 +1112,8 @@ const runInitConnectSmokeTarget: DbSmokeTargetHandler = async (
     databaseUrl: context.databaseUrl,
     migrationsFolder: context.migrationsFolder,
     smokeId: runtime.createId("init-connect-smoke"),
-    targetRepoPath: targetRepoFixturePath(context)
+    targetRepoPath: targetRepoFixturePath(context),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -1134,6 +1148,11 @@ const runInitConnectSmokeTarget: DbSmokeTargetHandler = async (
       `Refreshed ProjectKernel version: ${report.refreshedProjectKernelVersion}`,
       `Refreshed owner files: ${report.refreshedOwnerFilePaths.join(", ")}`,
       `Repo installations listed: ${report.repoInstallationCount}`,
+      `Command status: ${report.commandStatus}`,
+      `Observation-only boundary: ${report.observationOnly ? "yes" : "no"}`,
+      `Project registration readback: ${report.projectRegistrationReadback ? "matched" : "mismatch"}`,
+      `Idempotency readback: ${report.idempotencyReadback ? "matched" : "mismatch"}`,
+      `Refresh readback: ${report.refreshReadback ? "matched" : "mismatch"}`,
       `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
       ...cleanupStatusLines(report.cleanedUp, "Init-connect smoke")
     ]
@@ -1149,7 +1168,8 @@ const runTargetRepoHarnessSmokeTarget: DbSmokeTargetHandler = async (
     migrationsFolder: context.migrationsFolder,
     repoRoot: context.repoRoot,
     smokeId: runtime.createId("target-repo-harness-smoke"),
-    targetRepoPath: targetRepoFixturePath(context)
+    targetRepoPath: targetRepoFixturePath(context),
+    environmentFingerprintId: context.environmentFingerprintId
   });
 
   return smokeResultFromCleanup(
@@ -1228,7 +1248,8 @@ export const runDbSmokeCommand = async (
     repoRoot,
     migrationsFolder,
     relativeMigrationsFolder,
-    databaseUrl
+    databaseUrl,
+    environmentFingerprintId: environmentFingerprint.id
   };
 
   try {

@@ -2,10 +2,23 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { EvalCandidateProposal, TargetEvidenceInput } from "@krn/core";
+import postgres from "postgres";
+import {
+  createKrnDatabase
+} from "@krn/db";
+import {
+  DrizzleHarnessRunRepository
+} from "@krn/db/adapters";
+import type {
+  EvalCandidateProposal,
+  RecordPairedLiveEvalEvidenceInput,
+  RecordPairedLiveEvalEvidenceResult,
+  TargetEvidenceInput
+} from "@krn/core";
 
 import {
   pairedRepairEvalCandidate,
+  resolvePairedEvalFamily,
   targetChangeManifestClaimsOwnedChanges
 } from "./paired-live-codex-repair.js";
 import {
@@ -267,6 +280,13 @@ const patchIdentityFields = (
     : { patchIdentity: `sha256:${sha256(`${baseline}:${krn}`)}` };
 };
 
+const checkerEvidenceRef = (artifact: TrackedTrialArtifact): string =>
+  artifact.checkerRevision === undefined
+    ? artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
+      ? "checker:paired-live-codex-repair.v2"
+      : "checker:paired-live-codex-repair.v1"
+    : `checker:${artifact.checkerRevision}`;
+
 const targetChangedFilesFor = (
   score: TrackedTrialArtifact["score"]
 ): NonNullable<TargetEvidenceInput["changedFiles"]> => score === undefined
@@ -279,9 +299,7 @@ const artifactEvidenceRefs = (
   `packet:${artifact.packet.checksum ?? "unknown"}`,
   `artifact:sha256:${artifact.artifactHash}`,
   `manifest:sha256:${artifact.manifestHash}`,
-  artifact.kind === "krn.pairedLiveCodexRepairArtifact.v2"
-    ? "checker:paired-live-codex-repair.v2"
-    : "checker:paired-live-codex-repair.v1",
+  checkerEvidenceRef(artifact),
   `environment:sha256:${artifact.execution.environmentProfileHash ?? "unknown"}`,
   ...(artifact.execution.targets?.baseline.after?.patchHash === undefined
     ? []
@@ -313,6 +331,12 @@ const observationCandidate = (input: {
         packetChecksum: input.artifact.packet.checksum ?? "unknown",
         artifactHash: input.artifact.artifactHash,
         evidenceRefs: [...input.evidenceRefs],
+        ...(input.artifact.execution.liveOutput === undefined
+          ? {}
+          : { liveOutput: input.artifact.execution.liveOutput }),
+        ...(input.artifact.execution.liveOutputValidation === undefined
+          ? {}
+          : { liveOutputValidation: input.artifact.execution.liveOutputValidation }),
         doesNotProve: [
           "An incomplete paired trial does not prove memory usefulness.",
           "The candidate is an observation and does not mutate MemoryRecord or SourceClaim truth."
@@ -324,9 +348,16 @@ const observationCandidate = (input: {
       score: input.artifact.score,
       runId: input.artifact.runId,
       projectId: input.manifest.projectId,
+      scenario: input.manifest.scenario,
       packetChecksum: input.artifact.packet.checksum ?? "unknown",
       evidenceRefs: input.evidenceRefs,
-      createdAt: input.createdAt
+      createdAt: input.createdAt,
+      ...(input.artifact.execution.liveOutput === undefined
+        ? {}
+        : { liveOutput: input.artifact.execution.liveOutput }),
+      ...(input.artifact.execution.liveOutputValidation === undefined
+        ? {}
+        : { liveOutputValidation: input.artifact.execution.liveOutputValidation })
     });
 
 const scoreCommandRows = (artifact: TrackedTrialArtifact) => {
@@ -500,32 +531,142 @@ export const preparePairedTrialPersistence = (input: {
   };
 };
 
-const main = async (): Promise<void> => {
+const pairedLiveEvidenceUsefulnessOutcome = (
+  artifact: TrackedTrialArtifact,
+  candidate: EvalCandidateProposal
+): RecordPairedLiveEvalEvidenceInput["usefulnessOutcome"] => {
+  const value = candidate.metadata["usefulnessOutcome"];
+  const candidateOutcome =
+    value === "helped" ||
+    value === "neutral" ||
+    value === "hurt" ||
+    value === "unknown"
+      ? value
+      : "unknown";
+  const outcome = artifact.score?.outcome ?? "unknown";
+
+  if (
+    artifact.status !== "passed" &&
+    candidateOutcome === "helped"
+  ) {
+    return "unknown";
+  }
+
+  return outcome === "invalid" && candidateOutcome === "helped"
+    ? "unknown"
+    : candidateOutcome;
+};
+
+export const pairedLiveEvalEvidenceInputForPersistence = (input: {
+  readonly manifest: PairedTrialManifest;
+  readonly artifact: TrackedTrialArtifact;
+  readonly candidate: EvalCandidateProposal;
+  readonly packetChecksum: string;
+  readonly evidenceRefs: readonly string[];
+  readonly feedbackDeltaId: string;
+  readonly decisionApplications: readonly DecisionApplicationReadback[];
+}): RecordPairedLiveEvalEvidenceInput => {
+  const checkerRef = checkerEvidenceRef(input.artifact);
+  const checkerRevision = checkerRef.slice("checker:".length);
+  const environmentProfileHash = input.artifact.execution.environmentProfileHash ?? "unknown";
+
+  return {
+    projectId: input.manifest.projectId,
+    runId: input.artifact.runId,
+    feedbackDeltaId: input.feedbackDeltaId,
+    candidateId: input.candidate.id,
+    candidateStatus: input.candidate.status,
+    title: input.candidate.title,
+    scenario: input.candidate.scenario,
+    family: resolvePairedEvalFamily(input.candidate.scenario),
+    expectedSignal: input.candidate.expectedSignal,
+    artifactStatus: input.artifact.status,
+    outcome: input.artifact.score?.outcome ?? "unknown",
+    usefulnessOutcome: pairedLiveEvidenceUsefulnessOutcome(
+      input.artifact,
+      input.candidate
+    ),
+    packetChecksum: input.packetChecksum,
+    packetEvidenceRef: `packet:${input.packetChecksum}`,
+    artifactHash: input.artifact.artifactHash,
+    artifactRef: `artifact:sha256:${input.artifact.artifactHash}`,
+    manifestHash: input.artifact.manifestHash,
+    manifestRef: `manifest:sha256:${input.artifact.manifestHash}`,
+    checkerRevision,
+    checkerEvidenceRef: checkerRef,
+    environmentProfileHash,
+    environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`,
+    sourceEvidence: [...input.candidate.sourceEvidence],
+    evidenceRefs: [...input.evidenceRefs],
+    metadata: {
+      evaluationKind: "paired_live_codex_repair",
+      candidateMetadata: input.candidate.metadata,
+      artifactKind: input.artifact.kind,
+      artifactStatus: input.artifact.status,
+      ...(input.manifest.treatment === undefined ? {} : { treatment: input.manifest.treatment }),
+      ...(input.manifest.packetContextMode === undefined
+        ? {}
+        : { packetContextMode: input.manifest.packetContextMode }),
+      decisionApplications: [...input.decisionApplications],
+      proof: input.artifact.proof
+    }
+  };
+};
+
+const recordPairedLiveEvalEvidence = async (
+  databaseUrl: string,
+  input: RecordPairedLiveEvalEvidenceInput
+): Promise<RecordPairedLiveEvalEvidenceResult> => {
+  const client = postgres(databaseUrl, { max: 1 });
+  try {
+    const repository = new DrizzleHarnessRunRepository(createKrnDatabase(client));
+
+    return repository.recordPairedLiveEvalEvidenceOnce(input);
+  } finally {
+    await client.end();
+  }
+};
+
+interface PersistPairedTrialArgs {
+  readonly manifestPath: string;
+  readonly attemptDirectory: string;
+  readonly checkerRoot: string;
+  readonly databaseUrl: string;
+}
+
+type EvidenceCaptureResult = Awaited<ReturnType<typeof runEvidenceCaptureCommand>>;
+
+const parsePersistPairedTrialArgs = (
+  args: readonly string[]
+): PersistPairedTrialArgs => {
   const [manifestPath, attemptDirectory, checkerRoot = process.cwd(), databaseUrl =
-    process.env.KRN_DATABASE_URL ?? "postgres://krn:krn@localhost:54329/krn"] = process.argv.slice(2);
+    process.env.KRN_DATABASE_URL ?? "postgres://krn:krn@localhost:54329/krn"] = args;
   if (manifestPath === undefined || attemptDirectory === undefined) {
     throw new Error(
       "Usage: persist-paired-live-codex-repair <manifest-path> <attempt-directory> [checker-root] [database-url]"
     );
   }
 
-  const manifestRaw = await readFile(resolve(manifestPath), "utf8");
-  const manifestValue: unknown = JSON.parse(manifestRaw);
-  const manifest = parseTrackedTrialManifest(manifestValue);
-  const manifestHash = sha256(JSON.stringify(manifest));
+  return {
+    manifestPath,
+    attemptDirectory,
+    checkerRoot,
+    databaseUrl
+  };
+};
+
+const readRequiredTrackedTrialArtifact = async (
+  attemptDirectory: string
+): Promise<TrackedTrialArtifact> => {
   const artifact = await readTrackedTrialArtifact(resolve(attemptDirectory));
   if (artifact === undefined) {
     throw new Error("Tracked paired-trial artifact or its immutable phase journal is invalid");
   }
 
-  const now = new Date().toISOString();
-  const packetReadback = await runDecisionPacketCommand({
-    env: { KRN_DATABASE_URL: databaseUrl },
-    now: () => now,
-    createId: (prefix) => `${prefix}:paired-live-preflight:${manifest.runId}`,
-    runId: manifest.runId
-  });
-  const packetValue: unknown = JSON.parse(packetReadback.stdout);
+  return artifact;
+};
+
+const packetGeneratedAtFromReadback = (packetValue: unknown): string => {
   const packetIdentity = isRecord(packetValue) && isRecord(packetValue["packetIdentity"])
     ? packetValue["packetIdentity"]
     : undefined;
@@ -533,6 +674,131 @@ const main = async (): Promise<void> => {
   if (typeof packetGeneratedAt !== "string" || !Number.isFinite(Date.parse(packetGeneratedAt))) {
     throw new Error("Current DecisionPacket readback has no valid generatedAt binding");
   }
+
+  return packetGeneratedAt;
+};
+
+const capturePreparedPairedEvidence = async (input: {
+  readonly artifact: TrackedTrialArtifact;
+  readonly checkerRoot: string;
+  readonly commandOutcomes: readonly PreparedPairedTrialPersistence["commandRows"][number]["command"][];
+  readonly commandOutputArtifacts: readonly NonNullable<
+    PreparedPairedTrialPersistence["commandRows"][number]["commandOutputArtifact"]
+  >[];
+  readonly databaseUrl: string;
+  readonly now: string;
+  readonly packetChecksum: string;
+  readonly packetGeneratedAt: string;
+  readonly prepared: PreparedPairedTrialPersistence;
+}): Promise<EvidenceCaptureResult | undefined> => {
+  if (input.prepared.alreadyPersistedFeedbackDeltaId !== undefined) {
+    return undefined;
+  }
+
+  return runEvidenceCaptureCommand({
+    env: { KRN_DATABASE_URL: input.databaseUrl },
+    cwd: resolve(input.checkerRoot),
+    now: () => input.now,
+    createId: (prefix) => `${prefix}:paired-live:${input.artifact.runId}`,
+    persist: true,
+    runId: input.artifact.runId,
+    decisionPacketChecksum: input.packetChecksum,
+    decisionPacketGeneratedAt: input.packetGeneratedAt,
+    commandOutcomes: input.commandOutcomes,
+    commandOutputArtifacts: input.commandOutputArtifacts,
+    targetEvidence: input.prepared.targetEvidence,
+    evalCandidateProposals: [input.prepared.candidate],
+    readGitStatus: async () => ""
+  });
+};
+
+const persistedFeedbackIdentityLines = (
+  evidence: EvidenceCaptureResult | undefined,
+  prepared: PreparedPairedTrialPersistence
+): readonly string[] => evidence === undefined
+  ? [`feedbackDelta: ${prepared.alreadyPersistedFeedbackDeltaId}`]
+  : evidence.stdout
+      .split("\n")
+      .filter((line) => line.includes("evidenceBundle:") || line.includes("feedbackDelta:"));
+
+const scoreReport = (
+  artifact: TrackedTrialArtifact
+): Record<string, unknown> => artifact.score === undefined
+  ? {}
+  : {
+      score: {
+        outcome: artifact.score.outcome,
+        reason: artifact.score.reason,
+        baseline: pairedArmScoreSummary(artifact.score.baseline),
+        krn: pairedArmScoreSummary(artifact.score.krn)
+      }
+    };
+
+const pairedTrialPersistenceReport = (input: {
+  readonly artifact: TrackedTrialArtifact;
+  readonly evidence: EvidenceCaptureResult | undefined;
+  readonly evidenceIdentity: readonly string[];
+  readonly pairedEvalEvidence: RecordPairedLiveEvalEvidenceResult;
+  readonly prepared: PreparedPairedTrialPersistence;
+}): Record<string, unknown> => ({
+  kind: "krn.pairedLiveCodexRepair.persistence.v3",
+  artifactStatus: input.artifact.status,
+  outcome: input.artifact.score?.outcome ?? "unknown",
+  candidateId: input.prepared.candidate.id,
+  packetChecksum: input.artifact.packet.checksum,
+  artifactHash: input.artifact.artifactHash,
+  manifestHash: input.artifact.manifestHash,
+  environmentProfileHash: input.artifact.execution.environmentProfileHash,
+  decisionApplications: input.prepared.decisionApplications,
+  persistedInDecisionPacket: true,
+  persistedInPairedLiveEvalEvidence: true,
+  pairedLiveEvalEvidence: {
+    id: input.pairedEvalEvidence.evidence.id,
+    created: input.pairedEvalEvidence.created,
+    storeScope: "paired_live_eval_evidence",
+    projectId: input.pairedEvalEvidence.evidence.projectId,
+    runId: input.pairedEvalEvidence.evidence.runId,
+    candidateId: input.pairedEvalEvidence.evidence.candidateId,
+    checkerEvidenceRef: input.pairedEvalEvidence.evidence.checkerEvidenceRef,
+    usefulnessOutcome: input.pairedEvalEvidence.evidence.usefulnessOutcome
+  },
+  idempotentReplay: input.evidence === undefined,
+  evidenceIdentity: input.evidenceIdentity,
+  ...scoreReport(input.artifact),
+  proof: {
+    proves: [
+      "the immutable tracked artifact was validated before persistence",
+      "recorded arm and checker command outcomes were consumed without rerunning the target",
+      "the observed result was stored as a proposal-only EvalCandidate",
+      "the candidate was visible after persistence through DecisionPacket readback",
+      "the paired-live eval evidence row was stored for readback without relying on .local-lab artifacts or retained fixture rows"
+    ],
+    doesNotProve: [
+      "MemoryRecord or SourceClaim promotion",
+      "a KRN causal win or arbitrary-repository portability",
+      "product readiness"
+    ]
+  }
+});
+
+const main = async (): Promise<void> => {
+  const args = parsePersistPairedTrialArgs(process.argv.slice(2));
+
+  const manifestRaw = await readFile(resolve(args.manifestPath), "utf8");
+  const manifestValue: unknown = JSON.parse(manifestRaw);
+  const manifest = parseTrackedTrialManifest(manifestValue);
+  const manifestHash = sha256(JSON.stringify(manifest));
+  const artifact = await readRequiredTrackedTrialArtifact(args.attemptDirectory);
+
+  const now = new Date().toISOString();
+  const packetReadback = await runDecisionPacketCommand({
+    env: { KRN_DATABASE_URL: args.databaseUrl },
+    now: () => now,
+    createId: (prefix) => `${prefix}:paired-live-preflight:${manifest.runId}`,
+    runId: manifest.runId
+  });
+  const packetValue: unknown = JSON.parse(packetReadback.stdout);
+  const packetGeneratedAt = packetGeneratedAtFromReadback(packetValue);
   const prepared = preparePairedTrialPersistence({
     manifest,
     manifestHash,
@@ -548,25 +814,19 @@ const main = async (): Promise<void> => {
   const commandOutputArtifacts = prepared.commandRows.flatMap((row) =>
     row.commandOutputArtifact === undefined ? [] : [row.commandOutputArtifact]
   );
-  const evidence = prepared.alreadyPersistedFeedbackDeltaId === undefined
-    ? await runEvidenceCaptureCommand({
-        env: { KRN_DATABASE_URL: databaseUrl },
-        cwd: resolve(checkerRoot),
-        now: () => now,
-        createId: (prefix) => `${prefix}:paired-live:${artifact.runId}`,
-        persist: true,
-        runId: artifact.runId,
-        decisionPacketChecksum: packetChecksum,
-        decisionPacketGeneratedAt: packetGeneratedAt,
-        commandOutcomes,
-        commandOutputArtifacts,
-        targetEvidence: prepared.targetEvidence,
-        evalCandidateProposals: [prepared.candidate],
-        readGitStatus: async () => ""
-      })
-    : undefined;
+  const evidence = await capturePreparedPairedEvidence({
+    artifact,
+    checkerRoot: args.checkerRoot,
+    commandOutcomes,
+    commandOutputArtifacts,
+    databaseUrl: args.databaseUrl,
+    now,
+    packetChecksum,
+    packetGeneratedAt,
+    prepared
+  });
   const readback = await runDecisionPacketCommand({
-    env: { KRN_DATABASE_URL: databaseUrl },
+    env: { KRN_DATABASE_URL: args.databaseUrl },
     now: () => now,
     createId: (prefix) => `${prefix}:paired-live-readback:${artifact.runId}`,
     runId: artifact.runId
@@ -576,47 +836,27 @@ const main = async (): Promise<void> => {
   if (persisted === undefined) {
     throw new Error(`Paired repair EvalCandidate ${prepared.candidate.id} was not visible in readback`);
   }
+  const pairedEvalEvidence = await recordPairedLiveEvalEvidence(
+    args.databaseUrl,
+    pairedLiveEvalEvidenceInputForPersistence({
+      manifest,
+      artifact,
+      candidate: prepared.candidate,
+      packetChecksum,
+      evidenceRefs: prepared.evidenceRefs,
+      feedbackDeltaId: persisted.feedbackDeltaId,
+      decisionApplications: prepared.decisionApplications
+    })
+  );
+  const report = pairedTrialPersistenceReport({
+    artifact,
+    evidence,
+    evidenceIdentity: persistedFeedbackIdentityLines(evidence, prepared),
+    pairedEvalEvidence,
+    prepared
+  });
 
-  const evidenceIdentity = evidence === undefined
-    ? [`feedbackDelta: ${prepared.alreadyPersistedFeedbackDeltaId}`]
-    : evidence.stdout
-        .split("\n")
-        .filter((line) => line.includes("evidenceBundle:") || line.includes("feedbackDelta:"));
-  process.stdout.write(`${JSON.stringify({
-    kind: "krn.pairedLiveCodexRepair.persistence.v2",
-    artifactStatus: artifact.status,
-    outcome: artifact.score?.outcome ?? "unknown",
-    candidateId: prepared.candidate.id,
-    packetChecksum: artifact.packet.checksum,
-    artifactHash: artifact.artifactHash,
-    manifestHash: artifact.manifestHash,
-    environmentProfileHash: artifact.execution.environmentProfileHash,
-    decisionApplications: prepared.decisionApplications,
-    persistedInDecisionPacket: true,
-    idempotentReplay: evidence === undefined,
-    evidenceIdentity,
-    ...(artifact.score === undefined ? {} : {
-      score: {
-        outcome: artifact.score.outcome,
-        reason: artifact.score.reason,
-        baseline: pairedArmScoreSummary(artifact.score.baseline),
-        krn: pairedArmScoreSummary(artifact.score.krn)
-      }
-    }),
-    proof: {
-      proves: [
-        "the immutable tracked artifact was validated before persistence",
-        "recorded arm and checker command outcomes were consumed without rerunning the target",
-        "the observed result was stored as a proposal-only EvalCandidate",
-        "the candidate was visible after persistence through DecisionPacket readback"
-      ],
-      doesNotProve: [
-        "MemoryRecord or SourceClaim promotion",
-        "a KRN causal win or arbitrary-repository portability",
-        "product readiness"
-      ]
-    }
-  }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 };
 
 if (process.argv[1]?.endsWith("persist-paired-live-codex-repair.ts") === true) {

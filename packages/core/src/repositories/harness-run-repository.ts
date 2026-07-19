@@ -12,11 +12,16 @@ import type {
   UpdateExecutionRunStatusResult,
   FeedbackDelta,
   FeedbackDeltaCreateStatus,
+  FeedbackDeltaStatus,
   HarnessPlan,
   IsoTimestamp,
+  ListPairedLiveEvalEvidenceInput,
   KnowledgeUsefulnessOutcomeFeedback,
   OperatorIntent,
+  PairedLiveEvalEvidenceRecord,
   ProjectId,
+  RecordPairedLiveEvalEvidenceInput,
+  RecordPairedLiveEvalEvidenceResult,
   ReviewAssessment,
   ReviewFinding,
   SourceUsefulnessOutcomeFeedback,
@@ -95,7 +100,9 @@ export interface CreateReviewFeedbackOnceInput extends RepositoryMetadata {
   evidenceBundleId: string;
   requestIdentity: string;
   review: Omit<CreateReviewAssessmentInput, "evidenceBundleId">;
-  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId">;
+  feedback: Omit<CreateFeedbackDeltaInput, "reviewAssessmentId" | "status"> & {
+    status?: FeedbackDeltaStatus;
+  };
 }
 
 export interface CreateReviewFeedbackOnceResult {
@@ -223,6 +230,7 @@ export interface HarnessRunAggregate {
   contextAssembly?: ContextAssembly;
   activationTrace?: {
     retrievalRunId: string;
+    metadata?: Record<string, unknown>;
     candidates: RetrievalCandidateRecord[];
     decisions: ActivationDecisionRecord[];
   };
@@ -263,6 +271,12 @@ export interface HarnessRunRepository {
   createEvalFeedbackDeltaOnce?(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;
+  recordPairedLiveEvalEvidenceOnce?(
+    input: RecordPairedLiveEvalEvidenceInput
+  ): Promise<RecordPairedLiveEvalEvidenceResult>;
+  listPairedLiveEvalEvidence?(
+    input: ListPairedLiveEvalEvidenceInput
+  ): Promise<PairedLiveEvalEvidenceRecord[]>;
   listFeedbackDeltasForProject(projectId: string, limit?: number): Promise<FeedbackDelta[]>;
   listFeedbackDeltasForSubjects?(
     input: ListFeedbackDeltasForSubjectsInput

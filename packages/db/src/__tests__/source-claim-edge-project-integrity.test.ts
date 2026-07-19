@@ -236,6 +236,20 @@ describe("source claim edge project integrity", () => {
             })).rejects.toThrow("SourceClaimEdge requires source records from the same project");
 
             const firstSupportsForward = await sourceRepository.createSourceClaimEdge(supportsForward);
+            const pluralEvidenceEdge = await sourceRepository.createSourceClaimEdge({
+              fromSourceClaimId: projectAClaim.id,
+              toSourceClaimId: projectASecondClaim.id,
+              kind: "invalidates",
+              metadata: {
+                smokeId: fixture.marker,
+                consumer: supportsForward.metadata.consumer,
+                doesNotProve: supportsForward.metadata.doesNotProve,
+                evidenceRefs: [
+                  "source-claim-edge-integrity:plural-evidence-1",
+                  "source-claim-edge-integrity:plural-evidence-2"
+                ]
+              }
+            });
             const exactRetry = await sourceRepository.createSourceClaimEdge({
               ...supportsForward,
               metadata: {
@@ -256,7 +270,10 @@ describe("source claim edge project integrity", () => {
                 [projectAClaim.id, projectASecondClaim.id, "forward"],
                 [projectASecondClaim.id, projectAClaim.id, "reverse"]
               ] as const) {
-                if (kind === "supports" && direction === "forward") {
+                if (
+                  (kind === "supports" || kind === "invalidates") &&
+                  direction === "forward"
+                ) {
                   continue;
                 }
 
@@ -270,6 +287,12 @@ describe("source claim edge project integrity", () => {
             }
 
             const edges = await sourceRepository.listSourceClaimEdgesForClaim(projectAClaim.id);
+            expect(edges.find((edge) => edge.id === pluralEvidenceEdge.id)?.metadata).toMatchObject({
+              evidenceRefs: [
+                "source-claim-edge-integrity:plural-evidence-1",
+                "source-claim-edge-integrity:plural-evidence-2"
+              ]
+            });
             const fixtureEdges = await transaction
               .select({ id: sourceClaimEdges.id })
               .from(sourceClaimEdges)

@@ -536,6 +536,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let databaseRuntimeInput: DatabaseRuntimeInput | undefined;
     const result = await runCli(
       [
         "source",
@@ -559,7 +560,9 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => withSourceTransaction({
+        createDatabaseRuntime: async (input) => {
+          databaseRuntimeInput = input;
+          return withSourceTransaction({
           workspaceId: "workspace-1",
           projectId: "project-1",
           compilerDependencies: dependencies,
@@ -604,7 +607,8 @@ describe("runCli", () => {
           async close() {
             return undefined;
           }
-        }, dependencies.retrievalRepository)
+          }, dependencies.retrievalRepository);
+        }
       }
     );
 
@@ -614,6 +618,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceDecision: source-decision-1");
     expect(result.stdout).toContain("sourceClaimId: source-claim-1");
     expect(result.stdout).toContain("sourceClaimReadback: accepted");
+    expect(databaseRuntimeInput?.repoPathHint).toBe(await findRepoRoot(process.cwd()));
     expect(result.stdout).toContain("status: adopt");
     expect(result.stdout).toContain("rationale: The claim has mechanism, consumer, falsifier, and doesNotProve.");
     expect(result.stdout).toContain("falsifier: Source search cannot read back the decision support.");
@@ -1047,6 +1052,7 @@ describe("runCli", () => {
   });
 
   it("persists source decision link and prints edge details", async () => {
+    let databaseRuntimeInput: DatabaseRuntimeInput | undefined;
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -1078,11 +1084,13 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: dependencies,
-          sourceRepository: {
+        createDatabaseRuntime: async (input) => {
+          databaseRuntimeInput = input;
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: dependencies,
+            sourceRepository: {
             ...unusedSourceRepository,
             async createSourceArtifact() {
               throw new Error("createSourceArtifact should not be called");
@@ -1138,13 +1146,14 @@ describe("runCli", () => {
                 createdAt: now
               };
             }
-          },
-          harnessRunRepository: createSourceHarnessRunRepository(dependencies),
-          memoryRepository: unusedMemoryRepository,
-          async close() {
-            return undefined;
-          }
-        })
+            },
+            harnessRunRepository: createSourceHarnessRunRepository(dependencies),
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
       }
     );
 
@@ -1159,6 +1168,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("confidence: medium");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("doesNotProve: SourceDecisionEdge readback does not prove source truth");
+    expect(databaseRuntimeInput?.repoPathHint).toBe(await findRepoRoot(process.cwd()));
   });
 
   it("rejects source decision link when the source claim is rejected", async () => {

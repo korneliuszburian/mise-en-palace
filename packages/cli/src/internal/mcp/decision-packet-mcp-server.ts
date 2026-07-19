@@ -399,13 +399,6 @@ const runDecisionPacket = async (
   };
   const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
 
-  if (
-    Buffer.byteLength(result.stdout, "utf8")
-      > decisionPacketTransportBudget.maximumMessageUtf8Bytes
-  ) {
-    return outputLimitResult();
-  }
-
   const parsed: unknown = JSON.parse(result.stdout);
   const readback = parseDecisionPacketContractReadback(parsed, runId);
 
@@ -444,7 +437,10 @@ const runToolCall = async (
     };
   }
 
-  if (Object.keys(params).some((key) => key !== "name" && key !== "arguments")) {
+  if (
+    Object.keys(params).some((key) => key !== "name" && key !== "arguments" && key !== "_meta") ||
+    (params["_meta"] !== undefined && !isRecord(params["_meta"]))
+  ) {
     return {
       kind: "protocol_error",
       error: {

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildPairedRepairPrompts,
+  liveCodexObedienceMarker,
   pairedRepairEvalCandidate,
   pairedRepairUsefulnessOutcome,
   scorePairedRepairs,
@@ -13,10 +14,13 @@ import {
   runFocusedTestMutationSuite,
   runHeldOutTargetRepairChecker,
   runHeldOutRuntimeWorker,
+  pairedEvalFamilyContract,
+  resolvePairedEvalFamily,
   selectHeldOutRuntimePermissionFlag,
   type CommandResult,
   type FocusedTestMutationName,
-  type HeldOutObservation
+  type HeldOutObservation,
+  type HeldOutRuntimeObservations
 } from "../internal/eval/paired-live-codex-repair.js";
 
 const command = (exitCode = 0): CommandResult => ({
@@ -32,6 +36,19 @@ const observation = (overrides: Partial<HeldOutObservation> = {}): HeldOutObserv
   accepted: false,
   savedUserDelta: 0,
   resultState: "ok:false",
+  ...overrides
+});
+
+const temporalPolicyObservations = (
+  overrides: Partial<HeldOutRuntimeObservations> = {}
+): HeldOutRuntimeObservations => ({
+  invalidJson: observation(),
+  missingEmail: observation(),
+  invalidRole: observation(),
+  temporalPolicyCurrent: true,
+  temporalPolicyThresholdCurrent: true,
+  temporalPolicyBelowThresholdDefault: true,
+  temporalPolicyNonEuDefault: true,
   ...overrides
 });
 
@@ -120,6 +137,372 @@ const writeCompiledMutationTarget = async (
 };
 
 describe("paired live Codex repair eval", () => {
+  it("routes scenarios to one explicit family contract", () => {
+    expect(resolvePairedEvalFamily("env-config-contract-typescript held-out")).toBe("env-config");
+    expect(resolvePairedEvalFamily("async-job-boundary-typescript held-out")).toBe("async-job");
+    expect(resolvePairedEvalFamily("temporal-policy-drift-typescript held-out")).toBe("temporal-policy-drift");
+    expect(resolvePairedEvalFamily("temporal-policy-hidden-source-typescript held-out")).toBe("temporal-policy-hidden-source");
+    expect(resolvePairedEvalFamily("user-create-boundary-typescript held-out")).toBe("user-create");
+    expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
+    expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
+    expect(pairedEvalFamilyContract("temporal-policy-drift").sourcePaths).toContain("src/payoutPolicy.ts");
+    expect(pairedEvalFamilyContract("temporal-policy-hidden-source").requiredChecks)
+      .toContain("held_out_runtime");
+    expect(pairedEvalFamilyContract("user-create").sourcePaths).toContain("src/userService.ts");
+  });
+
+  it("requires finite user creation and supported default/role behavior", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "export type CreateUserResult = { status: 'created' | 'invalid_input'; user?: { role: string } }; export function createUserFromJson() { return { status: 'created' }; }",
+        "tests/userService.test.ts": "admin member"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: false
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("accepts the user-create family when its held-out creation and rejection gates pass", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "export type CreateUserResult = { state: 'created' | 'rejected'; user?: { role: 'admin' | 'member' } }; export function createUserFromJson() { return { state: 'created' }; }",
+        "tests/userService.test.ts": "admin member malformed missing unsupported"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: true
+      }
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+  });
+
+  it("does not require a ceremonial result type name for user-create", () => {
+    const score = scoreTargetRepair({
+      family: "user-create",
+      sourceFiles: {
+        "src/config.ts": "export const supported = ['admin', 'member'];",
+        "src/userService.ts": "type UserCreationOutcome = { state: 'created' | 'rejected'; user?: { role: 'admin' | 'member' } }; export function createUserFromJson(): UserCreationOutcome { return { state: 'created' }; }",
+        "tests/userService.test.ts": "rejected"
+      },
+      changedFiles: ["src/userService.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        validCreation: true
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+  });
+
+  it("fails a family contract when an env boundary leaks the guarded behavior", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "export type RuntimeMode = 'development' | 'staging' | 'production';",
+        "src/configReadback.ts": "export const redactConfigReadback = (env: Record<string, unknown>) => env;",
+        "tests/config.test.ts": "assert.equal(result.kind, 'invalid_config');"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        redactionSafe: true
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("fails an async-job family contract when finite clock/state seams are absent", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: { "src/jobQueue.ts": "export interface JobEnvelope { readonly idempotencyKey: string; }" },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+  });
+
+  it("records env-config runtime contract failure when redaction is unsafe", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "mode !== 'development' && mode !== 'staging' && mode !== 'production';",
+        "src/configReadback.ts": "const secretKeyPattern = /secret/i; export const redactConfigReadback = (env) => Object.fromEntries(Object.keys(env).map((key) => [key, '[redacted]']));",
+        "tests/config.test.ts": "invalid_config"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        redactionSafe: false
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: true, details: expect.stringContaining("contract failure") }));
+  });
+
+  it("records async-job runtime contract failure when enqueue is rejected", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": "const idempotencyKey = ''; const retryBudget = 1; const leaseTimeoutMs = 1; const state = 'dead_lettered'; interface Clock { now(): number; }"
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: false
+      }
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: true, details: expect.stringContaining("contract failure") }));
+  });
+
+  it("accepts an explicit alternate clock seam in the async family contract", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "type Clock = { nowMs: () => number };",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'dead_lettered' };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+  });
+
+  it("accepts a method-based Clock seam used with lease expiry readback", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "interface Clock { now(): number; }",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'leased' | 'dead_lettered'; leaseExpiresAt: number };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      }
+    });
+
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+    expect(score.status).toBe("pass");
+  });
+
+  it("accepts only current temporal policy behavior and rejects stale/rejected paths", () => {
+    const current = scoreTargetRepair({
+      family: "temporal-policy-drift",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'hold_for_policy_review' | 'manual_review';",
+          "export const validFrom = '2026-06-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "hold_for_policy_review 2026-06-01",
+        "docs/payout-policy-contract.md": "current authority overrides stale docs"
+      },
+      changedFiles: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: temporalPolicyObservations()
+    });
+    const stale = scoreTargetRepair({
+      family: "temporal-policy-drift",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'legacy_hold' | 'manual_review';",
+          "export const validFrom = '2025-01-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "legacy_hold",
+        "docs/payout-policy-contract.md": "current authority overrides stale docs"
+      },
+      changedFiles: ["src/payoutPolicy.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: temporalPolicyObservations({
+        temporalPolicyCurrent: false,
+        temporalPolicyThresholdCurrent: false
+      })
+    });
+
+    expect(current.status).toBe("pass");
+    expect(current.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: true }));
+    expect(stale.status).toBe("fail");
+    expect(stale.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+    expect(stale.checks).toContainEqual(expect.objectContaining({
+      name: "held_out_runtime",
+      passed: true,
+      details: expect.stringContaining("contract failure")
+    }));
+  });
+
+  it("keeps target-hidden temporal policy scoring separate while reusing the held-out contract", () => {
+    const score = scoreTargetRepair({
+      family: "temporal-policy-hidden-source",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'hold_for_policy_review' | 'manual_review';",
+          "export const validFrom = '2026-06-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "hold_for_policy_review 2026-06-01",
+        "docs/payout-policy-contract.md": "local docs are stale when current authority is supplied"
+      },
+      changedFiles: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: temporalPolicyObservations()
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.checks).toContainEqual(expect.objectContaining({
+      name: "family_contract",
+      passed: true,
+      details: expect.stringContaining("temporal-policy-hidden-source")
+    }));
+  });
+
+  it("fails temporal policy scoring when held-out boundary observations miss", () => {
+    const score = scoreTargetRepair({
+      family: "temporal-policy-drift",
+      sourceFiles: {
+        "src/payoutPolicy.ts": [
+          "type PayoutPolicyAction = 'hold_for_policy_review' | 'manual_review';",
+          "export const validFrom = '2026-06-01';"
+        ].join("\n"),
+        "tests/payoutPolicy.test.ts": "hold_for_policy_review 2026-06-01",
+        "docs/payout-policy-contract.md": "current authority overrides stale docs"
+      },
+      changedFiles: ["src/payoutPolicy.ts", "tests/payoutPolicy.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: temporalPolicyObservations({
+        temporalPolicyThresholdCurrent: false,
+        temporalPolicyBelowThresholdDefault: false
+      })
+    });
+
+    expect(score.status).toBe("fail");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "family_contract", passed: false }));
+    expect(score.checks).toContainEqual(expect.objectContaining({
+      name: "held_out_runtime",
+      passed: true,
+      details: expect.stringContaining("contract failure")
+    }));
+  });
+
+  it("omits weak-json focused-test proof from non-weak family artifacts", () => {
+    const score = scoreTargetRepair({
+      family: "async-job",
+      sourceFiles: {
+        "src/jobQueue.ts": [
+          "interface Clock { now(): number; }",
+          "type Job = { idempotencyKey: string; retryBudget: number; leaseTimeoutMs: number; state: 'leased' | 'dead_lettered'; leaseExpiresAt: number };"
+        ].join("\n")
+      },
+      changedFiles: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      focusedTestControl: command(1),
+      focusedTestMutations: focusedMutationProofs("invalid_json"),
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      }
+    });
+
+    expect(score.status).toBe("pass");
+    expect(score.focusedTestControl).toBeUndefined();
+    expect(score.focusedTestMutations).toBeUndefined();
+    expect(score.checks.map((check) => check.name)).not.toContain("focused_test_control");
+    expect(score.checks.map((check) => check.name)).not.toContain("focused_tests");
+  });
+
+  it("invalidates a family arm when its independent runtime observer is unavailable", () => {
+    const score = scoreTargetRepair({
+      family: "env-config",
+      sourceFiles: {
+        "src/config.ts": "mode !== 'development' && mode !== 'staging' && mode !== 'production';",
+        "src/configReadback.ts": "const secretKeyPattern = /secret/i; export const redactConfigReadback = (env) => Object.fromEntries(Object.keys(env).map((key) => [key, secretKeyPattern.test(key) ? '[redacted]' : env[key]]));",
+        "tests/config.test.ts": "invalid_config"
+      },
+      changedFiles: ["src/config.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: false,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation()
+      }
+    });
+
+    expect(score.status).toBe("invalid");
+    expect(score.checks).toContainEqual(expect.objectContaining({ name: "held_out_runtime", passed: false }));
+  });
+
   it("keeps skipped preflight command identities aligned with the issued contract", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-missing-paired-target-"));
 
@@ -326,6 +709,70 @@ describe("paired live Codex repair eval", () => {
     expect(selectHeldOutRuntimePermissionFlag(new Set())).toBeUndefined();
   });
 
+  it("observes current temporal policy behavior through the held-out runtime worker", async () => {
+    if (selectHeldOutRuntimePermissionFlag() === undefined) return;
+    const root = await mkdtemp(join(tmpdir(), "krn-temporal-policy-runtime-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/payoutPolicy.js"), [
+        "export const decidePayoutPolicy = (input) => {",
+        "  if (input.region === 'EU' && input.riskScore >= 80) {",
+        "    return { action: 'hold_for_policy_review', validFrom: '2026-06-01' };",
+        "  }",
+        "  return { action: 'manual_review', validFrom: '2025-01-01' };",
+        "};"
+      ].join("\n"), "utf8");
+
+      const result = await runHeldOutRuntimeWorker(
+        root,
+        process.cwd(),
+        root,
+        "temporal-policy-drift"
+      );
+
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.temporalPolicyCurrent).toBe(true);
+      expect(result.observations.temporalPolicyThresholdCurrent).toBe(true);
+      expect(result.observations.temporalPolicyBelowThresholdDefault).toBe(true);
+      expect(result.observations.temporalPolicyNonEuDefault).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("observes exclusive temporal thresholds as held-out runtime failures", async () => {
+    if (selectHeldOutRuntimePermissionFlag() === undefined) return;
+    const root = await mkdtemp(join(tmpdir(), "krn-temporal-policy-runtime-"));
+
+    try {
+      await mkdir(join(root, "src"));
+      await writeFile(join(root, "src/payoutPolicy.js"), [
+        "export const decidePayoutPolicy = (input) => {",
+        "  if (input.region === 'EU' && input.riskScore > 80) {",
+        "    return { action: 'hold_for_policy_review', validFrom: '2026-06-01' };",
+        "  }",
+        "  return { action: 'manual_review', validFrom: '2025-01-01' };",
+        "};"
+      ].join("\n"), "utf8");
+
+      const result = await runHeldOutRuntimeWorker(
+        root,
+        process.cwd(),
+        root,
+        "temporal-policy-drift"
+      );
+
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.temporalPolicyCurrent).toBe(true);
+      expect(result.observations.temporalPolicyThresholdCurrent).toBe(false);
+      expect(result.observations.temporalPolicyBelowThresholdDefault).toBe(true);
+      expect(result.observations.temporalPolicyNonEuDefault).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("forces a timed-out command to settle when it ignores SIGTERM", async () => {
     const result = await runCommand(process.execPath, [
       "-e",
@@ -349,12 +796,106 @@ describe("paired live Codex repair eval", () => {
 
     expect(first).toEqual(second);
     expect(first.baseline).not.toContain("packetIdentity");
+    expect(first.baseline).toContain("contract documentation present in the target");
+    expect(first.baseline).not.toContain("docs/repair-contract.md");
     expect(first.krn).toContain("packetIdentity");
     expect(first.delta).toMatchObject({
       generated: true,
       packetOnlyByConstruction: true,
       deltaBytes: expect.any(Number)
     });
+  });
+
+  it("requires the KRN arm to emit a bounded obedience record", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "abc" } }
+    });
+
+    expect(prompts.baseline).not.toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain("decisionId");
+    expect(prompts.krn).toContain("nonProof");
+    expect(prompts.krn).toContain("compact packet proof boundary");
+    expect(prompts.krn).toContain("packet.doesNotProve");
+    expect(prompts.krn).toContain("packet.nonProofs");
+    expect(prompts.krn).toContain("packet.evidenceGaps");
+    expect(prompts.krn).toContain("Do not take nonProof only from the outer readback proof");
+    expect(prompts.krn).toContain("Treat packet.rejectedPathIds as the complete rejected-path authority");
+    expect(prompts.krn).toContain("packet.staleDecisionIds and packet.staleKnowledgeIds");
+    expect(prompts.krn).toContain("Do not emit an array for staleBoundary");
+  });
+
+  it("generates async-job family prompt guidance without weak-json repair language", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the async job boundary",
+      decisionPacket: { packetIdentity: { checksum: "abc" } },
+      family: "async-job"
+    });
+
+    expect(prompts.baseline).toContain("async job enqueue and lease boundary");
+    expect(prompts.baseline).toContain("idempotency key");
+    expect(prompts.baseline).toContain("retry budget");
+    expect(prompts.baseline).toContain("injected-clock lease behavior");
+    expect(prompts.baseline).not.toContain("user-creation boundary");
+    expect(prompts.baseline).not.toContain("malformed-JSON");
+    expect(prompts.baseline).not.toContain("unsupported-role");
+  });
+
+  it("keeps target-hidden temporal update details out of the baseline prompt", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "Repair the target-hidden temporal payout policy without inventing current authority.",
+      decisionPacket: {
+        packetIdentity: { checksum: "abc" },
+        packet: {
+          governingStatements: [
+            "EU high-risk payouts use hold_for_policy_review from 2026-06-01."
+          ]
+        }
+      },
+      family: "temporal-policy-hidden-source"
+    });
+
+    expect(prompts.baseline).toContain("target-hidden temporal payout-policy boundary");
+    expect(prompts.baseline).toContain("cannot be inferred");
+    expect(prompts.baseline).not.toContain("hold_for_policy_review");
+    expect(prompts.baseline).not.toContain("2026-06-01");
+    expect(prompts.krn).toContain("hold_for_policy_review");
+    expect(prompts.krn).toContain("2026-06-01");
+  });
+
+  it("can remove packet injection when capabilities are the experiment variable", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
+      includeDecisionPacket: false
+    });
+    expect(prompts.krn).toBe(prompts.baseline);
+    expect(prompts.krn).not.toContain("private-packet-marker");
+    expect(prompts.delta.deltaBytes).toBe(0);
+  });
+
+  it("keeps capability-tool discovery identical while requiring KRN measurement output", () => {
+    const prompts = buildPairedRepairPrompts({
+      task: "repair the boundary",
+      decisionPacket: { packetIdentity: { checksum: "private-packet-marker" } },
+      includeDecisionPacket: false,
+      contextToolRunId: "run-123"
+    });
+    expect(prompts.krn).not.toBe(prompts.baseline);
+    expect(prompts.baseline).toContain("krn_decision_packet tool is available");
+    expect(prompts.krn).toContain("krn_decision_packet tool is available");
+    expect(prompts.baseline).toContain("run-123");
+    expect(prompts.krn).toContain("run-123");
+    expect(prompts.baseline).not.toContain("private-packet-marker");
+    expect(prompts.krn).not.toContain("private-packet-marker");
+    expect(prompts.baseline).not.toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain(liveCodexObedienceMarker);
+    expect(prompts.krn).toContain("use only that returned packet");
+    expect(prompts.krn).toContain("compact packet proof boundary");
+    expect(prompts.krn).toContain("packet.doesNotProve");
+    expect(prompts.krn).toContain("Do not take nonProof only from the outer readback proof");
+    expect(prompts.delta.deltaBytes).toBeGreaterThan(0);
   });
 
   it("keeps private repair mechanisms out of baseline participant inputs", async () => {
@@ -394,6 +935,25 @@ describe("paired live Codex repair eval", () => {
         expect(materializedInput).toBe(blindInput);
         expect(materializedInput).not.toBe(operatorInput);
       }
+
+      const materializedContract = await readFile(join(targetRoot, "docs/repair-contract.md"), "utf8");
+      const materializedConfig = await readFile(join(targetRoot, "src/config.ts"), "utf8");
+      const materializedService = await readFile(join(targetRoot, "src/userService.ts"), "utf8");
+      const materializedTests = await readFile(join(targetRoot, "tests/userService.test.ts"), "utf8");
+
+      expect(materializedContract).toContain("type CreateUserResult");
+      expect(materializedContract).toContain("parseJsonConfig(raw: string)");
+      expect(materializedContract).toContain("return `unknown`");
+      expect(materializedContract).toContain("JSON.parse");
+      expect(materializedContract).toContain("status");
+      expect(materializedContract).toContain("kind");
+      expect(materializedContract).toContain("ok");
+      expect(materializedConfig).toContain("parseJsonConfig(raw: string): any");
+      expect(materializedService).toContain("CreatedUser | null");
+      expect(materializedService).not.toContain("CreateUserResult");
+      expect(materializedTests).not.toContain("invalid_json");
+      expect(materializedTests).not.toContain("invalid_shape");
+      expect(materializedTests).not.toContain("unsupported role");
     } finally {
       await rm(targetRoot, { recursive: true, force: true });
     }
@@ -421,6 +981,8 @@ describe("paired live Codex repair eval", () => {
     expect(result.status).toBe("pass");
     expect(result.score).toBe(3);
     expect(result.checks.every((check) => check.passed)).toBe(true);
+    expect(result.focusedTestControl?.exitCode).toBe(0);
+    expect(result.focusedTestMutations?.map((proof) => proof.command.exitCode)).toEqual([0, 0, 0]);
   });
 
   it("does not award advantage for static tokens without held-out behavior", () => {
@@ -511,6 +1073,54 @@ describe("paired live Codex repair eval", () => {
       }
     }
   );
+
+  it("preserves injected clock arguments through focused mutation wrappers", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-focused-mutation-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(join(compileRoot, "tests"), { recursive: true });
+    await writeFile(join(compileRoot, "src/index.js"),
+      "export { createUserFromJson, listSavedUsers } from './userService.js';\n",
+      "utf8");
+    await writeFile(join(compileRoot, "src/userService.js"), [
+      "const users = [];",
+      "export const listSavedUsers = () => users;",
+      "export const createUserFromJson = (raw, _env, now) => {",
+      "  let input;",
+      "  try { input = JSON.parse(raw); } catch { return { status: 'invalid_input' }; }",
+      "  if (typeof input?.email !== 'string' || input.email.length === 0) return { status: 'invalid_input' };",
+      "  if (input.role !== undefined && input.role !== 'admin' && input.role !== 'member') return { status: 'invalid_input' };",
+      "  const user = { id: String(now()), email: input.email, role: 'admin' };",
+      "  users.push(user);",
+      "  return { status: 'created', user };",
+      "};"
+    ].join("\n"), "utf8");
+    await writeFile(join(compileRoot, "tests/userService.test.js"), [
+      "import { createUserFromJson, listSavedUsers } from '../src/index.js';",
+      "const clock = () => 1;",
+      "const created = createUserFromJson(JSON.stringify({ email: 'ok@example.com' }), {}, clock);",
+      "if (created.status !== 'created' || created.user.id !== '1') throw new Error('create failed');",
+      "for (const raw of ['{', JSON.stringify({}), JSON.stringify({ email: 'bad@example.com', role: 'owner' })]) {",
+      "  const before = listSavedUsers().length;",
+      "  const result = createUserFromJson(raw, {}, clock);",
+      "  if (result.status !== 'invalid_input' || listSavedUsers().length !== before) throw new Error('invalid input accepted');",
+      "}"
+    ].join("\n"), "utf8");
+    await mkdir(sandboxRoot);
+
+    try {
+      const suite = await runFocusedTestMutationSuite(compileRoot, process.cwd(), sandboxRoot);
+      expect(suite.control.exitCode).toBe(0);
+      expect(suite.mutations.map((proof) => [proof.name, proof.command.exitCode])).toEqual([
+        ["invalid_json", 0],
+        ["missing_email", 0],
+        ["invalid_role", 0]
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 
   it.each(["invalid_json", "missing_email", "invalid_role"] as const)(
     "fails only the %s mutation proof when that vector is absent",
@@ -825,10 +1435,12 @@ describe("paired live Codex repair eval", () => {
       const result = await runHeldOutRuntimeWorker(
         compileRoot,
         process.cwd(),
-        sandboxRoot
+        sandboxRoot,
+        "user-create"
       );
 
       expect(result.runtimeAvailable).toBe(false);
+      expect(result.failureReason).toBe("runtime_observer_failed");
       expect(await readFile(sentinel, "utf8")).toBe("must-not-be-read");
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -853,7 +1465,7 @@ describe("paired live Codex repair eval", () => {
     ].join("\n"), "utf8");
 
     try {
-      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot);
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "user-create");
 
       expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
       expect(result.command.exitCode).toBe(0);
@@ -861,8 +1473,153 @@ describe("paired live Codex repair eval", () => {
       expect(result.observations).toEqual({
         invalidJson: observation({ resultState: "kind:invalid_input" }),
         missingEmail: observation({ resultState: "kind:invalid_input" }),
-        invalidRole: observation({ resultState: "kind:invalid_input" })
+        invalidRole: observation({ resultState: "kind:invalid_input" }),
+        redactionSafe: false,
+        enqueueAccepted: false,
+        temporalPolicyCurrent: false,
+        temporalPolicyThresholdCurrent: false,
+        temporalPolicyBelowThresholdDefault: false,
+        temporalPolicyNonEuDefault: false,
+        validCreation: false
       });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("passes the deterministic clock to the user-create held-out contract", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-live-user-create-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/userService.js"), [
+      "const users = [];",
+      "export const listSavedUsers = () => users;",
+      "export const createUserFromJson = (raw, env, idClock) => {",
+      "  let input; try { input = JSON.parse(raw); } catch { return { kind: 'invalid_input' }; }",
+      "  if (typeof input.email !== 'string' || input.email.length === 0) return { kind: 'invalid_input' };",
+      "  if (input.role !== undefined && input.role !== 'admin' && input.role !== 'member') return { kind: 'invalid_input' };",
+      "  if (typeof idClock !== 'function') throw new Error('clock required');",
+      "  const user = { id: String(idClock()), email: input.email, role: input.role ?? env.DEFAULT_ROLE };",
+      "  users.push(user);",
+      "  return { kind: 'created', user };",
+      "};"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "user-create");
+      expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
+      expect(result.observations).toMatchObject({
+        invalidJson: { threw: false, resultState: "kind:invalid_input" },
+        missingEmail: { threw: false, resultState: "kind:invalid_input" },
+        invalidRole: { threw: false, resultState: "kind:invalid_input" },
+        validCreation: true
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ["env-config", "src/configReadback.js", "export const redactConfigReadback = (env) => Object.fromEntries(Object.entries(env));"],
+    ["async-job", "src/jobQueue.js", "export const unrelated = true;"],
+  ] as const)("treats %s target rejection as observed runtime failure", async (family, modulePath, source) => {
+    const root = await mkdtemp(join(tmpdir(), "krn-family-observed-failure-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, modulePath), source, "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, family);
+      expect(result.runtimeAvailable, JSON.stringify(result.command)).toBe(true);
+      expect(result.command.exitCode).toBe(0);
+      expect(result.failureReason).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retains env-config runtime evidence when guarded redaction succeeds", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-env-runtime-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/configReadback.js"), "export const redactConfigReadback = () => ({ CLIENT_SECRET: '[redacted]' });", "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "env-config");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.redactionSafe).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("retains async-job runtime evidence when enqueue and lease readback succeed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leaseExpiresAt: 1123 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("accepts semantic async lease readback when fields use an Ms suffix", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-ms-success-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leasedAtMs: 123, leaseExpiresAtMs: 1123 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(true);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects async lease readback when the clock value is not observed", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-async-runtime-wrong-clock-"));
+    const compileRoot = join(root, "compiled");
+    const sandboxRoot = join(root, "sandbox");
+    await mkdir(join(compileRoot, "src"), { recursive: true });
+    await mkdir(sandboxRoot);
+    await writeFile(join(compileRoot, "package.json"), JSON.stringify({ type: "module" }), "utf8");
+    await writeFile(join(compileRoot, "src/jobQueue.js"), [
+      "export const enqueueJob = (input) => ({ ...input });",
+      "export const leaseJob = (job) => ({ ...job, leasedAtMs: 999, leaseExpiresAtMs: 1999 });"
+    ].join("\n"), "utf8");
+
+    try {
+      const result = await runHeldOutRuntimeWorker(compileRoot, process.cwd(), sandboxRoot, "async-job");
+      expect(result.runtimeAvailable).toBe(true);
+      expect(result.observations.enqueueAccepted).toBe(false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -965,6 +1722,7 @@ describe("paired live Codex repair eval", () => {
     expect(candidate).toMatchObject({
       id: "paired-target-repair:run-1",
       status: "candidate",
+      scenario: "weak-json-boundary-typescript current-shell Codex repair",
       metadata: {
         outcome: "tie",
         usefulnessOutcome: "neutral",
@@ -974,5 +1732,31 @@ describe("paired live Codex repair eval", () => {
     expect(candidate.metadata.doesNotProve).toEqual(expect.arrayContaining([
       expect.stringContaining("does not mutate MemoryRecord")
     ]));
+  });
+
+  it("keeps the manifest scenario when creating persisted paired eval candidates", () => {
+    const score = scoreTargetRepair({
+      sourceFiles,
+      changedFiles: ["src/jobQueue.ts", "tests/jobQueue.test.ts"],
+      commands: { test: command(), typecheck: command(), diffCheck: command() },
+      runtimeAvailable: true,
+      observations: {
+        invalidJson: observation(),
+        missingEmail: observation(),
+        invalidRole: observation(),
+        enqueueAccepted: true
+      },
+      family: "async-job"
+    });
+    const candidate = pairedRepairEvalCandidate({
+      score: scorePairedRepairs({ baseline: score, krn: score }),
+      runId: "run-async",
+      packetChecksum: "a".repeat(64),
+      evidenceRefs: ["packet:" + "a".repeat(64), "checker:live-score"],
+      createdAt: "2026-07-10T00:00:00.000Z",
+      scenario: "async-job-boundary"
+    });
+
+    expect(candidate.scenario).toBe("async-job-boundary");
   });
 });

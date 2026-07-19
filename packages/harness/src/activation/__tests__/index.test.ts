@@ -701,6 +701,7 @@ describe("activation engine", () => {
       kind: "invalidates",
       metadata: {
         consumer: "source graph ranking",
+        evidenceRef: "test:edge-invalidates-stale",
         doesNotProve: "This edge does not prove source truth."
       },
       createdAt: now
@@ -712,6 +713,7 @@ describe("activation engine", () => {
       kind: "invalidates",
       metadata: {
         consumer: "source graph ranking",
+        evidenceRef: "test:edge-proposed-invalidates-active",
         doesNotProve: "This edge does not prove source truth."
       },
       createdAt: now
@@ -781,6 +783,7 @@ describe("activation engine", () => {
       kind: "contradicts",
       metadata: {
         consumer: "source graph ranking",
+        evidenceRef: "test:edge-contradicts-contested",
         doesNotProve: "This edge does not prove source truth."
       },
       createdAt: now
@@ -819,6 +822,36 @@ describe("activation engine", () => {
     expect(ranked.map((candidate) => candidate.subjectId).indexOf(acceptedDissent.id)).toBeLessThan(
       ranked.map((candidate) => candidate.subjectId).indexOf(contestedClaim.id)
     );
+  });
+
+  it("does not rank down a target through an unsupported current relation", () => {
+    const acceptedClaim = sourceClaim({ id: "claim-supported-rank-down-seed" });
+    const targetClaim = sourceClaim({ id: "claim-unsupported-rank-down-target" });
+    const unsupportedEdge: SourceClaimEdge = {
+      id: "edge-unsupported-rank-down",
+      fromSourceClaimId: acceptedClaim.id,
+      toSourceClaimId: targetClaim.id,
+      kind: "invalidates",
+      metadata: {
+        consumer: "source graph ranking",
+        doesNotProve: "This unsupported edge does not prove source truth."
+      },
+      createdAt: now
+    };
+
+    const ranked = applySourceClaimEdgeRankDown([
+      toSourceClaimCandidate(acceptedClaim),
+      toSourceClaimCandidate(targetClaim)
+    ], {
+      edges: [unsupportedEdge],
+      rankDownAuthoritySourceClaimIds: [acceptedClaim.id],
+      now,
+      graphPenalty: 30
+    });
+    const target = ranked.find((candidate) => candidate.subjectId === targetClaim.id);
+
+    expect(target?.graphScore).toBeUndefined();
+    expect(target?.metadata).not.toHaveProperty("sourceClaimEdgeRankDown");
   });
 
   it("uses edge-selected source context to ground a tiny graph-brain QA answer", () => {
@@ -2253,6 +2286,7 @@ describe("activation engine", () => {
       kind: "supersedes",
       metadata: {
         consumer: "activation-engine-test",
+        evidenceRef: "test:edge-current-supersedes-old",
         doesNotProve: "This edge does not prove source truth outside the fixture."
       },
       createdAt: now
@@ -2332,6 +2366,7 @@ describe("activation engine", () => {
       kind: "supersedes",
       metadata: {
         consumer: "activation-engine-test",
+        evidenceRef: "test:edge-storage-supersedes-widget",
         doesNotProve: "This edge does not prove source truth outside the fixture."
       },
       createdAt: now

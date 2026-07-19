@@ -17,6 +17,12 @@ import {
   maintenanceQueueStatus
 } from "@krn/db/schema";
 import {
+  postgresStoreIdentity,
+  readCurrentInitConnectRuntimeProof,
+  readCurrentTargetRepoRuntimeProof
+} from "@krn/db/dev";
+import postgres from "postgres";
+import {
   maintenanceJobPersistenceContract
 } from "@krn/maintenance-preview";
 
@@ -307,7 +313,12 @@ const hasForbiddenTargetSurface = async (fixturePath: string): Promise<boolean> 
     path.join(fixturePath, "MEMORY.md")
   ]);
 
-export const checkTargetRepoReadiness = async (repoRoot: string): Promise<DoctorCheck[]> => {
+export const checkTargetRepoReadiness = async (
+  repoRoot: string,
+  databaseUrl?: string,
+  environmentFingerprintId?: string,
+  initConnectEnvironmentFingerprintId?: string
+): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const fixturePath = targetRepoFixturePath(repoRoot);
   const initCommandAvailable = hasTargetInitCommand();
@@ -316,6 +327,127 @@ export const checkTargetRepoReadiness = async (repoRoot: string): Promise<Doctor
   const initConnectSmokeAvailable = hasInitConnectSmokeCapability(packageJson);
   const targetHarnessSmokeAvailable = hasTargetHarnessSmokeCapability(packageJson);
   const forbiddenSurfacePresent = await hasForbiddenTargetSurface(fixturePath);
+  let initConnectProof: Awaited<ReturnType<typeof readCurrentInitConnectRuntimeProof>>;
+  let targetProof: Awaited<ReturnType<typeof readCurrentTargetRepoRuntimeProof>>;
+
+  if (databaseUrl !== undefined) {
+    const client = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
+    try {
+      if (initConnectEnvironmentFingerprintId !== undefined) {
+        initConnectProof = await readCurrentInitConnectRuntimeProof(client, {
+          databaseUrl,
+          environmentFingerprintId: initConnectEnvironmentFingerprintId,
+          scopeKey: fixturePath
+        });
+      }
+      if (environmentFingerprintId !== undefined) {
+        targetProof = await readCurrentTargetRepoRuntimeProof(client, {
+          databaseUrl,
+          environmentFingerprintId,
+          scopeKey: fixturePath
+        });
+      }
+    } catch {
+      targetProof = undefined;
+    } finally {
+      await client.end();
+    }
+  }
+
+  let initConnectProofCheck: DoctorCheck = {
+    label: "Init-connect smoke",
+    status: initConnectSmokeAvailable
+      ? "available (pnpm db:smoke:init-connect; run it for proof)"
+      : "unverified (pnpm db:smoke:init-connect missing)",
+    outcome: initConnectSmokeAvailable ? "available" : "runtime_unverified",
+    severity: passOrWarning(initConnectSmokeAvailable)
+  };
+
+  if (databaseUrl !== undefined && initConnectEnvironmentFingerprintId !== undefined) {
+    initConnectProofCheck = {
+      label: "Init-connect smoke",
+      status: "unverified (run pnpm db:smoke:init-connect)",
+      outcome: "runtime_unverified",
+      severity: "warning"
+    };
+  }
+
+  if (initConnectProof !== undefined && initConnectProof.projectId !== null) {
+    const report = initConnectProof.report;
+    const proofValid = report.commandStatus === "passed" &&
+      report.observationOnly === true &&
+      report.projectRegistrationReadback === true &&
+      report.idempotencyReadback === true &&
+      report.refreshReadback === true;
+
+    if (proofValid) {
+      initConnectProofCheck = {
+        label: "Init-connect smoke",
+        status: `ready (project ${initConnectProof.projectId}; command pnpm db:smoke:init-connect; captured ${initConnectProof.capturedAt}; store ${postgresStoreIdentity(databaseUrl!)})`,
+        outcome: "proven",
+        severity: "pass",
+        proof: {
+          command: "pnpm db:smoke:init-connect",
+          status: "passed",
+          capturedAt: initConnectProof.capturedAt,
+          freshness: "current",
+          storeIdentity: initConnectProof.storeIdentity,
+          projectId: initConnectProof.projectId,
+          environmentFingerprintId: initConnectProof.environmentFingerprintId
+        }
+      };
+    }
+  }
+
+  let targetProofCheck: DoctorCheck = {
+    label: "Cross-project leakage proof",
+    status: "unverified (run pnpm db:smoke:target-repo-harness)",
+    outcome: "runtime_unverified",
+    severity: "warning"
+  };
+
+  let targetHarnessProofCheck: DoctorCheck = {
+    label: "Target repo harness smoke",
+    status: targetHarnessSmokeAvailable
+      ? "available (pnpm db:smoke:target-repo-harness; run it for proof)"
+      : "unverified (pnpm db:smoke:target-repo-harness missing)",
+    outcome: targetHarnessSmokeAvailable ? "available" : "runtime_unverified",
+    severity: passOrWarning(targetHarnessSmokeAvailable)
+  };
+
+  if (targetProof !== undefined && targetProof.projectId !== null) {
+    const targetProofReport = targetProof.report;
+    const targetProofValid = targetProofReport.crossProjectLeakageProof === true &&
+      targetProofReport.consumerTargetCommandStatus === "passed" &&
+      targetProofReport.consumerEvidenceBoundToPacket === true &&
+      targetProofReport.targetProjectLinked === true;
+
+    if (targetProofValid) {
+      const proof = {
+        command: "pnpm db:smoke:target-repo-harness",
+        status: "passed" as const,
+        capturedAt: targetProof.capturedAt,
+        freshness: "current" as const,
+        storeIdentity: targetProof.storeIdentity,
+        projectId: targetProof.projectId,
+        environmentFingerprintId: targetProof.environmentFingerprintId
+      };
+      targetHarnessProofCheck = {
+        label: "Target repo harness smoke",
+        status: `ready (project ${targetProof.projectId}; command pnpm db:smoke:target-repo-harness; captured ${targetProof.capturedAt}; store ${postgresStoreIdentity(databaseUrl!)})`,
+        outcome: "proven",
+        severity: "pass",
+        proof
+      };
+      targetProofCheck = {
+      label: "Cross-project leakage proof",
+      status: `ready (project ${targetProof.projectId}; command pnpm db:smoke:target-repo-harness; captured ${targetProof.capturedAt}; store ${postgresStoreIdentity(databaseUrl!)})`,
+      outcome: "proven",
+      severity: "pass",
+        proof
+      };
+    }
+  }
 
   return [
     {
@@ -342,28 +474,9 @@ export const checkTargetRepoReadiness = async (repoRoot: string): Promise<Doctor
       outcome: projectRegistrationSchemaPresent ? "present" : "missing",
       severity: passOrWarning(projectRegistrationSchemaPresent)
     },
-    {
-      label: "Init-connect smoke",
-      status: initConnectSmokeAvailable
-        ? "available (pnpm db:smoke:init-connect; run it for proof)"
-        : "unverified (pnpm db:smoke:init-connect missing)",
-      outcome: initConnectSmokeAvailable ? "available" : "runtime_unverified",
-      severity: passOrWarning(initConnectSmokeAvailable)
-    },
-    {
-      label: "Target repo harness smoke",
-      status: targetHarnessSmokeAvailable
-        ? "available (pnpm db:smoke:target-repo-harness; run it for proof)"
-        : "unverified (pnpm db:smoke:target-repo-harness missing)",
-      outcome: targetHarnessSmokeAvailable ? "available" : "runtime_unverified",
-      severity: passOrWarning(targetHarnessSmokeAvailable)
-    },
-    {
-      label: "Cross-project leakage proof",
-      status: "unverified (run pnpm db:smoke:target-repo-harness)",
-      outcome: "runtime_unverified",
-      severity: "warning"
-    },
+    initConnectProofCheck,
+    targetHarnessProofCheck,
+    targetProofCheck,
     {
       label: "Target repo forbidden surfaces",
       status: forbiddenSurfacePresent ? "present" : "absent",

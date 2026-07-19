@@ -72,6 +72,7 @@ export interface CreateSourceClaimEdgeInput {
     consumer: string;
     doesNotProve: string;
     evidenceRef?: string;
+    evidenceRefs?: readonly string[];
     sourceDecisionRef?: string;
     scope?: string;
     validFrom?: string;
@@ -138,6 +139,9 @@ export interface SourceRepository {
     projectId: ProjectId,
     id: SourceDecision["id"]
   ): Promise<SourceDecision | undefined>;
+  listSourceDecisionsForClaim?(
+    sourceClaimId: SourceClaim["id"]
+  ): Promise<SourceDecision[]>;
   listSourceDecisionKnowledgeSources(
     projectId: ProjectId,
     limit: number

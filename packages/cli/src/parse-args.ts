@@ -165,6 +165,26 @@ export type CliCommand =
       format: "text" | "json";
     }
   | {
+      kind: "runEvalEvidence";
+      projectId: string;
+      runId?: string;
+      scenario?: string;
+      outcome?: "win" | "tie" | "loss" | "invalid" | "unknown";
+      usefulnessOutcome?: "helped" | "neutral" | "hurt" | "unknown";
+      limit?: number;
+      format: "text" | "json";
+    }
+  | {
+      kind: "runEvalPromotionEligibility";
+      projectId: string;
+      runId?: string;
+      candidateId?: string;
+      sourceDecisionId?: string;
+      reviewAssessmentId?: string;
+      limit?: number;
+      format: "text" | "json";
+    }
+  | {
       kind: "decisionPacketHelp";
     }
   | {
@@ -330,6 +350,8 @@ export type CliCommand =
       decision?: string;
       evidenceReviewedRef?: string;
       untrustedSourceReviewRef?: string;
+      sourceMemoryRecordId?: string;
+      reason?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -378,6 +400,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiAdd";
       persist: boolean;
+      projectId?: string;
       runId?: string;
       rejectedClaim?: string;
       reason?: string;
@@ -403,6 +426,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiPromote";
       persist: boolean;
+      projectId?: string;
       candidateId?: string;
       reviewer?: string;
       decision?: string;
@@ -412,6 +436,7 @@ export type CliCommand =
   | {
       kind: "memoryAntiReject";
       persist: boolean;
+      projectId?: string;
       candidateId?: string;
       reviewer?: string;
       reason?: string;
@@ -616,6 +641,8 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
+  "krn run eval-evidence --project-id <project-id> [--run-id <id>] [--candidate-id <id>] [--json]",
+  "krn run eval-promotion-eligibility --project-id <project-id> [--run-id <id>] [--candidate-id <id>] [--json]",
   "krn decision packet --run-id <id> [--json]",
   "krn memory search --query \"...\" [--project <project-id>] [--json]",
   "krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",
@@ -637,6 +664,7 @@ const usage = [
   "krn source decision import --file source-decisions.json [--project <project-id>] [--persist] [--json]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
+  "  revision: add --source-memory-id <id> --reason \"...\" to atomically supersede one active predecessor",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",

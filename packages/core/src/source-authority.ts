@@ -195,12 +195,12 @@ export const sourceClaimAuthorityStateFor = (input: {
   readonly status: SourceClaimAuthorityStatus;
   readonly reasons: readonly SourceClaimAuthorityReason[];
 }): SourceClaimAuthorityState => {
-  if (input.status === "rejected" || input.reasons.includes("rejected_or_deprecated")) {
-    return "rejected";
-  }
-
   if (input.status === "stale" || input.reasons.includes("stale")) {
     return "stale";
+  }
+
+  if (input.status === "rejected" || input.reasons.includes("rejected_or_deprecated")) {
+    return "rejected";
   }
 
   if (
@@ -271,8 +271,12 @@ const uniqueSourceClaimAuthorityReasons = (
 ): readonly SourceClaimAuthorityReason[] => [...new Set(values)];
 
 const sourceClaimLifecycleAuthorityReasons = (
-  claim: Pick<SourceClaim, "status">
+  claim: Pick<SourceClaim, "status" | "metadata">
 ): readonly SourceClaimAuthorityReason[] => {
+  if (claim.metadata["decisionCorpusStatus"] === "stale") {
+    return ["stale"];
+  }
+
   if (claim.status !== "accepted") {
     return [
       claim.status === "proposed"
@@ -389,21 +393,21 @@ const sourceClaimStructuralAuthorityCaveats = (
 ];
 
 const sourceClaimIsRejectedAuthority = (input: {
-  readonly claim: Pick<SourceClaim, "status">;
+  readonly claim: Pick<SourceClaim, "status" | "metadata">;
   readonly rejectionIds: readonly SourceRejection["id"][];
 }): boolean =>
-  input.claim.status === "rejected" ||
-  input.claim.status === "deprecated" ||
+  (input.claim.status === "rejected" && input.claim.metadata["decisionCorpusStatus"] !== "stale") ||
+  (input.claim.status === "deprecated" && input.claim.metadata["decisionCorpusStatus"] !== "stale") ||
   input.rejectionIds.length > 0;
 
 const sourceClaimIsBlockedAuthority = (input: {
-  readonly claim: Pick<SourceClaim, "status">;
+  readonly claim: Pick<SourceClaim, "status" | "metadata">;
   readonly temporalValidity: SourceClaimTemporalValidity;
   readonly reasons: readonly SourceClaimAuthorityReason[];
   readonly supersededBySourceClaimIds: readonly SourceClaim["id"][];
   readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
 }): boolean =>
-  input.claim.status !== "accepted" ||
+  (input.claim.status !== "accepted" && input.claim.metadata["decisionCorpusStatus"] !== "stale") ||
   input.temporalValidity.status === "invalid" ||
   input.reasons.includes("missing_source_to_decision_fields") ||
   input.reasons.includes("decorative_support_type") ||
@@ -411,7 +415,7 @@ const sourceClaimIsBlockedAuthority = (input: {
   input.blockedByCurrentSourceClaimId !== undefined;
 
 const sourceClaimAuthorityStatus = (input: {
-  readonly claim: Pick<SourceClaim, "status">;
+  readonly claim: Pick<SourceClaim, "status" | "metadata">;
   readonly temporalValidity: SourceClaimTemporalValidity;
   readonly reasons: readonly SourceClaimAuthorityReason[];
   readonly sourceDecisionSupportCount?: number | undefined;
@@ -420,6 +424,10 @@ const sourceClaimAuthorityStatus = (input: {
   readonly rejectionIds: readonly SourceRejection["id"][];
   readonly blockedByCurrentSourceClaimId?: SourceClaim["id"];
 }): SourceClaimAuthorityStatus => {
+  if (input.claim.metadata["decisionCorpusStatus"] === "stale") {
+    return "stale";
+  }
+
   if (sourceClaimIsRejectedAuthority(input)) {
     return "rejected";
   }

@@ -11,6 +11,9 @@ import {
 import {
   currentDecisionPacketBindingForHarnessRun
 } from "@krn/core";
+import type {
+  EvalCandidateProposal
+} from "@krn/core";
 import {
   createCompiledSmokeExecution,
   migrateDatabase
@@ -26,6 +29,7 @@ import {
   defaultProjectSlug,
   defaultWorkspaceSlug
 } from "../database-runtime.js";
+import { runEvidenceCaptureCommand } from "../run-evidence-capture-command.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const execFileAsync = promisify(execFile);
@@ -121,13 +125,14 @@ const memoryCandidateIdFrom = (stdout: string): string => {
 describe("evidence capture retry boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "keeps a sequential changed-file retry in one evidence chain across CLI processes",
+    // fallow-ignore-next-line complexity -- one disposable PostgreSQL smoke owns source, eval, transient-failure, idempotency, and proposal-only readbacks
     async () => {
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
       const client = postgres(disposableDatabase.databaseUrl, {
         max: 1,
         onnotice: () => undefined
       });
-      const intendedFile = `.krn-evidence-capture-retry-${crypto.randomUUID()}.tmp`;
+      const intendedFile = `.krn-evidence-capture-retry-source-fixture-${crypto.randomUUID()}.ts`;
 
       try {
         await writeFile(
@@ -232,18 +237,14 @@ describe("evidence capture retry boundary", () => {
           intendedFile,
           sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
         });
-        const retry = await runEvidenceCaptureCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          runId: compiled.executionRun.id,
-          packetChecksum: packetBinding.packetChecksum,
-          packetGeneratedAt: packetBinding.packetGeneratedAt,
-          intendedFile,
-          sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
-        });
-        const counts = await client<{
+        const readChainCounts = async () => client<{
           evidenceBundleCount: number;
           reviewAssessmentCount: number;
           feedbackDeltaCount: number;
+          memoryCandidateProposalCount: number;
+          sourceDecisionProposalCount: number;
+          evalCandidateProposalCount: number;
+          materializedMemoryCandidateCount: number;
           outboxEventCount: number;
           maintenanceCount: number;
         }[]>`
@@ -257,12 +258,64 @@ describe("evidence capture retry boundary", () => {
               inner join review_assessments review on review.id = feedback.review_assessment_id
               inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
               where bundle.execution_run_id = ${compiled.executionRun.id}) as "feedbackDeltaCount",
+            (select coalesce(sum(jsonb_array_length(feedback.memory_candidates)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "memoryCandidateProposalCount",
+            (select coalesce(sum(jsonb_array_length(feedback.source_decisions)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "sourceDecisionProposalCount",
+            (select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int
+              from feedback_deltas feedback
+              inner join review_assessments review on review.id = feedback.review_assessment_id
+              inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+              where bundle.execution_run_id = ${compiled.executionRun.id}) as "evalCandidateProposalCount",
+            (select count(*)::int from memory_candidates
+              where execution_run_id = ${compiled.executionRun.id}) as "materializedMemoryCandidateCount",
             (select count(*)::int from outbox_events
               where topic = 'feedback.delta.created'
                 and payload->>'projectId' = ${compiled.project.id}) as "outboxEventCount",
             (select count(*)::int from maintenance_queue_records
               where payload->>'projectId' = ${compiled.project.id}) as "maintenanceCount"
         `;
+        let transientFailure: { stderr?: string } | undefined;
+        try {
+          await runEvidenceCaptureCli({
+            databaseUrl: "postgres://127.0.0.1:0/krn",
+            runId: compiled.executionRun.id,
+            packetChecksum: packetBinding.packetChecksum,
+            packetGeneratedAt: packetBinding.packetGeneratedAt,
+            intendedFile,
+            sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
+          });
+        } catch (error) {
+          transientFailure = error as { stderr?: string };
+        }
+        expect(transientFailure?.stderr).toContain("evidence_capture (disposition=transient, retryable)");
+        expect(await readChainCounts()).toEqual([{
+          evidenceBundleCount: 1,
+          reviewAssessmentCount: 1,
+          feedbackDeltaCount: 1,
+          memoryCandidateProposalCount: 1,
+          sourceDecisionProposalCount: 1,
+          evalCandidateProposalCount: 0,
+          materializedMemoryCandidateCount: 0,
+          outboxEventCount: 1,
+          maintenanceCount: 1
+        }]);
+
+        const retry = await runEvidenceCaptureCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          runId: compiled.executionRun.id,
+          packetChecksum: packetBinding.packetChecksum,
+          packetGeneratedAt: packetBinding.packetGeneratedAt,
+          intendedFile,
+          sourceUsefulness: `claim:${selectedSourceClaimId}=stale|Selected retry guidance was stale|${packetBinding.packetEvidenceRef}|One stale report does not prove future source selection quality`
+        });
+        const counts = await readChainCounts();
 
         expect(captureIdentityFrom(retry.stdout)).toBe(captureIdentityFrom(first.stdout));
         expect(memoryCandidateIdFrom(retry.stdout)).toBe(memoryCandidateIdFrom(first.stdout));
@@ -273,9 +326,81 @@ describe("evidence capture retry boundary", () => {
           evidenceBundleCount: 1,
           reviewAssessmentCount: 1,
           feedbackDeltaCount: 1,
+          memoryCandidateProposalCount: 1,
+          sourceDecisionProposalCount: 1,
+          evalCandidateProposalCount: 0,
+          materializedMemoryCandidateCount: 0,
           outboxEventCount: 1,
           maintenanceCount: 1
         });
+
+        const evalExecutionRun = await compiled.harnessRunRepository.createExecutionRun({
+          harnessPlanId: compiled.result.harnessPlan.id,
+          adapter: "codex",
+          metadata: { smokeId: "evidence-capture-eval-retry" }
+        });
+        const evalAggregate = await compiled.harnessRunRepository
+          .getHarnessRunByExecutionRunId(evalExecutionRun.id);
+        if (evalAggregate === undefined) {
+          throw new Error("compiled eval retry run is missing");
+        }
+        const evalPacketBinding = currentDecisionPacketBindingForHarnessRun({
+          aggregate: evalAggregate,
+          packetGeneratedAt: "2026-07-15T00:00:00.000Z",
+          sha256Hex: (value) => crypto.createHash("sha256").update(value).digest("hex")
+        });
+        const evalProposal: EvalCandidateProposal = {
+          id: "eval-candidate-postgres-retry",
+          status: "candidate",
+          title: "Postgres retry eval proposal",
+          scenario: "A transient persistence failure occurs",
+          expectedSignal: "The same eval proposal is retained exactly once",
+          sourceEvidence: [evalPacketBinding.packetEvidenceRef],
+          metadata: { consumer: "evidence capture retry smoke" },
+          createdAt: "2026-07-15T00:00:00.000Z"
+        };
+        const runEvalCapture = (url: string) => runEvidenceCaptureCommand({
+          env: { KRN_DATABASE_URL: url },
+          cwd: repoRoot,
+          persist: true,
+          runId: evalExecutionRun.id,
+          decisionPacketChecksum: evalPacketBinding.packetChecksum,
+          decisionPacketGeneratedAt: evalPacketBinding.packetGeneratedAt,
+          intendedFiles: [intendedFile],
+          evalCandidateProposals: [evalProposal],
+          now: () => "2026-07-15T00:00:00.000Z",
+          createId: (prefix) => `${prefix}-eval-retry`,
+          readGitStatus: async () => `?? ${intendedFile}`
+        });
+        const evalFirst = await runEvalCapture(disposableDatabase.databaseUrl);
+        let evalTransientError: unknown;
+        try {
+          await runEvalCapture("postgres://127.0.0.1:0/krn");
+        } catch (error) {
+          evalTransientError = error;
+        }
+        expect(evalTransientError).toBeInstanceOf(Error);
+        expect((evalTransientError as Error).message).toMatch(/ECONNREFUSED|connect/i);
+        const evalCountsAfterFailure = await client<{ count: number }[]>`
+          select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int as count
+          from feedback_deltas feedback
+          inner join review_assessments review on review.id = feedback.review_assessment_id
+          inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+          where bundle.execution_run_id = ${evalExecutionRun.id}
+        `;
+        expect(evalCountsAfterFailure[0]?.count).toBe(1);
+        const evalRetry = await runEvalCapture(disposableDatabase.databaseUrl);
+        const evalCountsAfterRetry = await client<{ count: number }[]>`
+          select coalesce(sum(jsonb_array_length(feedback.eval_candidates)), 0)::int as count
+          from feedback_deltas feedback
+          inner join review_assessments review on review.id = feedback.review_assessment_id
+          inner join evidence_bundles bundle on bundle.id = review.evidence_bundle_id
+          where bundle.execution_run_id = ${evalExecutionRun.id}
+        `;
+        expect(evalCountsAfterRetry[0]?.count).toBe(1);
+        expect(evalFirst.stdout).toContain("evalCandidateProposals: 1");
+        expect(evalRetry.stdout).toContain("evalCandidateProposals: 1");
+        expect(captureIdentityFrom(evalRetry.stdout)).toBe(captureIdentityFrom(evalFirst.stdout));
       } finally {
         await rm(path.join(repoRoot, intendedFile), { force: true });
         await client.end();

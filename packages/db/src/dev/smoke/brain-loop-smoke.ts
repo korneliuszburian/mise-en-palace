@@ -134,6 +134,13 @@ export interface BrainLoopSmokeReport {
   revisionRunIncludedReplacementDecisionCount: number;
   revisionRunSourceMemoryInclusionCount: number;
   revisionRunSupersededSourceExcluded: boolean;
+  revisionPacketReplacementMemoryRefCount: number;
+  revisionPacketSupersededMemoryRefCount: number;
+  revisionPacketSupersessionExplanation: boolean;
+  revisionPacketSupersessionEvidenceStatus: string;
+  revisionPacketSupersessionEvidenceRefCount: number;
+  revisionPacketSupersessionSourceClaimCount: number;
+  revisionBriefIncludesSupersession: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -1340,6 +1347,32 @@ export const runBrainLoopSmokeCheck = async (
       decision.subjectType === "memory_record" &&
       decision.subjectId === revisionReplacementMemory.id
     ).length;
+    const revisionDecisionPacket = decisionPacketForCompiledPlan(revisionCompile);
+    const revisionPacketReplacementMemoryRefCount = revisionDecisionPacket.memoryRefs.filter(
+      (memoryRef) => memoryRef === revisionReplacementMemory.id
+    ).length;
+    const revisionPacketSupersededMemoryRefCount = revisionDecisionPacket.memoryRefs.filter(
+      (memoryRef) => memoryRef === memoryRecord.id
+    ).length;
+    const revisionPacketSupersessionEntry = revisionDecisionPacket.memorySupersessionTimeline?.entries.find(
+      (entry) => entry.predecessorMemoryRecordId === memoryRecord.id
+    );
+    const revisionPacketSupersessionExplanation =
+      revisionPacketSupersessionEntry?.replacementMemoryRecordId === revisionReplacementMemory.id &&
+      revisionPacketSupersessionEntry.predecessorStatus === "superseded" &&
+      revisionPacketSupersessionEntry.replacementStatus === "active" &&
+      revisionPacketSupersessionEntry.transition.reason.length > 0;
+    const revisionPacketSupersessionEvidenceStatus =
+      revisionPacketSupersessionEntry?.evidence.status ?? "missing";
+    const revisionPacketSupersessionEvidenceRefCount =
+      revisionPacketSupersessionEntry?.evidence.evidenceRefs.length ?? 0;
+    const revisionPacketSupersessionSourceClaimCount =
+      revisionPacketSupersessionEntry?.evidence.sourceClaimIds.length ?? 0;
+    const revisionRenderedBrief = input.renderExecutionBrief(revisionDecisionPacket);
+    const revisionBriefIncludesSupersession =
+      revisionRenderedBrief.includes("Memory Supersession Timeline:") &&
+      revisionRenderedBrief.includes(memoryRecord.id) &&
+      revisionRenderedBrief.includes(revisionReplacementMemory.id);
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
@@ -1591,6 +1624,29 @@ export const runBrainLoopSmokeCheck = async (
       {
         label: "revision run activation decision",
         passed: revisionRunIncludedReplacementDecisionCount === 1
+      },
+      {
+        label: "revision DecisionPacket selects replacement memory",
+        passed: revisionPacketReplacementMemoryRefCount === 1
+      },
+      {
+        label: "revision DecisionPacket excludes superseded memory",
+        passed: revisionPacketSupersededMemoryRefCount === 0
+      },
+      {
+        label: "revision DecisionPacket explains supersession",
+        passed: revisionPacketSupersessionExplanation
+      },
+      {
+        label: "revision Codex brief preserves supersession explanation",
+        passed: revisionBriefIncludesSupersession
+      },
+      {
+        label: "revision supersession evidence round-trips",
+        passed:
+          revisionPacketSupersessionEvidenceStatus === "complete" &&
+          revisionPacketSupersessionEvidenceRefCount === 2 &&
+          revisionPacketSupersessionSourceClaimCount === 1
       }
     ], readbackError);
 
@@ -1682,6 +1738,13 @@ export const runBrainLoopSmokeCheck = async (
       revisionRunIncludedReplacementDecisionCount,
       revisionRunSourceMemoryInclusionCount: revisionRunSourceMemoryInclusions.length,
       revisionRunSupersededSourceExcluded: revisionRunSourceMemoryInclusions.length === 0,
+      revisionPacketReplacementMemoryRefCount,
+      revisionPacketSupersededMemoryRefCount,
+      revisionPacketSupersessionExplanation,
+      revisionPacketSupersessionEvidenceStatus,
+      revisionPacketSupersessionEvidenceRefCount,
+      revisionPacketSupersessionSourceClaimCount,
+      revisionBriefIncludesSupersession,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

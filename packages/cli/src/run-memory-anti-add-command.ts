@@ -39,6 +39,50 @@ const defaultOwner = "operator";
 const defaultConfidence = 90;
 const defaultProposedBy = "cli";
 
+type AntiAddDatabaseRuntime = Awaited<ReturnType<typeof createMemoryCommandDatabaseRuntime>>;
+
+const persistedRunProjectId = async (
+  databaseRuntime: AntiAddDatabaseRuntime,
+  executionRunId: string | undefined
+): Promise<string | undefined> => {
+  if (executionRunId === undefined) return undefined;
+  const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(executionRunId);
+  return aggregate?.taskContract.projectId ?? aggregate?.operatorIntent.projectId;
+};
+
+const assertAntiAddProjectMatch = (
+  requestedProjectId: string | undefined,
+  runProjectId: string | undefined
+): void => {
+  if (requestedProjectId !== undefined && runProjectId !== undefined && requestedProjectId !== runProjectId) {
+    throw new Error(`--project ${requestedProjectId} does not match persisted run project ${runProjectId}`);
+  }
+};
+
+const createScopedAntiAddRuntime = async (
+  runtime: MemoryAntiAddCommandRuntime,
+  command: MemoryAntiAddCommand,
+  executionRunId: string | undefined
+): Promise<{ databaseRuntime: AntiAddDatabaseRuntime; requestedProjectId: string | undefined }> => {
+  const requestedProjectId = command.projectId?.trim() || undefined;
+  let databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory anti add --persist",
+    requestedProjectId
+  );
+  const runProjectId = await persistedRunProjectId(databaseRuntime, executionRunId);
+  assertAntiAddProjectMatch(requestedProjectId, runProjectId);
+  if (requestedProjectId === undefined && runProjectId !== undefined && runProjectId !== databaseRuntime.projectId) {
+    await databaseRuntime.close();
+    databaseRuntime = await createMemoryCommandDatabaseRuntime(
+      runtime,
+      "KRN_DATABASE_URL is required for krn memory anti add --persist",
+      runProjectId
+    );
+  }
+  return { databaseRuntime, requestedProjectId };
+};
+
 const sourceLineage = (command: MemoryAntiAddCommand): { sourceId: string }[] => [
   ...(command.invalidatedBySourceClaimId === undefined
     ? []
@@ -149,14 +193,13 @@ export const runMemoryAntiAddCommand = async (
     };
   }
 
-  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
-    runtime,
-    "KRN_DATABASE_URL is required for krn memory anti add --persist"
-  );
+  const scopedRuntime = await createScopedAntiAddRuntime(runtime, command, antiMemoryInput.executionRunId);
+  const { requestedProjectId } = scopedRuntime;
+  const databaseRuntime = scopedRuntime.databaseRuntime;
 
   try {
     for (const sourceClaimId of antiMemoryInput.invalidatedBySourceClaimIds) {
-      await assertSourceClaimExists(databaseRuntime, sourceClaimId);
+      await assertSourceClaimExists(databaseRuntime, sourceClaimId, requestedProjectId);
     }
 
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.createAntiMemoryCandidate({

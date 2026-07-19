@@ -601,8 +601,15 @@ describe("compileHarnessPlan", () => {
     });
 
     expect(result.contextAssembly.metadata).toMatchObject({
-      retrievalRunId: "retrieval-1"
+      retrievalRunId: "retrieval-1",
+      sourceConsensusTimeline: expect.objectContaining({
+        currentSourceClaimIds: ["claim-trace"]
+      })
     });
+    const compiledPacket = decisionPacketForCompiledPlan(result);
+    expect(compiledPacket.sourceConsensus.timeline).toEqual(
+      result.contextAssembly.metadata.sourceConsensusTimeline
+    );
     expect(harnessRunRepository.contexts[0]?.id).toBe(result.contextAssembly.id);
     expect(retrievalRepository.storedSelection).toMatchObject({
       id: result.contextAssembly.id,
@@ -635,11 +642,16 @@ describe("compileHarnessPlan", () => {
       expect.objectContaining({
         retrievalRunId: "retrieval-1",
         status: "completed",
-        metadata: {
+        completedAt: now,
+        rawEvidenceRecallTriggerCount: 0,
+        metadata: expect.objectContaining({
           conflictCount: 0,
           exclusionCount: 0,
-          inclusionCount: 2
-        }
+          inclusionCount: 2,
+          sourceConsensusTimeline: expect.objectContaining({
+            currentSourceClaimIds: ["claim-trace"]
+          })
+        })
       })
     ]);
   });

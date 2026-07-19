@@ -16,6 +16,7 @@ import type {
   SourceClaimEdgeKind,
   SourceClaimAuthorityReason,
   SourceClaimAuthorityStatus,
+  SourceConsensusTimelineReadback,
   SourceDecisionTargetType,
   SourceUsefulnessOutcome,
   TaskContractStatus,
@@ -142,6 +143,7 @@ export interface DecisionPacketReadModelActivationCandidate {
   projectStandardDecision?: ProjectStandardDecisionReadback;
   sourceClaimEdgeInfluence?: DecisionPacketReadModelSourceClaimEdgeInfluence;
   sourceDecisionSupportBoost?: DecisionPacketReadModelSourceDecisionSupportBoost;
+  staleSourceDecisionIds?: string[];
   sourceRejectionIds?: string[];
   pendingAntiMemoryReview?: DecisionPacketReadModelPendingAntiMemoryReview;
 }
@@ -160,6 +162,7 @@ export interface DecisionPacketReadModelActivationDecision {
 
 export interface DecisionPacketReadModelActivationTrace {
   retrievalRunId: string;
+  sourceConsensusTimeline?: SourceConsensusTimelineReadback;
   candidates: DecisionPacketReadModelActivationCandidate[];
   decisions: DecisionPacketReadModelActivationDecision[];
 }

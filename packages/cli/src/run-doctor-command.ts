@@ -172,6 +172,26 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     databaseUrl: runtime.env.KRN_DATABASE_URL,
     evaluatorVersion: "doctor.v1"
   });
+  const activationProofFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "db-smoke:activation"
+  });
+  const targetRepoProofFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "db-smoke:targetRepoHarness"
+  });
+  const initConnectProofFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "db-smoke:initConnect"
+  });
+  const codexAdapterProofFingerprint = await collectEnvironmentFingerprint({
+    repoRoot,
+    databaseUrl: runtime.env.KRN_DATABASE_URL,
+    evaluatorVersion: "db-smoke:codexAdapter"
+  });
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
   const harnessPersistenceChecks = await checkHarnessPersistence(
@@ -206,20 +226,27 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
   const activationChecks = await checkActivation(
     repoRoot,
     runtime.env.KRN_DATABASE_URL,
-    postgresChecks
+    postgresChecks,
+    activationProofFingerprint.id
   );
   const codexAdapterChecks = await checkCodexAdapter(repoRoot);
   const codexAdapterRuntimeProofChecks = await checkCodexAdapterRuntimeProof(
     repoRoot,
     runtime.env.KRN_DATABASE_URL,
-    postgresChecks
+    postgresChecks,
+    codexAdapterProofFingerprint.id
   );
   const codexAdapterReadinessChecks = [
     ...codexAdapterChecks,
     ...codexAdapterRuntimeProofChecks
   ];
   const maintenanceQueueChecks = await checkMaintenanceQueue(repoRoot);
-  const targetRepoChecks = await checkTargetRepoReadiness(repoRoot);
+  const targetRepoChecks = await checkTargetRepoReadiness(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    targetRepoProofFingerprint.id,
+    initConnectProofFingerprint.id
+  );
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),

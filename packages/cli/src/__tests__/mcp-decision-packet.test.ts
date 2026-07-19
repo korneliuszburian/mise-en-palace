@@ -701,6 +701,20 @@ describe("DecisionPacket MCP wrapper", () => {
     }
   });
 
+  it("owns only read-only DecisionPacket transport, not evidence capture", async () => {
+    const listed = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "list-ownership",
+      method: "tools/list"
+    }, runtime());
+    const result = requiredRecord(requiredRecord(listed, "tools/list response")["result"], "tools/list result");
+    const tools = requiredArray(result["tools"], "tools/list tools");
+    const names = tools.map((tool) => requiredRecord(tool, "tool")["name"]);
+    expect(names).toContain("krn_decision_packet");
+    expect(names).not.toContain("krn_evidence_capture");
+    expect(names).not.toContain("krn_candidate_persist");
+  });
+
   it("advertises validated output schema with JSON text parity", async () => {
     const listed = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
@@ -1412,6 +1426,33 @@ describe("DecisionPacket MCP wrapper", () => {
       error: {
         code: -32602,
         message: "krn_decision_packet requires a non-empty runId argument"
+      }
+    });
+  });
+
+  it("accepts standard tools-call metadata without widening tool arguments", async () => {
+    const reply = await handleDecisionPacketMcpMessage({
+      jsonrpc: "2.0",
+      id: "call-with-meta",
+      method: "tools/call",
+      params: {
+        name: "krn_decision_packet",
+        arguments: {
+          runId: "run-agent-1"
+        },
+        _meta: {
+          progressToken: "codex-progress-1"
+        }
+      }
+    }, runtime(async () => ({ stdout: `${JSON.stringify(packetJson)}\n` })));
+
+    expect(reply).toMatchObject({
+      id: "call-with-meta",
+      result: {
+        isError: false,
+        structuredContent: {
+          kind: "krn.decisionPacketReadback.v1"
+        }
       }
     });
   });

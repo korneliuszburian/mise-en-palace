@@ -175,9 +175,16 @@ export interface DatabaseRuntime {
     | "getAntiMemoryCandidateById"
     | "promoteReviewedAntiMemoryCandidate"
     | "rejectAntiMemoryCandidate"
-  > & Partial<Pick<
+  > & {
+    getAuthorityUpgradePredecessorPreview?: (input: { memoryRecordId: string }) => Promise<{
+      memoryRecord: import("@krn/core").MemoryRecord;
+      memoryCandidate: import("@krn/core").MemoryCandidate;
+      fingerprint: string;
+    } | undefined>;
+  } & Partial<Pick<
     MemoryRepository,
     | "listActiveMemory"
+    | "applyReviewedMemoryRevision"
     | "proposeReviewedHelpedMemoryCandidateOnce"
     | "listMemoryCandidates"
     | "listAntiMemoryCandidates"

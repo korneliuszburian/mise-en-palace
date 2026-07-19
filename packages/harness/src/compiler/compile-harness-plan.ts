@@ -13,7 +13,9 @@ import {
   capabilityPlanToolBoundaries,
   capabilityPlanToolBoundariesMetadataKey,
   decisionPacketFormatVersion,
-  decisionPacketNegativePathsForContext
+  decisionPacketNegativePathsForContext,
+  parseMemorySupersessionTimelineReadback,
+  parseSourceConsensusTimelineReadback
 } from "@krn/core";
 import {
   applyContextROI,
@@ -148,6 +150,12 @@ export const decisionPacketForCompiledPlan = (
     contextInclusions,
     contextExclusions
   });
+  const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
+    result.contextAssembly.metadata["memorySupersessionTimeline"]
+  );
+  const sourceConsensusTimeline = parseSourceConsensusTimelineReadback(
+    result.contextAssembly.metadata["sourceConsensusTimeline"]
+  );
 
   return {
     formatVersion: decisionPacketFormatVersion,
@@ -199,8 +207,10 @@ export const decisionPacketForCompiledPlan = (
       sourceRejectionIds: [],
       conflictedDecisionIds: [],
       evidenceGapIds: [],
+      ...(sourceConsensusTimeline === undefined ? {} : { timeline: sourceConsensusTimeline }),
       doesNotProve: "A compile-time packet does not prove source truth or persisted authority."
     },
+    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
     abstentionScore: {
       status: "abstain",
       score: 0,
@@ -328,6 +338,8 @@ const startCompilerRetrievalRun = (
   metadata: {
     sourceQuery: retrieved.sourceQuery.text,
     activationRetrievalDiagnostics: retrieved.diagnostics,
+    sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
+    memorySupersessionTimeline: retrieved.memorySupersessionTimeline,
     ...targetReadModelMetadata(input, targetOwnerFileRecall)
   }
 });
@@ -390,7 +402,9 @@ const createPersistedContextAssembly = async (
     metadata: {
       retrievalRunId,
       conflictSets: conflictResult.conflictSets,
-      activationRetrievalDiagnostics: retrieved.diagnostics
+      activationRetrievalDiagnostics: retrieved.diagnostics,
+      sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
+      memorySupersessionTimeline: retrieved.memorySupersessionTimeline
     }
   });
 
@@ -476,6 +490,7 @@ export const compileHarnessPlan = async (
     retrievalRepository: dependencies.retrievalRepository,
     metadata: {
       conflictCount: conflictResult.conflictSets.length,
+      sourceConsensusTimeline: retrieved.sourceConsensusTimeline,
       ...targetReadModelMetadata(input, targetOwnerFileRecall)
     }
   });

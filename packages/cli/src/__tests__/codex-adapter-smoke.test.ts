@@ -20,7 +20,12 @@ describe("codexAdapterSmoke", () => {
       ],
       codexInvocationCount: 0,
       remainingMarkerCount: 0,
-      cleanedUp: true
+      cleanedUp: true,
+      commandStatus: "passed",
+      observationOnly: true,
+      sourceReadback: true,
+      memoryReadback: true,
+      nonMutatingBoundary: true
     });
 
     expect(output).toContain("KRN Codex Adapter Smoke");
@@ -30,6 +35,8 @@ describe("codexAdapterSmoke", () => {
       "Boundary checks: persisted-readback, rendered-contract, bounded-selected-context, stale-memory-exclusion, proof-boundaries, no-codex-invocation"
     );
     expect(output).toContain("Codex invocations: 0");
+    expect(output).toContain("Source readback: matched");
+    expect(output).toContain("Memory readback: matched");
     expect(output).toContain("Cleanup remaining marker count: 0");
     expect(output).toContain("Codex adapter smoke: passed");
   });

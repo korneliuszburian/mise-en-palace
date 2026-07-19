@@ -416,6 +416,10 @@ export const applySourceClaimEdgeRankDown = (
       continue;
     }
 
+    if (!edgeHasRelationSupport(edge)) {
+      continue;
+    }
+
     if (!rankDownAuthoritySourceClaimIds.has(edge.fromSourceClaimId)) {
       continue;
     }

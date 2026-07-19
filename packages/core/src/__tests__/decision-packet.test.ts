@@ -100,6 +100,10 @@ const readModel = {
       subjectType: "source_claim",
       subjectId: "claim-superseded",
       reason: "superseded"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "memory-stale",
+      reason: "stale"
     }],
     activationTrace: {
       candidates: [{
@@ -227,7 +231,8 @@ const readModel = {
 } satisfies DecisionPacketReadModelInput;
 
 const relationReadModel = (
-  missingRelationSupportEdgeIds: readonly string[]
+  missingRelationSupportEdgeIds: readonly string[],
+  includeRelationEvidenceGap = false
 ): DecisionPacketReadModelInput => ({
   run: {
     id: "run-relation-consensus",
@@ -281,7 +286,48 @@ const relationReadModel = (
       decisions: [{
         reason: "anti_memory_block",
         antiMemoryRecordId: "anti-memory-superseded-relation"
-      }]
+      }],
+      sourceConsensusTimeline: {
+        currentSourceClaimIds: ["claim-relation-current"],
+        caveatedSourceClaimIds: [],
+        historicalSourceClaimIds: ["claim-relation-old"],
+        staleSourceClaimIds: [],
+        supersededSourceClaimIds: ["claim-relation-old"],
+        unknownSourceClaimIds: [],
+        rejectedSourceClaimIds: [],
+        entries: [{
+          sourceClaimId: "claim-relation-current",
+          claim: "Use the supported relation.",
+          status: "accepted",
+          createdAt: now,
+          sourceAuthority: "project-decision",
+          authorityRank: 3,
+          temporalValidity: { status: "current" as const },
+          authorityState: "accepted",
+          state: "current_authority" as const,
+          decisionSupportEdgeIds: ["source-decision-edge-relation"],
+          evidenceRefs: ["evidence:relation-current"],
+          rawEvidenceCitationRefs: ["citation:relation-current"],
+          sourceRanges: [],
+          relationEvidence: includeRelationEvidenceGap ? [{
+            sourceClaimEdgeId: "edge-relation-missing-support",
+            direction: "incoming",
+            kind: "narrows",
+            relatedSourceClaimId: "claim-relation-old",
+            metadataEvidenceRefs: [],
+            sourceRanges: [],
+            evidenceGaps: ["missing_relation_support_ref"],
+            temporalValidity: { status: "current" }
+          }] : [],
+          supportingSourceClaimIds: [],
+          dissentingSourceClaimIds: [],
+          supersededBySourceClaimIds: [],
+          supersedesSourceClaimIds: ["claim-relation-old"],
+          rejectionIds: [],
+          caveats: []
+        }],
+        doesNotProve: "Timeline evidence does not prove source truth."
+      }
     }
   },
   evidenceBundles: [],
@@ -621,7 +667,7 @@ describe("DecisionPacket builder", () => {
     expect(packet.memoryRefs).toEqual(["memory-current"]);
     expect(packet.caveatedMemoryRefs).toEqual(["memory-current"]);
     expect(packet.staleDecisionIds).toEqual([]);
-    expect(packet.staleKnowledgeIds).toEqual([]);
+    expect(packet.staleKnowledgeIds).toEqual(["memory-stale"]);
     expect(packet.noiseKnowledgeIds).toEqual([]);
     expect(packet.unknownKnowledgeIds).toEqual([]);
     expect(packet.supersededPathIds).toEqual(["claim-superseded"]);
@@ -648,6 +694,43 @@ describe("DecisionPacket builder", () => {
         "caveated_memory_authority"
       ]
     });
+  });
+
+  it("keeps stale memory identity historical without promoting it into memoryRefs", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        exclusions: readModel.context.exclusions + 1,
+        exclusionDetails: [...(readModel.context.exclusionDetails ?? []), {
+          subjectType: "memory_record",
+          subjectId: "memory-stale-boundary",
+          reason: "stale"
+        }]
+      }
+    });
+
+    expect(packet.staleKnowledgeIds).toContain("memory-stale-boundary");
+    expect(packet.memoryRefs).not.toContain("memory-stale-boundary");
+    expect(packet.contextExclusions).toContainEqual(expect.objectContaining({
+      subjectId: "memory-stale-boundary",
+      reason: "stale"
+    }));
+
+    const invalidatedPacket = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        exclusions: readModel.context.exclusions + 1,
+        exclusionDetails: [...(readModel.context.exclusionDetails ?? []), {
+          subjectType: "memory_record",
+          subjectId: "memory-invalidated-boundary",
+          reason: "invalidated"
+        }]
+      }
+    });
+
+    expect(invalidatedPacket.staleKnowledgeIds).toContain("memory-invalidated-boundary");
   });
 
   it("exposes canonical selected SourceDecision ids", () => {
@@ -760,6 +843,36 @@ describe("DecisionPacket builder", () => {
       "source-decision-rejected-id",
       "source-decision-feedback-only-id"
     ]));
+  });
+
+  it("preserves persisted stale SourceDecision ids as historical packet boundaries", () => {
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        activationTrace: {
+          ...readModel.context.activationTrace,
+          candidates: [
+            ...(readModel.context.activationTrace?.candidates ?? []),
+            {
+              id: "candidate-stale-source",
+              kind: "source",
+              status: "excluded",
+              subjectType: "source_claim",
+              subjectId: "claim-stale-source",
+              sourceAuthority: "project-decision",
+              reason: "stale",
+              staleSourceDecisionIds: ["source-decision-historical"]
+            }
+          ]
+        }
+      }
+    });
+
+    expect(packet.staleDecisionIds).toEqual(["source-decision-historical"]);
+    expect(packet.sourceConsensus.staleDecisionIds).toEqual(["source-decision-historical"]);
+    expect(packet.governingDecisionIds).not.toContain("source-decision-historical");
+    expect(packet.sourceDecisionIds).not.toContain("source-decision-historical");
   });
 
   it("keeps project-scoped owner-file directives out of governing authority", () => {
@@ -1168,6 +1281,32 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("preserves relation evidence gaps in the bounded DecisionPacket timeline", () => {
+    const packet = buildDecisionPacketFromReadModel(relationReadModel([], true));
+
+    expect(packet.sourceConsensus.timeline?.entries[0]?.relationEvidence).toEqual([
+      expect.objectContaining({
+        sourceClaimEdgeId: "edge-relation-missing-support",
+        evidenceGaps: ["missing_relation_support_ref"]
+      })
+    ]);
+  });
+
+  it("carries the authoritative temporal consensus explanation into the packet", () => {
+    const packet = buildDecisionPacketFromReadModel(relationReadModel([]));
+
+    expect(packet.sourceConsensus.timeline?.entries[0]).toMatchObject({
+      sourceClaimId: "claim-relation-current",
+      createdAt: now,
+      decisionSupportEdgeIds: ["source-decision-edge-relation"],
+      evidenceRefs: ["evidence:relation-current"],
+      supersedesSourceClaimIds: ["claim-relation-old"]
+    });
+    expect(packet.sourceConsensus.timeline?.supersededSourceClaimIds).toEqual([
+      "claim-relation-old"
+    ]);
+  });
+
   it("abstains on unresolved accepted source dissent", () => {
     const packet = buildDecisionPacketFromReadModel(unresolvedAcceptedSourceDissentReadModel());
 
@@ -1414,6 +1553,26 @@ describe("DecisionPacket builder", () => {
 
     expect(packet.caveatedSourceClaimIds).toEqual(["claim-hurt"]);
     expect(packet.caveatedMemoryRefs).toEqual([]);
+    expect(packet.reviewOnlyUsefulnessCaveats).toEqual([
+      expect.objectContaining({
+        subjectType: "source_claim",
+        subjectId: "claim-hurt",
+        outcome: "hurt",
+        feedbackStatus: "accepted"
+      }),
+      expect.objectContaining({
+        subjectType: "source_decision",
+        subjectId: "source-decision-feedback-rejected",
+        outcome: "rejected",
+        feedbackStatus: "accepted"
+      }),
+      expect.objectContaining({
+        subjectType: "knowledge",
+        subjectId: "memory-hurt",
+        outcome: "hurt",
+        feedbackStatus: "accepted"
+      })
+    ]);
     expect(packet.rejectedPathIds).not.toContain("source-decision-feedback-rejected");
     expect(packet.sourceRejectionIds).toEqual([]);
     expect(packet.evidenceGaps.map((gap) => gap.id)).toEqual([
@@ -1494,6 +1653,14 @@ describe("DecisionPacket builder", () => {
     expect(first.returnChannels.feedback.sourceDecisionUsefulnessExample).toContain(
       "decision:<id>=selected"
     );
+    expect(first.packet.reviewOnlyUsefulnessCaveats).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectType: "knowledge",
+        subjectId: "memory-current",
+        outcome: "stale",
+        feedbackStatus: "accepted"
+      })
+    ]));
     expect(first.proof.doesNotProve).toContain("live Codex obedience");
     expect(replay.packetIdentity.checksum).toBe(first.packetIdentity.checksum);
     expect(second.packetIdentity.checksum).not.toBe(first.packetIdentity.checksum);

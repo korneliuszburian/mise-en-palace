@@ -7,6 +7,23 @@ into durable memory/source systems.
 This file defines shared language for operators and agents. It is not a roadmap,
 task list, scratchpad, runtime memory, or implementation plan.
 
+## Operational Gotcha Index
+
+These are stable, repo-local traps that have repeatedly caused false progress
+or invalid evidence. Read the matching detail before entering the workflow.
+The durable entries live in [`docs/CONTEXT_GOTCHAS.md`](docs/CONTEXT_GOTCHAS.md);
+this index stays short so it can be read every session.
+
+| Workflow | Read before acting | Core boundary |
+| --- | --- | --- |
+| Live Codex evaluation | [Auth and invocation](docs/CONTEXT_GOTCHAS.md#live-codex-auth-and-invocation) | Use the active Codex profile; a copied fixture auth file is not proof of current auth. |
+| Retained paired fixtures | [Fixture lifecycle](docs/CONTEXT_GOTCHAS.md#retained-fixture-lifecycle) | Retain only for capture, then run the guarded cleanup and verify zero owned rows. |
+| Trial interpretation | [Invalid versus quality outcome](docs/CONTEXT_GOTCHAS.md#trial-interpretation) | Missing obedience, capability, packet, or auth evidence is not a win/loss/tie. |
+| Trial chronology | [First trial versus rerun](docs/CONTEXT_GOTCHAS.md#first-trial-versus-rerun) | Report the original trial separately from reruns and harness debugging. |
+| Trial readback | [Aggregate and evidence identity](docs/CONTEXT_GOTCHAS.md#trial-readback) | New eval families and checker revisions must appear in aggregate and persistence readbacks before claims are reused. |
+| CLI argument forwarding | [Entrypoint arguments](docs/CONTEXT_GOTCHAS.md#entrypoint-arguments) | Verify what `pnpm` forwards before treating an argument failure as product behavior. |
+| Scope control | [Memory Core boundary](docs/CONTEXT_GOTCHAS.md#memory-core-boundary) | Improve governed context/evidence; do not grow an operator/executor platform without a consumer falsifier. |
+
 ## Language
 
 **KRN**:

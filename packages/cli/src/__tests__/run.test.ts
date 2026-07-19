@@ -32,7 +32,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn run show --run-id <execution-run-id> [--json]");
+    expect(result.stdout).toContain("krn run show --run-id <execution-run-id> [--json]");
     expect(result.stdout).toContain("requires: KRN_DATABASE_URL and a persisted execution run");
     expect(result.stdout).toContain("verify DB first: pnpm db:migrate && pnpm db:ready");
   });
@@ -104,11 +104,11 @@ describe("runCli", () => {
       },
       {
         args: ["run", "--help"],
-        usage: "Usage: krn run show"
+        usage: "krn run show --run-id"
       },
       {
         args: ["run", "-h"],
-        usage: "Usage: krn run show"
+        usage: "krn run show --run-id"
       },
       {
         args: ["decision", "--help"],
@@ -311,4 +311,51 @@ describe("runCli", () => {
     expect(stdout).toEqual([]);
     expect(stderr.join("")).toBe("KRN CLI failed: simulated entrypoint failure\n");
   });
+
+  it("renders candidate scope failures as non-retryable remediation", async () => {
+    const stderr: string[] = [];
+    const exitCode = await runCliEntrypoint(
+      [],
+      { env: {}, now: () => now, createId: (prefix) => `${prefix}-1` },
+      { stdout: { write: () => undefined }, stderr: { write: (chunk) => { stderr.push(chunk); } } },
+      async () => {
+        const error = new Error("Candidate project scope does not match execution project: eval candidate-1") as Error & { code: string };
+        error.code = "candidate_project_scope";
+        throw error;
+      }
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr.join("")).toContain("candidate_project_scope (disposition=permanent, non-retryable)");
+    expect(stderr.join("")).toContain("do not retry unchanged input");
+  });
+
+  it("does not mislabel transient database failures as permanent", async () => {
+    const stderr: string[] = [];
+    const exitCode = await runCliEntrypoint(
+      [],
+      { env: {}, now: () => now, createId: (prefix) => `${prefix}-1` },
+      { stdout: { write: () => undefined }, stderr: { write: (chunk) => { stderr.push(chunk); } } },
+      async () => { throw new Error("postgres connection timeout"); }
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr.join("")).toContain("postgres connection timeout");
+    expect(stderr.join("")).not.toContain("disposition=permanent");
+  });
+
+  it("renders transient handoff through the real evidence capture CLI dispatch", async () => {
+    const result = await runCli(["evidence", "capture", "--persist", "--run-id", "run-transient-1"], {
+      env: { KRN_DATABASE_URL: "postgres://unused" },
+      cwd: process.cwd(),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => {
+        throw new Error("postgres connection timeout");
+      }
+    });
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("evidence_capture (disposition=transient, retryable)");
+    expect(result.stderr).toContain("keep candidate input unchanged");
+    expect(result.stderr).not.toContain("disposition=permanent");
+  }, 20000);
 });

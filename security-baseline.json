@@ -28,6 +28,18 @@
       "reason": "The fixture contains a deliberately fake secret-shaped value to prove Beads history rejection; it is not a credential."
     },
     {
+      "path": "packages/cli/src/__tests__/candidate-batch-scope.test.ts",
+      "pattern": "secret-shaped assignment",
+      "matchSha256": "5eea076048a31b5d20fe718a5c055cd204d039f638fe50b7a33d5e48bc86528a",
+      "reason": "Historical PR-range test code contained a synthetic fake metadata leak sentinel; the working tree now avoids the secret-shaped assignment and this hash is not a credential."
+    },
+    {
+      "path": "packages/cli/src/__tests__/paired-command-evidence.test.ts",
+      "pattern": "secret-shaped assignment",
+      "matchSha256": "9d520b4b24d2b73e357642fb43b4a966a6de5d19c608bb56e927792401cb1125",
+      "reason": "Historical paired-command test code contained a synthetic fake output-redaction sentinel; the working tree uses a non-secret-shaped marker and this hash is not a credential."
+    },
+    {
       "path": "packages/cli/src/__tests__/security-policy.test.ts",
       "pattern": "AWS access key",
       "matchSha256": "743554670c6065b3f7f13ac4f07e392f977b3556ceb7457411633c454bcbece8",

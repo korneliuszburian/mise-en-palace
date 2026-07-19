@@ -11,6 +11,7 @@ import {
 import type {
   DecisionPacketAuthorization,
   DecisionPacketBinding,
+  DecisionPacketContractReadback,
   CommandOutputArtifact,
   DiffRisk,
   EvalCandidateProposal,
@@ -30,6 +31,7 @@ import type {
 import {
   authorizeDecisionPacketBinding,
   authorizeDecisionPacketUsefulness,
+  authorizeIssuedDecisionPacketUsefulness,
   assessCurrentDecisionPacketHelpedProof,
   assessCandidateReviewability,
   canonicalTargetRepoPath,
@@ -230,9 +232,11 @@ const sourceDecisionCandidatesForCapture = (
 const memoryCandidateProposalsForCapture = (
   proposals: readonly MemoryCandidateProposal[],
   captureIdentity: string,
-  stableTimestamp: string
+  stableTimestamp: string,
+  projectId: string
 ): MemoryCandidateProposal[] => proposals.map((proposal, index) => ({
   ...proposal,
+  projectId,
   id: `memory-candidate-proposal-${captureIdentity}-${index + 1}`,
   createdAt: stableTimestamp,
   updatedAt: stableTimestamp
@@ -246,8 +250,9 @@ interface EvidencePersistenceCounts {
   targetEvidencePresent: boolean;
 }
 
-interface MemoryCandidateProposal {
+export interface MemoryCandidateProposal {
   id: string;
+  projectId?: string;
   kind: MemoryCandidate["kind"];
   status: MemoryCandidate["status"];
   summary: string;
@@ -260,6 +265,112 @@ interface MemoryCandidateProposal {
   updatedAt: string;
   metadata: Record<string, unknown>;
 }
+
+export class CandidateProjectScopeError extends Error {
+  readonly code = "candidate_project_scope" as const;
+  readonly retryable = false as const;
+  readonly handoff: {
+    readonly kind: "krn.candidateScopeFailure.v1";
+    readonly candidateLabels: readonly string[];
+    readonly remediation: string;
+    readonly doesNotProve: readonly string[];
+  };
+
+  constructor(candidateLabels: readonly string[]) {
+    super(`Candidate project scope does not match execution project: ${candidateLabels.join(", ")}`);
+    this.name = "CandidateProjectScopeError";
+    this.handoff = {
+      kind: "krn.candidateScopeFailure.v1",
+      candidateLabels: [...candidateLabels],
+      remediation: "Align candidate project scope with the execution project and submit a new capture.",
+      doesNotProve: [
+        "source truth",
+        "candidate usefulness",
+        "product readiness"
+      ]
+    };
+  }
+}
+
+export type EvidenceCaptureErrorDisposition = "permanent" | "transient" | "unknown";
+
+const transientInfrastructureErrorCodes = new Set([
+  "EADDRNOTAVAIL",
+  "ECONNABORTED",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "CONNECT_TIMEOUT",
+  "CONNECTION_CLOSED"
+]);
+
+export const classifyEvidenceCaptureError = (error: unknown): EvidenceCaptureErrorDisposition => {
+  if (error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope" && !error.retryable) {
+    return "permanent";
+  }
+  if (error instanceof Error) {
+    const code = "code" in error && typeof error.code === "string" ? error.code : undefined;
+    if (code !== undefined && transientInfrastructureErrorCodes.has(code)) {
+      return "transient";
+    }
+    if (/\b(?:timeout|timed out)\b/i.test(error.message) ||
+        /\bconnection\s+(?:refused|reset|aborted|closed|lost)\b/i.test(error.message)) {
+      return "transient";
+    }
+  }
+  return "unknown";
+};
+
+export const formatEvidenceCaptureError = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : "Unknown evidence capture error";
+  const sentence = message.endsWith(".") ? message : `${message}.`;
+  const disposition = classifyEvidenceCaptureError(error);
+
+  if (disposition === "permanent" && error instanceof CandidateProjectScopeError && error.code === "candidate_project_scope") {
+    return [
+      `candidate_project_scope (disposition=permanent, non-retryable): ${sentence}`,
+      `Candidates: ${error.handoff.candidateLabels.join(", ")}.`,
+      `Remediation: ${error.handoff.remediation} Do not retry unchanged input.`
+    ].join(" ");
+  }
+
+  if (disposition === "transient") {
+    return [
+      `evidence_capture (disposition=transient, retryable): ${sentence}`,
+      "Remediation: Retry the capture after the infrastructure recovers; keep candidate input unchanged.",
+      "Does not prove: source truth, candidate usefulness, or product readiness."
+    ].join(" ");
+  }
+
+  return [
+    `evidence_capture (disposition=unknown, retryable=undetermined): ${sentence}`,
+    "Remediation: Inspect and classify the failure before retrying; keep candidate input unchanged.",
+    "Does not prove: source truth, candidate usefulness, or product readiness."
+  ].join(" ");
+};
+
+export const assertCandidateBatchProjectScope = (input: {
+  readonly projectId: string;
+  readonly sourceDecisionCandidates: readonly SourceDecision[];
+  readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
+  readonly evalCandidateProposals: readonly EvalCandidateProposal[];
+}): void => {
+  const foreign = [
+    ...input.sourceDecisionCandidates
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `source decision ${candidate.id}`),
+    ...input.memoryCandidateProposals
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `memory candidate ${candidate.id}`),
+    ...input.evalCandidateProposals
+      .filter((candidate) => candidate.projectId !== undefined && candidate.projectId !== input.projectId)
+      .map((candidate) => `eval candidate ${candidate.id}`)
+  ];
+  if (foreign.length > 0) {
+    throw new CandidateProjectScopeError(foreign);
+  }
+};
 
 const candidateReviewabilityDoesNotProve =
   "This reviewability classification does not approve, promote, or persist the candidate as Memory Core truth.";
@@ -1011,7 +1122,8 @@ const usefulnessEvidenceClassFor = (input: {
       input.commandOutputArtifacts.map((artifact) => [artifact.outputRef, artifact])
     ),
     verificationCommands: input.commands.filter((command) =>
-      command.kind === "command_runner" && target?.commands.includes(command.command) === true
+      (command.kind === "command_runner" || command.kind === "captured_output_file") &&
+      target?.commands.includes(command.command) === true
     )
   };
 };
@@ -1028,8 +1140,9 @@ const verificationFollowsApplication = (input: {
     input.evidenceClass.requiredVerificationCommands.every((requiredCommand) =>
       input.evidenceClass.verificationCommands.some((command) =>
         command.command === requiredCommand &&
-        command.kind === "command_runner" &&
+        (command.kind === "command_runner" || command.kind === "captured_output_file") &&
         command.outputRef !== undefined &&
+        command.capturedAt !== undefined &&
         Date.parse(
           input.evidenceClass.verificationArtifactsByRef.get(command.outputRef)?.startedAt ?? ""
         ) > Date.parse(appliedAt) &&
@@ -1246,32 +1359,125 @@ interface EvidenceCapturePacketBinding {
   readonly binding: DecisionPacketBinding | undefined;
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuedPacket: DecisionPacketContractReadback | undefined;
 }
 
-const packetBindingForEvidenceCapture = (input: {
+const issuedDecisionPacketForEvidenceCapture = async (input: {
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+  readonly repository: DatabaseRuntime["harnessRunRepository"];
+  readonly runId: string;
+}): Promise<DecisionPacketContractReadback | undefined> => {
+  if (input.callerPacketChecksum === undefined && input.callerPacketGeneratedAt === undefined) {
+    return undefined;
+  }
+
+  const getIssuedPacket = input.repository.getIssuedDecisionPacketForExecutionRun;
+
+  if (getIssuedPacket === undefined) {
+    return undefined;
+  }
+
+  return getIssuedPacket.call(input.repository, input.runId);
+};
+
+const issuedPacketAuthorizationForEvidenceCapture = (input: {
+  readonly aggregate: HarnessRunAggregate;
+  readonly callerPacketChecksum: string | undefined;
+  readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuance: DecisionPacketContractReadback | undefined;
+  readonly runId: string;
+  readonly runtimeProjectId: string;
+}): DecisionPacketAuthorization | undefined => input.issuance === undefined
+  ? undefined
+  : authorizeIssuedDecisionPacketUsefulness({
+      aggregate: input.aggregate,
+      issuance: input.issuance,
+      runId: input.runId,
+      runtimeProjectId: input.runtimeProjectId,
+      ...callerPacketBinding(input),
+      callerSourceRunLifecycleRevision:
+        input.issuance.packetIdentity.sourceRunLifecycleRevision,
+      subjects: []
+    });
+
+const selectEvidenceCaptureAuthorization = (input: {
+  readonly currentAuthorization: DecisionPacketAuthorization | undefined;
+  readonly issuedAuthorization: DecisionPacketAuthorization | undefined;
+}): DecisionPacketAuthorization | undefined => {
+  if (input.currentAuthorization?.authorized === true) {
+    return input.currentAuthorization;
+  }
+
+  if (input.issuedAuthorization?.authorized === true) {
+    return input.issuedAuthorization;
+  }
+
+  return input.currentAuthorization ?? input.issuedAuthorization;
+};
+
+const selectedIssuedPacketForEvidenceCapture = (input: {
+  readonly authorization: DecisionPacketAuthorization | undefined;
+  readonly issuedAuthorization: DecisionPacketAuthorization | undefined;
+  readonly issuance: DecisionPacketContractReadback | undefined;
+}): DecisionPacketContractReadback | undefined => {
+  if (input.authorization !== input.issuedAuthorization) {
+    return undefined;
+  }
+
+  return input.issuedAuthorization?.authorized === true ? input.issuance : undefined;
+};
+
+const packetBindingForEvidenceCapture = async (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly decisionPacketChecksum: string | undefined;
   readonly decisionPacketGeneratedAt: string | undefined;
+  readonly repository: DatabaseRuntime["harnessRunRepository"];
   readonly runId: string;
   readonly runtimeProjectId: string;
-}): EvidenceCapturePacketBinding => {
+}): Promise<EvidenceCapturePacketBinding> => {
   const callerPacketChecksum = normalizeDecisionPacketChecksum(input.decisionPacketChecksum);
   const callerPacketGeneratedAt = normalizeDecisionPacketGeneratedAt(
     input.decisionPacketGeneratedAt
   );
-  const authorization = packetAuthorizationForEvidenceCapture({
+  const currentAuthorization = packetAuthorizationForEvidenceCapture({
     aggregate: input.aggregate,
     callerPacketChecksum,
     callerPacketGeneratedAt,
     runId: input.runId,
     runtimeProjectId: input.runtimeProjectId
   });
+  const issuance = currentAuthorization?.authorized === true
+    ? undefined
+    : await issuedDecisionPacketForEvidenceCapture({
+        callerPacketChecksum,
+        callerPacketGeneratedAt,
+        repository: input.repository,
+        runId: input.runId
+      });
+  const issuedAuthorization = issuedPacketAuthorizationForEvidenceCapture({
+    aggregate: input.aggregate,
+    callerPacketChecksum,
+    callerPacketGeneratedAt,
+    issuance,
+    runId: input.runId,
+    runtimeProjectId: input.runtimeProjectId
+  });
+  const authorization = selectEvidenceCaptureAuthorization({
+    currentAuthorization,
+    issuedAuthorization
+  });
 
   return {
     authorization,
     binding: authorization?.authorized === true ? authorization : undefined,
     callerPacketChecksum,
-    callerPacketGeneratedAt
+    callerPacketGeneratedAt,
+    issuedPacket: selectedIssuedPacketForEvidenceCapture({
+      authorization,
+      issuedAuthorization,
+      issuance
+    })
   };
 };
 
@@ -1331,6 +1537,7 @@ const prepareUsefulnessOutcomes = (input: {
   readonly aggregate: HarnessRunAggregate;
   readonly callerPacketChecksum: string | undefined;
   readonly callerPacketGeneratedAt: string | undefined;
+  readonly issuedPacket: DecisionPacketContractReadback | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly packetAuthorization: DecisionPacketAuthorization | undefined;
   readonly runId: string;
@@ -1343,14 +1550,25 @@ const prepareUsefulnessOutcomes = (input: {
   });
   const authorization = input.packetAuthorization?.authorized === false || usefulnessSubjects.length === 0
     ? input.packetAuthorization
-    : authorizeDecisionPacketUsefulness({
-        aggregate: input.aggregate,
-        runId: input.runId,
-        runtimeProjectId: input.runtimeProjectId,
-        sha256Hex,
-        ...callerPacketBinding(input),
-        subjects: usefulnessSubjects
-      });
+    : input.issuedPacket === undefined
+      ? authorizeDecisionPacketUsefulness({
+          aggregate: input.aggregate,
+          runId: input.runId,
+          runtimeProjectId: input.runtimeProjectId,
+          sha256Hex,
+          ...callerPacketBinding(input),
+          subjects: usefulnessSubjects
+        })
+      : authorizeIssuedDecisionPacketUsefulness({
+          aggregate: input.aggregate,
+          issuance: input.issuedPacket,
+          runId: input.runId,
+          runtimeProjectId: input.runtimeProjectId,
+          ...callerPacketBinding(input),
+          callerSourceRunLifecycleRevision:
+            input.issuedPacket.packetIdentity.sourceRunLifecycleRevision,
+          subjects: usefulnessSubjects
+        });
   const downgradeUnauthorized = <T extends {
     readonly outcome: SourceUsefulnessOutcomeFeedback["outcome"];
     readonly reason: string;
@@ -1658,17 +1876,15 @@ const buildPersistedEvidenceIdentity = (input: {
     sourceOutcomes,
     knowledgeOutcomes
   });
-  const applications = input.atomicResult.created
-    ? [
-        ...input.applications,
-        ...persistedOutcomeApplications.filter((outcomeApplication) =>
-          !input.applications.some((application) =>
-            application.applicationId === outcomeApplication.applicationId &&
-            application.appliedAt === outcomeApplication.appliedAt
-          )
-        )
-      ]
-    : persistedOutcomeApplications;
+  const applications = [
+    ...input.applications,
+    ...persistedOutcomeApplications.filter((outcomeApplication) =>
+      !input.applications.some((application) =>
+        application.applicationId === outcomeApplication.applicationId &&
+        application.appliedAt === outcomeApplication.appliedAt
+      )
+    )
+  ];
 
   return {
     captureIdentity: input.captureIdentity,
@@ -1876,7 +2092,7 @@ const evidenceFeedbackOnceInputForCapture = (input: {
   readonly evidence: CreateEvidenceBundleInput;
   readonly evalCandidateProposals: readonly EvalCandidateProposal[];
   readonly memoryCandidates: readonly MemoryCandidate[];
-  readonly packet: ReturnType<typeof packetBindingForEvidenceCapture>;
+  readonly packet: EvidenceCapturePacketBinding;
   readonly persistedSourceDecisionCandidates: readonly SourceDecision[];
   readonly projectId: string;
   readonly runId: string;
@@ -1974,10 +2190,17 @@ const persistEvidenceCapture = async (
 
     const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
     const projectId = evidenceCaptureProjectIdFor(aggregate, databaseRuntime.projectId);
-    const packet = packetBindingForEvidenceCapture({
+    assertCandidateBatchProjectScope({
+      projectId,
+      sourceDecisionCandidates,
+      memoryCandidateProposals,
+      evalCandidateProposals
+    });
+    const packet = await packetBindingForEvidenceCapture({
       aggregate,
       decisionPacketChecksum: runtime.decisionPacketChecksum,
       decisionPacketGeneratedAt: runtime.decisionPacketGeneratedAt,
+      repository: databaseRuntime.harnessRunRepository,
       runId,
       runtimeProjectId: projectId
     });
@@ -2003,12 +2226,17 @@ const persistEvidenceCapture = async (
     const persistedMemoryCandidateProposals = memoryCandidateProposalsForCapture(
       memoryCandidateProposals,
       captureIdentity,
-      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt
+      packet.callerPacketGeneratedAt ?? aggregate.executionRun.createdAt,
+      projectId
     );
+    if (persistedMemoryCandidateProposals.some((candidate) => candidate.projectId !== projectId)) {
+      throw new Error("Memory candidate project scope does not match execution project");
+    }
     const usefulness = prepareUsefulnessOutcomes({
       aggregate,
       callerPacketChecksum: packet.callerPacketChecksum,
       callerPacketGeneratedAt: packet.callerPacketGeneratedAt,
+      issuedPacket: packet.issuedPacket,
       knowledgeUsefulnessOutcomes,
       packetAuthorization: packet.authorization,
       runId,
@@ -2080,7 +2308,8 @@ const persistEvidenceCapture = async (
         persistedSourceDecisionCandidates,
         projectId,
         runId,
-        sourceRunLifecycleRevision: aggregate.executionRun.lifecycleRevision,
+        sourceRunLifecycleRevision:
+          packet.binding?.sourceRunLifecycleRevision ?? aggregate.executionRun.lifecycleRevision,
         sourceUsefulnessOutcomes,
         knowledgeUsefulnessOutcomes,
         environmentFingerprint
@@ -2121,7 +2350,7 @@ const applicationTargetEvidence = async (
   const changedFiles = snapshot.changedPaths.map((changedPath) => ({
     status: claimedFiles.get(changedPath)?.status ?? "??",
     path: changedPath,
-    ownership: claimedFiles.get(changedPath)?.ownership ?? "unknown"
+    ownership: claimedFiles.get(changedPath)?.ownership ?? targetEvidence.ownedChanges ?? "unknown"
   }));
 
   return normalizeTargetEvidence({

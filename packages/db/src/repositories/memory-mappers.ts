@@ -102,12 +102,15 @@ const memoryCandidateAuthorityRefs = (
   item: MemoryCandidateJson
 ): Pick<
   MemoryCandidate,
-  "executionRunId" | "feedbackDeltaId" | "reviewAssessmentId" | "usefulnessApplicationId"
+  "executionRunId" | "feedbackDeltaId" | "reviewAssessmentId" | "revisionReviewAssessmentId" | "usefulnessApplicationId"
 > => ({
   ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
   ...(typeof item.feedbackDeltaId === "string" ? { feedbackDeltaId: item.feedbackDeltaId } : {}),
   ...(typeof item.reviewAssessmentId === "string"
     ? { reviewAssessmentId: item.reviewAssessmentId }
+    : {}),
+  ...(typeof item.revisionReviewAssessmentId === "string"
+    ? { revisionReviewAssessmentId: item.revisionReviewAssessmentId }
     : {}),
   ...(typeof item.usefulnessApplicationId === "string"
     ? { usefulnessApplicationId: item.usefulnessApplicationId }
@@ -278,6 +281,9 @@ export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => 
     ...(row.reviewAssessmentId === null
       ? {}
       : { reviewAssessmentId: row.reviewAssessmentId }),
+    ...(row.revisionReviewAssessmentId === null
+      ? {}
+      : { revisionReviewAssessmentId: row.revisionReviewAssessmentId }),
     ...(row.usefulnessApplicationId === null
       ? {}
       : { usefulnessApplicationId: row.usefulnessApplicationId }),

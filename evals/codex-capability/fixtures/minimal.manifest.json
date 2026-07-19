@@ -1,0 +1,72 @@
+{
+  "kind": "krn.codexCapabilityEvalManifest.v1",
+  "id": "weak-json-boundary-001",
+  "question": "Does KRN Memory Core context improve the same Codex model on a matched target-repo repair task?",
+  "target": {
+    "repoPath": "tests/fixtures/target-repos/weak-json-boundary-typescript",
+    "commit": "028ee980a7167855bafd3f8beb3e388fb3529bad",
+    "taskId": "weak-json-boundary",
+    "prompt": "Repair the target repository so invalid JSON and invalid input are handled through explicit result states, preserving strict TypeScript boundaries.",
+    "timeoutMs": 240000
+  },
+  "codex": {
+    "command": "codex",
+    "execBaseArgs": ["exec", "--json", "--ephemeral", "--ignore-rules", "--sandbox", "workspace-write"],
+    "model": "gpt-5.6-sol"
+  },
+  "arms": {
+    "baseline": {
+      "profile": {
+        "name": "plain-codex-eval",
+        "configPath": "evals/codex-capability/profiles/plain-codex-eval.config.toml"
+      },
+      "capabilities": {
+        "mcpServers": [],
+        "skills": []
+      }
+    },
+    "krn": {
+      "profile": {
+        "name": "krn-codex-eval",
+        "configPath": "evals/codex-capability/profiles/krn-codex-eval.config.toml"
+      },
+      "capabilities": {
+        "mcpServers": [
+          {
+            "id": "krn_decision_packet",
+            "transport": "stdio",
+            "readOnly": true
+          }
+        ],
+        "skills": [
+          {
+            "name": "krn-memory-core",
+            "path": ".agents/skills/krn-memory-core/SKILL.md"
+          }
+        ]
+      }
+    }
+  },
+  "graders": [
+    {
+      "id": "target-public-seam",
+      "kind": "deterministic_command",
+      "command": "pnpm",
+      "args": ["test"],
+      "proves": "target public tests pass for the repaired behavior",
+      "doesNotProve": "broad product readiness or human-quality review"
+    },
+    {
+      "id": "strict-typescript",
+      "kind": "deterministic_command",
+      "command": "pnpm",
+      "args": ["typecheck"],
+      "proves": "target TypeScript contract compiles under strict settings",
+      "doesNotProve": "runtime behavior beyond compiled paths"
+    }
+  ],
+  "usage": {
+    "source": "codex_exec_json",
+    "requireComparable": true
+  }
+}

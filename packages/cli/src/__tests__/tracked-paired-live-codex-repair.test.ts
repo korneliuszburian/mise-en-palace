@@ -3,11 +3,25 @@ import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs
 import { tmpdir } from "node:os";
 import { delimiter, dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import {
+  decisionPacketReadModelDoesNotProve
+} from "@krn/core";
 
 import {
   buildTrackedTrialArtifact,
+  codexCapabilityConfigArgs,
+  capabilityUseFalsifierReasons,
+  observeCodexCapabilityUse,
   hashTree,
+  extractLiveCodexObedienceOutput,
+  inspectLiveCodexObedienceOutput,
+  parseLiveCodexObedienceOutputJson,
+  readMcpStructuredContent,
+  validateLiveCodexObedienceOutputAgainstPacket,
   parseTrackedTrialManifest,
+  observeSourceCommands,
+  promptPacketForContext,
+  parseTrackedTrialCommandArguments,
   readTrackedTrialArtifact,
   runTrackedPairedTrial,
   runTrackedTrialCommand,
@@ -15,15 +29,146 @@ import {
   verifyTrackedTrialArtifact,
   type PairedTrialManifest
 } from "../internal/eval/tracked-paired-live-codex-repair.js";
-import type {
-  CommandResult,
-  HeldOutArmScore,
-  PairedRepairScore
+import {
+  parseRetainedFixtureReport
+} from "../internal/eval/cleanup-retained-paired-live-fixture.js";
+import {
+  liveCodexObedienceMarker,
+  type CommandResult,
+  type HeldOutArmScore,
+  type PairedRepairScore
 } from "../internal/eval/paired-live-codex-repair.js";
 
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 
 const profileConfig = "model = \"gpt-5.6-sol\"\n";
+
+describe("Codex capability profiles", () => {
+  it("keeps the baseline empty and emits only declared KRN config overrides", () => {
+    expect(codexCapabilityConfigArgs({ mode: "baseline", mcpServers: [], skillPaths: [] })).toEqual([
+      "--config",
+      "skills.config=[]"
+    ]);
+    expect(codexCapabilityConfigArgs({
+      mode: "krn",
+      mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio", "--read-only"], envVars: ["KRN_DATABASE_URL"] }],
+      skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+    })).toEqual([
+      "--config",
+      "mcp_servers.krn_decision_packet.command=\"/bin/krn-mcp\"",
+      "--config",
+      "mcp_servers.krn_decision_packet.args=[\"stdio\",\"--read-only\"]",
+      "--config",
+      "mcp_servers.krn_decision_packet.enabled=true",
+      "--config",
+      "mcp_servers.krn_decision_packet.env_vars=[\"KRN_DATABASE_URL\"]",
+      "--config",
+      "skills.config=[{path=\"/home/krn/skills/krn-memory-core/SKILL.md\",enabled=true}]"
+    ]);
+  });
+
+  it("counts only structured capability events, never prose mentions", () => {
+    expect(observeCodexCapabilityUse({ stdout: [
+      "I used the mcp_tool_call skill.",
+      JSON.stringify({ type: "mcp_tool_call", name: "krn_decision_packet" }),
+      JSON.stringify({ item: { type: "skill_loaded", path: "SKILL.md" } })
+    ].join("\n") })).toEqual({ mcpToolCallEvents: 1, skillEvents: 1 });
+    expect(capabilityUseFalsifierReasons({
+      baseline: { mcpToolCallEvents: 0, skillEvents: 0 },
+      krn: { mcpToolCallEvents: 1, skillEvents: 0 }
+    })).toEqual([]);
+    expect(capabilityUseFalsifierReasons({
+      baseline: { mcpToolCallEvents: 1, skillEvents: 0 },
+      krn: { mcpToolCallEvents: 0, skillEvents: 0 }
+    })).toEqual([
+      "baseline emitted a configured KRN capability-use event",
+      "KRN emitted no configured capability-use event"
+    ]);
+  });
+
+  it("ignores generic host MCP discovery when configured capability names are supplied", () => {
+    expect(observeCodexCapabilityUse({ stdout: [
+      JSON.stringify({ type: "mcp_tool_call", server: "codex", tool: "list_mcp_resources" }),
+      JSON.stringify({ type: "mcp_tool_call", server: "krn_decision_packet", tool: "read" })
+    ].join("\n") }, ["krn_decision_packet"], false)).toEqual({
+      mcpToolCallEvents: 1,
+      skillEvents: 0,
+      genericMcpToolCallEvents: 1,
+      genericSkillEvents: 0
+    });
+  });
+});
+
+describe("packet context ablation", () => {
+  it("keeps packet identity and task while removing decision context", () => {
+    const packet = {
+      packetIdentity: { checksum: "a".repeat(64) },
+      packet: {
+        task: { id: "task-1", projectId: "project-1" },
+        contextInclusions: [{ subjectId: "decision-1" }],
+        contextExclusions: [{ subjectId: "decision-2" }],
+        governingDecisionIds: ["decision-1"],
+        sourceDecisionIds: ["source-1"],
+        governingStatements: ["use decision-1"],
+        sourceClaimIds: ["claim-1"],
+        taskStandardDecisions: [{ id: "decision-1" }],
+        sourceConsensus: { status: "current" },
+        sourceConsensusTimeline: { status: "current" },
+        memoryConsensusTimeline: { status: "current" }
+      }
+    };
+
+    expect(promptPacketForContext(packet, "full")).toBe(packet);
+    expect(promptPacketForContext(packet, "task-only")).toEqual({
+      packetIdentity: packet.packetIdentity,
+      packet: { task: packet.packet.task }
+    });
+  });
+});
+
+describe("MCP packet readback", () => {
+  it("accepts a JSON packet carried in text content when structuredContent is absent", () => {
+    const packet = { kind: "krn.decisionPacketReadback.v1", packet: { task: { id: "task-1" } } };
+    const stdout = [
+      "pnpm warning",
+      JSON.stringify({ jsonrpc: "2.0", id: 2, result: { content: [{ type: "text", text: JSON.stringify(packet) }] } })
+    ].join("\n");
+
+    expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
+  });
+
+  it("ignores terminal prefixes before the JSON-RPC response", () => {
+    const packet = { kind: "krn.decisionPacketReadback.v1" };
+    const stdout = `\u001b[1;32m${JSON.stringify({ jsonrpc: "2.0", id: 2, result: { structuredContent: packet } })}`;
+
+    expect(readMcpStructuredContent(stdout, 2)).toEqual(packet);
+  });
+});
+
+describe("tracked trial command arguments", () => {
+  it("accepts direct args and pnpm separator args at the entrypoint boundary", () => {
+    expect(parseTrackedTrialCommandArguments(["manifests/trial.json", ".local-lab/attempt-1"])).toEqual({
+      manifestPath: "manifests/trial.json",
+      attemptDirectory: ".local-lab/attempt-1"
+    });
+    expect(parseTrackedTrialCommandArguments(["--", "manifests/trial.json", ".local-lab/attempt-1"])).toEqual({
+      manifestPath: "manifests/trial.json",
+      attemptDirectory: ".local-lab/attempt-1"
+    });
+  });
+});
+
+describe("trial source preflight", () => {
+  it("requires both test and typecheck scripts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-source-preflight-"));
+    try {
+      await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "pnpm test" } }), "utf8");
+      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
 
 const manifest: PairedTrialManifest = {
   kind: "krn.pairedLiveCodexRepairManifest.v1",
@@ -82,6 +227,61 @@ const manifest: PairedTrialManifest = {
   checker: { heldOut: true, outcome: "win|tie|loss|invalid" }
 };
 
+describe("preregistered memory treatments", () => {
+  it("accepts named treatment labels and rejects unregistered labels", () => {
+    expect(parseTrackedTrialManifest({ ...manifest, treatment: "semantic_governed" }).treatment)
+      .toBe("semantic_governed");
+    expect(() => parseTrackedTrialManifest({ ...manifest, treatment: "opaque_memory" }))
+      .toThrow("Invalid tracked paired-trial manifest");
+  });
+
+  it("requires explicit manifest opt-in for weak-context packet trials", () => {
+    const weakPacket = {
+      ...packet,
+      packet: {
+        ...packet.packet,
+        abstentionScore: { status: "weak_context" }
+      }
+    };
+
+    expect(validateTrialPacket(weakPacket, manifest).valid).toBe(false);
+    expect(validateTrialPacket(weakPacket, {
+      ...manifest,
+      packetReadiness: "weak_context"
+    }).valid).toBe(true);
+  });
+});
+
+describe("retained paired fixture identity", () => {
+  it("rejects missing or ambiguous cleanup identities", () => {
+    expect(() => parseRetainedFixtureReport({})).toThrow("missing or ambiguous");
+    expect(() => parseRetainedFixtureReport({
+      smokeId: "retained-memory-treatment-1",
+      report: {
+        workspaceSlug: "other-workspace",
+        projectId: "00000000-0000-4000-8000-000000000001",
+        executionRunId: "00000000-0000-4000-8000-000000000002",
+        retainedFixture: true
+      }
+    })).toThrow("missing or ambiguous");
+    expect(parseRetainedFixtureReport({
+      smokeId: "retained-memory-treatment-1",
+      report: {
+        workspaceSlug: "krn-decision-packet-smoke-retained-memory-treatment-1",
+        projectId: "00000000-0000-4000-8000-000000000001",
+        executionRunId: "00000000-0000-4000-8000-000000000002",
+        retainedFixture: true
+      }
+    })).toEqual({
+      smokeId: "retained-memory-treatment-1",
+      workspaceSlug: "krn-decision-packet-smoke-retained-memory-treatment-1",
+      projectId: "00000000-0000-4000-8000-000000000001",
+      runId: "00000000-0000-4000-8000-000000000002",
+      retainedFixture: true
+    });
+  });
+});
+
 const packet = {
   kind: "krn.decisionPacketReadback.v1",
   request: { runId: "run-1" },
@@ -94,6 +294,9 @@ const packet = {
     },
     governingDecisionIds: ["decision-1", "decision-2"],
     sourceDecisionIds: ["source-decision-1", "source-decision-2"],
+    rejectedPathIds: ["rejected-path-1"],
+    staleDecisionIds: [],
+    doesNotProve: ["live execution"],
     abstentionScore: { status: "ready" }
   }
 };
@@ -262,6 +465,227 @@ const passingChecker = async (): Promise<PairedRepairScore> => ({
 });
 
 describe("tracked paired live Codex repair", () => {
+  it("accepts the bounded live obedience output contract", () => {
+    expect(parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      nonProof: "does not prove live product readiness",
+      action: "validate before domain use"
+    }))).toEqual({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      nonProof: "does not prove live product readiness",
+      action: "validate before domain use"
+    });
+  });
+
+  it("rejects live output that omits a boundary field", () => {
+    expect(() => parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "validate-unknown-json-boundary",
+      rejectedPath: "cast JSON directly",
+      staleBoundary: "markdown notes are not runtime authority",
+      action: "validate before domain use"
+    }))).toThrow("required boundary fields are missing");
+  });
+
+  it("accepts multiple governing decisions and rejects invented packet authority", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: ["decision-a", "decision-b"],
+      rejectedPath: "rejected-id",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a", "decision-b"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+    expect(validateLiveCodexObedienceOutputAgainstPacket({
+      ...output,
+      decisionId: ["invented-decision"]
+    }, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    }).valid).toBe(false);
+  });
+
+  it("rejects generic live-obedience non-proof instead of packet proof-boundary language", () => {
+    const packet = {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["memory quality, source truth, review correctness, or product readiness"]
+      }
+    };
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: "no stale decisions",
+      nonProof: "live Codex obedience",
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, packet)).toEqual({
+      valid: false,
+      reasons: ["live output does not preserve the packet non-proof or unknown boundary"]
+    });
+    expect(validateLiveCodexObedienceOutputAgainstPacket({
+      ...output,
+      nonProof: "This does not prove memory quality, source truth, review correctness, or product readiness."
+    }, packet)).toEqual({ valid: true, reasons: [] });
+  });
+
+  it("accepts verbatim default DecisionPacket non-proof prose", () => {
+    const packet = {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: [],
+        staleDecisionIds: [],
+        doesNotProve: [...decisionPacketReadModelDoesNotProve]
+      }
+    };
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "No rejected path is present in the packet.",
+      staleBoundary: "No stale decision or knowledge ids are present in the packet.",
+      nonProof: decisionPacketReadModelDoesNotProve[0],
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, packet)).toEqual({
+      valid: true,
+      reasons: []
+    });
+  });
+
+  it("rejects an invented UUID in the stale boundary", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: "stale decision 00000000-0000-4000-8000-000000000000",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({
+      valid: false,
+      reasons: ["live output invents a stale boundary id outside packet authority"]
+    });
+  });
+
+  it("accepts a stale memory identity from the packet historical boundary", () => {
+    const staleKnowledgeId = "00000000-0000-4000-8000-000000000001";
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "rejected-id",
+      staleBoundary: `stale memory ${staleKnowledgeId}`,
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: ["rejected-id"],
+        staleDecisionIds: [],
+        staleKnowledgeIds: [staleKnowledgeId],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+  });
+
+  it("requires an explicit no-rejected-path statement when the packet has none", () => {
+    const output = parseLiveCodexObedienceOutputJson(JSON.stringify({
+      decisionId: "decision-a",
+      rejectedPath: "no rejected paths in this packet",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove execution",
+      action: "validate"
+    }));
+    expect(validateLiveCodexObedienceOutputAgainstPacket(output, {
+      packet: {
+        governingDecisionIds: ["decision-a"],
+        rejectedPathIds: [],
+        staleDecisionIds: [],
+        doesNotProve: ["execution is not proven"]
+      }
+    })).toEqual({ valid: true, reasons: [] });
+  });
+
+  it("extracts the final bounded JSON message from Codex logs", () => {
+    expect(extractLiveCodexObedienceOutput([
+      "codex startup log",
+      "not-json",
+      JSON.stringify({
+        decisionId: "d",
+        rejectedPath: "r",
+        staleBoundary: "s",
+        nonProof: "n",
+        action: "a"
+      })
+    ].join("\n"))).toEqual({
+      decisionId: "d",
+      rejectedPath: "r",
+      staleBoundary: "s",
+      nonProof: "n",
+      action: "a"
+    });
+  });
+
+  it("classifies the explicit machine envelope separately from missing output", () => {
+    expect(inspectLiveCodexObedienceOutput("repair report only")).toEqual({ status: "missing" });
+    expect(inspectLiveCodexObedienceOutput("KRN_OBEDIENCE_JSON:{not-json")).toEqual({ status: "malformed" });
+    expect(inspectLiveCodexObedienceOutput([
+      "repair report",
+      "KRN_OBEDIENCE_JSON:{\"decisionId\":\"d\",\"rejectedPath\":\"r\",\"staleBoundary\":\"s\",\"nonProof\":\"n\",\"action\":\"a\"}"
+    ].join("\n"))).toEqual({
+      status: "valid",
+      output: {
+        decisionId: "d",
+        rejectedPath: "r",
+        staleBoundary: "s",
+        nonProof: "n",
+        action: "a"
+      }
+    });
+    expect(inspectLiveCodexObedienceOutput(JSON.stringify({
+      type: "item.completed",
+      item: {
+        type: "agent_message",
+        text: [
+          "Repair report wrapped by Codex JSON output.",
+          "KRN_OBEDIENCE_JSON:{\"decisionId\":\"event-d\",\"rejectedPath\":\"event-r\",\"staleBoundary\":\"event-s\",\"nonProof\":\"event-n\",\"action\":\"event-a\"}"
+        ].join("\n")
+      }
+    }))).toEqual({
+      status: "valid",
+      output: {
+        decisionId: "event-d",
+        rejectedPath: "event-r",
+        staleBoundary: "event-s",
+        nonProof: "event-n",
+        action: "event-a"
+      }
+    });
+  });
+
   it("accepts only a run-, project-, task-, and authority-bound packet", () => {
     expect(validateTrialPacket(packet, manifest)).toEqual({
       valid: true,
@@ -282,7 +706,7 @@ describe("tracked paired live Codex repair", () => {
       reasons: expect.arrayContaining([
         "packet runId does not match the trial manifest",
         "packet task is not bound to the manifest project",
-        "packet abstains or is not ready for the trial"
+        "packet readiness abstain does not match manifest expectation ready"
       ])
     });
 
@@ -295,6 +719,14 @@ describe("tracked paired live Codex repair", () => {
     }, manifest)).toMatchObject({
       valid: false,
       reasons: ["packet lacks exact SourceDecision subjects: source-decision-2"]
+    });
+
+    expect(validateTrialPacket(packet, {
+      ...manifest,
+      scenario: "unrelated-boundary"
+    })).toMatchObject({
+      valid: false,
+      reasons: ["packet task does not describe the manifest scenario"]
     });
   });
 
@@ -351,6 +783,23 @@ describe("tracked paired live Codex repair", () => {
   });
 
   it("rejects malformed and escaped command manifests before starting MCP", async () => {
+    const capabilities = {
+      baseline: { mode: "baseline" as const, mcpServers: [], skillPaths: [] },
+      krn: {
+        mode: "krn" as const,
+        mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio"] }],
+        skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+      }
+    };
+    expect(parseTrackedTrialManifest({ ...manifest, capabilities })).toMatchObject({ capabilities });
+    expect(parseTrackedTrialManifest({
+      ...manifest,
+      decisionApplications: [manifest.decisionApplications[0]!]
+    }).decisionApplications).toHaveLength(1);
+    expect(() => parseTrackedTrialManifest({
+      ...manifest,
+      capabilities: { ...capabilities, baseline: { ...capabilities.baseline, skillPaths: ["/tmp/leak"] } }
+    })).toThrow("Invalid tracked paired-trial manifest");
     expect(() => parseTrackedTrialManifest({ kind: manifest.kind, codex: {} })).toThrow(
       "Invalid tracked paired-trial manifest"
     );
@@ -455,6 +904,47 @@ describe("tracked paired live Codex repair", () => {
     });
   });
 
+  it("rejects capability trials that cannot produce packet-derived obedience", async () => {
+    const proceduralOnlyManifest: PairedTrialManifest = {
+      ...manifest,
+      codex: {
+        ...manifest.codex,
+        args: [
+          ...manifest.codex.args.slice(0, 3),
+          "--json",
+          ...manifest.codex.args.slice(3)
+        ]
+      },
+      capabilities: {
+        baseline: { mode: "baseline", mcpServers: [], skillPaths: [] },
+        krn: {
+          mode: "krn",
+          mcpServers: [],
+          skillPaths: ["/home/krn/skills/krn-memory-core/SKILL.md"]
+        }
+      },
+      treatment: "procedural_skills"
+    };
+
+    const result = await runTrackedPairedTrial({
+      manifest: proceduralOnlyManifest,
+      sourceRoot,
+      checkerRoot: process.cwd(),
+      packet
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid",
+      execution: {
+        invalidReasons: [
+          "capability KRN arm cannot satisfy bounded packet-derived obedience without krn_decision_packet"
+        ]
+      }
+    });
+    expect(result.execution.baseline).toBeUndefined();
+    expect(result.execution.krn).toBeUndefined();
+  });
+
   it("rejects an observed CLI-version mismatch before an arm starts", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-version-"));
     const source = await makeRunnableTargetSource();
@@ -502,12 +992,16 @@ describe("tracked paired live Codex repair", () => {
     await mkdir(binRoot, { recursive: true });
     await makeFakeCodex(join(binRoot, "codex"), [
       `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; fi`,
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
       "exit 0"
     ].join("\n"));
     await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
 
     try {
-      const passedManifest = runnableManifest(binRoot, 1_000);
+      const passedManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        treatment: "semantic_governed" as const
+      };
       let fetchCalls = 0;
       let applicationRecorderCalls = 0;
       const result = await withProcessEnvironment({
@@ -527,7 +1021,12 @@ describe("tracked paired live Codex repair", () => {
           expect(input.rules).toEqual(passedManifest.decisionApplications);
           expect(await readFile(join(input.krnTarget.targetRoot, "src/target.ts"), "utf8"))
             .toContain("fixture");
-          return [];
+          return [{
+            sourceDecisionId: passedManifest.decisionApplications[0]!.sourceDecisionId,
+            applicationId: "application:tracked-passed",
+            appliedAt: "2026-07-18T00:00:00.000Z",
+            outcome: "used"
+          }];
         },
         attemptDirectory: join(root, "attempt")
       }, passingChecker));
@@ -535,6 +1034,13 @@ describe("tracked paired live Codex repair", () => {
       expect(result.status).toBe("passed");
       expect(result.kind).toBe("krn.pairedLiveCodexRepairArtifact.v2");
       expect(result.score?.outcome).toBe("tie");
+      expect(result.execution.liveObedienceStatus).toBe("valid");
+      expect(result.execution.decisionApplicationObservation).toBe("observed");
+      expect(result.execution.modelUsageObservation).toMatchObject({
+        tokenUsage: "unavailable",
+        latencySource: "arm_command_duration_ms"
+      });
+      expect(result.execution.treatment).toBe("semantic_governed");
       expect(result.execution.attempt?.phases.map((phase) => phase.name)).toEqual([
         "claimed",
         "conditions_observed",
@@ -561,6 +1067,26 @@ describe("tracked paired live Codex repair", () => {
         kind: "krn.pairedLiveCodexRepairArtifact.v1",
         score: legacyScore
       }))).toBe(true);
+
+      const noApplication = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: passedManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: { ...packet, request: { runId: passedManifest.runId } },
+        recordDecisionApplications: async () => [],
+        attemptDirectory: join(root, "no-application-attempt")
+      }, passingChecker));
+      expect(noApplication).toMatchObject({
+        status: "unverified",
+        execution: {
+          decisionApplicationObservation: "none_observed",
+          invalidReasons: ["decision application persistence produced no observed applications"]
+        }
+      });
+      expect(verifyTrackedTrialArtifact(noApplication)).toBe(true);
 
       const missingFocusedProof: PairedRepairScore = {
         ...result.score!,
@@ -611,7 +1137,7 @@ describe("tracked paired live Codex repair", () => {
           ...differentialScore,
           krn: withoutFocusedTestProof(failedKrnArm)
         }
-      }))).toBe(false);
+      }))).toBe(true);
 
       const failedPersistence = await withProcessEnvironment({
         KRN_TRIAL_CODEX_HOME: binRoot,
@@ -629,12 +1155,207 @@ describe("tracked paired live Codex repair", () => {
       expect(failedPersistence).toMatchObject({
         status: "unverified",
         execution: {
-          invalidReasons: ["decision application persistence could not be verified"]
+          invalidReasons: ["decision application persistence failed: simulated persistence failure"]
         },
         score: { outcome: "tie" }
       });
+      expect(failedPersistence.execution.decisionApplicationObservation).toBe("persistence_failed");
       expect(await readTrackedTrialArtifact(join(root, "failed-persistence-attempt")))
         .toEqual(failedPersistence);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("passes the resolved async-job family into live arm prompts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-async-prompt-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'user-creation boundary'; then exit 11; fi",
+      "if ! printf '%s\\n' \"$@\" | grep -q 'async job enqueue and lease boundary'; then exit 12; fi",
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
+      "exit 0"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const asyncManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        scenario: "async-job-boundary",
+        projectId: "async-job-boundary-typescript",
+        taskId: "async-job-repair",
+        task: "Repair async-job-boundary with bounded job enqueue and lease behavior.",
+        treatment: "semantic_governed" as const
+      };
+      const asyncPacket = {
+        ...packet,
+        request: { runId: asyncManifest.runId },
+        packet: {
+          ...packet.packet,
+          task: {
+            id: asyncManifest.taskId,
+            projectId: asyncManifest.projectId,
+            objective: "Repair async-job-boundary with bounded job enqueue and lease behavior."
+          }
+        }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: asyncManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: asyncPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("passes the target-hidden temporal family identity from the manifest into live arm prompts", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-hidden-temporal-prompt-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'user-creation boundary'; then exit 11; fi",
+      "if ! printf '%s\\n' \"$@\" | grep -q 'target-hidden temporal payout-policy boundary'; then exit 12; fi",
+      "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
+      "exit 0"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const hiddenManifest = {
+        ...runnableManifest(binRoot, 1_000),
+        scenario: "temporal-policy-hidden-source-typescript",
+        projectId: "temporal-policy-hidden-source-typescript",
+        taskId: "temporal-policy-hidden-source-repair",
+        task: "Repair temporal-policy-hidden-source-typescript without inventing current policy authority.",
+        treatment: "semantic_governed" as const
+      };
+      const hiddenPacket = {
+        ...packet,
+        request: { runId: hiddenManifest.runId },
+        packet: {
+          ...packet.packet,
+          task: {
+            id: hiddenManifest.taskId,
+            projectId: hiddenManifest.projectId,
+            objective: "Repair temporal-policy-hidden-source-typescript without inventing current policy authority."
+          }
+        }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: hiddenManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: hiddenPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+      expect(result.execution.treatment).toBe("semantic_governed");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
+  it("passes the capability KRN arm a packet-derived obedience contract without prompt-injecting the packet", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-capability-envelope-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    const baselinePromptPath = join(root, "baseline-prompt.txt");
+    const krnPromptPath = join(root, "krn-prompt.txt");
+    const capabilityUseEvent = JSON.stringify({ type: "mcp_tool_call", server: "krn_decision_packet" });
+    const obedienceLine = `${liveCodexObedienceMarker}${JSON.stringify({
+      decisionId: ["decision-1", "decision-2"],
+      rejectedPath: "rejected-path-1",
+      staleBoundary: "no stale decisions",
+      nonProof: "does not prove live execution",
+      action: "validate"
+    })}`;
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), [
+      "if printf '%s\\n' \"$@\" | grep -q 'trial-baseline'; then",
+      `  printf '%s\\n' "$@" > "${baselinePromptPath}"`,
+      "  exit 0",
+      "fi",
+      "if printf '%s\\n' \"$@\" | grep -q 'trial-krn'; then",
+      `  printf '%s\\n' "$@" > "${krnPromptPath}"`,
+      `  printf '%s\\n' '${capabilityUseEvent}'`,
+      `  if printf '%s\\n' "$@" | grep -q '${liveCodexObedienceMarker}'; then printf '%s\\n' '${obedienceLine}'; fi`,
+      "  exit 0",
+      "fi",
+      "exit 2"
+    ].join("\n"));
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+
+    try {
+      const baseManifest = runnableManifest(binRoot, 1_000);
+      const capabilityManifest: PairedTrialManifest = {
+        ...baseManifest,
+        codex: {
+          ...baseManifest.codex,
+          args: [
+            ...baseManifest.codex.args.slice(0, 3),
+            "--json",
+            ...baseManifest.codex.args.slice(3)
+          ]
+        },
+        capabilities: {
+          baseline: { mode: "baseline", mcpServers: [], skillPaths: [] },
+          krn: {
+            mode: "krn",
+            mcpServers: [{ name: "krn_decision_packet", command: "/bin/krn-mcp", args: ["stdio"] }],
+            skillPaths: []
+          }
+        }
+      };
+      const privatePacketMarker = "private-packet-marker";
+      const trialPacket = {
+        ...packet,
+        request: { runId: capabilityManifest.runId },
+        packet: { ...packet.packet, privatePacketMarker }
+      };
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: capabilityManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: trialPacket,
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.status).toBe("passed");
+      expect(result.execution.liveObedienceStatus).toBe("valid");
+      expect(result.execution.capabilityUseObservation).toMatchObject({
+        baseline: { mcpToolCallEvents: 0, skillEvents: 0 },
+        krn: { mcpToolCallEvents: 1, skillEvents: 0 }
+      });
+
+      const baselinePrompt = await readFile(baselinePromptPath, "utf8");
+      const krnPrompt = await readFile(krnPromptPath, "utf8");
+      expect(baselinePrompt).toContain("runId replayed-run");
+      expect(krnPrompt).toContain("runId replayed-run");
+      expect(baselinePrompt).not.toContain(liveCodexObedienceMarker);
+      expect(krnPrompt).toContain(liveCodexObedienceMarker);
+      expect(baselinePrompt).not.toContain(privatePacketMarker);
+      expect(krnPrompt).not.toContain(privatePacketMarker);
     } finally {
       await rm(root, { recursive: true, force: true });
       await rm(source, { recursive: true, force: true });
@@ -800,6 +1521,8 @@ describe("tracked paired live Codex repair", () => {
       expect(first.status).toBe("invalid");
       expect(first.execution.baseline?.exitCode).toBe(1);
       expect(first.execution.krn?.exitCode).toBe(1);
+      expect(first.execution.baseline?.timedOut).toBe(false);
+      expect(first.execution.krn?.timedOut).toBe(false);
       expect(first.execution.baseline?.args).toEqual(expect.arrayContaining([
         "--proc",
         "/proc",
@@ -845,6 +1568,18 @@ describe("tracked paired live Codex repair", () => {
       expect(timeout.status).toBe("invalid");
       expect(timeout.execution.baseline?.exitCode).toBeNull();
       expect(timeout.execution.krn?.exitCode).toBeNull();
+      expect(timeout.execution.baseline?.timedOut).toBe(true);
+      expect(timeout.execution.krn?.timedOut).toBe(true);
+      expect(timeout.execution.baseline?.durationMs).toBeGreaterThanOrEqual(
+        timeoutManifest.codex.budget.timeoutMs - 100
+      );
+      expect(timeout.execution.krn?.durationMs).toBeGreaterThanOrEqual(
+        timeoutManifest.codex.budget.timeoutMs - 100
+      );
+      expect(timeout.execution.invalidReasons).toEqual([
+        "baseline arm timed out",
+        "krn arm timed out"
+      ]);
       expect(checkerCalls).toBe(0);
 
       const phasePath = join(root, "first-attempt", "01-claimed.json");

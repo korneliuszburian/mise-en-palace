@@ -931,8 +931,12 @@ const ineligibleCommandHelpedProof = (
   reason
 });
 
+type ExecutionBackedEvidenceCommand =
+  | CommandRunnerEvidenceCommand
+  | CapturedOutputFileEvidenceCommand;
+
 const commandCaptureAssessment = (
-  command: CommandRunnerEvidenceCommand,
+  command: ExecutionBackedEvidenceCommand,
   packetGeneratedAt: IsoTimestamp
 ): EvidenceCommandHelpedProofAssessment | undefined => {
   const capturedAt = command.capturedAt?.trim();
@@ -959,7 +963,7 @@ const commandCaptureAssessment = (
 };
 
 const commandStatusAssessment = (
-  command: CommandRunnerEvidenceCommand
+  command: ExecutionBackedEvidenceCommand
 ): EvidenceCommandHelpedProofAssessment => {
   if (command.status === "passed") {
     if (command.exitCode === undefined) {
@@ -979,7 +983,7 @@ const commandStatusAssessment = (
 };
 
 const commandOutputArtifactMismatchReason = (
-  command: CommandRunnerEvidenceCommand,
+  command: ExecutionBackedEvidenceCommand,
   artifact: CommandOutputArtifact,
   outputRef: string,
   packetGeneratedAt: IsoTimestamp
@@ -1004,7 +1008,7 @@ const commandOutputArtifactMismatchReason = (
 };
 
 const commandOutputArtifactAssessment = (input: {
-  command: CommandRunnerEvidenceCommand;
+  command: ExecutionBackedEvidenceCommand;
   packetGeneratedAt: IsoTimestamp;
   resolveCommandOutputArtifact: ResolveCommandOutputArtifact;
   sha256Hex: CommandOutputArtifactSha256Hex;
@@ -1042,14 +1046,14 @@ export const assessEvidenceCommandHelpedProof = (input: {
   resolveCommandOutputArtifact: ResolveCommandOutputArtifact;
   sha256Hex: CommandOutputArtifactSha256Hex;
 }): EvidenceCommandHelpedProofAssessment => {
-  if (
-    input.command.kind === "captured_output_file" ||
-    input.command.kind === "external_log"
-  ) {
+  if (input.command.kind === "external_log") {
     return ineligibleCommandHelpedProof("unresolved_output_reference");
   }
 
-  if (input.command.kind !== "command_runner") {
+  if (
+    input.command.kind !== "command_runner" &&
+    input.command.kind !== "captured_output_file"
+  ) {
     return ineligibleCommandHelpedProof("not_execution_backed");
   }
 

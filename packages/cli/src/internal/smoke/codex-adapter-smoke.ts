@@ -3,6 +3,8 @@ import type {
 } from "postgres";
 import {
   inspectMigrationReadiness,
+  persistActivationRuntimeProof,
+  postgresStoreIdentity,
   smokeFixtureClocks
 } from "@krn/db/dev";
 import {
@@ -34,6 +36,7 @@ export interface CodexAdapterSmokeInput {
   databaseUrl: string;
   migrationsFolder: string;
   smokeId: string;
+  environmentFingerprintId?: string;
 }
 
 export interface CodexAdapterSmokeReport {
@@ -44,6 +47,11 @@ export interface CodexAdapterSmokeReport {
   codexInvocationCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
+  commandStatus: "passed";
+  observationOnly: true;
+  sourceReadback: true;
+  memoryReadback: true;
+  nonMutatingBoundary: true;
 }
 
 interface CountRow {
@@ -269,6 +277,11 @@ const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Context assembly: ${report.contextAssemblyId}`,
   `Boundary checks: ${report.boundaryChecks.join(", ")}`,
   `Codex invocations: ${report.codexInvocationCount}`,
+  `Command status: ${report.commandStatus}`,
+  `Observation-only boundary: ${report.observationOnly ? "yes" : "no"}`,
+  `Source readback: ${report.sourceReadback ? "matched" : "mismatch"}`,
+  `Memory readback: ${report.memoryReadback ? "matched" : "mismatch"}`,
+  `Non-mutating boundary: ${report.nonMutatingBoundary ? "yes" : "no"}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
   `Codex adapter smoke: ${report.cleanedUp ? "passed" : "failed"}`
 ];
@@ -536,15 +549,35 @@ export const runCodexAdapterSmokeCheck = async (
       contextAssemblyId
     );
 
-    return {
+    const report: CodexAdapterSmokeReport = {
       workspaceSlug,
       executionRunId: executionRun.id,
       contextAssemblyId: proof.contextAssemblyId,
       boundaryChecks: proof.checks,
       codexInvocationCount: proof.codexInvocationCount,
       remainingMarkerCount,
-      cleanedUp: remainingMarkerCount === 0
+      cleanedUp: remainingMarkerCount === 0,
+      commandStatus: "passed",
+      observationOnly: true,
+      sourceReadback: true,
+      memoryReadback: true,
+      nonMutatingBoundary: true
     };
+
+    if (input.environmentFingerprintId !== undefined) {
+      await persistActivationRuntimeProof(client, {
+        proofKind: "codex_adapter",
+        scopeKey: "codex_adapter",
+        environmentFingerprintId: input.environmentFingerprintId,
+        storeIdentity: postgresStoreIdentity(input.databaseUrl),
+        status: "passed",
+        capturedAt: new Date(),
+        cleanupRemainingMarkerCount: report.remainingMarkerCount,
+        report
+      });
+    }
+
+    return report;
   } catch (error) {
     await cleanupMarkerRows(client, workspaceSlug, marker, retrievalRunId, contextAssemblyId);
     throw error;

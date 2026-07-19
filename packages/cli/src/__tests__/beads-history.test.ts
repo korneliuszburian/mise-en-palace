@@ -69,6 +69,14 @@ describe("Beads history policy", () => {
       const sensitiveFailure = runFailure("validate", issues, interactions);
       expect(sensitiveFailure?.status).toBe(1);
       expect(sensitiveFailure?.stderr).toContain("sensitive value pattern");
+
+      writeFileSync(issues, JSON.stringify({
+        ...validIssue,
+        description: "store=postgres://operator:secret@db.example/krn"
+      }));
+      const postgresFailure = runFailure("validate", issues, interactions);
+      expect(postgresFailure?.status).toBe(1);
+      expect(postgresFailure?.stderr).toContain("sensitive value pattern");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

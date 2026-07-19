@@ -1,0 +1,464 @@
+import { readFile } from "node:fs/promises";
+import type {
+  PairedEvalFamily,
+  PairedRepairOutcome
+} from "./paired-live-codex-repair.js";
+import {
+  pairedEvalFamilies
+} from "./paired-live-codex-repair.js";
+import {
+  readTrackedTrialArtifact,
+  type TrackedTrialArtifact
+} from "./tracked-paired-live-codex-repair.js";
+
+export type PairedEvalArtifactInput = {
+  readonly family: PairedEvalFamily;
+  readonly artifact: TrackedTrialArtifact;
+};
+
+export type PairedEvalOutcomeCounts = {
+  readonly wins: number;
+  readonly ties: number;
+  readonly losses: number;
+  readonly qualityTrials: number;
+  readonly invalidTrials: number;
+  readonly totalInputs: number;
+  readonly winRateAmongQuality: number | null;
+  readonly capabilityConfiguredTrials: number;
+  readonly capabilityUseObservedTrials: number;
+  readonly capabilityUseMissingTrials: number;
+  readonly decisionApplicationAttemptedTrials: number;
+  readonly decisionApplicationObservedTrials: number;
+  readonly decisionApplicationMissingTrials: number;
+};
+
+export type PairedEvalInvalidReason = {
+  readonly reason: string;
+  readonly count: number;
+};
+
+export type PairedEvalFamilyAggregate = PairedEvalOutcomeCounts & {
+  readonly family: PairedEvalFamily;
+  readonly duplicateRunIds: readonly string[];
+  readonly invalidReasons: readonly PairedEvalInvalidReason[];
+};
+
+export type PairedEvalAggregate = {
+  readonly kind: "krn.pairedEvalAggregate.v1";
+  readonly families: readonly PairedEvalFamilyAggregate[];
+  readonly overall: PairedEvalOutcomeCounts;
+  readonly comparison: {
+    readonly outcomeLevel: "cross-family";
+    readonly scoreLevel: "family-local-only";
+    readonly reason: string;
+  };
+  readonly checkerBoundary: {
+    readonly status: "unknown" | "single-revision" | "mixed-revisions";
+    readonly revision?: string;
+    readonly partitions?: Readonly<Record<string, readonly string[]>>;
+    readonly reason: string;
+  };
+  readonly proves: readonly string[];
+  readonly doesNotProve: readonly string[];
+  readonly invalidReasons: readonly PairedEvalInvalidReason[];
+};
+
+export type PairedEvalArtifactDirectory = {
+  readonly family: PairedEvalFamily;
+  readonly directory: string;
+};
+
+export type PairedEvalResultFile = {
+  readonly family: PairedEvalFamily;
+  readonly file: string;
+};
+
+export type PairedEvalUnreadableInput = PairedEvalArtifactDirectory & {
+  readonly reason: "artifact_or_phase_journal_failed_validation";
+};
+
+export type PairedEvalReadback = PairedEvalAggregate & {
+  readonly unreadableInputs: readonly PairedEvalUnreadableInput[];
+};
+
+export type PairedEvalUnreadableFile = PairedEvalResultFile & {
+  readonly reason: "generic_result_failed_validation" | "generic_result_not_quality_proof";
+};
+
+export type PairedEvalFileReadback = PairedEvalAggregate & {
+  readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
+};
+
+export type PairedEvalMixedInputs = {
+  readonly artifactDirectories?: readonly PairedEvalArtifactDirectory[];
+  readonly resultFiles?: readonly PairedEvalResultFile[];
+};
+
+export type PairedEvalMixedReadback = PairedEvalAggregate & {
+  readonly unreadableInputs: readonly PairedEvalUnreadableInput[];
+  readonly unreadableFiles: readonly PairedEvalUnreadableFile[];
+};
+
+const qualityOutcomes: readonly PairedRepairOutcome[] = ["win", "tie", "loss"];
+
+const invalidReasonsForArtifact = (artifact: TrackedTrialArtifact): readonly string[] => {
+  const reasons = [
+    ...(artifact.execution.invalidReasons ?? []),
+    ...(artifact.score?.reason === undefined ? [] : [artifact.score.reason]),
+    ...(["baseline", "krn"] as const).flatMap((arm) => {
+      const score = artifact.score?.[arm];
+      if (score?.status !== "invalid") return [];
+      return score.checks
+        .filter((check) => !check.passed)
+        .map((check) => `${arm}.${check.name}: ${check.details}`);
+    })
+  ];
+  return reasons.length === 0 ? [`artifact status ${artifact.status}`] : reasons;
+};
+
+const reasonCounts = (reasons: readonly string[]): readonly PairedEvalInvalidReason[] => {
+  const counts = new Map<string, number>();
+  for (const reason of reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([reason, count]) => ({ reason, count }));
+};
+
+const expandReasonCounts = (reasons: readonly PairedEvalInvalidReason[]): readonly string[] =>
+  reasons.flatMap(({ reason, count }) => Array.from({ length: count }, () => reason));
+
+const emptyCounts = (): PairedEvalOutcomeCounts => ({
+  wins: 0,
+  ties: 0,
+  losses: 0,
+  qualityTrials: 0,
+  invalidTrials: 0,
+  totalInputs: 0,
+  winRateAmongQuality: null,
+  capabilityConfiguredTrials: 0,
+  capabilityUseObservedTrials: 0,
+  capabilityUseMissingTrials: 0,
+  decisionApplicationAttemptedTrials: 0,
+  decisionApplicationObservedTrials: 0,
+  decisionApplicationMissingTrials: 0
+});
+
+const finalizeCounts = (counts: PairedEvalOutcomeCounts): PairedEvalOutcomeCounts => ({
+  ...counts,
+  winRateAmongQuality: counts.qualityTrials === 0
+    ? null
+    : counts.wins / counts.qualityTrials
+});
+
+const sumCounts = (
+  left: PairedEvalOutcomeCounts,
+  right: PairedEvalOutcomeCounts
+): PairedEvalOutcomeCounts => ({
+  wins: left.wins + right.wins,
+  ties: left.ties + right.ties,
+  losses: left.losses + right.losses,
+  qualityTrials: left.qualityTrials + right.qualityTrials,
+  invalidTrials: left.invalidTrials + right.invalidTrials,
+  totalInputs: left.totalInputs + right.totalInputs,
+  winRateAmongQuality: null,
+  capabilityConfiguredTrials: left.capabilityConfiguredTrials + right.capabilityConfiguredTrials,
+  capabilityUseObservedTrials: left.capabilityUseObservedTrials + right.capabilityUseObservedTrials,
+  capabilityUseMissingTrials: left.capabilityUseMissingTrials + right.capabilityUseMissingTrials,
+  decisionApplicationAttemptedTrials: left.decisionApplicationAttemptedTrials + right.decisionApplicationAttemptedTrials,
+  decisionApplicationObservedTrials: left.decisionApplicationObservedTrials + right.decisionApplicationObservedTrials,
+  decisionApplicationMissingTrials: left.decisionApplicationMissingTrials + right.decisionApplicationMissingTrials
+});
+
+const addOutcome = (
+  counts: PairedEvalOutcomeCounts,
+  outcome: PairedRepairOutcome | undefined,
+  invalid: boolean
+): PairedEvalOutcomeCounts => {
+  if (invalid || outcome === undefined || !qualityOutcomes.includes(outcome)) {
+    return { ...counts, invalidTrials: counts.invalidTrials + 1 };
+  }
+
+  return {
+    ...counts,
+    qualityTrials: counts.qualityTrials + 1,
+    ...(outcome === "win" ? { wins: counts.wins + 1 } : {}),
+    ...(outcome === "tie" ? { ties: counts.ties + 1 } : {}),
+    ...(outcome === "loss" ? { losses: counts.losses + 1 } : {})
+  };
+};
+
+const addEvidenceObservations = (
+  counts: PairedEvalOutcomeCounts,
+  artifact: TrackedTrialArtifact
+): PairedEvalOutcomeCounts => {
+  const capability = artifact.execution.capabilityUseObservation;
+  const capabilityConfigured = capability !== undefined;
+  const capabilityObserved = capabilityConfigured && (
+    capability.krn.mcpToolCallEvents > 0 || capability.krn.skillEvents > 0
+  );
+  const application = artifact.execution.decisionApplicationObservation;
+  const applicationAttempted = application !== undefined && application !== "not_attempted";
+
+  const next = { ...counts };
+  if (capabilityConfigured) {
+    next.capabilityConfiguredTrials += 1;
+    if (capabilityObserved) next.capabilityUseObservedTrials += 1;
+    else next.capabilityUseMissingTrials += 1;
+  }
+  if (applicationAttempted) {
+    next.decisionApplicationAttemptedTrials += 1;
+    if (application === "observed") next.decisionApplicationObservedTrials += 1;
+    else next.decisionApplicationMissingTrials += 1;
+  }
+  return next;
+};
+
+const isQualityArtifact = (artifact: TrackedTrialArtifact): boolean =>
+  artifact.status === "passed" &&
+  artifact.score !== undefined &&
+  qualityOutcomes.includes(artifact.score.outcome);
+
+const aggregateFamily = (
+  family: PairedEvalFamily,
+  inputs: readonly { readonly input: PairedEvalArtifactInput; readonly index: number }[],
+  duplicateIndices: ReadonlySet<number>
+): PairedEvalFamilyAggregate => {
+  const duplicateRunIds = new Set<string>();
+  const invalidReasons: string[] = [];
+  let counts = emptyCounts();
+
+  for (const { input, index } of inputs) {
+    counts = { ...counts, totalInputs: counts.totalInputs + 1 };
+    if (duplicateIndices.has(index)) {
+      duplicateRunIds.add(input.artifact.runId);
+      counts = { ...counts, invalidTrials: counts.invalidTrials + 1 };
+      invalidReasons.push(`duplicate run id: ${input.artifact.runId}`);
+      continue;
+    }
+    if (!isQualityArtifact(input.artifact)) invalidReasons.push(...invalidReasonsForArtifact(input.artifact));
+    const nextCounts = addOutcome(
+      counts,
+      input.artifact.score?.outcome,
+      !isQualityArtifact(input.artifact)
+    );
+    counts = isQualityArtifact(input.artifact)
+      ? addEvidenceObservations(nextCounts, input.artifact)
+      : nextCounts;
+  }
+
+  return {
+    family,
+    ...finalizeCounts(counts),
+    duplicateRunIds: [...duplicateRunIds].sort(),
+    invalidReasons: reasonCounts(invalidReasons)
+  };
+};
+
+const checkerBoundaryFor = (
+  inputs: readonly PairedEvalArtifactInput[]
+): PairedEvalAggregate["checkerBoundary"] => {
+  const partitions = new Map<string, string[]>();
+  const unknownRunIds: string[] = [];
+  for (const { artifact } of inputs) {
+    const revision = artifact.checkerRevision;
+    if (revision === undefined) {
+      unknownRunIds.push(artifact.runId);
+      continue;
+    }
+    const runIds = partitions.get(revision) ?? [];
+    runIds.push(artifact.runId);
+    partitions.set(revision, runIds);
+  }
+  const serializedPartitions: Record<string, readonly string[]> = Object.fromEntries(
+    [...partitions.entries()].map(([revision, runIds]) => [revision, [...runIds].sort()])
+  );
+  if (partitions.size === 1 && unknownRunIds.length === 0) {
+    const revision = [...partitions.keys()][0]!;
+    return {
+      status: "single-revision",
+      revision,
+      partitions: serializedPartitions,
+      reason: `All readable artifacts carry checker revision ${revision}.`
+    };
+  }
+  if (partitions.size === 0) {
+    return {
+      status: "unknown",
+      partitions: unknownRunIds.length === 0 ? {} : { unknown: [...unknownRunIds].sort() },
+      reason: "Readable artifacts do not currently carry a checker revision; no single-version estimate is allowed."
+    };
+  }
+  if (unknownRunIds.length > 0) serializedPartitions.unknown = [...unknownRunIds].sort();
+  return {
+    status: "mixed-revisions",
+    partitions: serializedPartitions,
+    reason: "Readable artifacts span multiple checker revisions or include legacy artifacts without a revision; outcomes must remain partitioned."
+  };
+};
+
+export const aggregatePairedEvalArtifacts = (
+  inputs: readonly PairedEvalArtifactInput[]
+): PairedEvalAggregate => {
+  const seenRunIds = new Set<string>();
+  const duplicateIndices = new Set<number>();
+  for (const [index, input] of inputs.entries()) {
+    if (seenRunIds.has(input.artifact.runId)) duplicateIndices.add(index);
+    else seenRunIds.add(input.artifact.runId);
+  }
+  const indexedInputs = inputs.map((input, index) => ({ input, index }));
+  const familyAggregates = pairedEvalFamilies.map((family) => aggregateFamily(
+    family,
+    indexedInputs.filter(({ input }) => input.family === family),
+    duplicateIndices
+  ));
+  const overall = finalizeCounts(familyAggregates.reduce(sumCounts, emptyCounts()));
+
+  return {
+    kind: "krn.pairedEvalAggregate.v1",
+    families: familyAggregates,
+    overall,
+    comparison: {
+      outcomeLevel: "cross-family",
+      scoreLevel: "family-local-only",
+      reason: "win/tie/loss outcomes share a bounded contract gate; numeric arm scores count family-specific checks and must not be compared across families."
+    },
+    checkerBoundary: checkerBoundaryFor(inputs),
+    proves: [
+      "quality outcome counts are deterministic for unique validated run ids",
+      "invalid, blocked, unverified, and duplicate inputs are excluded from quality outcomes",
+      "configured capability-use and decision-application observations are stratified without changing family-local outcomes"
+    ],
+    doesNotProve: [
+      "causal KRN advantage or arbitrary-repository portability",
+      "comparability of differently designed evaluation families",
+      "Codex obedience outside the observed bounded trials",
+      "that observed capability use caused a win or that an observed application was useful"
+    ],
+    invalidReasons: reasonCounts(familyAggregates.flatMap((family) => expandReasonCounts(family.invalidReasons)))
+  };
+};
+
+export const aggregatePairedEvalArtifactDirectories = async (
+  inputs: readonly PairedEvalArtifactDirectory[]
+): Promise<PairedEvalReadback> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadableInputs: PairedEvalUnreadableInput[] = [];
+
+  for (const input of inputs) {
+    const artifact = await readTrackedTrialArtifact(input.directory);
+    if (artifact === undefined) {
+      unreadableInputs.push({
+        ...input,
+        reason: "artifact_or_phase_journal_failed_validation"
+      });
+    } else {
+      readable.push({ family: input.family, artifact });
+    }
+  }
+
+  const aggregate = aggregatePairedEvalArtifacts(readable);
+  const unreadableByFamily = new Map<PairedEvalFamily, number>();
+  for (const input of unreadableInputs) {
+    unreadableByFamily.set(input.family, (unreadableByFamily.get(input.family) ?? 0) + 1);
+  }
+  const addUnreadable = (counts: PairedEvalOutcomeCounts, family: PairedEvalFamily) => ({
+    ...counts,
+    totalInputs: counts.totalInputs + (unreadableByFamily.get(family) ?? 0),
+    invalidTrials: counts.invalidTrials + (unreadableByFamily.get(family) ?? 0)
+  });
+  const familyAggregates = aggregate.families.map((family) => ({
+    ...family,
+    ...addUnreadable(family, family.family)
+  }));
+  const overall = finalizeCounts(familyAggregates.reduce(sumCounts, emptyCounts()));
+
+  return {
+    ...aggregate,
+    families: familyAggregates,
+    overall,
+    invalidReasons: reasonCounts([
+      ...expandReasonCounts(aggregate.invalidReasons),
+      ...unreadableInputs.map(({ reason }) => reason)
+    ]),
+    unreadableInputs
+  };
+};
+
+const readGenericResultInputs = async (
+  inputs: readonly PairedEvalResultFile[]
+): Promise<{ readonly readable: readonly PairedEvalArtifactInput[]; readonly unreadable: readonly PairedEvalUnreadableFile[] }> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadable: PairedEvalUnreadableFile[] = [];
+  for (const input of inputs) {
+    try {
+      const parsed: unknown = JSON.parse(await readFile(input.file, "utf8"));
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        (parsed as Record<string, unknown>)["kind"] === "krn.genericPairedCodexEval.v1"
+      ) {
+        unreadable.push({ ...input, reason: "generic_result_not_quality_proof" });
+      } else {
+        unreadable.push({ ...input, reason: "generic_result_failed_validation" });
+      }
+    } catch {
+      unreadable.push({ ...input, reason: "generic_result_failed_validation" });
+    }
+  }
+  return { readable, unreadable };
+};
+
+const addUnreadableCounts = (
+  aggregate: PairedEvalAggregate,
+  unreadableInputs: readonly PairedEvalUnreadableInput[],
+  unreadableFiles: readonly PairedEvalUnreadableFile[]
+): PairedEvalAggregate => {
+  const counts = new Map<PairedEvalFamily, number>();
+  for (const input of [...unreadableInputs, ...unreadableFiles]) {
+    counts.set(input.family, (counts.get(input.family) ?? 0) + 1);
+  }
+  const familiesWithInvalid = aggregate.families.map((family) => ({
+    ...family,
+    totalInputs: family.totalInputs + (counts.get(family.family) ?? 0),
+    invalidTrials: family.invalidTrials + (counts.get(family.family) ?? 0)
+  }));
+  const overall = finalizeCounts(familiesWithInvalid.reduce(sumCounts, emptyCounts()));
+  return {
+    ...aggregate,
+    families: familiesWithInvalid,
+    overall,
+    invalidReasons: reasonCounts([
+      ...expandReasonCounts(aggregate.invalidReasons),
+      ...unreadableInputs.map(({ reason }) => reason),
+      ...unreadableFiles.map(({ reason }) => reason)
+    ])
+  };
+};
+
+export const aggregatePairedEvalMixedInputs = async (
+  inputs: PairedEvalMixedInputs
+): Promise<PairedEvalMixedReadback> => {
+  const readable: PairedEvalArtifactInput[] = [];
+  const unreadableInputs: PairedEvalUnreadableInput[] = [];
+  for (const input of inputs.artifactDirectories ?? []) {
+    const artifact = await readTrackedTrialArtifact(input.directory);
+    if (artifact === undefined) unreadableInputs.push({ ...input, reason: "artifact_or_phase_journal_failed_validation" });
+    else readable.push({ family: input.family, artifact });
+  }
+  const resultReadback = await readGenericResultInputs(inputs.resultFiles ?? []);
+  readable.push(...resultReadback.readable);
+  const aggregate = addUnreadableCounts(readable.length === 0
+    ? aggregatePairedEvalArtifacts([])
+    : aggregatePairedEvalArtifacts(readable), unreadableInputs, resultReadback.unreadable);
+  return { ...aggregate, unreadableInputs, unreadableFiles: resultReadback.unreadable };
+};
+
+export const aggregatePairedEvalResultFiles = async (
+  inputs: readonly PairedEvalResultFile[]
+): Promise<PairedEvalFileReadback> => {
+  const result = await aggregatePairedEvalMixedInputs({ resultFiles: inputs });
+  return {
+    ...result,
+    unreadableFiles: result.unreadableFiles
+  };
+};

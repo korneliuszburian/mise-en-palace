@@ -13,6 +13,7 @@ import type {
 } from "@krn/core";
 import type { HarnessRunAggregate } from "@krn/core/repositories/internal";
 import type {
+  ApplyReviewedMemoryRevisionInput,
   CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
@@ -625,6 +626,106 @@ describe("runCli", () => {
     expect(result.stdout).toContain("No memory application recorded");
   });
 
+  it("reads the exact predecessor subject and fingerprint for authority review", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const legacyCandidate: MemoryCandidate = {
+      id: "memory-candidate-legacy-1",
+      projectId: "project-1",
+      feedbackDeltaId: "feedback-1",
+      proposedBy: "legacy-learning",
+      kind: "procedure",
+      status: "accepted",
+      summary: "Validate external JSON before domain reads",
+      body: "Keep parsed JSON unknown until validation.",
+      owner: "memory-core",
+      confidence: 70,
+      applicationGuidance: "Validate before reading fields.",
+      invalidationRule: "A raw field reaches domain code.",
+      sourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      isUserPreference: false,
+      validFrom: now,
+      metadata: { createdFromCandidateId: "memory-candidate-legacy-1" },
+      createdAt: now,
+      updatedAt: now
+    };
+    const sourceMemoryRecord = {
+      id: "memory-legacy-1",
+      projectId: "project-1",
+      currentVersionId: "memory-version-legacy-1",
+      key: "memory:memory-candidate-legacy-1",
+      kind: legacyCandidate.kind,
+      status: "active" as const,
+      summary: legacyCandidate.summary,
+      body: legacyCandidate.body,
+      owner: legacyCandidate.owner,
+      confidence: legacyCandidate.confidence,
+      applicationGuidance: legacyCandidate.applicationGuidance,
+      ...(legacyCandidate.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: legacyCandidate.invalidationRule }),
+      sourceLineage: legacyCandidate.sourceLineage,
+      isUserPreference: false,
+      validFrom: now,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: { createdFromCandidateId: legacyCandidate.id },
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await runCli([
+      "memory", "candidate", "promote",
+      "--candidate-id", "memory-authority-1",
+      "--reviewer", "operator",
+      "--decision", "accepted",
+      "--source-memory-id", sourceMemoryRecord.id,
+      "--reason", "Review exact predecessor authority"
+    ], {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: dependencies,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: {
+          ...unusedMemoryRepository,
+          async getMemoryRecordById() {
+            return sourceMemoryRecord;
+          },
+          async getMemoryCandidateById() {
+            return legacyCandidate;
+          },
+          async getAuthorityUpgradePredecessorPreview() {
+            return {
+              memoryRecord: sourceMemoryRecord,
+              memoryCandidate: legacyCandidate,
+              fingerprint: sha256Hex("legacy-predecessor")
+            };
+          }
+        },
+        harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: disabled (read-only predecessor preview");
+    expect(result.stdout).toContain("authorityUpgradeMemoryRecordId: memory-legacy-1");
+    expect(result.stdout).toContain(
+      "authorityUpgradeMemoryCandidateId: memory-candidate-legacy-1"
+    );
+    expect(result.stdout).toMatch(/authorityUpgradePredecessorFingerprint: [0-9a-f]{64}/);
+    expect(result.stdout).toContain("DB writes: none");
+  });
+
   it("requires evidence review reference before memory candidate promote --persist", async () => {
     const result = await runCli(
       [
@@ -918,6 +1019,154 @@ describe("runCli", () => {
           reviewedSourceClaimIds: ["source-claim-1"],
           untrustedSourceClaimIds: ["source-claim-1"],
           untrustedSourceReviewRef: "security-review:source-lineage-1"
+        }
+      }
+    });
+  });
+
+  it("routes reviewed authority upgrade through the atomic revision port", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedRevision: ApplyReviewedMemoryRevisionInput | undefined;
+    const candidate: MemoryCandidate = {
+      id: "memory-candidate-authority-1",
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      feedbackDeltaId: "feedback-1",
+      reviewAssessmentId: "review-1",
+      usefulnessApplicationId: "application-1",
+      proposedBy: "reviewed-helped-learning",
+      kind: "constraint",
+      status: "proposed",
+      summary: "Use first-class reviewed helped authority",
+      body: "Replace the legacy metadata-only memory while preserving history.",
+      owner: "memory-core",
+      confidence: 92,
+      applicationGuidance: "Use the authority-bound replacement.",
+      invalidationRule: "Revisit when the helped application is superseded.",
+      sourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      isUserPreference: false,
+      validFrom: now,
+      metadata: {
+        reflectionCandidateEvidence: {
+          provenance: "feedback_delta",
+          evidenceRefs: ["review-assessment:review-1"],
+          doesNotProve: "One helped result does not prove broad usefulness."
+        }
+      },
+      createdAt: now,
+      updatedAt: now
+    };
+    const memoryRecord = {
+      id: "memory-authority-1",
+      projectId: "project-1",
+      currentVersionId: "memory-version-authority-1",
+      key: "memory:memory-candidate-authority-1",
+      kind: "constraint" as const,
+      status: "active" as const,
+      summary: candidate.summary,
+      body: candidate.body,
+      owner: candidate.owner,
+      confidence: candidate.confidence,
+      applicationGuidance: candidate.applicationGuidance,
+      ...(candidate.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: candidate.invalidationRule }),
+      sourceLineage: candidate.sourceLineage,
+      isUserPreference: false,
+      validFrom: now,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await runCli([
+      "memory",
+      "candidate",
+      "promote",
+      "--candidate-id",
+      candidate.id,
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--evidence-reviewed-ref",
+      "review-assessment:upgrade-review-1",
+      "--source-memory-id",
+      "memory-legacy-1",
+      "--reason",
+      "Replace legacy helped memory with first-class authority bindings",
+      "--persist"
+    ], {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: dependencies,
+        sourceRepository: {
+          ...unusedSourceRepository,
+          async getSourceClaimForProject(_projectId, id) {
+            return {
+              id,
+              sourceArtifactId: "source-artifact-1",
+              claim: "Reviewed helped authority must be first-class.",
+              mechanism: "The store binds review and application identity.",
+              krnImplication: "Legacy truth can be superseded without deletion.",
+              doesNotProve: "This does not prove broad usefulness.",
+              sourceAuthority: "project-decision",
+              supportType: "implementation-boundary",
+              consumer: "memory authority upgrade",
+              status: "accepted",
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            };
+          }
+        },
+        memoryRepository: {
+          ...unusedMemoryRepository,
+          async getMemoryCandidateById() {
+            return candidate;
+          },
+          async applyReviewedMemoryRevision(input) {
+            capturedRevision = input;
+            return {
+              memoryRecord,
+              supersededMemoryRecord: {
+                ...memoryRecord,
+                id: "memory-legacy-1",
+                currentVersionId: "memory-version-legacy-1",
+                status: "superseded"
+              }
+            };
+          }
+        },
+        harnessRunRepository: createMemoryHarnessRunRepository(dependencies, "project-1"),
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("memoryRecord: memory-authority-1");
+    expect(result.stdout).toContain("supersededMemoryRecord: memory-legacy-1");
+    expect(capturedRevision).toMatchObject({
+      candidateId: candidate.id,
+      sourceMemoryRecordId: "memory-legacy-1",
+      reason: "Replace legacy helped memory with first-class authority bindings",
+      metadata: {
+        reviewGate: { evidenceReviewedRef: "review-assessment:upgrade-review-1" },
+        memoryRevision: {
+          action: "merge_duplicate",
+          sourceMemoryRecordId: "memory-legacy-1"
         }
       }
     });

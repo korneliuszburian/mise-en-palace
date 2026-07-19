@@ -1,6 +1,43 @@
 {
   "finding_counts": {
+    "packages/cli/src/__tests__/temporal-authority-roundtrip.test.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/__tests__/tracked-paired-live-codex-repair.test.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
     "packages/cli/src/database-runtime.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/decision-packet-read-model-builders.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 2
+      }
+    },
+    "packages/cli/src/doctor-static-checks.ts": {
+      "complexity_high": {
+        "count": 1
+      },
+      "crap_high": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/index.ts": {
       "crap_moderate": {
         "count": 1
       }
@@ -11,14 +48,11 @@
       }
     },
     "packages/cli/src/internal/eval/persist-paired-live-codex-repair.ts": {
-      "crap_high": {
+      "crap_moderate": {
         "count": 1
       }
     },
-    "packages/cli/src/internal/eval/run-decision-packet-eval.ts": {
-      "complexity_moderate": {
-        "count": 1
-      },
+    "packages/cli/src/internal/eval/run-paired-live-aggregate.ts": {
       "crap_moderate": {
         "count": 1
       }
@@ -28,7 +62,52 @@
         "count": 1
       }
     },
-    "packages/cli/src/internal/smoke/run-decision-corpus-import-db-smoke.ts": {
+    "packages/cli/src/internal/eval/tracked-paired-live-codex-repair.ts": {
+      "complexity_critical": {
+        "count": 3
+      },
+      "complexity_moderate": {
+        "count": 2
+      },
+      "crap_critical": {
+        "count": 3
+      },
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 3
+      }
+    },
+    "packages/cli/src/internal/smoke/target-repo-harness-smoke.ts": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "crap_critical": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/run-db-smoke-command.ts": {
+      "crap_moderate": {
+        "count": 2
+      }
+    },
+    "packages/cli/src/run-evidence-capture-command.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/codex-adapter/src/render-execution-brief.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/core/src/decision-packet-authority.ts": {
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/db/src/dev/smoke/brain-loop-smoke.ts": {
       "complexity_high": {
         "count": 1
       },
@@ -36,22 +115,20 @@
         "count": 1
       }
     },
-    "packages/cli/src/run-memory-record-apply-command.ts": {
+    "packages/db/src/dev/smoke/maintenance-queue-smoke.ts": {
       "complexity_moderate": {
         "count": 1
       }
     },
-    "packages/db/src/dev/smoke/harness-evidence-smoke.ts": {
-      "complexity_moderate": {
-        "count": 1
+    "packages/db/src/repositories/drizzle-memory-repository.ts": {
+      "crap_moderate": {
+        "count": 3
       }
     },
-    "packages/db/src/dev/smoke/memory-governance-smoke.ts": {
+    "packages/harness/src/activation/activation-engine.ts": {
       "complexity_moderate": {
         "count": 1
-      }
-    },
-    "packages/db/src/migration-readiness.ts": {
+      },
       "crap_moderate": {
         "count": 1
       }
@@ -59,10 +136,11 @@
   },
   "runtime_coverage_findings": [],
   "target_keys": [
-    "packages/db/src/schema/reference-columns.ts:high impact",
-    "packages/core/src/metadata.ts:high impact",
-    "packages/db/src/repositories/repository-value-readers.ts:high impact",
-    "packages/cli/src/memory-record-knowledge-read-model.ts:high impact",
-    "packages/core/src/evidence-contract.ts:high impact"
+    "packages/cli/src/internal/eval/tracked-paired-live-codex-repair.ts:high impact",
+    "packages/cli/src/doctor-static-checks.ts:complexity",
+    "packages/cli/src/internal/smoke/decision-packet-return-loop-smoke.ts:complexity",
+    "packages/db/src/dev/smoke/activation-smoke.ts:complexity",
+    "scripts/validate-beads-history.mjs:untested risk",
+    "packages/db/src/dev/smoke/memory-governance-smoke.ts:complexity"
   ]
 }

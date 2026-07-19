@@ -15,6 +15,7 @@ import {
   runCodexBriefCommand
 } from "./run-codex-brief-command.js";
 import {
+  formatEvidenceCaptureError,
   runEvidenceCaptureCommand
 } from "./run-evidence-capture-command.js";
 import {
@@ -39,6 +40,12 @@ import {
   runRunShowCommand
 } from "./run-run-show-command.js";
 import {
+  runPairedLiveEvalEvidenceCommand
+} from "./run-paired-live-eval-evidence-command.js";
+import {
+  runPairedLiveEvalPromotionEligibilityCommand
+} from "./run-paired-live-eval-promotion-eligibility-command.js";
+import {
   runDecisionPacketCommand
 } from "./run-decision-packet-command.js";
 
@@ -47,6 +54,8 @@ type HarnessCliCommand = Extract<
   | { kind: "plan" }
   | { kind: "reviewAssess" }
   | { kind: "runShow" }
+  | { kind: "runEvalEvidence" }
+  | { kind: "runEvalPromotionEligibility" }
   | { kind: "decisionPacket" }
   | { kind: "codexBrief" }
   | { kind: "evidenceCapture" }
@@ -99,21 +108,28 @@ const databaseRuntimeOption = (
     : { createDatabaseRuntime: context.createDatabaseRuntime }
 );
 
-const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand => (
-  command.kind === "plan" ||
-    command.kind === "reviewAssess" ||
-    command.kind === "runShow" ||
-    command.kind === "decisionPacket" ||
-    command.kind === "codexBrief" ||
-  command.kind === "evidenceCapture" ||
-  command.kind === "observeRun" ||
-  command.kind === "reflect"
-);
+const harnessCliCommandKinds: ReadonlySet<CliCommand["kind"]> = new Set([
+  "plan",
+  "reviewAssess",
+  "runShow",
+  "runEvalEvidence",
+  "runEvalPromotionEligibility",
+  "decisionPacket",
+  "codexBrief",
+  "evidenceCapture",
+  "observeRun",
+  "reflect"
+]);
+
+const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand =>
+  harnessCliCommandKinds.has(command.kind);
 
 const harnessFallbackMessages = {
   plan: "Unknown CLI error",
   reviewAssess: "Unknown review assess error",
   runShow: "Unknown run show error",
+  runEvalEvidence: "Unknown paired-live eval evidence readback error",
+  runEvalPromotionEligibility: "Unknown paired-live eval promotion eligibility error",
   codexBrief: "Unknown Codex brief error",
   decisionPacket: "Unknown decision packet error",
   evidenceCapture: "Unknown evidence capture error",
@@ -150,7 +166,17 @@ const runReviewAssessCliCommand = (
   });
 
 const runReadbackHarnessCommand = (
-  command: Extract<HarnessCliCommand, { kind: "runShow" | "decisionPacket" | "codexBrief" }>,
+  command: Extract<
+    HarnessCliCommand,
+    {
+      kind:
+        | "runShow"
+        | "runEvalEvidence"
+        | "runEvalPromotionEligibility"
+        | "decisionPacket"
+        | "codexBrief";
+    }
+  >,
   context: HarnessCliCommandContext
 ): Promise<HarnessCommandOutput> => {
   if (command.kind === "runShow") {
@@ -161,6 +187,24 @@ const runReadbackHarnessCommand = (
       runId: command.runId,
       format: command.format,
       ...databaseRuntimeOption(context)
+    });
+  }
+
+  if (command.kind === "runEvalEvidence") {
+    return runPairedLiveEvalEvidenceCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command
+    });
+  }
+
+  if (command.kind === "runEvalPromotionEligibility") {
+    return runPairedLiveEvalPromotionEligibilityCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command
     });
   }
 
@@ -259,7 +303,13 @@ const runSelectedHarnessCommand = (
     return runReviewAssessCliCommand(command, context);
   }
 
-  if (command.kind === "runShow" || command.kind === "decisionPacket" || command.kind === "codexBrief") {
+  if (
+    command.kind === "runShow" ||
+    command.kind === "runEvalEvidence" ||
+    command.kind === "runEvalPromotionEligibility" ||
+    command.kind === "decisionPacket" ||
+    command.kind === "codexBrief"
+  ) {
     return runReadbackHarnessCommand(command, context);
   }
 
@@ -282,6 +332,13 @@ export const runHarnessCliCommand = async (
     const result = await runSelectedHarnessCommand(command, context);
     return harnessCommandResult(result.stdout);
   } catch (error) {
+    if (command.kind === "evidenceCapture") {
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: context.formatCliError(formatEvidenceCaptureError(error))
+      };
+    }
     return harnessCommandError(error, harnessFallbackMessages[command.kind], context);
   }
 };

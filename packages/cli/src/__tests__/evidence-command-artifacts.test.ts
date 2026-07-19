@@ -93,8 +93,7 @@ describe("prepareEvidenceCommandArtifacts", () => {
         prepared.commandOutputArtifacts.find((artifact) => artifact.outputRef === outputRef),
       sha256Hex: commandOutputArtifactSha256Hex
     })).toEqual({
-      status: "ineligible",
-      reason: "unresolved_output_reference"
+      status: "eligible"
     });
   });
 

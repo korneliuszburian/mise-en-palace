@@ -6,6 +6,9 @@
     "tests/fixtures/**",
     "**/*.typecheck.ts"
   ],
+  "dynamicallyLoaded": [
+    "evals/codex-capability/graders/temporal-policy-hidden-source.mjs"
+  ],
   "usedClassMembers": [
     {
       "implements": "HarnessRunRepository",
@@ -29,6 +32,7 @@
         "listMemoryRecordsForProject",
         "listActiveMemory",
         "listHistoricalMemoryWarnings",
+        "getAuthorityUpgradePredecessorPreview",
         "createMemoryCandidate",
         "invalidateMemoryRecord",
         "supersedeMemoryRecord",
@@ -66,6 +70,7 @@
         "createSourceDecisionEdge",
         "listHistoricalClaimWarningsForProject",
         "listSourceDecisionEdgesForRun",
+        "listSourceDecisionsForClaim",
         "createSourceRejection",
         "getSourceDecisionEdgeById"
       ]

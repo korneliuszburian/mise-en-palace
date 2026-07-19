@@ -1,0 +1,13 @@
+{
+  "name": "krn-fixture-env-config-contract-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "trap 'rm -rf .tmp-test' EXIT; rm -rf .tmp-test; tsc -p tsconfig.json --outDir .tmp-test --noEmit false && node .tmp-test/tests/config.test.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

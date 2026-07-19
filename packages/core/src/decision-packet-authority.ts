@@ -4,6 +4,7 @@ import type {
   DecisionPacketContractReadback,
   DecisionPacketActivationDecisionInput,
   DecisionPacketActivationTraceInput,
+  DecisionPacketReviewOnlyUsefulnessCaveat,
   DecisionPacketReadModelInput,
   DecisionPacketTask
 } from "./decision-packet.js";
@@ -11,10 +12,15 @@ import {
   buildDecisionPacketContractReadback
 } from "./decision-packet.js";
 import {
+  parseMemorySupersessionTimelineReadback,
+  parseSourceConsensusTimelineReadback
+} from "./decision-packet-contract.js";
+import {
   decideEvidenceContractActivation
 } from "./evidence-contract.js";
 import {
   knowledgeUsefulnessOutcomesFromMetadata,
+  isSourceUsefulnessOutcome,
   sourceUsefulnessOutcomesFromMetadata
 } from "./feedback-delta.js";
 import type {
@@ -64,10 +70,10 @@ export const decisionPacketReadModelProves = [
 ] as const;
 
 export const decisionPacketReadModelDoesNotProve = [
-  "commands were executed by this readback command or that their selected set is sufficient",
-  "activation scoring quality or production graph retrieval quality",
-  "memory quality, source truth, review correctness, or product readiness",
-  "Memory Core mutation"
+  "this readback command does not prove commands were executed or that their selected set is sufficient",
+  "this readback does not prove activation scoring quality or production graph retrieval quality",
+  "this readback does not prove memory quality, source truth, review correctness, or product readiness",
+  "this readback does not prove Memory Core mutation occurred"
 ] as const;
 
 export type DecisionPacketUsefulnessSubjectKind =
@@ -442,6 +448,7 @@ export const projectDecisionPacketActivationCandidate = (
   const projectStandardDecision = projectStandardDecisionFromMetadata(candidate.metadata);
   const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
   const sourceDecisionSupportBoost = sourceDecisionSupportBoostFromMetadata(candidate.metadata);
+  const staleSourceDecisionIds = readMetadataStringList(candidate.metadata, "staleSourceDecisionIds");
   const sourceRejectionIds = readMetadataStringList(candidate.metadata, "sourceRejectionIds");
   const pendingAntiMemoryReview = pendingAntiMemoryReviewFromMetadata(candidate.metadata);
 
@@ -457,6 +464,7 @@ export const projectDecisionPacketActivationCandidate = (
     ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
     ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence }),
     ...(sourceDecisionSupportBoost === undefined ? {} : { sourceDecisionSupportBoost }),
+    ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
     ...(sourceRejectionIds.length === 0 ? {} : { sourceRejectionIds }),
     ...(pendingAntiMemoryReview === undefined ? {} : { pendingAntiMemoryReview })
   } satisfies DecisionPacketActivationCandidateInput;
@@ -488,18 +496,28 @@ export const projectDecisionPacketTask = (
 
 const activationTraceForAuthority = (
   aggregate: HarnessRunAggregate
-): DecisionPacketActivationTraceInput | undefined => aggregate.activationTrace === undefined
-  ? undefined
-  : {
+): DecisionPacketActivationTraceInput | undefined => {
+  if (aggregate.activationTrace === undefined) return undefined;
+  const sourceConsensusTimeline = parseSourceConsensusTimelineReadback(
+    aggregate.activationTrace.metadata?.sourceConsensusTimeline
+  );
+  const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
+    aggregate.activationTrace.metadata?.memorySupersessionTimeline
+  );
+  return {
+      ...(sourceConsensusTimeline === undefined ? {} : { sourceConsensusTimeline }),
+      ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
       candidates: aggregate.activationTrace.candidates.map(
         projectDecisionPacketActivationCandidate
       ),
       decisions: aggregate.activationTrace.decisions.map(projectDecisionPacketActivationDecision)
     };
+};
 
 const feedbackDeltaForAuthority = (
   feedback: HarnessRunAggregate["feedbackDeltas"][number]
 ): DecisionPacketReadModelInput["feedbackDeltas"][number] => ({
+  id: feedback.id,
   status: feedback.status,
   candidates: [],
   sourceUsefulnessOutcomes: sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
@@ -517,6 +535,53 @@ const feedbackDeltaForAuthority = (
       reason: outcome.reason
     }))
 });
+
+const reviewOnlyFeedbackStatuses = new Set(["candidate", "accepted", "rejected", "applied"]);
+const nonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.length > 0;
+const isReviewOnlyFeedbackStatus = (
+  value: unknown
+): value is DecisionPacketReviewOnlyUsefulnessCaveat["feedbackStatus"] =>
+  reviewOnlyFeedbackStatuses.has(String(value));
+
+const reviewOnlyUsefulnessCaveatFromUnknown = (
+  value: unknown
+): DecisionPacketReviewOnlyUsefulnessCaveat | undefined => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  if (
+    record.subjectType !== "knowledge" ||
+    !isReviewOnlyFeedbackStatus(record.feedbackStatus) ||
+    !nonEmptyString(record.subjectId) ||
+    !nonEmptyString(record.reason) ||
+    !nonEmptyString(record.doesNotProve) ||
+    !isSourceUsefulnessOutcome(record.outcome)
+  ) return undefined;
+  return {
+    ...(nonEmptyString(record.feedbackDeltaId) ? { feedbackDeltaId: record.feedbackDeltaId } : {}),
+    subjectType: "knowledge",
+    subjectId: record.subjectId,
+    feedbackStatus: record.feedbackStatus,
+    outcome: record.outcome,
+    reason: record.reason,
+    doesNotProve: record.doesNotProve
+  };
+};
+
+const reviewOnlyUsefulnessCaveatsFromHarnessPlan = (
+  aggregate: HarnessRunAggregate
+): DecisionPacketReviewOnlyUsefulnessCaveat[] => {
+  const selection = aggregate.harnessPlan.metadata.knowledgeSelection;
+  if (typeof selection !== "object" || selection === null || Array.isArray(selection)) {
+    return [];
+  }
+  const values = (selection as Record<string, unknown>).reviewOnlyUsefulnessCaveats;
+  if (!Array.isArray(values)) return [];
+  return values.flatMap((value) => {
+    const caveat = reviewOnlyUsefulnessCaveatFromUnknown(value);
+    return caveat === undefined ? [] : [caveat];
+  });
+};
 
 export const decisionPacketToolBoundariesForHarnessRun = (
   aggregate: HarnessRunAggregate
@@ -545,6 +610,8 @@ export const buildDecisionPacketAuthorityProjection = (
     executionRun: aggregate.executionRun
   });
   const nextAction = decisionPacketNextActionForHarnessRun(aggregate);
+
+  const reviewOnlyUsefulnessCaveats = reviewOnlyUsefulnessCaveatsFromHarnessPlan(aggregate);
 
   return {
     run: {
@@ -583,6 +650,7 @@ export const buildDecisionPacketAuthorityProjection = (
       : { evidenceContract: evidenceContractActivation.evidenceContract }),
     evidenceBundles: [],
     feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaForAuthority),
+    ...(reviewOnlyUsefulnessCaveats.length === 0 ? {} : { reviewOnlyUsefulnessCaveats }),
     proof: {
       doesNotProve: [...decisionPacketReadModelDoesNotProve]
     }

@@ -135,7 +135,7 @@ const runRetrievalSubstrateReadinessProbe = async (
   try {
     const [workspace] = await client<{ id: string }[]>`
       insert into workspaces (slug, display_name, metadata)
-      values (${marker}, 'Retrieval substrate readiness probe', ${client.json({ marker })})
+      values (${marker}, 'Retrieval substrate readiness probe', ${JSON.stringify({ marker })})
       returning id
     `;
 
@@ -143,7 +143,7 @@ const runRetrievalSubstrateReadinessProbe = async (
 
     const [project] = await client<{ id: string }[]>`
       insert into projects (workspace_id, slug, display_name, metadata)
-      values (${workspaceRow.id}, ${marker}, 'Retrieval substrate readiness probe', ${client.json({ marker })})
+      values (${workspaceRow.id}, ${marker}, 'Retrieval substrate readiness probe', ${JSON.stringify({ marker })})
       returning id
     `;
     const projectRow = requireInsertedRow(project, "a project");
@@ -161,7 +161,7 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${projectRow.id},
         'db-readiness',
         'retrieval substrate readiness probe',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -180,7 +180,7 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${projectRow.id},
         'Retrieval substrate readiness probe',
         'Prove retrieval substrate rows can be inserted and read.',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -195,7 +195,7 @@ const runRetrievalSubstrateReadinessProbe = async (
       values (
         ${taskContractRow.id},
         'Retrieval substrate readiness probe',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -212,7 +212,7 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${harnessPlanRow.id},
         1,
         1,
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -232,14 +232,14 @@ const runRetrievalSubstrateReadinessProbe = async (
       )
       values (
         ${projectRow.id},
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         'source-code',
         'english',
         'Retrieval substrate readiness probe',
         'The probe writes and reads retrieval rows in one transaction.',
         'retrieval substrate readiness probe',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -258,7 +258,7 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${marker},
         ${DEFAULT_EMBEDDING_DIMENSIONS},
         'cosine',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -279,13 +279,13 @@ const runRetrievalSubstrateReadinessProbe = async (
       values (
         ${projectRow.id},
         ${embeddingModelRow.id},
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         ${searchDocumentRow.id},
         ${zeroEmbeddingVector}::vector,
         ${`sha256:${marker}:embedding`},
         'source-code',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -300,7 +300,7 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${projectRow.id},
         'retrieval substrate readiness probe',
         'hybrid',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -321,13 +321,13 @@ const runRetrievalSubstrateReadinessProbe = async (
       values (
         ${retrievalRunRow.id},
         'search',
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         ${searchDocumentRow.id},
         'source-code',
         100,
         'retrieval substrate readiness probe',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
       returning id
     `;
@@ -349,12 +349,12 @@ const runRetrievalSubstrateReadinessProbe = async (
         ${retrievalRunRow.id},
         ${retrievalCandidateRow.id},
         ${contextAssemblyRow.id},
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         'included',
         'retrieval substrate readiness probe',
         100,
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -371,13 +371,13 @@ const runRetrievalSubstrateReadinessProbe = async (
       )
       values (
         ${contextAssemblyRow.id},
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         1,
         'retrieval substrate readiness probe',
         'prove context item writes are structurally usable',
         'source-code',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 
@@ -393,12 +393,12 @@ const runRetrievalSubstrateReadinessProbe = async (
       )
       values (
         ${contextAssemblyRow.id},
-        'architecture_decision',
-        ${projectRow.id},
+        'task_contract',
+        ${taskContractRow.id},
         'duplicate',
         'retrieval substrate readiness probe',
         'source-code',
-        ${client.json({ marker })}
+        ${JSON.stringify({ marker })}
       )
     `;
 

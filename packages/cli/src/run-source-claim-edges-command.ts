@@ -93,6 +93,12 @@ const sourceRelationMetadataLines = (
     ...optionalValueLine("consumer", metadata.consumer),
     ...optionalValueLine("doesNotProve", metadata.doesNotProve),
     ...optionalValueLine("evidenceRef", metadata.evidenceRef),
+    ...(metadata.evidenceRefs.length === 0
+      ? []
+      : [
+          "  evidenceRefs:",
+          ...metadata.evidenceRefs.map((evidenceRef) => `  - ${evidenceRef}`)
+        ]),
     ...optionalValueLine("sourceDecisionRef", metadata.sourceDecisionRef),
     ...optionalValueLine("scope", metadata.scope),
     ...optionalValueLine("validFrom", metadata.validFrom),

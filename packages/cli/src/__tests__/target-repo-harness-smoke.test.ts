@@ -53,6 +53,7 @@ describe("targetRepoHarnessSmoke", () => {
       memoryPositiveFeedbackCount: 0,
       automaticMemoryRecordMutation: "none",
       targetProjectLinked: true,
+      crossProjectLeakageProof: true,
       remainingMarkerCount: 0,
       cleanedUp: true
     });

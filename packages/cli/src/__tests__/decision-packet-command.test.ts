@@ -761,6 +761,74 @@ describe("decision packet CLI", () => {
     ));
   });
 
+  it("exposes only validated persisted source consensus timeline metadata", () => {
+    const timeline = {
+      currentSourceClaimIds: ["claim-current"],
+      caveatedSourceClaimIds: [],
+      historicalSourceClaimIds: ["claim-old"],
+      staleSourceClaimIds: ["claim-old"],
+      supersededSourceClaimIds: ["claim-old"],
+      unknownSourceClaimIds: [],
+      rejectedSourceClaimIds: [],
+      entries: [{
+        sourceClaimId: "claim-current",
+        claim: "Current governed claim",
+        status: "accepted",
+        createdAt: "2026-07-17T00:00:00.000Z",
+        sourceAuthority: "project-decision",
+        authorityRank: 100,
+        temporalValidity: { status: "current" },
+        authorityState: "accepted",
+        state: "current_authority",
+        decisionSupportEdgeIds: [],
+        evidenceRefs: ["source:current"],
+        rawEvidenceCitationRefs: [],
+        sourceRanges: [],
+        relationEvidence: [],
+        supportingSourceClaimIds: [],
+        dissentingSourceClaimIds: [],
+        supersededBySourceClaimIds: [],
+        supersedesSourceClaimIds: [],
+        rejectionIds: [],
+        caveats: []
+      }],
+      doesNotProve: "Timeline is bounded readback only."
+    };
+    const projected = buildDecisionPacketReadModel({
+      ...aggregate,
+      ...(aggregate.activationTrace === undefined ? {} : {
+          activationTrace: {
+            ...aggregate.activationTrace,
+            metadata: {
+              sourceConsensusTimeline: timeline
+            }
+          }
+        })
+    });
+    expect(projected.context.activationTrace?.sourceConsensusTimeline).toEqual(timeline);
+    expect(buildDecisionPacketReadModel({
+      ...aggregate,
+      ...(aggregate.activationTrace === undefined ? {} : {
+          activationTrace: {
+            ...aggregate.activationTrace,
+            metadata: {
+              sourceConsensusTimeline: {
+                currentSourceClaimIds: [],
+                caveatedSourceClaimIds: [],
+                historicalSourceClaimIds: [],
+                staleSourceClaimIds: [],
+                supersededSourceClaimIds: [],
+                unknownSourceClaimIds: [],
+                rejectedSourceClaimIds: [],
+                entries: [{ sourceClaimId: "forged", authorityRank: Number.NaN }],
+                doesNotProve: "forged"
+              }
+            }
+          }
+        })
+    }).context.activationTrace?.sourceConsensusTimeline).toBeUndefined();
+  });
+
   it("projects persisted tool boundaries and fail-closed abstention guidance", () => {
     if (aggregate.contextAssembly === undefined) {
       throw new Error("decision packet fixture requires a context assembly");
@@ -836,6 +904,8 @@ describe("decision packet CLI", () => {
       .toEqual(packetWithoutFeedback.caveatedMemoryRefs);
     expect(packetWithRejectedHistory.staleKnowledgeIds)
       .toEqual(packetWithoutFeedback.staleKnowledgeIds);
+    expect(packetWithRejectedHistory.reviewOnlyUsefulnessCaveats)
+      .toBeUndefined();
     expect(packetWithRejectedHistory.evidenceGaps)
       .toEqual(packetWithoutFeedback.evidenceGaps);
     expect(packetWithRejectedHistory.abstentionScore)

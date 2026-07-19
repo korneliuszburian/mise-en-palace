@@ -129,6 +129,54 @@ describe("runCli init", () => {
     );
   });
 
+  it("resolves init --repo from pnpm's existing absolute caller cwd", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageCwd = path.join(repoRoot, "packages", "cli");
+    const result = await runCli(
+      ["init", "--dry-run", "--repo", "."],
+      {
+        env: { INIT_CWD: repoRoot },
+        cwd: packageCwd,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(`Repo path: ${repoRoot}`);
+  });
+
+  it("falls back to runtime cwd when init caller cwd is absent or invalid", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageCwd = path.join(repoRoot, "packages", "cli");
+    const absentCallerResult = await runCli(
+      ["init", "--dry-run", "--repo", "."],
+      {
+        env: {},
+        cwd: packageCwd,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+    const invalidCallerResult = await runCli(
+      ["init", "--dry-run", "--repo", "."],
+      {
+        env: { INIT_CWD: path.join(repoRoot, "package.json") },
+        cwd: packageCwd,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(absentCallerResult.exitCode).toBe(0);
+    expect(absentCallerResult.stderr).toBe("");
+    expect(absentCallerResult.stdout).toContain(`Repo path: ${packageCwd}`);
+    expect(invalidCallerResult.exitCode).toBe(0);
+    expect(invalidCallerResult.stderr).toBe("");
+    expect(invalidCallerResult.stdout).toContain(`Repo path: ${packageCwd}`);
+  });
+
   it("keeps owner-file inputs in the dry-run connect next command", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const fixtureRepo = path.join(

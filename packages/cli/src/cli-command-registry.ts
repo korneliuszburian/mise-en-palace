@@ -8,7 +8,11 @@ import {
 } from "./parse-run-args.js";
 
 type RegisteredTopLevelCommand = "run";
-type RegisteredCommandKind = "runShow" | "runShowHelp";
+type RegisteredCommandKind =
+  | "runShow"
+  | "runEvalEvidence"
+  | "runEvalPromotionEligibility"
+  | "runShowHelp";
 export type RegisteredHelpCommandKind = Extract<RegisteredCommandKind, `${string}Help`>;
 
 interface RegisteredCliCommandGroup<K extends RegisteredCommandKind> {
@@ -20,12 +24,19 @@ interface RegisteredCliCommandGroup<K extends RegisteredCommandKind> {
 
 const runCommandGroup = {
   topLevelCommand: "run",
-  commandKinds: ["runShow", "runShowHelp"],
+  commandKinds: [
+    "runShow",
+    "runEvalEvidence",
+    "runEvalPromotionEligibility",
+    "runShowHelp"
+  ],
   parse: parseRunArgs,
   formatHelp: (_kind: "runShowHelp") => formatRunUsage()
-} satisfies RegisteredCliCommandGroup<"runShow" | "runShowHelp">;
+} satisfies RegisteredCliCommandGroup<
+  "runShow" | "runEvalEvidence" | "runEvalPromotionEligibility" | "runShowHelp"
+>;
 
-export const registeredCliCommandGroups = [
+const registeredCliCommandGroups = [
   runCommandGroup
 ] as const;
 

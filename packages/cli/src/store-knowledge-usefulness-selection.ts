@@ -1,7 +1,9 @@
 import {
+  isSourceUsefulnessOutcome,
   knowledgeUsefulnessOutcomesFromMetadata
 } from "@krn/core";
 import type {
+  DecisionPacketReviewOnlyUsefulnessCaveat,
   FeedbackDelta
 } from "@krn/core";
 import type {
@@ -60,6 +62,7 @@ const usefulnessFeedbackByKnowledgeId = (
 export interface StoreKnowledgeUsefulnessSelection {
   readModels: KnowledgeReadModel[];
   attachedReviewOnlyFeedback: boolean;
+  reviewOnlyUsefulnessCaveats: DecisionPacketReviewOnlyUsefulnessCaveat[];
 }
 
 const feedbackSubjectsForKnowledgeReadModels = (
@@ -108,6 +111,29 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
     readModels,
     [...visibleFeedback.values()]
   );
+  const knownKnowledgeIds = new Set(readModels.map((readModel) => readModel.id));
+  const reviewOnlyUsefulnessCaveats = feedbackDeltas
+    .filter((feedbackDelta) => feedbackDelta.status !== "rejected")
+    .flatMap((feedbackDelta) => knowledgeUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)
+      .flatMap((outcome) => {
+        if (
+          !knownKnowledgeIds.has(outcome.knowledgeId) ||
+          !isSourceUsefulnessOutcome(outcome.outcome) ||
+          !["noise", "stale", "hurt", "rejected", "unknown"].includes(outcome.outcome)
+        ) {
+          return [];
+        }
+        return [{
+          feedbackDeltaId: feedbackDelta.id,
+          subjectType: "knowledge" as const,
+          subjectId: outcome.knowledgeId,
+          feedbackStatus: feedbackDelta.status,
+          outcome: outcome.outcome,
+          reason: outcome.reason,
+          doesNotProve:
+            "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+        }];
+      }));
 
   return {
     readModels: readModelsWithFeedback
@@ -117,6 +143,7 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
           nextAction: readModel.nextAction === "use" ? "review" as const : readModel.nextAction
         }
         : readModel),
-    attachedReviewOnlyFeedback: visibleFeedback.size > 0
+    attachedReviewOnlyFeedback: visibleFeedback.size > 0,
+    reviewOnlyUsefulnessCaveats
   };
 };

@@ -325,7 +325,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 21,
+      maxRenderedSections: 23,
       maxRenderedItems: 80,
       status: "within_budget"
     });
@@ -362,6 +362,80 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- source-decision-canonical-1");
     expect(rendered).not.toContain("architecture-target-opaque-1");
     expect(rendered).not.toContain("source-decision-stale-1");
+  });
+
+  it("renders bounded source consensus history with evidence and caveats", () => {
+    const packet: DecisionPacket = {
+      ...packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Use the current source consensus."
+      }),
+      sourceConsensus: {
+        ...packetForBrief({
+          taskContract,
+          contextAssembly,
+          capabilityPlan,
+          evidenceContract,
+          nextAction: "Use the current source consensus."
+        }).sourceConsensus,
+        timeline: {
+          currentSourceClaimIds: ["claim-current"],
+          caveatedSourceClaimIds: [],
+          historicalSourceClaimIds: ["claim-old"],
+          staleSourceClaimIds: [],
+          supersededSourceClaimIds: ["claim-old"],
+          unknownSourceClaimIds: [],
+          rejectedSourceClaimIds: [],
+          entries: [{
+            sourceClaimId: "claim-old",
+            claim: "Use the old standard only for historical context.",
+            status: "accepted",
+            createdAt,
+            sourceAuthority: "project-decision",
+            authorityRank: 4,
+            temporalValidity: { status: "current" },
+            authorityState: "superseded",
+            state: "historical",
+            decisionSupportEdgeIds: ["edge-1"],
+            evidenceRefs: ["review-1"],
+            rawEvidenceCitationRefs: ["artifact-1#L4"],
+            sourceRanges: ["artifact-1#L4-L8"],
+            relationEvidence: [{
+              sourceClaimEdgeId: "relation-edge-1",
+              direction: "outgoing",
+              kind: "supersedes",
+              relatedSourceClaimId: "claim-current",
+              metadataEvidenceRefs: [],
+              sourceRanges: [],
+              evidenceGaps: ["missing_relation_support_ref"],
+              temporalValidity: { status: "current" }
+            }],
+            supportingSourceClaimIds: ["claim-support"],
+            dissentingSourceClaimIds: ["claim-dissent"],
+            supersededBySourceClaimIds: ["claim-current"],
+            supersedesSourceClaimIds: [],
+            rejectionIds: [],
+            caveats: ["Historical path; do not treat as current authority."]
+          }],
+          doesNotProve: "Timeline does not prove source truth or Codex obedience."
+        }
+      }
+    };
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceConsensusTimeline).toHaveLength(1);
+    expect(rendered).toContain("Source Consensus Timeline:");
+    expect(rendered).toContain("claim-old");
+    expect(rendered).toContain("review-1");
+    expect(rendered).toContain("supporting_claims=claim-support");
+    expect(rendered).toContain("dissenting_claims=claim-dissent");
+    expect(rendered).toContain("relation_evidence_gaps=missing_relation_support_ref");
+    expect(rendered).toContain("Historical path; do not treat as current authority.");
+    expect(brief.doesNotProve).toContain("Timeline does not prove source truth or Codex obedience.");
   });
 
   it("keeps stale canonical provenance visible while preserving packet abstention", () => {

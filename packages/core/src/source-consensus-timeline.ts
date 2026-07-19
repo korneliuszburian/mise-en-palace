@@ -117,11 +117,16 @@ const sourceClaimEdgesBySource = (
 };
 
 const sourceDecisionEdgesByClaim = (
-  edges: readonly SourceDecisionEdge[]
+  edges: readonly SourceDecisionEdge[],
+  now: IsoTimestamp
 ): ReadonlyMap<SourceClaim["id"], readonly SourceDecisionEdge[]> => {
   const byClaim = new Map<SourceClaim["id"], SourceDecisionEdge[]>();
 
   for (const edge of edges) {
+    if (assessSourceMetadataTemporalValidity(edge.metadata, now).status !== "current") {
+      continue;
+    }
+
     addGroupedValue(byClaim, edge.sourceClaimId, edge);
   }
 
@@ -164,15 +169,18 @@ const supersedingEdgeKinds = new Set<SourceClaimEdgeKind>([
 const sourceClaimEndpointIdsByKind = (
   edges: readonly SourceClaimEdge[],
   kinds: ReadonlySet<SourceClaimEdgeKind>,
-  endpoint: "from" | "to"
+  endpoint: "from" | "to",
+  knownSourceClaimIds?: ReadonlySet<SourceClaim["id"]>
 ): readonly SourceClaim["id"][] => {
   const sourceClaimIds: SourceClaim["id"][] = [];
 
   for (const edge of edges) {
     if (kinds.has(edge.kind)) {
-      sourceClaimIds.push(
-        endpoint === "from" ? edge.fromSourceClaimId : edge.toSourceClaimId
-      );
+      const sourceClaimId = endpoint === "from" ? edge.fromSourceClaimId : edge.toSourceClaimId;
+
+      if (knownSourceClaimIds === undefined || knownSourceClaimIds.has(sourceClaimId)) {
+        sourceClaimIds.push(sourceClaimId);
+      }
     }
   }
 
@@ -189,7 +197,7 @@ const sourceClaimEndpointIdsByKindAndStatus = (
   now: IsoTimestamp
 ): readonly SourceClaim["id"][] =>
   sourceClaimEndpointIdsByKind(
-    edges.filter((edge) => sourceClaimEdgeIsCurrent(edge, now)),
+    edges.filter((edge) => sourceClaimEdgeCanAffectConsensus(edge, now)),
     kinds,
     endpoint
   ).filter((sourceClaimId) =>
@@ -284,6 +292,12 @@ const sourceConsensusRelationEvidenceForEdge = (
   };
 };
 
+const sourceClaimEdgeHasSupportRef = (edge: SourceClaimEdge): boolean => {
+  const metadata = readSourceRelationMetadataReadback(edge.metadata);
+
+  return metadata.evidenceRefs.length > 0 || metadata.sourceDecisionRef !== undefined;
+};
+
 const sourceConsensusRelationEvidence = (input: {
   readonly incomingEdges: readonly SourceClaimEdge[];
   readonly outgoingEdges: readonly SourceClaimEdge[];
@@ -301,6 +315,11 @@ const sourceClaimEdgeIsCurrent = (
   edge: SourceClaimEdge,
   now: IsoTimestamp
 ): boolean => assessSourceMetadataTemporalValidity(edge.metadata, now).status === "current";
+
+const sourceClaimEdgeCanAffectConsensus = (
+  edge: SourceClaimEdge,
+  now: IsoTimestamp
+): boolean => sourceClaimEdgeIsCurrent(edge, now) && sourceClaimEdgeHasSupportRef(edge);
 
 const isUnknownSourceConsensusEntry = (
   entry: SourceConsensusTimelineEntry
@@ -398,15 +417,17 @@ const sourceClaimEndpointIdsByKindAndRankDownAuthority = (
   kinds: ReadonlySet<SourceClaimEdgeKind>,
   endpoint: "from" | "to",
   rankDownAuthoritySourceClaimIds: ReadonlySet<SourceClaim["id"]>,
+  knownSourceClaimIds: ReadonlySet<SourceClaim["id"]>,
   now: IsoTimestamp
 ): readonly SourceClaim["id"][] =>
   sourceClaimEndpointIdsByKind(
     edges.filter((edge) =>
       rankDownAuthoritySourceClaimIds.has(edge.fromSourceClaimId) &&
-      sourceClaimEdgeIsCurrent(edge, now)
+      sourceClaimEdgeCanAffectConsensus(edge, now)
     ),
     kinds,
-    endpoint
+    endpoint,
+    knownSourceClaimIds
   );
 
 const sourceConsensusTimelineEntryForClaim = (input: {
@@ -422,10 +443,10 @@ const sourceConsensusTimelineEntryForClaim = (input: {
   readonly now: IsoTimestamp;
 }): SourceConsensusTimelineEntry => {
   const currentIncomingEdges = input.incomingEdges.filter((edge) =>
-    sourceClaimEdgeIsCurrent(edge, input.now)
+    sourceClaimEdgeCanAffectConsensus(edge, input.now)
   );
   const currentOutgoingEdges = input.outgoingEdges.filter((edge) =>
-    sourceClaimEdgeIsCurrent(edge, input.now)
+    sourceClaimEdgeCanAffectConsensus(edge, input.now)
   );
   const blockedByCurrentSourceClaimId = blockedByCurrentSourceClaimIdFor(input);
   const supersededBySourceClaimIds = sourceClaimEndpointIdsByKindAndRankDownAuthority(
@@ -433,6 +454,7 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     supersedingEdgeKinds,
     "from",
     input.rankDownAuthoritySourceClaimIds,
+    new Set(input.sourceClaims.map((claim) => claim.id)),
     input.now
   );
   const acceptedDissentingSourceClaimIds = sourceClaimEndpointIdsByKindAndStatus(
@@ -486,18 +508,21 @@ const sourceConsensusTimelineEntryForClaim = (input: {
     supportingSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentIncomingEdges,
       supportEdgeKinds,
-      "from"
+      "from",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     dissentingSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentIncomingEdges,
       dissentEdgeKinds,
-      "from"
+      "from",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     supersededBySourceClaimIds,
     supersedesSourceClaimIds: sourceClaimEndpointIdsByKind(
       currentOutgoingEdges,
       supersedingEdgeKinds,
-      "to"
+      "to",
+      new Set(input.sourceClaims.map((claim) => claim.id))
     ),
     rejectionIds: input.rejectionIds,
     caveats: authorityAssessment.caveats
@@ -513,7 +538,7 @@ export const buildSourceConsensusTimelineReadback = (input: {
 }): SourceConsensusTimelineReadback => {
   const incomingEdgesByClaim = sourceClaimEdgesByTarget(input.sourceClaimEdges);
   const outgoingEdgesByClaim = sourceClaimEdgesBySource(input.sourceClaimEdges);
-  const decisionEdgesByClaim = sourceDecisionEdgesByClaim(input.sourceDecisionEdges);
+  const decisionEdgesByClaim = sourceDecisionEdgesByClaim(input.sourceDecisionEdges, input.now);
   const rejectionsByClaim = sourceRejectionsByClaim(input.sourceRejections ?? []);
   const sourceClaimStatusById = new Map(input.sourceClaims.map((claim) => [
     claim.id,

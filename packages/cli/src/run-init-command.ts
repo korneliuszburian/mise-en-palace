@@ -1,6 +1,9 @@
 import {
   createHash
 } from "node:crypto";
+import {
+  stat
+} from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 import {
@@ -110,6 +113,31 @@ export interface InitConnectRuntime {
 export type CreateInitConnectRuntime = (
   input: InitConnectRuntimeInput
 ) => Promise<InitConnectRuntime>;
+
+const pathIsDirectory = async (targetPath: string): Promise<boolean> => {
+  try {
+    return (await stat(targetPath)).isDirectory();
+  } catch {
+    return false;
+  }
+};
+
+const resolveInitCallerCwd = async (
+  runtime: Pick<InitCommandRuntime, "cwd" | "env">
+): Promise<string> => {
+  const initCwd = runtime.env.INIT_CWD?.trim();
+
+  if (
+    initCwd === undefined ||
+    initCwd.length === 0 ||
+    !path.isAbsolute(initCwd) ||
+    !(await pathIsDirectory(initCwd))
+  ) {
+    return runtime.cwd;
+  }
+
+  return initCwd;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -564,7 +592,8 @@ const createPostgresInitConnectRuntime = async (
 export const runInitCommand = async (
   runtime: InitCommandRuntime
 ): Promise<InitCommandResult> => {
-  const detection = await detectTargetRepo(runtime.cwd, runtime.repo, runtime.ownerFiles ?? []);
+  const callerCwd = await resolveInitCallerCwd(runtime);
+  const detection = await detectTargetRepo(callerCwd, runtime.repo, runtime.ownerFiles ?? []);
 
   if (runtime.mode === "connect") {
     if (runtime.persist !== true) {

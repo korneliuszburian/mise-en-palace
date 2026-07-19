@@ -7,20 +7,11 @@ import {
 import {
   formatRegisteredCommandHelp,
   isRegisteredHelpCommandKind,
-  parseRegisteredTopLevelCommand,
-  registeredCliCommandGroups
+  parseRegisteredTopLevelCommand
 } from "../cli-command-registry.js";
 
 describe("cliCommandRegistry", () => {
-  it("registers the run show parser and help as the first pilot", () => {
-    expect(registeredCliCommandGroups.map((group) => group.topLevelCommand)).toEqual([
-      "run"
-    ]);
-    expect(registeredCliCommandGroups[0]?.commandKinds).toEqual([
-      "runShow",
-      "runShowHelp"
-    ]);
-
+  it("parses run show through the registered command boundary", () => {
     expect(parseRegisteredTopLevelCommand("run", ["show", "--run-id", "run-1"])).toEqual({
       command: {
         kind: "runShow",
@@ -31,11 +22,59 @@ describe("cliCommandRegistry", () => {
     expect(parseRegisteredTopLevelCommand("plan", [])).toBeUndefined();
   });
 
+  it("parses paired-live eval evidence through the registered command boundary", () => {
+    expect(parseRegisteredTopLevelCommand("run", [
+      "eval-evidence",
+      "--project-id",
+      "project-1",
+      "--run-id",
+      "run-1",
+      "--outcome",
+      "win",
+      "--usefulness-outcome",
+      "helped",
+      "--limit",
+      "25",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "runEvalEvidence",
+        projectId: "project-1",
+        runId: "run-1",
+        outcome: "win",
+        usefulnessOutcome: "helped",
+        limit: 25,
+        format: "json"
+      }
+    });
+  });
+
+  it("parses paired-live eval promotion eligibility through the registered command boundary", () => {
+    expect(parseRegisteredTopLevelCommand("run", [
+      "eval-promotion-eligibility",
+      "--project-id",
+      "project-1",
+      "--candidate-id",
+      "paired-target-repair:run-1",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "runEvalPromotionEligibility",
+        projectId: "project-1",
+        candidateId: "paired-target-repair:run-1",
+        format: "json"
+      }
+    });
+  });
+
   it("formats registered help without the legacy help map", () => {
     expect(isRegisteredHelpCommandKind("runShowHelp")).toBe(true);
     expect(isRegisteredHelpCommandKind("dbHelp")).toBe(false);
     expect(formatRegisteredCommandHelp("runShowHelp")).toContain(
-      "Usage: krn run show --run-id <execution-run-id> [--json]"
+      "krn run eval-evidence --project-id <project-id>"
+    );
+    expect(formatRegisteredCommandHelp("runShowHelp")).toContain(
+      "krn run eval-promotion-eligibility --project-id <project-id>"
     );
   });
 });

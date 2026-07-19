@@ -108,7 +108,9 @@ const executionBriefSectionCounters = {
   explicit_exclusions: (brief) => brief.explicitExclusions.length,
   source_claims_selected: (brief) => brief.sourceClaimsSelected.length,
   source_decision_ids: (brief) => brief.sourceDecisionIds.length,
+  source_consensus_timeline: (brief) => brief.sourceConsensusTimeline.length,
   memory_records_selected: (brief) => brief.memoryRecordsSelected.length,
+  memory_supersession_timeline: (brief) => brief.memorySupersessionTimeline.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -251,6 +253,36 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const memoryRecordsSelected = includedContext
     .filter((inclusion) => inclusion.subjectType === "memory_record")
     .map((inclusion) => inclusion.subjectId);
+  const sourceConsensusTimeline = (packet.sourceConsensus.timeline?.entries ?? []).map((entry) =>
+    [
+      `- ${entry.sourceClaimId}`,
+      `state=${entry.state}`,
+      `authority_state=${entry.authorityState}`,
+      `claim=${entry.claim}`,
+      `superseded_by=${entry.supersededBySourceClaimIds.join(",") || "none"}`,
+      `supersedes=${entry.supersedesSourceClaimIds.join(",") || "none"}`,
+      `supporting_claims=${entry.supportingSourceClaimIds.join(",") || "none"}`,
+      `dissenting_claims=${entry.dissentingSourceClaimIds.join(",") || "none"}`,
+      `decision_edges=${entry.decisionSupportEdgeIds.join(",") || "none"}`,
+      `evidence_refs=${entry.evidenceRefs.join(",") || "none"}`,
+      `raw_evidence_refs=${entry.rawEvidenceCitationRefs.join(",") || "none"}`,
+      `relation_evidence_gaps=${entry.relationEvidence.flatMap((relation) => relation.evidenceGaps).join(",") || "none"}`,
+      `caveats=${entry.caveats.join(";") || "none"}`
+    ].join(" | ")
+  );
+  const memorySupersessionTimeline = (packet.memorySupersessionTimeline?.entries ?? []).map((entry) =>
+    [
+      `- ${entry.predecessorMemoryRecordId} -> ${entry.replacementMemoryRecordId}`,
+      `predecessor_status=${entry.predecessorStatus}`,
+      `replacement_status=${entry.replacementStatus}`,
+      `reviewer=${entry.transition.reviewer}`,
+      `superseded_at=${entry.transition.supersededAt}`,
+      `reason=${entry.transition.reason}`,
+      `evidence_status=${entry.evidence.status}`,
+      `source_claim_ids=${entry.evidence.sourceClaimIds.join(",") || "none"}`,
+      `evidence_refs=${entry.evidence.evidenceRefs.join(",") || "none"}`
+    ].join(" | ")
+  );
   const evidenceContract = packet.evidenceContract === undefined
     ? {
         active: false,
@@ -279,6 +311,12 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const doesNotProve = [...new Set([
     ...packet.doesNotProve,
     ...packet.nonProofs,
+    ...(packet.sourceConsensus.timeline === undefined
+      ? []
+      : [packet.sourceConsensus.timeline.doesNotProve]),
+    ...(packet.memorySupersessionTimeline === undefined
+      ? []
+      : [packet.memorySupersessionTimeline.doesNotProve]),
     "Codex executed the work.",
     "Memory was mutated.",
     "Maintenance queue records were processed by a runtime."
@@ -305,7 +343,9 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     explicitExclusions,
     sourceClaimsSelected,
     sourceDecisionIds: [...packet.sourceDecisionIds],
+    sourceConsensusTimeline,
     memoryRecordsSelected,
+    memorySupersessionTimeline,
     antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
     evidenceGaps,
     toolBoundaries: [...packet.toolBoundaries],
@@ -362,7 +402,9 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     "",
     ...renderOptionalSection("Source Claims Selected:", brief.sourceClaimsSelected.map((claim) => `- ${claim}`)),
     ...renderOptionalSection("Canonical SourceDecision IDs:", brief.sourceDecisionIds.map((id) => `- ${id}`)),
+    ...renderOptionalSection("Source Consensus Timeline:", brief.sourceConsensusTimeline),
     ...renderOptionalSection("Memory Records Selected:", brief.memoryRecordsSelected.map((record) => `- ${record}`)),
+    ...renderOptionalSection("Memory Supersession Timeline:", brief.memorySupersessionTimeline),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),

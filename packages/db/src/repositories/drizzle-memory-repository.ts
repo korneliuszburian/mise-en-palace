@@ -76,6 +76,7 @@ import {
   taskContracts,
   outboxEvents,
   decisionPacketIssuances,
+  reviewAssessments,
   usefulnessApplications
 } from "../schema/index.js";
 import {
@@ -208,11 +209,40 @@ export const memoryPromotionMetadata = (
   sourceClaimIds: candidate.sourceClaimIds
 });
 
+export const memoryAuthorityPredecessorFingerprint = (input: {
+  candidate: MemoryCandidate;
+  memoryRecord: MemoryRecord;
+}): string => sha256Hex(canonicalJson({
+  candidate: {
+    id: input.candidate.id,
+    projectId: input.candidate.projectId,
+    feedbackDeltaId: input.candidate.feedbackDeltaId ?? null,
+    kind: input.candidate.kind,
+    summary: input.candidate.summary,
+    body: input.candidate.body,
+    owner: input.candidate.owner,
+    confidence: input.candidate.confidence,
+    applicationGuidance: input.candidate.applicationGuidance,
+    invalidationRule: input.candidate.invalidationRule ?? null,
+    sourceClaimIds: input.candidate.sourceClaimIds,
+    sourceLineage: input.candidate.sourceLineage,
+    isUserPreference: input.candidate.isUserPreference,
+    validFrom: input.candidate.validFrom,
+    validUntil: input.candidate.validUntil ?? null,
+    metadata: input.candidate.metadata
+  },
+  memoryRecord: {
+    id: input.memoryRecord.id,
+    currentVersionId: input.memoryRecord.currentVersionId ?? null,
+    key: input.memoryRecord.key
+  }
+}));
+
 const reviewedMemoryRevisionMetadata = (
   candidate: MemoryCandidate,
   input: ApplyReviewedMemoryRevisionInput
 ): Record<string, unknown> => {
-  const revision = candidate.metadata.memoryRevision;
+  const revision = reviewedMemoryRevision(candidate, input);
 
   if (typeof revision !== "object" || revision === null || Array.isArray(revision)) {
     throw new Error(
@@ -266,6 +296,7 @@ const selectionDate = (value: string | undefined): Date | undefined => {
   return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
 };
 
+// fallow-ignore-next-line code-duplication -- memory and source repositories each own their bounded lexical query normalization
 const normalizedMemorySelectionTerms = (terms: readonly string[] | undefined): string[] => [
   ...new Set((terms ?? [])
     .map((term) => term.trim().toLowerCase())
@@ -513,6 +544,12 @@ const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
   if (candidate.status !== "proposed" && candidate.status !== "candidate") {
     throw new Error(
       `Memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`
+    );
+  }
+
+  if (candidate.sourceClaimIds.length === 0) {
+    throw new Error(
+      `Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`
     );
   }
 
@@ -783,6 +820,39 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return row === undefined ? undefined : mapMemoryRecord(row);
   }
 
+  async getAuthorityUpgradePredecessorPreview(input: {
+    memoryRecordId: string;
+  }): Promise<{
+    memoryRecord: MemoryRecord;
+    memoryCandidate: MemoryCandidate;
+    fingerprint: string;
+  } | undefined> {
+    return this.db.transaction(async (tx) => {
+      const sourceRow = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.memoryRecordId)
+      });
+      if (sourceRow === undefined || sourceRow.currentVersionId === null) return undefined;
+      const versionRow = await tx.query.memoryRecordVersions.findFirst({
+        where: eq(memoryRecordVersions.id, sourceRow.currentVersionId)
+      });
+      if (versionRow === undefined || versionRow.createdFromCandidateId === null) return undefined;
+      const candidateRow = await tx.query.memoryCandidates.findFirst({
+        where: eq(memoryCandidates.id, versionRow.createdFromCandidateId)
+      });
+      if (candidateRow === undefined || candidateRow.projectId !== sourceRow.projectId) return undefined;
+      const memoryRecord = mapMemoryRecord(sourceRow);
+      const memoryCandidate = mapMemoryCandidate(candidateRow);
+      return {
+        memoryRecord,
+        memoryCandidate,
+        fingerprint: memoryAuthorityPredecessorFingerprint({
+          candidate: memoryCandidate,
+          memoryRecord
+        })
+      };
+    });
+  }
+
   async listMemoryRecordsForProject(
     projectId: ProjectId,
     limit?: number
@@ -801,6 +871,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     limit: number,
     options?: ActiveMemorySelectionOptions
   ): Promise<MemoryRecord[]> {
+    // fallow-ignore-next-line code-duplication -- active and historical reads intentionally share the same project/time/relevance query prelude
     const now = selectionDate(options?.now);
     if (now === undefined) {
       return [];
@@ -942,6 +1013,21 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         throw new Error(`Memory candidate ${input.candidateId} was not found`);
       }
 
+      await lockMemoryFeedbackAuthority(tx, candidateRow);
+      if (candidateRow.feedbackDeltaId !== null) {
+        const activeFeedbackCandidateIds = await readActiveFeedbackMemoryCandidateIds({
+          tx,
+          projectId: candidateRow.projectId,
+          feedbackDeltaId: candidateRow.feedbackDeltaId,
+          excludeCandidateId: candidateRow.id
+        });
+        if (activeFeedbackCandidateIds.length > 0) {
+          throw new Error(
+            `Memory feedback ${candidateRow.feedbackDeltaId} already has active memory; use the reviewed authority upgrade path`
+          );
+        }
+      }
+
       const candidate = mapMemoryCandidate(candidateRow);
       ensurePromotableCandidate(candidate);
 
@@ -964,6 +1050,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         "promoteMemoryCandidate",
         candidateRow.id
       );
+      // fallow-ignore-next-line code-duplication -- reviewed promotion and atomic revision deliberately share the record mapping
       const memoryRecordRow = requireReturnedRow(
         await tx
           .insert(memoryRecords)
@@ -993,6 +1080,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           .returning(),
         "promoteMemoryCandidate.insertMemoryRecord"
       );
+      // fallow-ignore-next-line code-duplication -- reviewed promotion and atomic revision deliberately share the version mapping
       const versionRow = requireReturnedRow(
         await tx
           .insert(memoryRecordVersions)
@@ -1056,21 +1144,51 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
     if (reviewer.length === 0) throw new Error("applyReviewedMemoryRevision requires reviewer");
     if (reason.length === 0) throw new Error("applyReviewedMemoryRevision requires reason");
+    // fallow-ignore-next-line complexity -- one transaction owns idempotent acceptance, replacement creation, lineage validation, and predecessor supersession
     return this.db.transaction(async (tx) => {
+      const candidateIdentityRow = await tx.query.memoryCandidates.findFirst({
+        where: eq(memoryCandidates.id, input.candidateId)
+      });
+      if (candidateIdentityRow === undefined) {
+        throw new Error(`Memory candidate ${input.candidateId} was not found`);
+      }
+      await lockMemoryFeedbackAuthority(tx, candidateIdentityRow);
+      await tx.execute(sql`
+        SELECT id FROM ${memoryCandidates}
+        WHERE id = ${input.candidateId}
+        FOR UPDATE
+      `);
       const candidateRow = await tx.query.memoryCandidates.findFirst({
         where: eq(memoryCandidates.id, input.candidateId)
       });
       if (candidateRow === undefined) throw new Error(`Memory candidate ${input.candidateId} was not found`);
 
       const candidate = mapMemoryCandidate(candidateRow);
-      ensurePromotableCandidate(candidate);
       const promotionMetadata = reviewedMemoryRevisionMetadata(candidate, input);
+      const revisionReviewAssessmentId = reviewAssessmentIdFromPromotionMetadata(
+        promotionMetadata
+      );
+      const appliedRetry = await readAppliedMemoryRevisionRetry({
+        tx,
+        candidateRow,
+        promotionMetadata,
+        request: input,
+        reviewer,
+        reason
+      });
+
+      if (appliedRetry !== undefined) return appliedRetry;
+
+      ensurePromotableCandidate(candidate);
       const now = new Date();
       requireCandidateTransitionRow(
         await tx.update(memoryCandidates).set({
           status: "accepted",
           reviewer,
           reviewedAt: now,
+          ...(revisionReviewAssessmentId === undefined
+            ? {}
+            : { revisionReviewAssessmentId }),
           metadata: promotionMetadata,
           updatedAt: now
         }).where(and(
@@ -1152,6 +1270,18 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       if (currentRow.status !== "active") {
         throw new Error(`applyReviewedMemoryRevision requires an active source record; found ${currentRow.status}`);
       }
+      await assertAuthorityUpgradePredecessor({
+        tx,
+        candidate,
+        candidateRow: {
+          ...candidateRow,
+          revisionReviewAssessmentId:
+            revisionReviewAssessmentId ?? candidateRow.revisionReviewAssessmentId
+        },
+        sourceRow: currentRow,
+        promotionMetadata,
+        reviewer
+      });
       const supersededAt = input.supersededAt === undefined ? now : fromIsoTimestamp(input.supersededAt);
       const supersededRow = requireMemoryRecordTransitionRow(
         await tx.update(memoryRecords).set({
@@ -1165,7 +1295,11 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               reviewer,
               reason,
               supersededAt: supersededAt.toISOString(),
-              supersededByMemoryRecordId: replacementRow.id
+              supersededByMemoryRecordId: replacementRow.id,
+              ...supersessionEvidenceMetadata(
+                replacementRow.metadata,
+                nonEmptyStringList(candidateRow.sourceClaimIds)
+              )
             }
           },
           updatedAt: now
@@ -1365,7 +1499,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
                 reviewer,
                 reason,
                 supersededAt: supersededAt.toISOString(),
-                supersededByMemoryRecordId: input.supersededByMemoryRecordId
+                supersededByMemoryRecordId: input.supersededByMemoryRecordId,
+                ...supersessionEvidenceMetadata(input.metadata)
               }
             },
             updatedAt: new Date()
@@ -2510,3 +2645,546 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return proposeReviewedHelpedMemoryCandidateOnce(this.db, input);
   }
 }
+
+type MemoryCandidateRow = typeof memoryCandidates.$inferSelect;
+type MemoryRecordRow = typeof memoryRecords.$inferSelect;
+type MemoryRecordVersionRow = typeof memoryRecordVersions.$inferSelect;
+
+const isJsonRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const nonEmptyStringList = (value: unknown): string[] => Array.isArray(value)
+  ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+  : [];
+
+const supersessionEvidenceMetadata = (
+  metadata: Record<string, unknown> | undefined,
+  fallbackSourceClaimIds: readonly string[] = []
+): Record<string, unknown> => {
+  const revision = isJsonRecord(metadata?.memoryRevision)
+    ? metadata.memoryRevision
+    : undefined;
+  const evidenceRefs = nonEmptyStringList(
+    revision?.evidenceRefs ?? metadata?.evidenceRefs
+  );
+  const sourceClaimIds = nonEmptyStringList(
+    metadata?.sourceClaimIds ?? fallbackSourceClaimIds
+  );
+
+  return {
+    ...(evidenceRefs.length === 0 ? {} : { evidenceRefs }),
+    ...(sourceClaimIds.length === 0 ? {} : { sourceClaimIds })
+  };
+};
+
+const reviewedMemoryRevision = (
+  candidate: MemoryCandidate,
+  input: ApplyReviewedMemoryRevisionInput
+): unknown => {
+  const isReviewedHelpedAuthorityUpgrade = candidate.feedbackDeltaId !== undefined &&
+    candidate.reviewAssessmentId !== undefined &&
+    candidate.usefulnessApplicationId !== undefined &&
+    isJsonRecord(input.metadata?.reviewGate);
+
+  return isReviewedHelpedAuthorityUpgrade
+    ? input.metadata?.memoryRevision
+    : candidate.metadata.memoryRevision;
+};
+
+const supersessionReviewMatches = (input: {
+  review: unknown;
+  reviewer: string;
+  reason: string;
+  replacementMemoryRecordId: string | undefined;
+  invalidatedAt: Date | null;
+}): boolean =>
+  isJsonRecord(input.review) &&
+  input.invalidatedAt !== null &&
+  input.review.reviewer === input.reviewer &&
+  input.review.reason === input.reason &&
+  input.review.supersededByMemoryRecordId === input.replacementMemoryRecordId &&
+  input.review.supersededAt === input.invalidatedAt.toISOString();
+
+const reviewAssessmentIdFromPromotionMetadata = (
+  promotionMetadata: Record<string, unknown>
+): string | undefined => {
+  const reviewGate = promotionMetadata.reviewGate;
+  const evidenceReviewedRef = isJsonRecord(reviewGate)
+    ? reviewGate.evidenceReviewedRef
+    : undefined;
+
+  return typeof evidenceReviewedRef === "string" &&
+    evidenceReviewedRef.startsWith("review-assessment:")
+    ? evidenceReviewedRef.slice("review-assessment:".length) || undefined
+    : undefined;
+};
+
+// fallow-ignore-next-line complexity -- idempotent revision retry validates every immutable candidate, version, replacement, and supersession coordinate
+const readAppliedMemoryRevisionRetry = async (input: {
+  tx: KrnDatabaseTransaction;
+  candidateRow: MemoryCandidateRow;
+  promotionMetadata: Record<string, unknown>;
+  request: ApplyReviewedMemoryRevisionInput;
+  reviewer: string;
+  reason: string;
+}): Promise<ApplyReviewedMemoryRevisionResult | undefined> => {
+  if (input.candidateRow.status !== "accepted") {
+    return undefined;
+  }
+
+  const versionRows = await input.tx.query.memoryRecordVersions.findMany({
+    where: eq(memoryRecordVersions.createdFromCandidateId, input.candidateRow.id),
+    limit: 2
+  });
+  const versionRow = versionRows[0];
+  const replacementRow = versionRow === undefined
+    ? undefined
+    : await input.tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, versionRow.memoryRecordId)
+      });
+  const sourceRow = await input.tx.query.memoryRecords.findFirst({
+    where: eq(memoryRecords.id, input.request.sourceMemoryRecordId)
+  });
+  const explicitSupersededAtMatches = input.request.supersededAt === undefined ||
+    sourceRow?.invalidatedAt?.toISOString() ===
+      fromIsoTimestamp(input.request.supersededAt).toISOString();
+  const appliedPredecessorMatches = sourceRow !== undefined &&
+    await appliedAuthorityUpgradePredecessorMatches({
+      tx: input.tx,
+      candidateRow: input.candidateRow,
+      sourceRow,
+      promotionMetadata: input.promotionMetadata,
+      reviewer: input.reviewer
+    });
+  const exactRetry =
+    input.candidateRow.reviewer === input.reviewer &&
+    input.candidateRow.revisionReviewAssessmentId ===
+      reviewAssessmentIdFromPromotionMetadata(input.promotionMetadata) &&
+    canonicalJson(input.candidateRow.metadata) === canonicalJson(input.promotionMetadata) &&
+    versionRows.length === 1 &&
+    replacementRow !== undefined &&
+    replacementRow.currentVersionId === versionRow?.id &&
+    replacementRow.projectId === input.candidateRow.projectId &&
+    replacementRow.status === "active" &&
+    replacementRow.key === memoryRecordKeyForCandidate(input.request) &&
+    memoryRevisionProjectionMatches({
+      candidateRow: input.candidateRow,
+      replacementRow,
+      versionRow,
+      promotionMetadata: input.promotionMetadata
+    }) &&
+    sourceRow !== undefined &&
+    sourceRow.projectId === input.candidateRow.projectId &&
+    sourceRow.status === "superseded" &&
+    sourceRow.invalidationReason === input.reason &&
+    appliedPredecessorMatches &&
+    sourceRow.metadata.replacementMemoryRecordId === replacementRow.id &&
+    supersessionReviewMatches({
+      review: sourceRow.metadata.supersessionReview,
+      reviewer: input.reviewer,
+      reason: input.reason,
+      replacementMemoryRecordId: replacementRow.id,
+      invalidatedAt: sourceRow.invalidatedAt
+    }) &&
+    explicitSupersededAtMatches;
+
+  if (!exactRetry) {
+    throw new Error(
+      `applyReviewedMemoryRevision identity conflict for accepted candidate ${input.candidateRow.id}`
+    );
+  }
+
+  return {
+    memoryRecord: mapMemoryRecord(replacementRow),
+    supersededMemoryRecord: mapMemoryRecord(sourceRow)
+  };
+};
+
+// fallow-ignore-next-line complexity -- authority upgrade must match every legacy candidate, feedback, application, project, and lifecycle coordinate
+const assertAuthorityUpgradePredecessor = async (input: {
+  tx: KrnDatabaseTransaction;
+  candidate: MemoryCandidate;
+  candidateRow: MemoryCandidateRow;
+  sourceRow: MemoryRecordRow;
+  promotionMetadata: Record<string, unknown>;
+  reviewer: string;
+}): Promise<void> => {
+  if (
+    input.candidate.feedbackDeltaId === undefined ||
+    input.candidate.reviewAssessmentId === undefined ||
+    input.candidate.usefulnessApplicationId === undefined
+  ) {
+    return;
+  }
+
+  const {
+    activeLegacyCandidateIds: canonicalLegacyCandidateIds,
+    applicationRow,
+    currentVersionRow,
+    legacyCandidateRow
+  } = await readAuthorityPredecessorCoordinates(input);
+  const legacyProjectionMatches = legacyCandidateRow !== undefined &&
+    currentVersionRow !== undefined &&
+    legacyMemoryProjectionMatches({
+      candidateRow: legacyCandidateRow,
+      sourceRow: input.sourceRow,
+      versionRow: currentVersionRow
+    });
+  const sourceIdentityMatches = legacyCandidateRow !== undefined &&
+    authorityUpgradeSourceIdentityMatches({
+      applicationRow,
+      candidateRow: input.candidateRow,
+      legacyCandidateRow
+    });
+  const metadataApplicationMatches = input.sourceRow.metadata.usefulnessApplicationId ===
+    input.candidateRow.usefulnessApplicationId;
+  const predecessorReviewMatches = legacyCandidateRow !== undefined &&
+    await reviewedAuthorityPredecessorBindingMatches({
+      tx: input.tx,
+      candidateRow: input.candidateRow,
+      legacyCandidateRow,
+      sourceRow: input.sourceRow,
+      promotionMetadata: input.promotionMetadata,
+      reviewer: input.reviewer
+    });
+  const canonicalLegacyMatches = canonicalLegacyCandidateIds.length === 1 &&
+    canonicalLegacyCandidateIds[0] === legacyCandidateRow?.id;
+  const authorityUpgradeMatches =
+    input.candidateRow.feedbackDeltaId !== null &&
+    input.candidateRow.reviewAssessmentId !== null &&
+    input.candidateRow.usefulnessApplicationId !== null &&
+    legacyCandidateRow !== undefined &&
+    legacyCandidateRow.id !== input.candidateRow.id &&
+    legacyCandidateRow.projectId === input.candidateRow.projectId &&
+    legacyCandidateRow.status === "accepted" &&
+    legacyCandidateRow.feedbackDeltaId === input.candidateRow.feedbackDeltaId &&
+    legacyCandidateRow.reviewAssessmentId === null &&
+    legacyCandidateRow.usefulnessApplicationId === null &&
+    canonicalLegacyMatches &&
+    predecessorReviewMatches &&
+    legacyProjectionMatches &&
+    sourceIdentityMatches &&
+    metadataApplicationMatches;
+
+  if (!authorityUpgradeMatches) {
+    throw new Error(
+      `applyReviewedMemoryRevision authority upgrade requires matching legacy feedback and application lineage; failed coordinates: ${[
+        ...(legacyProjectionMatches ? [] : ["legacy_projection"]),
+        ...(canonicalLegacyMatches ? [] : ["canonical_legacy"]),
+        ...(predecessorReviewMatches ? [] : ["predecessor_review"]),
+        ...(sourceIdentityMatches ? [] : ["source_identity"]),
+        ...(metadataApplicationMatches ? [] : ["metadata_application"])
+      ].join(", ")}`
+    );
+  }
+};
+
+const nullableDateIdentity = (value: Date | null): string | null =>
+  value?.toISOString() ?? null;
+
+const memoryFeedbackAuthorityLockKey = (input: {
+  projectId: string;
+  feedbackDeltaId: string;
+}): string => `memory-feedback-authority:${input.projectId}:${input.feedbackDeltaId}`;
+
+const lockMemoryFeedbackAuthority = async (
+  tx: KrnDatabaseTransaction,
+  candidateRow: MemoryCandidateRow
+): Promise<void> => {
+  if (candidateRow.feedbackDeltaId === null) return;
+
+  await tx.execute(sql`
+    select pg_advisory_xact_lock(hashtextextended(${memoryFeedbackAuthorityLockKey({
+      projectId: candidateRow.projectId,
+      feedbackDeltaId: candidateRow.feedbackDeltaId
+    })}, 0))
+  `);
+};
+
+const readActiveFeedbackMemoryCandidateIds = async (input: {
+  tx: KrnDatabaseTransaction;
+  projectId: string;
+  feedbackDeltaId: string;
+  excludeCandidateId?: string;
+  legacyOnly?: boolean;
+}): Promise<string[]> => {
+  const rows = await input.tx
+    .select({ candidateId: memoryCandidates.id })
+    .from(memoryCandidates)
+    .innerJoin(
+      memoryRecordVersions,
+      eq(memoryRecordVersions.createdFromCandidateId, memoryCandidates.id)
+    )
+    .innerJoin(
+      memoryRecords,
+      and(
+        eq(memoryRecords.currentVersionId, memoryRecordVersions.id),
+        eq(memoryRecords.status, "active")
+      )
+    )
+    .where(and(
+      eq(memoryCandidates.projectId, input.projectId),
+      eq(memoryCandidates.feedbackDeltaId, input.feedbackDeltaId),
+      ...(input.excludeCandidateId === undefined
+        ? []
+        : [sql`${memoryCandidates.id} <> ${input.excludeCandidateId}`]),
+      ...(input.legacyOnly !== true
+        ? []
+        : [
+            eq(memoryCandidates.status, "accepted"),
+            isNull(memoryCandidates.reviewAssessmentId),
+            isNull(memoryCandidates.usefulnessApplicationId)
+          ])
+    ))
+    .orderBy(asc(memoryCandidates.createdAt), asc(memoryCandidates.id))
+    .limit(2);
+
+  return rows.map((row) => row.candidateId);
+};
+
+// fallow-ignore-next-line complexity -- an accepted upgrade review must bind exact reviewer, record, candidate, and full projection fingerprint coordinates
+const reviewedAuthorityPredecessorBindingMatches = async (input: {
+  tx: KrnDatabaseTransaction;
+  candidateRow: MemoryCandidateRow;
+  legacyCandidateRow: MemoryCandidateRow;
+  sourceRow: MemoryRecordRow;
+  promotionMetadata: Record<string, unknown>;
+  reviewer: string;
+}): Promise<boolean> => {
+  const reviewGate = input.promotionMetadata.reviewGate;
+  const evidenceReviewedRef = isJsonRecord(reviewGate)
+    ? reviewGate.evidenceReviewedRef
+    : undefined;
+  const reviewAssessmentId = typeof evidenceReviewedRef === "string" &&
+    evidenceReviewedRef.startsWith("review-assessment:")
+    ? evidenceReviewedRef.slice("review-assessment:".length)
+    : undefined;
+  if (reviewAssessmentId === undefined || reviewAssessmentId.length === 0) return false;
+
+  const [linkedReview] = await input.tx
+    .select({
+      evidenceBundle: evidenceBundles,
+      review: reviewAssessments,
+      taskContract: taskContracts
+    })
+    .from(reviewAssessments)
+    .innerJoin(evidenceBundles, eq(evidenceBundles.id, reviewAssessments.evidenceBundleId))
+    .innerJoin(executionRuns, eq(executionRuns.id, evidenceBundles.executionRunId))
+    .innerJoin(harnessPlans, eq(harnessPlans.id, executionRuns.harnessPlanId))
+    .innerJoin(taskContracts, eq(taskContracts.id, harnessPlans.taskContractId))
+    .where(eq(reviewAssessments.id, reviewAssessmentId))
+    .limit(1);
+  const reviewRow = linkedReview?.review;
+  if (
+    linkedReview === undefined ||
+    reviewRow === undefined ||
+    input.candidateRow.revisionReviewAssessmentId !== reviewRow.id ||
+    linkedReview.taskContract.projectId !== input.candidateRow.projectId ||
+    reviewRow.captureChannel !== "review_assess_v1" ||
+    (linkedReview.evidenceBundle.status !== "captured" &&
+      linkedReview.evidenceBundle.status !== "verified") ||
+    reviewRow.status !== "accepted" ||
+    reviewRow.reviewer !== input.reviewer
+  ) {
+    return false;
+  }
+
+  return reviewRow.metadata.authorityUpgradeMemoryRecordId === input.sourceRow.id &&
+    reviewRow.metadata.authorityUpgradeMemoryCandidateId === input.legacyCandidateRow.id &&
+    reviewRow.metadata.authorityUpgradePredecessorFingerprint ===
+      memoryAuthorityPredecessorFingerprint({
+      candidate: mapMemoryCandidate(input.legacyCandidateRow),
+      memoryRecord: mapMemoryRecord(input.sourceRow)
+    });
+};
+
+const readAuthorityPredecessorCoordinates = async (input: {
+  tx: KrnDatabaseTransaction;
+  candidateRow: MemoryCandidateRow;
+  sourceRow: MemoryRecordRow;
+}) => {
+  const currentVersionRow = input.sourceRow.currentVersionId === null
+    ? undefined
+    : await input.tx.query.memoryRecordVersions.findFirst({
+        where: eq(memoryRecordVersions.id, input.sourceRow.currentVersionId)
+      });
+  const legacyCandidateRow = currentVersionRow?.createdFromCandidateId === null ||
+    currentVersionRow?.createdFromCandidateId === undefined
+    ? undefined
+    : await input.tx.query.memoryCandidates.findFirst({
+        where: eq(memoryCandidates.id, currentVersionRow.createdFromCandidateId)
+      });
+  const applicationRow = input.candidateRow.usefulnessApplicationId === null
+    ? undefined
+    : await input.tx.query.usefulnessApplications.findFirst({
+        where: eq(
+          usefulnessApplications.applicationId,
+          input.candidateRow.usefulnessApplicationId
+        )
+      });
+  const activeLegacyCandidateIds = input.candidateRow.feedbackDeltaId === null
+    ? []
+    : await readActiveFeedbackMemoryCandidateIds({
+        tx: input.tx,
+        projectId: input.candidateRow.projectId,
+        feedbackDeltaId: input.candidateRow.feedbackDeltaId,
+        legacyOnly: true
+      });
+
+  return {
+    activeLegacyCandidateIds,
+    applicationRow,
+    currentVersionRow,
+    legacyCandidateRow
+  };
+};
+
+// fallow-ignore-next-line complexity -- exact retry revalidates every persisted predecessor authority and projection coordinate after supersession
+const appliedAuthorityUpgradePredecessorMatches = async (input: {
+  tx: KrnDatabaseTransaction;
+  candidateRow: MemoryCandidateRow;
+  sourceRow: MemoryRecordRow;
+  promotionMetadata: Record<string, unknown>;
+  reviewer: string;
+}): Promise<boolean> => {
+  const {
+    activeLegacyCandidateIds,
+    applicationRow,
+    currentVersionRow,
+    legacyCandidateRow
+  } = await readAuthorityPredecessorCoordinates(input);
+
+  return currentVersionRow !== undefined &&
+    legacyCandidateRow !== undefined &&
+    activeLegacyCandidateIds.length === 0 &&
+    legacyCandidateRow.feedbackDeltaId === input.candidateRow.feedbackDeltaId &&
+    legacyCandidateRow.reviewAssessmentId === null &&
+    legacyCandidateRow.usefulnessApplicationId === null &&
+    input.sourceRow.metadata.usefulnessApplicationId ===
+      input.candidateRow.usefulnessApplicationId &&
+    legacyMemoryProjectionMatches({
+      candidateRow: legacyCandidateRow,
+      sourceRow: input.sourceRow,
+      versionRow: currentVersionRow
+    }) &&
+    authorityUpgradeSourceIdentityMatches({
+      applicationRow,
+      candidateRow: input.candidateRow,
+      legacyCandidateRow
+    }) &&
+    await reviewedAuthorityPredecessorBindingMatches({
+      tx: input.tx,
+      candidateRow: input.candidateRow,
+      legacyCandidateRow,
+      sourceRow: input.sourceRow,
+      promotionMetadata: input.promotionMetadata,
+      reviewer: input.reviewer
+    });
+};
+
+// fallow-ignore-next-line complexity -- exact retry identity deliberately enumerates every immutable candidate, record, version, and metadata coordinate
+const memoryRevisionProjectionMatches = (input: {
+  candidateRow: MemoryCandidateRow;
+  replacementRow: MemoryRecordRow;
+  versionRow: MemoryRecordVersionRow | undefined;
+  promotionMetadata: Record<string, unknown>;
+}): boolean => input.versionRow !== undefined && (
+  input.versionRow.memoryRecordId === input.replacementRow.id &&
+  input.versionRow.createdFromCandidateId === input.candidateRow.id &&
+  memoryRecordProjectionMatches(input.candidateRow, input.replacementRow) &&
+  canonicalJson(input.replacementRow.metadata) === canonicalJson(input.promotionMetadata) &&
+  memoryVersionProjectionMatches(
+    input.candidateRow,
+    input.versionRow,
+    input.promotionMetadata
+  )
+);
+
+// fallow-ignore-next-line complexity -- legacy authority must prove that the selected record and current version are the accepted candidate projection
+const legacyMemoryProjectionMatches = (input: {
+  candidateRow: MemoryCandidateRow;
+  sourceRow: MemoryRecordRow;
+  versionRow: MemoryRecordVersionRow;
+}): boolean => (
+  input.sourceRow.currentVersionId === input.versionRow.id &&
+  input.versionRow.memoryRecordId === input.sourceRow.id &&
+  input.versionRow.createdFromCandidateId === input.candidateRow.id &&
+  memoryRecordProjectionMatches(input.candidateRow, input.sourceRow) &&
+  memoryVersionProjectionMatches(
+    input.candidateRow,
+    input.versionRow,
+    input.candidateRow.metadata
+  )
+);
+
+// fallow-ignore-next-line complexity -- immutable record projection is an explicit fail-closed coordinate list shared by revision and legacy checks
+const memoryRecordProjectionMatches = (
+  candidateRow: MemoryCandidateRow,
+  recordRow: MemoryRecordRow
+): boolean => (
+  recordRow.projectId === candidateRow.projectId &&
+  recordRow.kind === candidateRow.kind &&
+  recordRow.summary === candidateRow.summary &&
+  recordRow.body === candidateRow.body &&
+  recordRow.owner === candidateRow.owner &&
+  recordRow.confidence === candidateRow.confidence &&
+  recordRow.applicationGuidance === candidateRow.applicationGuidance &&
+  recordRow.invalidationRule === candidateRow.invalidationRule &&
+  canonicalJson(recordRow.sourceLineage) === canonicalJson(candidateRow.sourceLineage) &&
+  recordRow.isUserPreference === candidateRow.isUserPreference &&
+  nullableDateIdentity(recordRow.validFrom) === nullableDateIdentity(candidateRow.validFrom) &&
+  nullableDateIdentity(recordRow.validUntil) === nullableDateIdentity(candidateRow.validUntil)
+);
+
+// fallow-ignore-next-line complexity -- immutable version projection is an explicit fail-closed coordinate list shared by revision and legacy checks
+const memoryVersionProjectionMatches = (
+  candidateRow: MemoryCandidateRow,
+  versionRow: MemoryRecordVersionRow,
+  metadata: Record<string, unknown>
+): boolean => (
+  versionRow.version === 1 &&
+  versionRow.summary === candidateRow.summary &&
+  versionRow.body === candidateRow.body &&
+  versionRow.owner === candidateRow.owner &&
+  versionRow.confidence === candidateRow.confidence &&
+  versionRow.applicationGuidance === candidateRow.applicationGuidance &&
+  versionRow.invalidationRule === candidateRow.invalidationRule &&
+  canonicalJson(versionRow.sourceLineage) === canonicalJson(candidateRow.sourceLineage) &&
+  nullableDateIdentity(versionRow.validFrom) === nullableDateIdentity(candidateRow.validFrom) &&
+  nullableDateIdentity(versionRow.validUntil) === nullableDateIdentity(candidateRow.validUntil) &&
+  canonicalJson(versionRow.metadata) === canonicalJson(metadata)
+);
+
+// fallow-ignore-next-line complexity -- source substitution resistance requires every canonical application, decision, claim, lineage, and owner coordinate
+const authorityUpgradeSourceIdentityMatches = (input: {
+  applicationRow: UsefulnessApplicationRow | undefined;
+  candidateRow: MemoryCandidateRow;
+  legacyCandidateRow: MemoryCandidateRow;
+}): boolean => {
+  const sourceDecisionId = input.candidateRow.metadata.sourceDecisionId;
+  const sourceClaimId = input.candidateRow.metadata.sourceClaimId;
+  const candidate = mapMemoryCandidate(input.candidateRow);
+  const legacyCandidate = mapMemoryCandidate(input.legacyCandidateRow);
+
+  return input.applicationRow !== undefined &&
+    input.applicationRow.subjectKind === "source_decision" &&
+    input.applicationRow.subjectId === sourceDecisionId &&
+    input.applicationRow.projectId === input.candidateRow.projectId &&
+    input.applicationRow.appliedAt.toISOString() === input.candidateRow.validFrom.toISOString() &&
+    input.legacyCandidateRow.metadata.sourceDecisionId === sourceDecisionId &&
+    input.legacyCandidateRow.metadata.reviewAssessmentId ===
+      input.candidateRow.reviewAssessmentId &&
+    typeof sourceClaimId === "string" &&
+    canonicalJson(input.legacyCandidateRow.sourceClaimIds) ===
+      canonicalJson(input.candidateRow.sourceClaimIds) &&
+    input.candidateRow.sourceClaimIds.length === 1 &&
+    input.candidateRow.sourceClaimIds[0] === sourceClaimId &&
+    legacyCandidate.sourceLineage.some((item) => item.sourceId === sourceClaimId) &&
+    candidate.sourceLineage.some((item) => item.sourceId === sourceDecisionId) &&
+    candidate.sourceLineage.some(
+      (item) => item.sourceId === input.applicationRow?.applicationId
+    ) &&
+    input.legacyCandidateRow.kind === input.candidateRow.kind &&
+    input.legacyCandidateRow.owner === input.candidateRow.owner &&
+    input.legacyCandidateRow.isUserPreference === input.candidateRow.isUserPreference;
+};

@@ -7,12 +7,20 @@ package and exported entry points.
 
 - Valid JSON containing a non-empty email and either the `admin` or `member`
   role creates and saves one user.
+- The raw JSON boundary is unknown-first: `parseJsonConfig(raw: string)` must
+  return `unknown` or an equivalent validated unknown value, and `JSON.parse`
+  output must not flow into domain logic as `any`.
 - When the role is omitted, the configured default is used only if it is
   supported; otherwise use a safe supported default.
 - Malformed JSON, a missing or empty email, and any unsupported role are
   rejected without throwing and without saving a user.
 - Every call returns an explicit object whose state lets a caller distinguish
   creation from rejected input.
+- Export `type CreateUserResult` from `src/userService.ts`, and have
+  `createUserFromJson` return it. Use a finite discriminator field named
+  `status`, `kind`, or `ok` to distinguish the created and invalid-input
+  states; do not return `null`, a bare boolean, or a raw `CreatedUser` as the
+  whole result.
 - Focused tests cover the three rejected-input classes above, and the package
   test and typecheck commands pass.
 

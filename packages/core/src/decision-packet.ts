@@ -10,6 +10,7 @@ import type {
 import type {
   ProjectStandardDecisionReadback
 } from "./memory.js";
+import type { MemorySupersessionTimelineReadback } from "./memory.js";
 import type {
   EvidenceContract,
   EvidenceContractActivationDecision
@@ -28,6 +29,7 @@ import type {
   SourceClaimAuthorityStatus,
   SourceDecisionTargetType
 } from "./source.js";
+import type { SourceConsensusTimelineReadback } from "./source-consensus-timeline.js";
 import type { TaskContractStatus } from "./task-contract.js";
 
 export const decisionPacketFormatVersion = "krn.decisionPacket.v1" as const;
@@ -86,6 +88,12 @@ export interface DecisionPacketSourceConsensus {
   sourceRejectionIds: readonly string[];
   conflictedDecisionIds: readonly string[];
   evidenceGapIds: readonly string[];
+  /**
+   * Evidence-backed temporal explanation for the source claims represented by
+   * this packet. This is projected from activation's authoritative timeline;
+   * it is optional for legacy/read-model inputs that did not capture it.
+   */
+  timeline?: SourceConsensusTimelineReadback;
   doesNotProve: string;
 }
 
@@ -120,6 +128,16 @@ export interface DecisionPacketContextExclusion {
   reason: string;
   explanation: string;
   sourceAuthority: SourceAuthorityLabel;
+}
+
+export interface DecisionPacketReviewOnlyUsefulnessCaveat {
+  feedbackDeltaId?: string;
+  subjectType: "source_claim" | "source_decision" | "knowledge";
+  subjectId: string;
+  feedbackStatus: FeedbackDeltaStatus;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  doesNotProve: string;
 }
 
 export interface DecisionPacketEvidenceContract {
@@ -196,6 +214,68 @@ export const decisionPacketNegativePathsForContext = (input: {
     .map((item) => item.subjectId))
 });
 
+/**
+ * Preserve memory candidates that activation rejected as stale as historical
+ * boundary evidence. They must not be confused with memoryRefs, which are
+ * the current positive context selected for the task.
+ */
+export const staleKnowledgeIdsForContext = (
+  contextExclusions: readonly {
+    readonly subjectType: ContextSubjectType;
+    readonly subjectId: string;
+    readonly reason: string;
+  }[]
+): readonly string[] => unique(contextExclusions
+  .filter((item) => item.subjectType === "memory_record" &&
+    (item.reason === "stale" || item.reason === "invalidated"))
+  .map((item) => item.subjectId));
+
+const reviewOnlyUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
+  "noise",
+  "stale",
+  "hurt",
+  "rejected",
+  "unknown"
+]);
+
+const reviewOnlyUsefulnessCaveatsFor = (
+  feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[]
+): DecisionPacketReviewOnlyUsefulnessCaveat[] => feedbackDeltas
+  .filter((feedback) => feedback.status !== "rejected")
+  .flatMap((feedback) => [
+    ...feedback.sourceUsefulnessOutcomes.flatMap((outcome) => {
+      if (!reviewOnlyUsefulnessOutcomes.has(outcome.outcome)) return [];
+      const subjectType = outcome.sourceDecisionId === undefined
+        ? "source_claim" as const
+        : "source_decision" as const;
+      const subjectId = outcome.sourceDecisionId ?? outcome.sourceClaimId;
+      return subjectId === undefined ? [] : [{
+        ...(feedback.id === undefined ? {} : { feedbackDeltaId: feedback.id }),
+        subjectType,
+        subjectId,
+        feedbackStatus: feedback.status,
+        outcome: outcome.outcome,
+        reason: outcome.reason,
+        doesNotProve:
+          "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+      }];
+    }),
+    ...feedback.knowledgeUsefulnessOutcomes.flatMap((outcome) =>
+      !reviewOnlyUsefulnessOutcomes.has(outcome.outcome)
+        ? []
+        : [{
+            ...(feedback.id === undefined ? {} : { feedbackDeltaId: feedback.id }),
+            subjectType: "knowledge" as const,
+            subjectId: outcome.knowledgeId,
+            feedbackStatus: feedback.status,
+            outcome: outcome.outcome,
+            reason: outcome.reason,
+            doesNotProve:
+              "Review-only usefulness feedback does not mutate source or memory truth, prove future usefulness, or authorize promotion."
+          }]
+    )
+  ]);
+
 const decisionLinkedSourceClaimIdsFor = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -232,6 +312,43 @@ const governingSourceClaimIdsFor = (input: {
   ));
 };
 
+const boundedSourceConsensusTimeline = (
+  timeline: SourceConsensusTimelineReadback,
+  sourceClaimIds: readonly string[]
+): SourceConsensusTimelineReadback => {
+  const retainedIds = new Set(sourceClaimIds);
+  const retainedEntries = timeline.entries.filter((entry) => retainedIds.has(entry.sourceClaimId));
+  const entries = retainedEntries.length >= 8
+    ? retainedEntries.slice(0, 8)
+    : [...retainedEntries, ...timeline.entries
+      .filter((entry) => !retainedIds.has(entry.sourceClaimId))
+      .slice(0, 8 - retainedEntries.length)];
+  return {
+    ...timeline,
+    entries: entries.map((entry) => ({
+      ...entry,
+      evidenceRefs: unique([
+        ...entry.evidenceRefs,
+        ...entry.relationEvidence.flatMap((relation) => [
+          ...relation.metadataEvidenceRefs,
+          `source-claim-edge:${relation.sourceClaimEdgeId}`
+        ])
+      ]),
+      rawEvidenceCitationRefs: [],
+      sourceRanges: [],
+      relationEvidence: entry.relationEvidence.slice(0, 4).map((relation) => ({
+        ...relation,
+        sourceRanges: [],
+        evidenceGaps: relation.evidenceGaps
+      })),
+      supportingSourceClaimIds: [],
+      dissentingSourceClaimIds: [],
+      rejectionIds: [],
+      caveats: []
+    }))
+  };
+};
+
 export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceClaimIds: readonly string[];
   readonly caveatedSourceClaimIds: readonly string[];
@@ -247,6 +364,7 @@ export const buildDecisionPacketSourceConsensus = (input: {
   readonly sourceRejectionIds: readonly string[];
   readonly conflictedDecisionIds: readonly string[];
   readonly evidenceGapIds: readonly string[];
+  readonly timeline?: SourceConsensusTimelineReadback;
 }): DecisionPacketSourceConsensus => {
   return {
     decisionLinkedSourceClaimIds: decisionLinkedSourceClaimIdsFor(input),
@@ -262,6 +380,9 @@ export const buildDecisionPacketSourceConsensus = (input: {
     sourceRejectionIds: unique(input.sourceRejectionIds),
     conflictedDecisionIds: unique(input.conflictedDecisionIds),
     evidenceGapIds: unique(input.evidenceGapIds),
+    ...(input.timeline === undefined ? {} : {
+      timeline: boundedSourceConsensusTimeline(input.timeline, input.sourceClaimIds)
+    }),
     doesNotProve:
       "DecisionPacket source consensus summarizes selected packet signals; it does not prove source truth, complete graph consensus, or repository-wide conflict resolution."
   };
@@ -384,6 +505,7 @@ export interface DecisionPacket {
   sourceRejectionIds: readonly string[];
   memoryRefs: readonly string[];
   caveatedMemoryRefs: readonly string[];
+  reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   staleDecisionIds: readonly string[];
   staleKnowledgeIds: readonly string[];
   noiseKnowledgeIds: readonly string[];
@@ -394,6 +516,7 @@ export interface DecisionPacket {
   verificationCommands: readonly string[];
   evidenceGaps: readonly DecisionPacketEvidenceGap[];
   sourceConsensus: DecisionPacketSourceConsensus;
+  memorySupersessionTimeline?: MemorySupersessionTimelineReadback;
   abstentionScore: DecisionPacketAbstentionScore;
   doesNotProve: readonly string[];
   nonProofs: readonly string[];
@@ -423,6 +546,7 @@ export interface DecisionPacketReadModelInput {
   evidenceContract?: Pick<EvidenceContract, "commands" | "diffRisk" | "reviewBurden" | "rollbackPath">;
   evidenceBundles: readonly DecisionPacketEvidenceBundleInput[];
   feedbackDeltas: readonly DecisionPacketFeedbackDeltaInput[];
+  reviewOnlyUsefulnessCaveats?: readonly DecisionPacketReviewOnlyUsefulnessCaveat[];
   proof: {
     doesNotProve: readonly string[];
   };
@@ -447,6 +571,8 @@ export interface DecisionPacketContextExclusionInput {
 export interface DecisionPacketActivationTraceInput {
   candidates: readonly DecisionPacketActivationCandidateInput[];
   decisions: readonly DecisionPacketActivationDecisionInput[];
+  sourceConsensusTimeline?: SourceConsensusTimelineReadback;
+  memorySupersessionTimeline?: MemorySupersessionTimelineReadback;
 }
 
 export interface DecisionPacketActivationCandidateInput {
@@ -477,6 +603,7 @@ export interface DecisionPacketActivationCandidateInput {
     subjectRefs: readonly string[];
     doesNotProve: string;
   };
+  staleSourceDecisionIds?: readonly string[];
 }
 
 export interface DecisionPacketActivationDecisionInput {
@@ -491,6 +618,7 @@ export interface DecisionPacketEvidenceBundleInput {
 }
 
 export interface DecisionPacketFeedbackDeltaInput {
+  id?: string;
   status: FeedbackDeltaStatus;
   candidates: readonly {
     kind: FeedbackCandidateProposalKind;
@@ -675,6 +803,12 @@ const sourceDecisionIdsFor = (
     : []
   ));
 };
+
+const staleSourceDecisionIdsFor = (
+  readModel: DecisionPacketReadModelInput
+): string[] => unique(readModel.context.activationTrace?.candidates.flatMap((candidate) =>
+  candidate.subjectType === "source_claim" ? candidate.staleSourceDecisionIds ?? [] : []
+) ?? []);
 
 const sourceClaimAuthorityCandidateFor = (
   readModel: DecisionPacketReadModelInput,
@@ -1037,11 +1171,28 @@ export const buildDecisionPacketFromReadModel = (
     governingSourceClaimIds
   );
   const governingDecisionIds = architectureDecisionTargetIdsFor(sourceDecisionTargets);
-  const staleDecisionIds: string[] = [];
+  const staleDecisionIds = staleSourceDecisionIdsFor(readModel);
   const memoryRefs = memoryRefsFor(readModel);
-  const staleKnowledgeIds: string[] = [];
+  const staleKnowledgeIds = staleKnowledgeIdsForContext(exclusions);
   const noiseKnowledgeIds: string[] = [];
   const unknownKnowledgeIds: string[] = [];
+  const caveatsFromFeedback = reviewOnlyUsefulnessCaveatsFor(readModel.feedbackDeltas);
+  const caveatKeys = new Set<string>();
+  const reviewOnlyUsefulnessCaveats = [
+    ...caveatsFromFeedback,
+    ...(readModel.reviewOnlyUsefulnessCaveats ?? [])
+  ].filter((caveat) => {
+    const key = [
+      caveat.feedbackDeltaId ?? "",
+      caveat.subjectType,
+      caveat.subjectId,
+      caveat.feedbackStatus,
+      caveat.outcome
+    ].join(":");
+    if (caveatKeys.has(key)) return false;
+    caveatKeys.add(key);
+    return true;
+  });
   const caveatedMemoryRefs = memoryRefsWithPendingAntiMemoryReview(readModel);
   const sourceRejectionIds = sourceRejectionIdsFor(readModel);
   const supersededPathIds = sourceClaimExclusionIdsFor(
@@ -1106,8 +1257,12 @@ export const buildDecisionPacketFromReadModel = (
     rejectedPathIds,
     sourceRejectionIds,
     conflictedDecisionIds: severeStaleAuthorityIds,
-    evidenceGapIds: evidenceGaps.map((gap) => gap.id)
+    evidenceGapIds: evidenceGaps.map((gap) => gap.id),
+    ...(readModel.context.activationTrace?.sourceConsensusTimeline === undefined
+      ? {}
+      : { timeline: readModel.context.activationTrace.sourceConsensusTimeline })
   });
+  const memorySupersessionTimeline = readModel.context.activationTrace?.memorySupersessionTimeline;
   const governingGuidanceInput = {
     readModel,
     unresolvedAcceptedDissentSourceClaimIds
@@ -1159,6 +1314,9 @@ export const buildDecisionPacketFromReadModel = (
     sourceRejectionIds,
     memoryRefs,
     caveatedMemoryRefs,
+    ...(reviewOnlyUsefulnessCaveats.length === 0
+      ? {}
+      : { reviewOnlyUsefulnessCaveats }),
     staleDecisionIds,
     staleKnowledgeIds,
     noiseKnowledgeIds,
@@ -1169,6 +1327,7 @@ export const buildDecisionPacketFromReadModel = (
     verificationCommands: verificationCommandsFor(activeEvidenceContract),
     evidenceGaps,
     sourceConsensus,
+    ...(memorySupersessionTimeline === undefined ? {} : { memorySupersessionTimeline }),
     abstentionScore: buildDecisionPacketAbstentionScore({
       projectId: task.projectId,
       governingDecisionIds,
