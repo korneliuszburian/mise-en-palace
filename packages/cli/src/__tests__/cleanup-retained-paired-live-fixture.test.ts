@@ -10,6 +10,7 @@ import type {
 import {
   parseCleanupRetainedFixtureCommandArguments,
   parseRetainedFixtureReport,
+  retainedFixturePersistenceIdentityFor,
   verifyRetainedFixturePersistenceGuard
 } from "../internal/eval/cleanup-retained-paired-live-fixture.js";
 import type {
@@ -139,6 +140,29 @@ describe("retained paired-live fixture cleanup guard", () => {
     });
 
     expect(listed).toEqual([{ projectId, runId, limit: 5 }]);
+  });
+
+  it("uses the persisted evidence unknown environment fallback", () => {
+    const derived = retainedFixturePersistenceIdentityFor({
+      manifest: {
+        projectId,
+        runId,
+        scenario: "temporal-policy-drift"
+      } as Parameters<typeof retainedFixturePersistenceIdentityFor>[0]["manifest"],
+      artifact: {
+        kind: "krn.pairedLiveCodexRepairArtifact.v2",
+        status: "passed",
+        artifactHash: "b".repeat(64),
+        manifestHash: "c".repeat(64),
+        runId,
+        packet: { checksum: "a".repeat(64) },
+        execution: {},
+        score: { outcome: "win" }
+      } as unknown as Parameters<typeof retainedFixturePersistenceIdentityFor>[0]["artifact"],
+      manifestHash: "c".repeat(64)
+    });
+
+    expect(derived.environmentEvidenceRef).toBe("environment:sha256:unknown");
   });
 
   it("refuses evidence-bearing cleanup when persisted readback is missing", async () => {

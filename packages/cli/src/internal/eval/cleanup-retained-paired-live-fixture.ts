@@ -194,9 +194,7 @@ export const retainedFixturePersistenceIdentityFor = (input: {
   if (input.artifact.packet.checksum === undefined) {
     throw new Error("Persistence guard requires a DecisionPacket checksum");
   }
-  if (input.artifact.execution.environmentProfileHash === undefined) {
-    throw new Error("Persistence guard requires an environment profile hash");
-  }
+  const environmentProfileHash = input.artifact.execution.environmentProfileHash ?? "unknown";
 
   return {
     projectId: input.manifest.projectId,
@@ -210,7 +208,7 @@ export const retainedFixturePersistenceIdentityFor = (input: {
     artifactRef: `artifact:sha256:${input.artifact.artifactHash}`,
     manifestRef: `manifest:sha256:${input.artifact.manifestHash}`,
     checkerEvidenceRef: checkerEvidenceRef(input.artifact),
-    environmentEvidenceRef: `environment:sha256:${input.artifact.execution.environmentProfileHash}`
+    environmentEvidenceRef: `environment:sha256:${environmentProfileHash}`
   };
 };
 
