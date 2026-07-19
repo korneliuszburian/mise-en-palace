@@ -3401,6 +3401,9 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     if (input.runId !== undefined) {
       conditions.push(eq(pairedLiveEvalEvidence.runId, input.runId));
     }
+    if (input.candidateId !== undefined) {
+      conditions.push(eq(pairedLiveEvalEvidence.candidateId, input.candidateId));
+    }
     if (input.scenario !== undefined) {
       conditions.push(eq(pairedLiveEvalEvidence.scenario, input.scenario));
     }

@@ -49,11 +49,32 @@ describe("cliCommandRegistry", () => {
     });
   });
 
+  it("parses paired-live eval promotion eligibility through the registered command boundary", () => {
+    expect(parseRegisteredTopLevelCommand("run", [
+      "eval-promotion-eligibility",
+      "--project-id",
+      "project-1",
+      "--candidate-id",
+      "paired-target-repair:run-1",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "runEvalPromotionEligibility",
+        projectId: "project-1",
+        candidateId: "paired-target-repair:run-1",
+        format: "json"
+      }
+    });
+  });
+
   it("formats registered help without the legacy help map", () => {
     expect(isRegisteredHelpCommandKind("runShowHelp")).toBe(true);
     expect(isRegisteredHelpCommandKind("dbHelp")).toBe(false);
     expect(formatRegisteredCommandHelp("runShowHelp")).toContain(
       "krn run eval-evidence --project-id <project-id>"
+    );
+    expect(formatRegisteredCommandHelp("runShowHelp")).toContain(
+      "krn run eval-promotion-eligibility --project-id <project-id>"
     );
   });
 });

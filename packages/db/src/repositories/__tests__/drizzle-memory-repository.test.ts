@@ -20,6 +20,9 @@ import {
   memoryAuthorityPredecessorFingerprint,
   memoryPromotionMetadata
 } from "../drizzle-memory-repository.js";
+import {
+  getReviewedHelpedMemoryProposalEligibility
+} from "../reviewed-helped-memory-candidate.js";
 import { createKrnDatabase } from "../../database.js";
 import {
   cleanupActivationSmokeRows,
@@ -482,6 +485,32 @@ describe("DrizzleMemoryRepository", () => {
         sourceDecisionId: decision.id
       };
 
+      await expect(getReviewedHelpedMemoryProposalEligibility(scaffold.db, {
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id
+      })).resolves.toMatchObject({
+        status: "ready_to_propose",
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id,
+        reviewAssessmentId: acceptedReview.id,
+        sourceDecisionId: decision.id,
+        sourceClaimId: claim.id,
+        evidenceBundleId: bundle.id,
+        usefulnessApplicationId: applicationId,
+        packetChecksum
+      });
+      const [preProposalCounts] = await scaffold.client<{
+        candidateCount: number;
+        recordCount: number;
+      }[]>`
+        select
+          (select count(*)::int from memory_candidates
+            where usefulness_application_id = ${applicationId}) as "candidateCount",
+          (select count(*)::int from memory_records
+            where metadata->>'smokeId' = ${marker}) as "recordCount"
+      `;
+      expect(preProposalCounts).toEqual({ candidateCount: 0, recordCount: 0 });
+
       await scaffold.client`
         update evidence_bundles set capture_channel = 'eval_feedback_v1' where id = ${bundle.id}
       `;
@@ -504,6 +533,14 @@ describe("DrizzleMemoryRepository", () => {
       await scaffold.client`
         update usefulness_applications set subject_id = ${usedDecisionId} where application_id = ${applicationId}
       `;
+      await expect(getReviewedHelpedMemoryProposalEligibility(scaffold.db, {
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id
+      })).resolves.toMatchObject({
+        status: "blocked_authority",
+        reason: "application_identity_mismatch",
+        sourceDecisionId: decision.id
+      });
       await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
         .rejects.toMatchObject({ reason: "application_identity_mismatch" });
       await scaffold.client`
@@ -599,6 +636,14 @@ describe("DrizzleMemoryRepository", () => {
       await scaffold.client`
         update review_assessments set status = 'pending' where id = ${acceptedReview.id}
       `;
+      await expect(getReviewedHelpedMemoryProposalEligibility(scaffold.db, {
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id
+      })).resolves.toMatchObject({
+        status: "missing_review",
+        reason: "review_assessment_not_found",
+        sourceDecisionId: decision.id
+      });
       await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
         .rejects.toMatchObject({ reason: "review_assessment_not_accepted" });
       await scaffold.client`
@@ -636,6 +681,15 @@ describe("DrizzleMemoryRepository", () => {
         set metadata = jsonb_set(metadata, '{sourceDecisionId}', to_jsonb(${usedDecisionId}::text))
         where id = ${acceptedReview.id}
       `;
+      await expect(getReviewedHelpedMemoryProposalEligibility(scaffold.db, {
+        projectId: scaffold.project.id,
+        feedbackDeltaId: feedback.id,
+        reviewAssessmentId: acceptedReview.id
+      })).resolves.toMatchObject({
+        status: "blocked_authority",
+        reason: "review_subject_mismatch",
+        sourceDecisionId: decision.id
+      });
       await expect(scaffold.memoryRepository.proposeReviewedHelpedMemoryCandidateOnce(input))
         .rejects.toMatchObject({ reason: "review_subject_mismatch" });
       await scaffold.client`

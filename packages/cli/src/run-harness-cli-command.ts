@@ -43,6 +43,9 @@ import {
   runPairedLiveEvalEvidenceCommand
 } from "./run-paired-live-eval-evidence-command.js";
 import {
+  runPairedLiveEvalPromotionEligibilityCommand
+} from "./run-paired-live-eval-promotion-eligibility-command.js";
+import {
   runDecisionPacketCommand
 } from "./run-decision-packet-command.js";
 
@@ -52,6 +55,7 @@ type HarnessCliCommand = Extract<
   | { kind: "reviewAssess" }
   | { kind: "runShow" }
   | { kind: "runEvalEvidence" }
+  | { kind: "runEvalPromotionEligibility" }
   | { kind: "decisionPacket" }
   | { kind: "codexBrief" }
   | { kind: "evidenceCapture" }
@@ -104,23 +108,28 @@ const databaseRuntimeOption = (
     : { createDatabaseRuntime: context.createDatabaseRuntime }
 );
 
-const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand => (
-  command.kind === "plan" ||
-  command.kind === "reviewAssess" ||
-  command.kind === "runShow" ||
-  command.kind === "runEvalEvidence" ||
-  command.kind === "decisionPacket" ||
-  command.kind === "codexBrief" ||
-  command.kind === "evidenceCapture" ||
-  command.kind === "observeRun" ||
-  command.kind === "reflect"
-);
+const harnessCliCommandKinds: ReadonlySet<CliCommand["kind"]> = new Set([
+  "plan",
+  "reviewAssess",
+  "runShow",
+  "runEvalEvidence",
+  "runEvalPromotionEligibility",
+  "decisionPacket",
+  "codexBrief",
+  "evidenceCapture",
+  "observeRun",
+  "reflect"
+]);
+
+const isHarnessCliCommand = (command: CliCommand): command is HarnessCliCommand =>
+  harnessCliCommandKinds.has(command.kind);
 
 const harnessFallbackMessages = {
   plan: "Unknown CLI error",
   reviewAssess: "Unknown review assess error",
   runShow: "Unknown run show error",
   runEvalEvidence: "Unknown paired-live eval evidence readback error",
+  runEvalPromotionEligibility: "Unknown paired-live eval promotion eligibility error",
   codexBrief: "Unknown Codex brief error",
   decisionPacket: "Unknown decision packet error",
   evidenceCapture: "Unknown evidence capture error",
@@ -159,7 +168,14 @@ const runReviewAssessCliCommand = (
 const runReadbackHarnessCommand = (
   command: Extract<
     HarnessCliCommand,
-    { kind: "runShow" | "runEvalEvidence" | "decisionPacket" | "codexBrief" }
+    {
+      kind:
+        | "runShow"
+        | "runEvalEvidence"
+        | "runEvalPromotionEligibility"
+        | "decisionPacket"
+        | "codexBrief";
+    }
   >,
   context: HarnessCliCommandContext
 ): Promise<HarnessCommandOutput> => {
@@ -176,6 +192,15 @@ const runReadbackHarnessCommand = (
 
   if (command.kind === "runEvalEvidence") {
     return runPairedLiveEvalEvidenceCommand({
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command
+    });
+  }
+
+  if (command.kind === "runEvalPromotionEligibility") {
+    return runPairedLiveEvalPromotionEligibilityCommand({
       env: context.env,
       now: context.now,
       createId: context.createId,
@@ -281,6 +306,7 @@ const runSelectedHarnessCommand = (
   if (
     command.kind === "runShow" ||
     command.kind === "runEvalEvidence" ||
+    command.kind === "runEvalPromotionEligibility" ||
     command.kind === "decisionPacket" ||
     command.kind === "codexBrief"
   ) {

@@ -81,6 +81,13 @@ export interface ProposeReviewedHelpedMemoryCandidateResult {
   packetChecksum: string;
 }
 
+export interface GetReviewedHelpedMemoryProposalEligibilityInput {
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  sourceDecisionId?: SourceDecisionId;
+  reviewAssessmentId?: ReviewAssessmentId;
+}
+
 export type ReviewedHelpedLearningBlockedReason =
   | "feedback_delta_not_found"
   | "feedback_delta_not_authoritative"
@@ -105,6 +112,42 @@ export class ReviewedHelpedLearningBlockedError extends Error {
     this.name = "ReviewedHelpedLearningBlockedError";
   }
 }
+
+export interface ReviewedHelpedMemoryProposalReady {
+  status: "ready_to_propose";
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  reviewAssessmentId: ReviewAssessmentId;
+  sourceDecisionId: SourceDecisionId;
+  sourceClaimId: SourceClaimId;
+  evidenceBundleId: string;
+  usefulnessApplicationId: string;
+  packetChecksum: string;
+  existingCandidateId?: MemoryCandidateId;
+}
+
+export interface ReviewedHelpedMemoryProposalMissingReview {
+  status: "missing_review";
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  sourceDecisionId?: SourceDecisionId;
+  evidenceBundleId?: string;
+  usefulnessApplicationId?: string;
+  reason: ReviewedHelpedLearningBlockedReason;
+}
+
+export interface ReviewedHelpedMemoryProposalBlocked {
+  status: "blocked_authority";
+  projectId: ProjectId;
+  feedbackDeltaId: FeedbackDeltaId;
+  sourceDecisionId?: SourceDecisionId;
+  reason: ReviewedHelpedLearningBlockedReason;
+}
+
+export type ReviewedHelpedMemoryProposalEligibility =
+  | ReviewedHelpedMemoryProposalReady
+  | ReviewedHelpedMemoryProposalMissingReview
+  | ReviewedHelpedMemoryProposalBlocked;
 
 export interface PromoteMemoryCandidateInput extends RepositoryMetadata {
   candidateId: MemoryCandidateId;

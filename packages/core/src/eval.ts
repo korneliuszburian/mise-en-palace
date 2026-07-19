@@ -90,6 +90,7 @@ export interface RecordPairedLiveEvalEvidenceResult {
 export interface ListPairedLiveEvalEvidenceInput {
   projectId: ProjectId;
   runId?: ExecutionRunId;
+  candidateId?: EvalCandidateId;
   scenario?: string;
   outcome?: PairedLiveEvalEvidenceOutcome;
   usefulnessOutcome?: PairedLiveEvalEvidenceUsefulnessOutcome;

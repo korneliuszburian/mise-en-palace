@@ -66,6 +66,7 @@ describe("runPairedLiveEvalEvidenceCommand", () => {
       command: {
         projectId,
         runId,
+        candidateId: `paired-target-repair:${runId}`,
         limit: 25,
         format: "json"
       },
@@ -90,7 +91,12 @@ describe("runPairedLiveEvalEvidenceCommand", () => {
       proof: { doesNotProve: readonly string[] };
     };
 
-    expect(listed).toEqual([{ projectId, runId, limit: 25 }]);
+    expect(listed).toEqual([{
+      projectId,
+      runId,
+      candidateId: `paired-target-repair:${runId}`,
+      limit: 25
+    }]);
     expect(closed).toEqual(["closed"]);
     expect(parsed.returnedCandidateCount).toBe(1);
     expect(parsed.candidates[0]).toEqual(expect.objectContaining({

@@ -5,7 +5,7 @@ import type {
 
 export type PairedLiveEvalEvidenceFilters = Pick<
   ListPairedLiveEvalEvidenceInput,
-  "runId" | "scenario" | "outcome" | "usefulnessOutcome"
+  "runId" | "candidateId" | "scenario" | "outcome" | "usefulnessOutcome"
 >;
 
 export type PairedLiveEvalEvidenceReadbackCandidate =
@@ -50,15 +50,13 @@ const readbackCandidateFor = (
 const matchesFilters = (
   candidate: PairedLiveEvalEvidenceReadbackCandidate,
   filters: PairedLiveEvalEvidenceFilters
-): boolean => (
-  (filters.runId === undefined || candidate.runId === filters.runId) &&
-  (filters.scenario === undefined || candidate.scenario === filters.scenario) &&
-  (filters.outcome === undefined || candidate.outcome === filters.outcome) &&
-  (
-    filters.usefulnessOutcome === undefined ||
-    candidate.usefulnessOutcome === filters.usefulnessOutcome
-  )
-);
+): boolean => [
+  [filters.runId, candidate.runId],
+  [filters.candidateId, candidate.candidateId],
+  [filters.scenario, candidate.scenario],
+  [filters.outcome, candidate.outcome],
+  [filters.usefulnessOutcome, candidate.usefulnessOutcome]
+].every(([expected, actual]) => expected === undefined || expected === actual);
 
 export const buildPairedLiveEvalEvidenceReadback = (input: {
   readonly projectId: string;

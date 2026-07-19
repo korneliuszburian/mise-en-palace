@@ -1,10 +1,3 @@
-import postgres from "postgres";
-import {
-  createKrnDatabase
-} from "@krn/db";
-import {
-  DrizzleHarnessRunRepository
-} from "@krn/db/adapters";
 import type {
   ListPairedLiveEvalEvidenceInput,
   PairedLiveEvalEvidenceRecord
@@ -17,10 +10,14 @@ import {
 import type {
   PairedLiveEvalEvidenceFilters
 } from "./paired-live-eval-evidence-readback.js";
+import {
+  createPairedLiveEvalReadbackRuntime
+} from "./paired-live-eval-readback-runtime.js";
 
 export interface PairedLiveEvalEvidenceCommand {
   readonly projectId: string;
   readonly runId?: string;
+  readonly candidateId?: string;
   readonly scenario?: string;
   readonly outcome?: PairedLiveEvalEvidenceFilters["outcome"];
   readonly usefulnessOutcome?: PairedLiveEvalEvidenceFilters["usefulnessOutcome"];
@@ -61,17 +58,8 @@ const missingDatabaseUrlMessage = [
 
 const createDefaultReadbackRuntime = async (input: {
   readonly databaseUrl: string;
-}): Promise<PairedLiveEvalEvidenceDatabaseRuntime> => {
-  const client = postgres(input.databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-
-  return {
-    listPairedLiveEvalEvidence: (filters) =>
-      harnessRunRepository.listPairedLiveEvalEvidence(filters),
-    close: () => client.end()
-  };
-};
+}): Promise<PairedLiveEvalEvidenceDatabaseRuntime> =>
+  createPairedLiveEvalReadbackRuntime(input);
 
 const resolveRuntime = (
   runtime: PairedLiveEvalEvidenceCommandRuntime,
@@ -86,6 +74,7 @@ const commandFilters = (
   command: PairedLiveEvalEvidenceCommand
 ): PairedLiveEvalEvidenceFilters => ({
   ...(command.runId === undefined ? {} : { runId: command.runId }),
+  ...(command.candidateId === undefined ? {} : { candidateId: command.candidateId }),
   ...(command.scenario === undefined ? {} : { scenario: command.scenario }),
   ...(command.outcome === undefined ? {} : { outcome: command.outcome }),
   ...(command.usefulnessOutcome === undefined
