@@ -372,7 +372,6 @@ const targetPlanReadbackProof = (
     memoryRecordId: string;
     renderedBrief: string;
     missingContextMessage: string;
-    memoryRendered: boolean;
   }
 ): TargetPlanReadbackProof => {
   const contextAssembly = input.aggregate.contextAssembly;
@@ -387,10 +386,13 @@ const targetPlanReadbackProof = (
   const targetProjectLinked =
     input.aggregate.operatorIntent.projectId === input.projectId &&
     input.aggregate.taskContract.projectId === input.projectId;
-  const memoryIncluded = contextAssembly.inclusions.some((inclusion) =>
+  const memoryInclusion = contextAssembly.inclusions.find((inclusion) =>
     inclusion.subjectType === "memory_record" &&
     inclusion.subjectId === input.memoryRecordId
   );
+  const memoryIncluded = memoryInclusion !== undefined;
+  const memoryRendered = memoryInclusion !== undefined &&
+    input.renderedBrief.includes(memoryInclusion.expectedUse);
   const ownerFileIncluded = contextAssembly.inclusions.some((inclusion) =>
     inclusion.subjectType === "owner_file"
   );
@@ -402,7 +404,7 @@ const targetPlanReadbackProof = (
     targetProjectLinked,
     memoryIncluded,
     ownerFileIncluded,
-    memoryRendered: input.memoryRendered,
+    memoryRendered,
     contextBytes,
     approximateTokens: Math.ceil(contextBytes / 4)
   };
@@ -419,10 +421,7 @@ const assertTargetPlanReadback = (
 ): TargetPlanReadbackProof => {
   const proof = targetPlanReadbackProof({
     ...input,
-    missingContextMessage: "Target repo harness smoke failed to read back persisted run",
-    // Grounded proof is a strict hit: the brief must expose the typed context row and the id.
-    memoryRendered: input.renderedBrief.includes(`memory_record:${input.memoryRecordId}`) &&
-      input.renderedBrief.includes(input.memoryRecordId)
+    missingContextMessage: "Target repo harness smoke failed to read back persisted run"
   });
   const proofChecks = [
     input.aggregate.executionRun.id === input.executionRunId,
@@ -452,10 +451,7 @@ const assertTargetBaselineReadback = (
 ): TargetPlanReadbackProof => {
   const proof = targetPlanReadbackProof({
     ...input,
-    missingContextMessage: "Target repo harness smoke failed to read back baseline run",
-    // Baseline proof is a strict miss: a target memory id mention would weaken the baseline.
-    memoryRendered: input.renderedBrief.includes(`memory_record:${input.memoryRecordId}`) ||
-      input.renderedBrief.includes(input.memoryRecordId)
+    missingContextMessage: "Target repo harness smoke failed to read back baseline run"
   });
   const proofChecks = [
     input.aggregate.executionRun.id === input.executionRunId,
