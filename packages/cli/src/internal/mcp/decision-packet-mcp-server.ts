@@ -58,7 +58,6 @@ type ToolCallResult = JsonObject & {
     readonly text: string;
   }];
   readonly structuredContent?: JsonValue;
-  readonly _meta?: JsonObject;
   readonly isError?: boolean;
 };
 
@@ -261,9 +260,6 @@ const briefResult = (
     ].join("\n")
   }],
   structuredContent: requireJsonValue(readback.packetIdentity),
-  _meta: {
-    decisionPacketReadback: requireJsonValue(readback)
-  },
   isError: false
 });
 
@@ -336,7 +332,7 @@ const initializeResult = (
       version: serverVersion
     },
     instructions:
-      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Exact issuance identity remains structured; evidence and feedback return channels remain machine-readable metadata."
+      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Exact issuance identity remains structured; detailed operator readback stays on the CLI surface."
   };
 };
 

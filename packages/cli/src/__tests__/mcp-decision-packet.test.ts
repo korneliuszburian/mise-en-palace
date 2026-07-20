@@ -1045,6 +1045,7 @@ describe("DecisionPacket MCP wrapper", () => {
       checksum: packetJson.packetIdentity.checksum,
       evidenceRef: packetJson.packetIdentity.evidenceRef
     });
+    expect(isRecord(result) ? result["_meta"] : undefined).toBeUndefined();
   });
 
   it.each([
