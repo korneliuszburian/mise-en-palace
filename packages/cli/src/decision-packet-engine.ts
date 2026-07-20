@@ -237,7 +237,10 @@ const packetForBriefInput = (input: {
     subjectId: item.subjectId,
     reason: item.reason,
     expectedUse: item.expectedUse,
-    sourceAuthority: item.sourceAuthority
+    sourceAuthority: item.sourceAuthority,
+    ...(item.supportingEvidence === undefined
+      ? {}
+      : { supportingEvidence: item.supportingEvidence })
   }));
   const contextExclusions = input.contextAssembly.exclusions.map((item) => ({
     subjectType: item.subjectType,
@@ -758,7 +761,10 @@ export const buildDecisionPacketWithEngine = async (
       subjectId: item.subjectId,
       reason: item.reason,
       expectedUse: item.expectedUse,
-      sourceAuthority: item.sourceAuthority
+      sourceAuthority: item.sourceAuthority,
+      ...(item.supportingEvidence === undefined
+        ? {}
+        : { supportingEvidence: item.supportingEvidence })
     })),
     contextExclusions,
     toolBoundaries: briefInput.capabilityPlan.toolBoundaries,

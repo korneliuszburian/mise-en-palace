@@ -130,7 +130,7 @@ export const formatSourceDecisionImportUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
+    "Usage: krn source artifact preview --file <path> [--repo <connected-target>] [--chunk-lines <n>] [--limit-chunks <n>|--all-chunks --persist] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --source-authority <authority> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
     "",
     "Required:",
     "--file",
@@ -138,6 +138,8 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "Optional:",
     "--chunk-lines <positive-integer>",
     "--limit-chunks <positive-integer>",
+    "--all-chunks (requires --persist; cannot be combined with --limit-chunks)",
+    "--repo <connected-target> (requires --persist)",
     "--extract-candidates",
     "--reviewed-extraction-claim-candidate-id <id>",
     "--claim <text>",
@@ -161,7 +163,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--persist",
     "--json",
     "",
-    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --extract-candidates renders candidate-only deterministic local extraction output. --reviewed-extraction-claim-candidate-id persists only a selected ready extraction candidate when explicit review fields and --persist are supplied. It does not crawl, embed, rank, or mutate Memory Core."
+    "Note: preview reads one local file, computes hashes, and renders bounded chunk source ranges. --all-chunks persists every line-bounded chunk and one exact full-content SearchDocument per chunk into the connected --repo project while keeping rendered preview bounded. --extract-candidates renders candidate-only deterministic local extraction output. --reviewed-extraction-claim-candidate-id persists only a selected ready extraction candidate when explicit review fields and --persist are supplied. It does not crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionLinkUsage = (): string =>
@@ -563,6 +565,7 @@ const hasSourceDecisionImportRequiredFields = (
   hasText(sourceCommand.file);
 
 const sourceArtifactPreviewStringOptions = {
+  "--repo": "repo",
   "--claim": "claim",
   "--mechanism": "mechanism",
   "--krn-implication": "krnImplication",
@@ -790,6 +793,12 @@ const parseSourceArtifactPreviewToken = (
     return sourceNext(index);
   }
 
+  if (common.arg === "--all-chunks") {
+    sourceCommand.allChunks = true;
+
+    return sourceNext(index);
+  }
+
   const parsed = parseSourceArtifactPreviewOption(rest, index, common.arg, sourceCommand);
 
   if ("error" in parsed) {
@@ -820,6 +829,24 @@ const validateReviewedExtractionClaimCandidate = (
 
   if (sourceCommand.claim !== undefined) {
     return "--reviewed-extraction-claim-candidate-id cannot be combined with --claim";
+  }
+
+  return undefined;
+};
+
+const validateSourceArtifactIngestOptions = (
+  sourceCommand: SourceArtifactPreviewCommand
+): string | undefined => {
+  if (sourceCommand.allChunks === true && sourceCommand.persist !== true) {
+    return "--all-chunks requires --persist";
+  }
+
+  if (sourceCommand.allChunks === true && sourceCommand.limitChunks !== undefined) {
+    return "--all-chunks cannot be combined with --limit-chunks";
+  }
+
+  if (sourceCommand.repo !== undefined && sourceCommand.persist !== true) {
+    return "--repo requires --persist";
   }
 
   return undefined;
@@ -1504,6 +1531,14 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
   if (reviewedExtractionError !== undefined) {
     return {
       error: reviewedExtractionError
+    };
+  }
+
+  const ingestOptionError = validateSourceArtifactIngestOptions(sourceCommand);
+
+  if (ingestOptionError !== undefined) {
+    return {
+      error: ingestOptionError
     };
   }
 

@@ -44,6 +44,7 @@ type SourceEvidenceQueryRow = {
     ordinal: number;
     content: string;
     contentHash: string;
+    metadata: Record<string, unknown>;
   } | null;
   sourceSnapshot: {
     id: string;
@@ -102,12 +103,19 @@ const sourceEvidenceFreshness = (
 const sourceEvidenceProvenance = (
   row: SourceEvidenceQueryRow
 ): NonNullable<SourceDecisionEvidenceLookup["provenance"]> => {
+  const sourceRange = row.sourceChunk === null
+    ? undefined
+    : typeof row.sourceChunk.metadata["sourceRange"] === "string"
+      ? row.sourceChunk.metadata["sourceRange"]
+      : undefined;
+
   if (row.sourceSnapshot === null) {
     return {
       kind: "source_artifact",
       uri: row.sourceArtifact.uri,
       sourceArtifactId: row.sourceArtifact.id,
-      ...(row.sourceChunk === null ? {} : { sourceChunkId: row.sourceChunk.id })
+      ...(row.sourceChunk === null ? {} : { sourceChunkId: row.sourceChunk.id }),
+      ...(sourceRange === undefined ? {} : { sourceRange })
     };
   }
 
@@ -116,6 +124,7 @@ const sourceEvidenceProvenance = (
     uri: row.sourceSnapshot.snapshotUri,
     sourceArtifactId: row.sourceArtifact.id,
     ...(row.sourceChunk === null ? {} : { sourceChunkId: row.sourceChunk.id }),
+    ...(sourceRange === undefined ? {} : { sourceRange }),
     sourceSnapshotId: row.sourceSnapshot.id
   };
 };

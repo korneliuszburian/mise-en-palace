@@ -393,7 +393,20 @@ const contextInclusionsOrEmpty = (value: unknown): ContextInclusion[] => {
       return false;
     }
 
-    return (
+    const supportingEvidence = item.supportingEvidence;
+    const supportingEvidenceValid = supportingEvidence === undefined || (
+      isRecord(supportingEvidence) &&
+      typeof supportingEvidence.searchDocumentId === "string" &&
+      typeof supportingEvidence.sourceArtifactId === "string" &&
+      typeof supportingEvidence.sourceChunkId === "string" &&
+      typeof supportingEvidence.contentHash === "string" &&
+      typeof supportingEvidence.renderedContentHash === "string" &&
+      (supportingEvidence.sourceRange === undefined || typeof supportingEvidence.sourceRange === "string") &&
+      typeof supportingEvidence.content === "string" &&
+      typeof supportingEvidence.truncated === "boolean"
+    );
+
+    return supportingEvidenceValid && (
       typeof item.subjectType === "string" &&
       typeof item.subjectId === "string" &&
       typeof item.reason === "string" &&

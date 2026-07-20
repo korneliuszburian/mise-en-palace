@@ -236,3 +236,25 @@ not prove a Memory Core advantage.
 
 **Retirement:** Retire only when the product boundary changes through an owned
 architecture decision with a named consumer and falsifier.
+
+## Protected Fallow invocation
+
+**Trigger:** `quality:fallow:ci` would run from an active disposable worktree,
+especially an uncommitted path matching `/tmp/mise-en-palace-*`.
+
+**Safe action:** Commit the owned slice first, then run Fallow from a protected
+persistent checkout or worktree whose lifecycle cannot be mistaken for audit
+scratch space. Verify the invoking worktree exists and remains registered
+before and after the gate. Never make an uncommitted disposable worktree the
+only copy of a Fallow-reviewed diff.
+
+**Evidence / non-proof:** On 2026-07-20, Fallow 2.103.0 removed the invoking
+`/tmp/mise-en-palace-frontend-retrieval` worktree during its audit. The process
+lost its working directory, Git reported the worktree as prunable, and the
+uncommitted specialist-corpus diff had to be reconstructed from Codex rollout
+records. This proves that invocation shape is unsafe; it does not establish the
+root cause inside Fallow or make a Fallow result valid.
+
+**Retirement:** Retire only after a focused reproduction identifies and fixes
+the cleanup owner, and the same disposable-worktree invocation preserves the
+worktree before and after the gate.

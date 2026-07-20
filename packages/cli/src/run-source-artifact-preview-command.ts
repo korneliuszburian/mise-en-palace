@@ -12,6 +12,7 @@ import type {
   CliCommand
 } from "./parse-args.js";
 import {
+  pathExists,
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
 import type {
@@ -69,17 +70,27 @@ export const runSourceArtifactPreviewCommand = async (
   const raw = await readFile(resolvedPath, "utf8");
   const lines = sourceArtifactLines(raw);
   const chunkSize = runtime.command.chunkLines ?? defaultChunkLines;
-  const chunkLimit = runtime.command.limitChunks ?? defaultLimitChunks;
+  const persistedChunkLimit = runtime.command.allChunks === true
+    ? Math.max(1, Math.ceil(lines.length / chunkSize))
+    : runtime.command.limitChunks ?? defaultLimitChunks;
   const chunks = buildSourceArtifactPreviewChunks({
     lines,
     chunkSize,
-    limit: chunkLimit,
+    limit: persistedChunkLimit,
     contentHash: sha256,
     maxPreviewCharacters
   });
+  const renderedChunks = chunks.slice(0, runtime.command.limitChunks ?? defaultLimitChunks);
   const artifactHash = sha256(raw);
+  const repoPath = runtime.command.repo === undefined
+    ? undefined
+    : path.resolve(runtime.cwd, runtime.command.repo);
+
+  if (repoPath !== undefined && !(await pathExists(repoPath))) {
+    throw new Error(`Target repo does not exist: ${repoPath}`);
+  }
   const persistence = runtime.command.persist
-    ? await persistSourceArtifactPreview(runtime, file, resolvedPath, artifactHash, chunks)
+    ? await persistSourceArtifactPreview(runtime, file, resolvedPath, artifactHash, chunks, repoPath)
     : undefined;
   const persistenceLines = persistence?.lines ?? [
     "Persistence: disabled (local preview only)",
@@ -96,7 +107,8 @@ export const runSourceArtifactPreviewCommand = async (
         raw,
         lines,
         chunkSize,
-        chunks,
+        chunks: renderedChunks,
+        persistedChunkCount: chunks.length,
         ...(persistence === undefined ? {} : { persistence })
       }), null, 2)}\n`
     };
@@ -115,12 +127,12 @@ export const runSourceArtifactPreviewCommand = async (
       `contentHash: ${artifactHash}`,
       `bytes: ${Buffer.byteLength(raw, "utf8")}`,
       `lines: ${lines.length}`,
-      `chunking: line-based | chunkLines=${chunkSize} | renderedChunks=${chunks.length}`,
+      `chunking: line-based | chunkLines=${chunkSize} | renderedChunks=${renderedChunks.length} | persistedChunks=${runtime.command.persist ? chunks.length : 0}`,
       "",
       "Chunks:",
-      ...formatChunks(chunks),
+      ...formatChunks(renderedChunks),
       "",
-      ...formatCandidateBridge(runtime.command, file, artifactHash, chunks, persistenceFlags(persistence)),
+      ...formatCandidateBridge(runtime.command, file, artifactHash, renderedChunks, persistenceFlags(persistence)),
       "",
       "Proof:",
       "- proves: one local file was readable in this shell",

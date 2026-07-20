@@ -114,7 +114,16 @@ export interface RejectedSourceDecisionKnowledgeSource {
 
 export interface SourceRepository {
   createSourceArtifact(input: CreateSourceArtifactInput): Promise<SourceArtifactRecord>;
+  getSourceArtifactByUriAndContentHash?(
+    uri: string,
+    contentHash: string
+  ): Promise<SourceArtifactRecord | undefined>;
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
+  listSourceChunksForArtifact?(sourceArtifactId: string): Promise<SourceChunkRecord[]>;
+  getSourceChunkForProject?(
+    projectId: ProjectId,
+    id: SourceChunkRecord["id"]
+  ): Promise<SourceChunkRecord | undefined>;
   createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim>;
   deprecateSourceClaim?(input: DeprecateSourceClaimInput): Promise<SourceClaim>;
   getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined>;

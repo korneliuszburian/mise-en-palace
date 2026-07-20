@@ -474,9 +474,11 @@ export type CliCommand =
       kind: "sourceArtifactPreview";
       persist: boolean;
       file?: string;
+      repo?: string;
       json?: boolean;
       chunkLines?: number;
       limitChunks?: number;
+      allChunks?: boolean;
       extractCandidates?: boolean;
       reviewedExtractionClaimCandidateId?: string;
       claim?: string;

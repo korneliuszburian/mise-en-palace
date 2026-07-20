@@ -49,6 +49,17 @@ export const contextSubjectTypes = [
 
 export type ContextSubjectType = (typeof contextSubjectTypes)[number];
 
+export interface ContextSupportingEvidence {
+  searchDocumentId: string;
+  sourceArtifactId: string;
+  sourceChunkId: string;
+  contentHash: string;
+  renderedContentHash: string;
+  sourceRange?: string | undefined;
+  content: string;
+  truncated: boolean;
+}
+
 export interface ContextInclusion extends SourceContextTaxonomy {
   subjectType: ContextSubjectType;
   subjectId: string;
@@ -56,6 +67,7 @@ export interface ContextInclusion extends SourceContextTaxonomy {
   expectedUse: string;
   tokenEstimate?: number;
   sourceAuthority: SourceAuthorityLabel;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface ContextExclusion extends SourceContextTaxonomy {

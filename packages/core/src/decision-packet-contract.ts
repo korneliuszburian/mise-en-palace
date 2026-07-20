@@ -27,6 +27,8 @@ import {
 } from "./source-model.js";
 import { isIsoTimestamp } from "./time.js";
 
+export const decisionPacketSupportingEvidenceMaxCharacters = 2_400;
+
 const stringArraySchema = z.array(z.string());
 const isoTimestampSchema = z.string().refine(isIsoTimestamp);
 
@@ -41,12 +43,24 @@ const taskSchema = z.strictObject({
   status: z.enum(["draft", "active", "superseded", "closed"]).optional()
 });
 
+const supportingEvidenceSchema = z.strictObject({
+  searchDocumentId: z.string(),
+  sourceArtifactId: z.string(),
+  sourceChunkId: z.string(),
+  contentHash: z.string(),
+  renderedContentHash: z.string(),
+  sourceRange: z.string().optional(),
+  content: z.string(),
+  truncated: z.boolean()
+});
+
 const contextInclusionSchema = z.strictObject({
   subjectType: z.enum(contextSubjectTypes),
   subjectId: z.string(),
   reason: z.string(),
   expectedUse: z.string(),
-  sourceAuthority: SourceAuthorityLabelSchema
+  sourceAuthority: SourceAuthorityLabelSchema,
+  supportingEvidence: supportingEvidenceSchema.optional()
 });
 
 const contextExclusionSchema = z.strictObject({

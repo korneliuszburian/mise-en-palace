@@ -69,6 +69,24 @@
         "count": 1
       }
     },
+    "packages/cli/src/run-source-artifact-preview-command.ts": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/source-artifact-preview-persistence.ts": {
+      "crap_high": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/cli/src/source-decision-store-import.ts": {
+      "crap_moderate": {
+        "count": 2
+      }
+    },
     "packages/codex-adapter/src/render-execution-brief.ts": {
       "crap_moderate": {
         "count": 1
@@ -97,8 +115,24 @@
         "count": 3
       }
     },
+    "packages/db/src/repositories/mappers.ts": {
+      "crap_high": {
+        "count": 1
+      }
+    },
     "packages/harness/src/activation/activation-engine.ts": {
       "complexity_moderate": {
+        "count": 1
+      },
+      "crap_moderate": {
+        "count": 1
+      }
+    },
+    "packages/harness/src/activation/search-document-authority.ts": {
+      "crap_critical": {
+        "count": 1
+      },
+      "crap_moderate": {
         "count": 1
       }
     }
