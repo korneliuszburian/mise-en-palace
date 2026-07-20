@@ -113,10 +113,15 @@ describe("DecisionPacket MCP PostgreSQL role boundary", () => {
             result: {
               isError: false,
               structuredContent: {
-                kind: "krn.decisionPacketReadback.v1",
-                access: "read_only",
-                mutation: "none",
-                request: { runId: compiled.executionRun.id }
+                checksumAlgorithm: "sha256"
+              },
+              _meta: {
+                decisionPacketReadback: {
+                  kind: "krn.decisionPacketReadback.v1",
+                  access: "read_only",
+                  mutation: "none",
+                  request: { runId: compiled.executionRun.id }
+                }
               }
             }
           });
