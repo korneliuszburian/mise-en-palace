@@ -1,5 +1,6 @@
-import type {
-  SourceClaimEdgeKind
+import {
+  isIsoTimestamp,
+  type SourceClaimEdgeKind
 } from "@krn/core";
 import {
   sourceDecisionImportReconciliationLimitMaximum
@@ -40,7 +41,7 @@ export const formatSourceClaimAddUsage = (): string =>
     "--type <artifact-kind-or-source-type>",
     "--krn-implication <text>",
     "--falsifier <text>",
-    "--revisit-when <text>",
+    "--revisit-when <ISO-8601-date-time>",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -509,6 +510,20 @@ const hasSourceClaimAddRequiredFields = (
     sourceCommand.sourceAuthority,
     sourceCommand.consumer
   ].every(hasText);
+
+const sourceClaimAddValidationError = (
+  sourceCommand: SourceClaimAddCommand
+): string | undefined => {
+  if (!hasSourceClaimAddRequiredFields(sourceCommand)) {
+    return formatSourceClaimAddUsage();
+  }
+
+  if (sourceCommand.revisitWhen !== undefined && !isIsoTimestamp(sourceCommand.revisitWhen)) {
+    return "--revisit-when must be an ISO 8601 date-time with timezone, for example 2026-07-01T00:00:00.000Z";
+  }
+
+  return undefined;
+};
 
 const hasSourceClaimEdgesRequiredFields = (
   sourceCommand: Extract<CliCommand, { kind: "sourceClaimEdges" }>
@@ -1494,9 +1509,11 @@ const parseSourceClaimAddArgs = (rest: readonly string[]): ParseArgsResult => {
     index = parsed.nextIndex;
   }
 
-  if (!hasSourceClaimAddRequiredFields(sourceCommand)) {
+  const validationError = sourceClaimAddValidationError(sourceCommand);
+
+  if (validationError !== undefined) {
     return {
-      error: formatSourceClaimAddUsage()
+      error: validationError
     };
   }
 

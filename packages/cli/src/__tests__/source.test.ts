@@ -202,6 +202,42 @@ describe("runCli", () => {
     expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
   });
 
+  it("rejects an invalid revisit time before opening the database", async () => {
+    let databaseOpened = false;
+    const result = await runCli(
+      [
+        "source", "claim", "add",
+        "--title", "Temporal claim",
+        "--claim", "A governed claim",
+        "--mechanism", "A bounded mechanism",
+        "--does-not-prove", "Broad superiority",
+        "--support-type", "implementation-boundary",
+        "--source-authority", "project-decision",
+        "--consumer", "Memory Core",
+        "--revisit-when", "when the contract changes",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => {
+          databaseOpened = true;
+          throw new Error("database must not open for invalid CLI input");
+        }
+      }
+    );
+
+    expect(result).toEqual({
+      exitCode: 2,
+      stdout: "",
+      stderr: "--revisit-when must be an ISO 8601 date-time with timezone, for example 2026-07-01T00:00:00.000Z\n"
+    });
+    expect(databaseOpened).toBe(false);
+  });
+
   it("requires database config for source claim add --persist", async () => {
     const result = await runCli(
       [
