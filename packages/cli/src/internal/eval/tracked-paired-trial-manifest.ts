@@ -83,6 +83,30 @@ export type PairedTrialManifest = {
   readonly packetContextMode?: "full" | "task-only";
   readonly packetReadiness?: "ready" | "weak_context" | "abstain";
   readonly treatment?: PairedMemoryTreatment;
+  readonly preregistration?: {
+    readonly family: "frontend-juniper-landing";
+    readonly targetCommit: string;
+    readonly sourceTreeHash: string;
+    readonly baselinePromptHash: string;
+    readonly packetChecksum: string;
+    readonly checkerHash: string;
+    readonly allowedPaths: readonly string[];
+    readonly codeBudget: {
+      readonly maxCssBytes: number;
+      readonly maxHtmlBytes: number;
+      readonly maxCssDeclarations: number;
+    };
+    readonly renderObservations: {
+      readonly viewports: readonly number[];
+      readonly programCounts: readonly number[];
+      readonly textScalePercent: number;
+      readonly checks: readonly string[];
+    };
+    readonly visualProtocol: string;
+    readonly operatorInterventionLog: string;
+    readonly falsifier: string;
+    readonly doesNotProve: string;
+  };
 };
 
 const isRecord = (value: unknown): value is JsonRecord =>
@@ -172,7 +196,14 @@ const decisionApplicationCheckNameValues = [
   "target_test",
   "target_typecheck",
   "target_diff_check",
-  "held_out_runtime"
+  "held_out_runtime",
+  "frontend_semantics",
+  "frontend_css_ownership",
+  "frontend_component_api",
+  "frontend_intrinsic_resilience",
+  "frontend_code_budget",
+  "frontend_render_resilience",
+  "frontend_render_quality"
 ] as const satisfies readonly DecisionApplicationCheckName[];
 
 const decisionApplicationCheckNames = new Set<string>(decisionApplicationCheckNameValues);
@@ -234,12 +265,48 @@ const optionalValueMatches = (
 
 const packetReadinessValues = new Set<string>(["ready", "weak_context", "abstain"]);
 
+const isPositiveInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value > 0;
+
+const isSha256 = (value: unknown): boolean => /^[0-9a-f]{64}$/u.test(String(value));
+
+const isTrialCodeBudget = (value: unknown): boolean => isRecord(value) &&
+  isPositiveInteger(value["maxCssBytes"]) &&
+  isPositiveInteger(value["maxHtmlBytes"]) &&
+  isPositiveInteger(value["maxCssDeclarations"]);
+
+const isTrialRenderObservations = (value: unknown): boolean => isRecord(value) &&
+  Array.isArray(value["viewports"]) && value["viewports"].every(isPositiveInteger) &&
+  Array.isArray(value["programCounts"]) && value["programCounts"].every(isPositiveInteger) &&
+  isPositiveInteger(value["textScalePercent"]) &&
+  isPresentStringArray(value["checks"]);
+
+const isTrialPreregistration = (value: unknown): boolean => {
+  if (!isRecord(value) || !hasRequiredStrings(value, [
+    "family", "targetCommit", "sourceTreeHash", "baselinePromptHash", "packetChecksum", "checkerHash",
+    "visualProtocol", "operatorInterventionLog", "falsifier", "doesNotProve"
+  ])) return false;
+  return value["family"] === "frontend-juniper-landing" &&
+    /^[0-9a-f]{40}$/u.test(String(value["targetCommit"])) &&
+    ["sourceTreeHash", "baselinePromptHash", "packetChecksum", "checkerHash"]
+      .every((key) => isSha256(value[key])) &&
+    hasSafeDecisionApplicationPaths(value["allowedPaths"]) &&
+    isTrialCodeBudget(value["codeBudget"]) &&
+    isTrialRenderObservations(value["renderObservations"]);
+};
+
+const hasRequiredJuniperPreregistration = (value: JsonRecord): boolean =>
+  String(value["scenario"]).toLowerCase().includes("frontend-juniper-landing")
+    ? isTrialPreregistration(value["preregistration"])
+    : value["preregistration"] === undefined;
+
 const hasValidOptionalMetadata = (value: JsonRecord): boolean => [
   optionalValueMatches(value["checkerRevision"], (candidate) => readString(candidate) !== undefined),
   optionalValueMatches(value["packetContextMode"], (candidate) => candidate === "full" || candidate === "task-only"),
   optionalValueMatches(value["packetReadiness"], (candidate) => typeof candidate === "string" && packetReadinessValues.has(candidate)),
   optionalValueMatches(value["treatment"], isPairedMemoryTreatment),
-  optionalValueMatches(value["capabilities"], isTrackedTrialCapabilities)
+  optionalValueMatches(value["capabilities"], isTrackedTrialCapabilities),
+  optionalValueMatches(value["preregistration"], isTrialPreregistration)
 ].every(Boolean);
 
 const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest =>
@@ -248,6 +315,7 @@ const isPairedTrialManifest = (value: unknown): value is PairedTrialManifest =>
   hasRequiredStrings(value, ["scenario", "sourcePath", "projectId", "taskId", "task", "runId"]) &&
   hasCompleteDecisionApplicationRules(value) &&
   hasValidOptionalMetadata(value) &&
+  hasRequiredJuniperPreregistration(value) &&
   isTrackedTrialCodex(value["codex"]) &&
   isTrackedTrialContainment(value["containment"]) &&
   isTrackedTrialChecker(value["checker"]);

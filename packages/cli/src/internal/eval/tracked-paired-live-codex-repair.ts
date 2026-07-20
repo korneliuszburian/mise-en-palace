@@ -30,6 +30,7 @@ import { fileURLToPath } from "node:url";
 import {
   buildPairedRepairPrompts,
   liveCodexObedienceMarker,
+  pairedEvalFamilyContract,
   pairedLiveCheckerRevision,
   runCommand,
   runPairedRepairChecker,
@@ -39,6 +40,7 @@ import {
   type HeldOutRuntimePermissionFlag,
   type PairedRepairScore
 } from "./paired-live-codex-repair.js";
+import { frontendJuniperPreregisteredContract } from "./frontend-juniper-landing-checker.js";
 import {
   recordPairedDecisionApplications
 } from "./paired-decision-application.js";
@@ -221,6 +223,7 @@ type TrialConditions = {
       readonly test: boolean;
       readonly typecheck: boolean;
       readonly css: boolean;
+      readonly build?: boolean;
     };
     readonly checkerRuntime?: {
       readonly nodeVersion: string;
@@ -1216,7 +1219,8 @@ const isObservedTrialConditions = (value: unknown): boolean => {
       isRecord(commands) &&
       typeof commands["test"] === "boolean" &&
       typeof commands["typecheck"] === "boolean" &&
-      (commands["css"] === undefined || typeof commands["css"] === "boolean")
+      (commands["css"] === undefined || typeof commands["css"] === "boolean") &&
+      (commands["build"] === undefined || typeof commands["build"] === "boolean")
     ) &&
     isObservedCheckerRuntime(value["checkerRuntime"]);
 };
@@ -1641,6 +1645,10 @@ type TrialContext = {
   readonly sourceTreeHash: string;
   readonly packetValidation: TrialPacketValidation;
   readonly conditions: TrialConditions;
+  readonly preregistrationObservations: {
+    readonly sourceCommit?: string;
+    readonly checkerHash?: string;
+  };
 };
 
 type TrialArtifactInput = {
@@ -1748,6 +1756,38 @@ const blockedTrialArtifact = (
   ...optionalField("conditions", conditions)
 });
 
+const preregistrationReasons = (context: TrialContext): readonly string[] => {
+  const preregistration = context.manifest.preregistration;
+  if (preregistration === undefined) return [];
+  const prompt = buildPairedRepairPrompts({
+    task: context.manifest.task,
+    decisionPacket: {},
+    includeDecisionPacket: false,
+    family: resolvePairedEvalFamily(context.manifest.scenario)
+  });
+  const family = pairedEvalFamilyContract(resolvePairedEvalFamily(context.manifest.scenario));
+  return [
+    missingReason(context.preregistrationObservations.sourceCommit === preregistration.targetCommit, "source commit does not match preregistration"),
+    missingReason(context.sourceTreeHash === preregistration.sourceTreeHash, "source tree does not match preregistration"),
+    missingReason(prompt.delta.baselineHash === preregistration.baselinePromptHash, "baseline prompt does not match preregistration"),
+    missingReason(context.packetValidation.checksum === preregistration.packetChecksum, "DecisionPacket checksum does not match preregistration"),
+    missingReason(context.preregistrationObservations.checkerHash === preregistration.checkerHash, "held-out checker does not match preregistration"),
+    missingReason(context.manifest.checkerRevision === pairedLiveCheckerRevision, "checker revision is not current"),
+    missingReason(preregistration.family === family.family, "preregistration family does not match trial family"),
+    missingReason(serializedJson(family.allowedPrefixes) === serializedJson(preregistration.allowedPaths), "allowed paths do not match preregistration"),
+    missingReason(
+      serializedJson(preregistration.codeBudget) === serializedJson(frontendJuniperPreregisteredContract.codeBudget),
+      "code budget does not match the checker-owned preregistration"
+    ),
+    missingReason(
+      serializedJson(preregistration.renderObservations) === serializedJson(frontendJuniperPreregisteredContract.renderObservations),
+      "render observations do not match the checker-owned preregistration"
+    ),
+    missingReason(preregistration.visualProtocol === frontendJuniperPreregisteredContract.visualProtocol, "visual protocol does not match preregistration"),
+    missingReason(preregistration.operatorInterventionLog === frontendJuniperPreregisteredContract.operatorInterventionLog, "operator intervention log contract does not match preregistration")
+  ].filter((reason): reason is string => reason !== undefined);
+};
+
 const initialTrialFailure = (input: {
   readonly packetFetchFailure?: string;
 }, context: TrialContext): TrialArtifactInput | undefined => {
@@ -1757,7 +1797,10 @@ const initialTrialFailure = (input: {
   if (!context.packetValidation.valid) {
     return { status: "invalid", invalidReasons: ["packet validation failed closed"] };
   }
-  const configurationReasons = manifestConditionReasons(context.manifest);
+  const configurationReasons = [
+    ...manifestConditionReasons(context.manifest),
+    ...preregistrationReasons(context)
+  ];
   if (configurationReasons.length > 0) {
     return { status: "invalid", invalidReasons: configurationReasons };
   }
@@ -1772,13 +1815,15 @@ const packetFetchFailureInput = (
 const buildTrialContext = (
   manifest: PairedTrialManifest,
   sourceTreeHash: string,
-  packet: unknown
+  packet: unknown,
+  preregistrationObservations: TrialContext["preregistrationObservations"]
 ): TrialContext => ({
   manifest,
   manifestHash: sha256(serializedJson(manifest)),
   sourceTreeHash,
   packetValidation: validateTrialPacket(packet, manifest),
-  conditions: trialConditions(manifest)
+  conditions: trialConditions(manifest),
+  preregistrationObservations
 });
 
 const matchesTrialIdentity = (
@@ -1839,7 +1884,7 @@ const hasChatGptAuthentication = (result: CommandResult): boolean =>
 
 export const observeSourceCommands = async (
   sourceRoot: string
-): Promise<{ readonly test: boolean; readonly typecheck: boolean; readonly css: boolean }> => {
+): Promise<{ readonly test: boolean; readonly typecheck: boolean; readonly css: boolean; readonly build: boolean }> => {
   try {
     const packageJson: unknown = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8"));
     const scripts = isRecord(packageJson) && isRecord(packageJson["scripts"])
@@ -1848,10 +1893,11 @@ export const observeSourceCommands = async (
     return {
       test: typeof scripts?.["test"] === "string" && scripts["test"].trim().length > 0,
       typecheck: typeof scripts?.["typecheck"] === "string" && scripts["typecheck"].trim().length > 0,
-      css: typeof scripts?.["css"] === "string" && scripts["css"].trim().length > 0
+      css: typeof scripts?.["css"] === "string" && scripts["css"].trim().length > 0,
+      build: typeof scripts?.["build"] === "string" && scripts["build"].trim().length > 0
     };
   } catch {
-    return { test: false, typecheck: false, css: false };
+    return { test: false, typecheck: false, css: false, build: false };
   }
 };
 
@@ -1861,7 +1907,7 @@ type TrialPreparationObservations = {
   readonly codex: TrialToolObservation;
   readonly authentication: CommandResult;
   readonly runtimePermissionFlag: HeldOutRuntimePermissionFlag | undefined;
-  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean; readonly css: boolean };
+  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean; readonly css: boolean; readonly build: boolean };
   readonly checkerRuntime: {
     readonly nodeVersion: string;
     readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
@@ -1941,13 +1987,15 @@ const trialPreparationRejection = (input: {
     const family = resolvePairedEvalFamily(input.manifest.scenario);
     const commandsAvailable = family === "frontend-course-cards"
       ? sourceCommands.css
-      : sourceCommands.test && sourceCommands.typecheck;
+      : family === "frontend-juniper-landing"
+        ? sourceCommands.build
+        : sourceCommands.test && sourceCommands.typecheck;
     if (!commandsAvailable) {
       return {
         kind: "rejected",
         status: "invalid",
-        reason: family === "frontend-course-cards"
-          ? "frontend source fixture must define the public css build script"
+        reason: family === "frontend-course-cards" || family === "frontend-juniper-landing"
+          ? "frontend source fixture must define a public build script"
           : "source fixture must define test and typecheck scripts",
         conditions
       };
@@ -2679,15 +2727,45 @@ const resolveTrialPacket = async (
   }
 };
 
+const observePreregistration = async (
+  manifest: PairedTrialManifest,
+  sourceRoot: string
+): Promise<TrialContext["preregistrationObservations"]> => {
+  if (manifest.preregistration === undefined) return {};
+  const sourceCommitResult = await runCommand("git", ["rev-parse", "HEAD"], sourceRoot, { timeoutMs: 10_000 });
+  let checkerHash: string | undefined;
+  try {
+    const behaviorSources = [
+      "./frontend-juniper-landing-checker.ts",
+      "./frontend-held-out-browser-observer.ts"
+    ];
+    const behaviorHashes = await Promise.all(behaviorSources.map(async (path) => ({
+      path,
+      hash: sha256(await readFile(fileURLToPath(new URL(path, import.meta.url))))
+    })));
+    checkerHash = sha256(serializedJson(behaviorHashes));
+  } catch {
+    checkerHash = undefined;
+  }
+  const sourceCommit = sourceCommitResult.exitCode === 0 ? sourceCommitResult.stdout.trim() : undefined;
+  return {
+    ...(sourceCommit === undefined ? {} : { sourceCommit }),
+    ...(checkerHash === undefined ? {} : { checkerHash })
+  };
+};
+
 export const runTrackedPairedTrial = async (
   input: TrackedPairedTrialInput,
   checker: PairedTrialChecker = runPairedRepairChecker
 ): Promise<TrackedTrialArtifact> => {
-  const sourceTreeHash = await hashTree(input.sourceRoot);
-  const provisionalContext = buildTrialContext(input.manifest, sourceTreeHash, undefined);
+  const [sourceTreeHash, preregistrationObservations] = await Promise.all([
+    hashTree(input.sourceRoot),
+    observePreregistration(input.manifest, input.sourceRoot)
+  ]);
+  const provisionalContext = buildTrialContext(input.manifest, sourceTreeHash, undefined, preregistrationObservations);
   const attemptDirectory = input.attemptDirectory?.trim();
   if (attemptDirectory === undefined || attemptDirectory.length === 0) {
-    const directContext = buildTrialContext(input.manifest, sourceTreeHash, input.packet);
+    const directContext = buildTrialContext(input.manifest, sourceTreeHash, input.packet, preregistrationObservations);
     const initialFailure = initialTrialFailure(input, directContext);
     return initialFailure === undefined
       ? blockedTrialArtifact(directContext, "blocked", "an empty immutable attempt directory is required before live execution")
@@ -2712,7 +2790,7 @@ export const runTrackedPairedTrial = async (
     return blockedTrialArtifact(provisionalContext, "blocked", journalResult.reason);
   }
   const packetResult = await resolveTrialPacket(input);
-  const context = buildTrialContext(input.manifest, sourceTreeHash, packetResult.packet);
+  const context = buildTrialContext(input.manifest, sourceTreeHash, packetResult.packet, preregistrationObservations);
   const initialFailure = initialTrialFailure(packetFetchFailureInput(packetResult.failure), context);
   if (initialFailure !== undefined) {
     return finalizeTrackedTrial({ context, journal: journalResult.journal, artifact: initialFailure });

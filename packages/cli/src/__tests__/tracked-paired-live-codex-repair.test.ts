@@ -185,17 +185,20 @@ describe("trial source preflight", () => {
     const root = await mkdtemp(join(tmpdir(), "krn-source-preflight-"));
     try {
       await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "pnpm test" } }), "utf8");
-      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false, css: false });
+      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false, css: false, build: false });
     } finally {
       await rm(root, { recursive: true, force: true });
     }
   });
 
-  it("observes the public CSS build used by frontend families", async () => {
+  it.each([
+    ["css", { test: false, typecheck: false, css: true, build: false }],
+    ["build", { test: false, typecheck: false, css: false, build: true }]
+  ] as const)("observes a public %s script without conflating frontend family contracts", async (script, expected) => {
     const root = await mkdtemp(join(tmpdir(), "krn-frontend-source-preflight-"));
     try {
-      await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { css: "postcss input.css -o output.css" } }), "utf8");
-      await expect(observeSourceCommands(root)).resolves.toEqual({ test: false, typecheck: false, css: true });
+      await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { [script]: "node build.mjs" } }), "utf8");
+      await expect(observeSourceCommands(root)).resolves.toEqual(expected);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -898,6 +901,49 @@ describe("tracked paired live Codex repair", () => {
     expect(result.status).toBe("blocked");
     expect(result.packet.validation.valid).toBe(true);
     expect(result.proof.doesNotProve).toEqual(expect.arrayContaining(["a live Codex repair"]));
+  });
+
+  it("fails closed when preregistered source, prompt, packet, checker, or path identity drifts", async () => {
+    const result = await runTrackedPairedTrial({
+      manifest: {
+        ...manifest,
+        preregistration: {
+          family: "frontend-juniper-landing",
+          targetCommit: "0".repeat(40),
+          sourceTreeHash: "1".repeat(64),
+          baselinePromptHash: "2".repeat(64),
+          packetChecksum: "3".repeat(64),
+          checkerHash: "4".repeat(64),
+          allowedPaths: ["src/config.ts"],
+          codeBudget: { maxCssBytes: 14_000, maxHtmlBytes: 12_000, maxCssDeclarations: 160 },
+          renderObservations: { viewports: [320], programCounts: [1], textScalePercent: 150, checks: ["overflow"] },
+          visualProtocol: "same viewports before interpretation",
+          operatorInterventionLog: "required; zero is valid",
+          falsifier: "any identity drift invalidates the result",
+          doesNotProve: "one task does not prove broad superiority"
+        }
+      },
+      sourceRoot,
+      checkerRoot: process.cwd(),
+      packet
+    });
+
+    expect(result).toMatchObject({
+      status: "invalid",
+      execution: {
+        invalidReasons: expect.arrayContaining([
+          "source commit does not match preregistration",
+          "source tree does not match preregistration",
+          "baseline prompt does not match preregistration",
+          "DecisionPacket checksum does not match preregistration",
+          "held-out checker does not match preregistration",
+          "allowed paths do not match preregistration",
+          "render observations do not match the checker-owned preregistration",
+          "visual protocol does not match preregistration",
+          "operator intervention log contract does not match preregistration"
+        ])
+      }
+    });
   });
 
   it("rejects unverifiable profile and token-budget declarations before execution", async () => {

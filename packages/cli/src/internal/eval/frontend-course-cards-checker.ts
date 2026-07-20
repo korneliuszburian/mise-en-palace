@@ -1,7 +1,3 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import type {
   CommandResult,
   HeldOutArmScore,
@@ -9,6 +5,15 @@ import type {
   HeldOutCheck,
   TargetChangeManifest
 } from "./paired-live-codex-repair.js";
+import {
+  createFrontendBrowserObservations,
+  frontendCommandPassed as passed,
+  invalidFrontendPreflightScore,
+  readOptionalFrontendFile as readOptional,
+  renderFrontendObservationDocument,
+  runFrontendBrowserObservations,
+  skippedFrontendCommand as skipped
+} from "./frontend-held-out-browser-observer.js";
 import {
   captureHeldOutTargetState,
   type HeldOutRunCommand
@@ -23,15 +28,6 @@ const builtCssPath = "dist/global.css";
 const allowedFiles = new Set([htmlPath, cardPath, globalCssPath]);
 const timeoutMs = 120_000;
 
-const passed = (result: CommandResult): boolean => result.exitCode === 0;
-const skipped = (command: string, reason: string): CommandResult => ({
-  command,
-  args: [],
-  exitCode: null,
-  stdout: "",
-  stderr: reason,
-  durationMs: 0
-});
 const courseSeam = /(?:\.course-card\b|\[data-course-card\]|\.course-list\b)/u;
 
 const cssRuleEntries = (css: string): readonly { readonly selector: string; readonly body: string }[] =>
@@ -75,14 +71,6 @@ const courseMediaCreatesLayoutFork = (css: string): boolean => {
     cursor = close;
   }
   return false;
-};
-
-const readOptional = async (root: string, path: string): Promise<string> => {
-  try {
-    return await readFile(join(root, path), "utf8");
-  } catch {
-    return "";
-  }
 };
 
 const ownedTarget = (manifest: TargetChangeManifest): boolean =>
@@ -159,8 +147,7 @@ export const evaluateFrontendCourseCardsSources = (input: {
 };
 
 const browserDocument = (html: string, css: string, count: number): string => {
-  const style = `<style>${css.replaceAll("</style", "<\\/style")}html{font-size:150%}body{margin:0}</style>`;
-const script = `<script>
+  const script = `
 const expectedCount=${count};
 const list=document.querySelector('ul');
 const seed=list?.querySelector('[data-course-card]');
@@ -171,52 +158,50 @@ const nodes=[...document.querySelectorAll('body *')];
 const fits=document.documentElement.scrollWidth<=window.innerWidth+1&&nodes.every(node=>node.getBoundingClientRect().right<=window.innerWidth+1&&node.getBoundingClientRect().left>=-1);
 const named=cards.every(card=>{const link=card.querySelector('a');return link&&link.textContent.trim().length>0;});
 const ordered=cards.every((card,index)=>card.querySelector('a')?.getAttribute('href')==='#module-'+index);
-document.body.dataset.layoutOk=String(cards.length===expectedCount&&fits&&named&&ordered);
-</script>`;
-  return html.replace("</head>", `${style}</head>`).replace("</body>", `${script}</body>`);
+document.body.dataset.layoutOk=String(cards.length===expectedCount&&fits&&named&&ordered);`;
+  return renderFrontendObservationDocument(html, css, script, 150);
 };
 
 const runRenderMatrix = async (
   input: HeldOutCheckerInput,
   runCommand: RunCommand,
-  scratchRoot: string,
   html: string,
   css: string
 ): Promise<CommandResult> => {
+  const observations = createFrontendBrowserObservations({
+    counts: [1, 3, 8], widths: [320, 480, 768, 1440], height: 1200,
+    documentForCount: (count) => browserDocument(html, css, count)
+  });
+  const observed = await runFrontendBrowserObservations({
+    checkerRoot: input.checkerRoot,
+    runCommand,
+    filePrefix: "frontend-course-cards",
+    observations,
+    timeoutMs
+  });
   const failures: string[] = [];
-  let durationMs = 0;
-  for (const count of [1, 3, 8]) {
-    for (const width of [320, 480, 768, 1440]) {
-      const documentPath = join(scratchRoot, `course-cards-${count}-${width}.html`);
-      await writeFile(documentPath, browserDocument(html, css, count), "utf8");
-      const browser = await runCommand("chromium", [
-        "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-background-networking",
-        "--host-resolver-rules=MAP * 0.0.0.0", `--window-size=${width},1200`, "--virtual-time-budget=1000",
-        "--dump-dom", `file://${documentPath}`
-      ], input.checkerRoot, { timeoutMs });
-      durationMs += browser.durationMs ?? 0;
-      if (!passed(browser) || !/data-layout-ok="true"/u.test(browser.stdout)) failures.push(`layout:${count}:${width}`);
-    }
+  for (const observation of observations) {
+    const stdout = observed.stdoutById.get(observation.id);
+    if (stdout !== undefined && !/data-layout-ok="true"/u.test(stdout)) failures.push(`layout:${observation.id.replace("-", ":")}`);
   }
   return {
+    ...observed.command,
     command: "frontend-course-cards-render-matrix",
     args: ["counts=1,3,8", "widths=320,480,768,1440", "text=150%"],
-    exitCode: failures.length === 0 ? 0 : 1,
+    exitCode: observed.command.exitCode === 0 && failures.length === 0 ? 0 : 1,
     stdout: failures.length === 0 ? "All 12 content and viewport observations passed." : "",
-    stderr: failures.join(", "),
-    durationMs
+    stderr: [observed.command.stderr, ...failures].filter(Boolean).join(", ")
   };
 };
 
 const observeRenderMatrix = async (input: {
   readonly checkerInput: HeldOutCheckerInput;
   readonly runCommand: RunCommand;
-  readonly scratchRoot: string;
   readonly html: string;
   readonly css: string;
   readonly prerequisitesPassed: boolean;
 }): Promise<CommandResult> => input.prerequisitesPassed
-  ? runRenderMatrix(input.checkerInput, input.runCommand, input.scratchRoot, input.html, input.css)
+  ? runRenderMatrix(input.checkerInput, input.runCommand, input.html, input.css)
   : skipped("frontend-course-cards-render-matrix", "public build or HTML syntax failed");
 
 export const runFrontendCourseCardsChecker = async (
@@ -224,18 +209,7 @@ export const runFrontendCourseCardsChecker = async (
   runCommand: RunCommand
 ): Promise<HeldOutArmScore> => {
   const before = await captureHeldOutTargetState(input, runCommand, (path) => allowedFiles.has(path));
-  if (!ownedTarget(before)) {
-    const command = skipped("frontend-course-cards", "target preflight violated identity or write ownership");
-    return {
-      status: "invalid",
-      score: 0,
-      checks: [{ name: "preflight", passed: false, details: "Target identity, staging state, or preregistered write ownership was violated before checking." }],
-      changedFiles: before.changedFiles,
-      changeManifest: before,
-      commands: { test: command, typecheck: command, diffCheck: command },
-      runtimeCommand: command
-    };
-  }
+  if (!ownedTarget(before)) return invalidFrontendPreflightScore("frontend-course-cards", before);
 
   const [cssBuild, htmlSyntax, diffCheck] = await Promise.all([
     runCommand("npm", ["run", "css"], input.targetRoot, { env: { ...process.env, CI: "1" }, timeoutMs }),
@@ -260,20 +234,13 @@ export const runFrontendCourseCardsChecker = async (
         passed: false,
         failures: [...evaluatedSources.failures, "The initial course identity could not be read from the frozen target commit."]
       };
-  const scratchRoot = await mkdtemp(join(tmpdir(), "krn-frontend-course-cards-checker-"));
-  let runtime: CommandResult;
-  try {
-    runtime = await observeRenderMatrix({
-      checkerInput: input,
-      runCommand,
-      scratchRoot,
-      html,
-      css: builtCss,
-      prerequisitesPassed: passed(cssBuild) && passed(htmlSyntax)
-    });
-  } finally {
-    await rm(scratchRoot, { recursive: true, force: true });
-  }
+  const runtime = await observeRenderMatrix({
+    checkerInput: input,
+    runCommand,
+    html,
+    css: builtCss,
+    prerequisitesPassed: passed(cssBuild) && passed(htmlSyntax)
+  });
   const after = await captureHeldOutTargetState(input, runCommand, (path) => allowedFiles.has(path));
   const checks: HeldOutCheck[] = [
     { name: "preflight", passed: ownedTarget(after), details: ownedTarget(after) ? "All target changes are owned and inside the preregistered example boundary." : "Target identity, staging state, or write boundary was violated." },

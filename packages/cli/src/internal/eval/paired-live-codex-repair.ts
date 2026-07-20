@@ -10,12 +10,13 @@ import {
   startCommandDeadline
 } from "../../bounded-command-execution.js";
 import { runFrontendCourseCardsChecker } from "./frontend-course-cards-checker.js";
+import { runFrontendJuniperLandingChecker } from "./frontend-juniper-landing-checker.js";
 import { captureHeldOutTargetState } from "./held-out-target-state.js";
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
 /** Canonical held-out checker identity bound into every new tracked artifact. */
-export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v5" as const;
+export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v6" as const;
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;
@@ -77,7 +78,14 @@ export type HeldOutCheck = {
   | "target_test"
   | "target_typecheck"
   | "target_diff_check"
-  | "held_out_runtime";
+  | "held_out_runtime"
+  | "frontend_semantics"
+  | "frontend_css_ownership"
+  | "frontend_component_api"
+  | "frontend_intrinsic_resilience"
+  | "frontend_code_budget"
+  | "frontend_render_resilience"
+  | "frontend_render_quality";
   readonly passed: boolean;
   readonly details: string;
 };
@@ -89,7 +97,8 @@ export const pairedEvalFamilies = [
   "user-create",
   "temporal-policy-drift",
   "temporal-policy-hidden-source",
-  "frontend-course-cards"
+  "frontend-course-cards",
+  "frontend-juniper-landing"
 ] as const;
 
 export type PairedEvalFamily = typeof pairedEvalFamilies[number];
@@ -103,6 +112,7 @@ export type HeldOutFamilyContract = {
 
 export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
   const normalized = scenario.toLowerCase();
+  if (normalized.includes("frontend-juniper-landing")) return "frontend-juniper-landing";
   if (normalized.includes("frontend-course-cards")) return "frontend-course-cards";
   if (normalized.includes("env-config")) return "env-config";
   if (normalized.includes("async-job")) return "async-job";
@@ -169,6 +179,25 @@ export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamil
         ],
         allowedPrefixes: ["index.html", "css/blocks/course-card.css", "css/global.css"],
         requiredChecks: ["held_out_runtime", "target_test", "target_diff_check"]
+      };
+    case "frontend-juniper-landing":
+      return {
+        family,
+        sourcePaths: ["src/index.html", "src/styles.css"],
+        allowedPrefixes: ["src/index.html", "src/styles.css"],
+        requiredChecks: [
+          "held_out_runtime",
+          "target_test",
+          "target_typecheck",
+          "target_diff_check",
+          "frontend_semantics",
+          "frontend_css_ownership",
+          "frontend_component_api",
+          "frontend_intrinsic_resilience",
+          "frontend_code_budget",
+          "frontend_render_resilience",
+          "frontend_render_quality"
+        ]
       };
   }
 };
@@ -364,6 +393,12 @@ const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance =>
         "Preserve all supplied content, links, source order, and semantics. Keep the visual language consistent with the starter tokens, support variable content and card counts across narrow and wide viewports, and minimize duplication and special cases. Do not copy an external implementation or hardcode checker-specific content.",
         "Keep the change inside the preregistered HTML, course-card stylesheet, and global CSS entry. The held-out checker will exercise the dependency-free public build and varied content and viewport conditions. Do not add tests, dependencies, or framework configuration."
       ];
+    case "frontend-juniper-landing":
+      return [
+        "Turn the supplied semantic coffee-school starter into a polished editorial landing page.",
+        "Preserve all supplied content, links, source order, and local artwork. Make the page feel intentional at phone, tablet, and desktop widths while keeping variable content resilient and the implementation concise. Do not copy an external implementation or hardcode checker-specific content.",
+        "Keep the change inside src/index.html and src/styles.css. The held-out checker will exercise the dependency-free public build under varied content, text size, and viewport conditions. Do not add tests, dependencies, generated assets, or framework configuration."
+      ];
   }
 };
 
@@ -372,8 +407,8 @@ const basePrompt = (
   family: PairedEvalFamily = "weak-json"
 ): string => {
   const familyGuidance = familyPromptGuidance(family);
-  const verificationGuidance = family === "frontend-course-cards"
-    ? "Run the target CSS build and HTML validation command before finishing. Do not stage, commit, or push."
+  const verificationGuidance = family === "frontend-course-cards" || family === "frontend-juniper-landing"
+    ? "Run the target build and browser validation command before finishing. Do not stage, commit, or push."
     : "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.";
   return [
     familyGuidance[0],
@@ -450,6 +485,15 @@ export const buildPairedRepairPrompts = (input: {
 
 const passed = (result: CommandResult): boolean => result.exitCode === 0;
 
+const frontendFamilies = new Set<PairedEvalFamily>([
+  "frontend-course-cards",
+  "frontend-juniper-landing"
+]);
+const temporalPolicyFamilies = new Set<PairedEvalFamily>([
+  "temporal-policy-drift",
+  "temporal-policy-hidden-source"
+]);
+
 const observationPassed = (observation: HeldOutObservation): boolean =>
   !observation.threw &&
   !observation.accepted &&
@@ -457,33 +501,35 @@ const observationPassed = (observation: HeldOutObservation): boolean =>
   observation.resultState !== "null" &&
   observation.resultState !== "undefined";
 
+const inputRuntimeObservationPassed = (
+  family: "weak-json" | "user-create",
+  observations: HeldOutRuntimeObservations
+): boolean => (family === "weak-json" || observations.validCreation === true) &&
+  observationPassed(observations.invalidJson) &&
+  observationPassed(observations.missingEmail) &&
+  observationPassed(observations.invalidRole);
+
 const runtimeObservationPassed = (
   family: PairedEvalFamily,
   observations: HeldOutRuntimeObservations
 ): boolean => {
+  if (frontendFamilies.has(family)) return false;
+  if (temporalPolicyFamilies.has(family)) {
+    return observations.temporalPolicyCurrent === true &&
+      observations.temporalPolicyThresholdCurrent === true &&
+      observations.temporalPolicyBelowThresholdDefault === true &&
+      observations.temporalPolicyNonEuDefault === true;
+  }
   switch (family) {
     case "env-config":
       return observations.redactionSafe === true;
     case "async-job":
       return observations.enqueueAccepted === true;
-    case "temporal-policy-drift":
-    case "temporal-policy-hidden-source":
-      return observations.temporalPolicyCurrent === true &&
-        observations.temporalPolicyThresholdCurrent === true &&
-        observations.temporalPolicyBelowThresholdDefault === true &&
-        observations.temporalPolicyNonEuDefault === true;
     case "weak-json":
-      return observationPassed(observations.invalidJson) &&
-        observationPassed(observations.missingEmail) &&
-        observationPassed(observations.invalidRole);
     case "user-create":
-      return observations.validCreation === true &&
-        observationPassed(observations.invalidJson) &&
-        observationPassed(observations.missingEmail) &&
-        observationPassed(observations.invalidRole);
-    case "frontend-course-cards":
-      return false;
+      return inputRuntimeObservationPassed(family, observations);
   }
+  return false;
 };
 
 const source = (files: TargetSourceFiles, path: string): string => files[path] ?? "";
@@ -520,6 +566,7 @@ const familySourceContractPassed = (
   family: PairedEvalFamily,
   files: TargetSourceFiles
 ): boolean => {
+  if (frontendFamilies.has(family)) return false;
   const tests = Object.values(files).filter((value): value is string => value !== undefined).join("\n");
   switch (family) {
     case "env-config":
@@ -537,9 +584,8 @@ const familySourceContractPassed = (
       return userCreateSourceContractPassed(source(files, "src/userService.ts"));
     case "weak-json":
       return false;
-    case "frontend-course-cards":
-      return false;
   }
+  return false;
 };
 
 const checkFamilyContract = (
@@ -1287,7 +1333,8 @@ const runtimeModulePathFor = (family: PairedEvalFamily): string => {
     case "user-create":
       return "src/userService.js";
     case "frontend-course-cards":
-      throw new Error("frontend-course-cards uses its dedicated browser observer");
+    case "frontend-juniper-landing":
+      throw new Error(`${family} uses its dedicated browser observer`);
   }
 };
 
@@ -1295,6 +1342,9 @@ const parseFamilyRuntimeObservations = (
   family: PairedEvalFamily,
   observations: Record<string, unknown>
 ): HeldOutRuntimeObservations => {
+  if (frontendFamilies.has(family)) {
+    throw new Error(`${family} observations are scored by its dedicated checker`);
+  }
   switch (family) {
     case "env-config":
       return {
@@ -1331,9 +1381,8 @@ const parseFamilyRuntimeObservations = (
           ? { validCreation: observations["validCreation"] === true }
           : {})
       };
-    case "frontend-course-cards":
-      throw new Error("frontend-course-cards observations are scored by its dedicated checker");
   }
+  throw new Error(`Unsupported runtime observation family: ${family}`);
 };
 
 type HeldOutRuntimeWorkerResult = {
@@ -1673,9 +1722,12 @@ export const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
   const family = input.family ?? "weak-json";
-  if (family === "frontend-course-cards") {
-    return runFrontendCourseCardsChecker(input, runCommand);
-  }
+  const frontendCheckers: Partial<Record<PairedEvalFamily, (checkerInput: HeldOutCheckerInput) => Promise<HeldOutArmScore>>> = {
+    "frontend-course-cards": (checkerInput) => runFrontendCourseCardsChecker(checkerInput, runCommand),
+    "frontend-juniper-landing": (checkerInput) => runFrontendJuniperLandingChecker(checkerInput, runCommand)
+  };
+  const frontendChecker = frontendCheckers[family];
+  if (frontendChecker !== undefined) return frontendChecker(input);
   const preflight = await targetPreflight(input);
   const sourceFiles = await readTargetSourceFiles(input.targetRoot, family);
   const skipped = (command: string): CommandResult => ({

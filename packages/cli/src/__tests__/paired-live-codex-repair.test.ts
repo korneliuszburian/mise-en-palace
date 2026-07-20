@@ -144,6 +144,7 @@ describe("paired live Codex repair eval", () => {
     expect(resolvePairedEvalFamily("temporal-policy-hidden-source-typescript held-out")).toBe("temporal-policy-hidden-source");
     expect(resolvePairedEvalFamily("user-create-boundary-typescript held-out")).toBe("user-create");
     expect(resolvePairedEvalFamily("frontend-course-cards held-out")).toBe("frontend-course-cards");
+    expect(resolvePairedEvalFamily("frontend-juniper-landing held-out")).toBe("frontend-juniper-landing");
     expect(pairedEvalFamilyContract("env-config").sourcePaths).toContain("src/configReadback.ts");
     expect(pairedEvalFamilyContract("async-job").sourcePaths).toContain("src/jobQueue.ts");
     expect(pairedEvalFamilyContract("temporal-policy-drift").sourcePaths).toContain("src/payoutPolicy.ts");
@@ -151,6 +152,14 @@ describe("paired live Codex repair eval", () => {
       .toContain("held_out_runtime");
     expect(pairedEvalFamilyContract("user-create").sourcePaths).toContain("src/userService.ts");
     expect(pairedEvalFamilyContract("frontend-course-cards").sourcePaths).toContain("index.html");
+    expect(pairedEvalFamilyContract("frontend-juniper-landing").sourcePaths).toEqual([
+      "src/index.html",
+      "src/styles.css"
+    ]);
+    expect(pairedEvalFamilyContract("frontend-juniper-landing").requiredChecks)
+      .toContain("frontend_render_quality");
+    expect(pairedEvalFamilyContract("temporal-policy-drift").requiredChecks)
+      .not.toContain("frontend_render_quality");
   });
 
   it("requires finite user creation and supported default/role behavior", () => {
