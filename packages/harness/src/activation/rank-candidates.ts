@@ -168,6 +168,15 @@ const mergedSearchDocumentIds = (
   ...searchDocumentIdInputs(right)
 ]);
 
+const evidenceCandidate = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate
+): RankedActivationCandidate | undefined => [left, right]
+  .filter((candidate) => candidate.supportingEvidence !== undefined)
+  .sort((first, second) =>
+    second.totalScore - first.totalScore ||
+    (first.searchDocumentId ?? "").localeCompare(second.searchDocumentId ?? ""))[0];
+
 const mergeTwoCandidates = (
   left: RankedActivationCandidate,
   right: RankedActivationCandidate
@@ -190,11 +199,16 @@ const mergeTwoCandidates = (
     left.kind,
     right.kind
   );
+  const selectedEvidenceCandidate = evidenceCandidate(left, right);
+  const supportingEvidence = selectedEvidenceCandidate?.supportingEvidence;
 
   return {
     ...representative,
     sourceAuthority,
-    tokenEstimate: Math.min(left.tokenEstimate, right.tokenEstimate),
+    tokenEstimate: selectedEvidenceCandidate === undefined
+      ? Math.min(left.tokenEstimate, right.tokenEstimate)
+      : selectedEvidenceCandidate.tokenEstimate,
+    ...(supportingEvidence === undefined ? {} : { supportingEvidence }),
     lexicalScore: scores.lexical,
     vectorScore: scores.vector,
     graphScore: scores.graph,

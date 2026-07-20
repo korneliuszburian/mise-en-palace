@@ -31,6 +31,9 @@ type SourceArtifactCreateInput = Parameters<
 type SourceChunkCreateInput = Parameters<
   NonNullable<DatabaseRuntime["sourceRepository"]["createSourceChunk"]>
 >[0];
+type SourceChunkRecord = Awaited<ReturnType<
+  NonNullable<DatabaseRuntime["sourceRepository"]["createSourceChunk"]>
+>>;
 type SourceArtifactRecord = Awaited<
   ReturnType<DatabaseRuntime["sourceRepository"]["createSourceArtifact"]>
 >;
@@ -159,6 +162,122 @@ const searchDocumentRecord = (
 });
 
 describe("runSourceArtifactPreviewCommand", () => {
+  it("persists every bounded chunk as an exact full-content target-owned search document", async () => {
+    const tempRoot = await createTempRoot();
+    const targetRepo = path.join(tempRoot, "target");
+    const sourcePath = path.join(tempRoot, "course.md");
+    const timestamp = "2026-07-20T10:00:00.000Z";
+    const createdDocuments: SearchDocumentRecord[] = [];
+    let createdArtifact: SourceArtifactRecord | undefined;
+    const createdChunks: SourceChunkRecord[] = [];
+    let runtimeRepoPath: string | undefined;
+    let requiredConnectedRepo = false;
+    await mkdir(targetRepo);
+    await writeFile(sourcePath, ["one", "two", "three", "four", "late-marker"].join("\n"), "utf8");
+
+    const commandRuntime: Parameters<typeof runSourceArtifactPreviewCommand>[0] = {
+      cwd: tempRoot,
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      now: () => timestamp,
+      createDatabaseRuntime: async (input) => {
+        runtimeRepoPath = input.repoPathHint;
+        requiredConnectedRepo = input.requireConnectedRepoPath === true;
+        return {
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+          harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+          memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+          sourceRepository: {
+            ...sourceReadbackNoops,
+            async createSourceArtifact(input) {
+              createdArtifact = sourceArtifactRecord(input, timestamp);
+              return createdArtifact;
+            },
+            async getSourceArtifactByUriAndContentHash(uri, contentHash) {
+              return createdArtifact?.uri === uri && createdArtifact.contentHash === contentHash
+                ? createdArtifact
+                : undefined;
+            },
+            async listSourceChunksForArtifact(sourceArtifactId) {
+              return createdChunks.filter((chunk) => chunk.sourceArtifactId === sourceArtifactId);
+            },
+            async createSourceChunk(input) {
+              const chunk = {
+                id: `22222222-2222-4222-8222-${input.ordinal.toString().padStart(12, "0")}`,
+                sourceArtifactId: input.sourceArtifactId,
+                ordinal: input.ordinal,
+                content: input.content,
+                contentHash: input.contentHash,
+                metadata: input.metadata ?? {},
+                createdAt: timestamp
+              };
+              createdChunks.push(chunk);
+              return chunk;
+            },
+            async createSourceClaim() { throw new Error("createSourceClaim should not be called"); },
+            async getSourceClaimById() { return undefined; },
+            async createSourceClaimEdge() { throw new Error("createSourceClaimEdge should not be called"); },
+            async listSourceClaimEdgesForClaim() { return []; },
+            async createSourceDecisionEdge() { throw new Error("createSourceDecisionEdge should not be called"); },
+            async createSourceRejection() { throw new Error("createSourceRejection should not be called"); }
+          },
+          retrievalRepository: {
+            async createSearchDocument(input) {
+              const record = {
+                ...searchDocumentRecord(input, timestamp),
+                id: `33333333-3333-4333-8333-${(createdDocuments.length + 1).toString().padStart(12, "0")}`
+              };
+              createdDocuments.push(record);
+              return record;
+            },
+            async searchLexical() {
+              return createdDocuments.map((document) => ({ ...document, lexicalScore: 100 }));
+            },
+            async listSearchDocumentsForSourceLinks() {
+              return createdDocuments;
+            }
+          },
+          async withTransaction(_lockKey, work) {
+            return work({
+              sourceRepository: this.sourceRepository,
+              retrievalRepository: this.retrievalRepository!,
+            });
+          },
+          async close() { return undefined; }
+        } satisfies DatabaseRuntime;
+      },
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        file: sourcePath,
+        repo: targetRepo,
+        chunkLines: 1,
+        allChunks: true,
+        sourceAuthority: "practitioner",
+        json: true
+      }
+    };
+    const result = await runSourceArtifactPreviewCommand(commandRuntime);
+    const retry = await runSourceArtifactPreviewCommand(commandRuntime);
+
+    expect(runtimeRepoPath).toBe(targetRepo);
+    expect(requiredConnectedRepo).toBe(true);
+    expect(createdDocuments).toHaveLength(5);
+    expect(createdChunks).toHaveLength(5);
+    expect(retry.stdout).toBe(result.stdout);
+    expect(createdDocuments[4]).toMatchObject({
+      projectId: "project-1",
+      subjectType: "source_chunk",
+      sourceChunkId: "22222222-2222-4222-8222-000000000005",
+      sourceAuthority: "practitioner",
+      body: "late-marker"
+    });
+    const json = JSON.parse(result.stdout) as { artifact: { chunking: Record<string, number> }; persistence: { readback: { searchDocument: { count: number } } } };
+    expect(json.artifact.chunking).toMatchObject({ renderedChunks: 3, persistedChunks: 5 });
+    expect(json.persistence.readback.searchDocument.count).toBe(5);
+  });
+
   it("renders deterministic local artifact chunks with source ranges", async () => {
     const tempRoot = await createTempRoot();
     const sourcePath = path.join(tempRoot, "source.md");

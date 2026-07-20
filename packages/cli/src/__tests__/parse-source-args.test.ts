@@ -14,6 +14,30 @@ import {
 } from "../parse-source-args.js";
 
 describe("parseSourceArgs", () => {
+  it("parses connected full-chunk ingestion and rejects ambiguous modes", () => {
+    expect(parseSourceArgs([
+      "artifact", "preview", "--file", "/corpus/course.md", "--repo", "/target",
+      "--chunk-lines", "40", "--all-chunks", "--source-authority", "practitioner", "--persist"
+    ])).toEqual({
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        file: "/corpus/course.md",
+        repo: "/target",
+        chunkLines: 40,
+        allChunks: true,
+        sourceAuthority: "practitioner"
+      }
+    });
+    expect(parseSourceArgs(["artifact", "preview", "--file", "course.md", "--all-chunks"]))
+      .toEqual({ error: "--all-chunks requires --persist" });
+    expect(parseSourceArgs([
+      "artifact", "preview", "--file", "course.md", "--all-chunks", "--limit-chunks", "2", "--persist"
+    ])).toEqual({ error: "--all-chunks cannot be combined with --limit-chunks" });
+    expect(parseSourceArgs(["artifact", "preview", "--file", "course.md", "--repo", "/target"]))
+      .toEqual({ error: "--repo requires --persist" });
+  });
+
   it("parses source artifact preview options", () => {
     expect(parseSourceArgs([
       "artifact",

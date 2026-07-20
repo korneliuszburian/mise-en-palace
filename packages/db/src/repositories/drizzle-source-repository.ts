@@ -973,6 +973,19 @@ export class DrizzleSourceRepository implements SourceRepository {
     return mapSourceArtifact(row);
   }
 
+  async getSourceArtifactByUriAndContentHash(
+    uri: string,
+    contentHash: string
+  ): Promise<SourceArtifactRecord | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(sourceArtifacts)
+      .where(and(eq(sourceArtifacts.uri, uri), eq(sourceArtifacts.contentHash, contentHash)))
+      .limit(1);
+
+    return row === undefined ? undefined : mapSourceArtifact(row);
+  }
+
   async createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord> {
     const row = requireReturnedRow(
       await this.db
@@ -991,6 +1004,30 @@ export class DrizzleSourceRepository implements SourceRepository {
     );
 
     return mapSourceChunk(row);
+  }
+
+  async listSourceChunksForArtifact(sourceArtifactId: string): Promise<SourceChunkRecord[]> {
+    const rows = await this.db
+      .select()
+      .from(sourceChunks)
+      .where(eq(sourceChunks.sourceArtifactId, sourceArtifactId))
+      .orderBy(asc(sourceChunks.ordinal));
+
+    return rows.map(mapSourceChunk);
+  }
+
+  async getSourceChunkForProject(
+    projectId: ProjectId,
+    id: SourceChunkRecord["id"]
+  ): Promise<SourceChunkRecord | undefined> {
+    const [row] = await this.db
+      .select({ sourceChunk: sourceChunks })
+      .from(sourceChunks)
+      .innerJoin(sourceArtifacts, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
+      .where(and(eq(sourceChunks.id, id), eq(sourceArtifacts.projectId, projectId)))
+      .limit(1);
+
+    return row === undefined ? undefined : mapSourceChunk(row.sourceChunk);
   }
 
   async createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim> {

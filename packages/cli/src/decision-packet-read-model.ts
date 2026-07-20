@@ -2,6 +2,7 @@ import type {
   CandidateReviewability,
   CommandOutputArtifactIntegrityFailureReason,
   ContextSubjectType,
+  ContextSupportingEvidence,
   DecisionPacketBindingReadback,
   EvidenceContract,
   EvidenceContractActivationDecision,
@@ -82,6 +83,7 @@ export interface DecisionPacketReadModelContextInclusion {
   expectedUse: string;
   sourceAuthority: SourceAuthorityLabel;
   tokenEstimate?: number;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface DecisionPacketReadModelContextExclusion {

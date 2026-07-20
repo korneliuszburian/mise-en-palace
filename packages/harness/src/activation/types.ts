@@ -2,6 +2,7 @@ import type {
   ActivationCandidateKind as CoreActivationCandidateKind,
   ActivationExclusionReason as CoreActivationExclusionReason,
   ContextAssemblyId,
+  ContextSupportingEvidence,
   ContextSubjectType,
   HarnessPlanId,
   IsoTimestamp,
@@ -101,6 +102,7 @@ export interface ActivationCandidate extends SourceContextTaxonomy {
   antiMemoryRecordId?: string;
   conflictReason?: "anti_memory_block";
   metadata: Record<string, unknown>;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface ActivationExclusion {

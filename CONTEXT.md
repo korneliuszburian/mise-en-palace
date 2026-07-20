@@ -25,6 +25,7 @@ this index stays short so it can be read every session.
 | Trial readback | [Aggregate and evidence identity](docs/CONTEXT_GOTCHAS.md#trial-readback) | New eval families and checker revisions must appear in aggregate and persistence readbacks before claims are reused. |
 | CLI argument forwarding | [Entrypoint arguments](docs/CONTEXT_GOTCHAS.md#entrypoint-arguments) | Verify what `pnpm` forwards before treating an argument failure as product behavior. |
 | Codex capability sandbox | [Sandboxed capability paths](docs/CONTEXT_GOTCHAS.md#sandboxed-capability-paths) | Materialize repo-local MCP servers and skills inside the trial sandbox; `/tmp` worktree paths may be hidden. |
+| Fallow from worktrees | [Protected Fallow invocation](docs/CONTEXT_GOTCHAS.md#protected-fallow-invocation) | Never run Fallow from an uncommitted disposable `/tmp/mise-en-palace-*` worktree; commit first and use a protected persistent checkout. |
 | Scope control | [Memory Core boundary](docs/CONTEXT_GOTCHAS.md#memory-core-boundary) | Improve governed context/evidence; do not grow an operator/executor platform without a consumer falsifier. |
 
 ## Language

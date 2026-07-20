@@ -5,6 +5,7 @@ import {
   eq,
   gt,
   inArray,
+  isNotNull,
   isNull,
   lte,
   or,
@@ -720,7 +721,14 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
         and(
           sql`${searchDocuments.searchVector} @@ ${query}`,
           currentSearchDocumentAt(now),
-          input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId)
+          input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId),
+          input.canonicalLinksOnly === true
+            ? or(
+                isNotNull(searchDocuments.sourceClaimId),
+                isNotNull(searchDocuments.memoryRecordId),
+                isNotNull(searchDocuments.antiMemoryRecordId)
+              )
+            : undefined
         )
       )
       .orderBy(desc(lexicalScore))
@@ -1071,7 +1079,9 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
               ? {}
               : { tokenEstimate: inclusion.tokenEstimate }),
             sourceAuthority: inclusion.sourceAuthority,
-            metadata: {}
+            metadata: inclusion.supportingEvidence === undefined
+              ? {}
+              : { supportingEvidence: inclusion.supportingEvidence }
           }))
         );
       }

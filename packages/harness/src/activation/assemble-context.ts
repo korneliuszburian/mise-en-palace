@@ -119,6 +119,9 @@ const toInclusion = (candidate: RankedActivationCandidate): ContextInclusion => 
   expectedUse: candidate.expectedUse,
   tokenEstimate: candidate.tokenEstimate,
   sourceAuthority: candidate.sourceAuthority,
+  ...(candidate.supportingEvidence === undefined
+    ? {}
+    : { supportingEvidence: candidate.supportingEvidence }),
   ...sourceTaxonomyContextFields(candidate)
 });
 

@@ -547,7 +547,7 @@ describe("runSourceSearchCommand", () => {
 
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
-    let searchQuery: string | undefined;
+    const searchQueries: string[] = [];
     const result = await runSourceSearchCommand({
       cwd: "/repo",
       env: {
@@ -563,7 +563,7 @@ describe("runSourceSearchCommand", () => {
       },
       createDatabaseRuntime: runtime({
         onSearchQuery(query) {
-          searchQuery = query;
+          searchQueries.push(query);
         },
         onClose() {
           closeCount += 1;
@@ -613,8 +613,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Embeddings: not run");
     expect(result.stdout).toContain("Graph runtime: not run");
     expect(closeCount).toBe(1);
-    expect(searchQuery).toBe("krn-source-artifact-preview 991034dc0684e887");
-    expect(searchQuery).not.toContain("crawler");
+    expect(searchQueries).toContain("krn-source-artifact-preview 991034dc0684e887");
+    expect(searchQueries.every((query) => !query.includes("crawler"))).toBe(true);
   });
 
   it("renders typed JSON answer package readback without hiding raw candidates", async () => {

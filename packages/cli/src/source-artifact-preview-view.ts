@@ -126,7 +126,7 @@ export const formatChunks = (chunks: readonly SourceArtifactPreviewChunk[]): str
     `  preview: ${chunk.preview.replace(/\n/gu, "\\n")}`
   ]);
 
-export const sourceArtifactPreviewChunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
+const sourceArtifactPreviewChunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
   chunks.map((chunk) =>
     [
       `chunk ${chunk.ordinal}`,
@@ -139,12 +139,13 @@ export const sourceArtifactPreviewChunkBody = (chunks: readonly SourceArtifactPr
 const searchDocumentCandidateView = (
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[]
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceAuthority: string
 ) => {
   const candidate = parseSearchDocumentInput({
     subjectType: "source_artifact",
     subjectId: artifactHash,
-    sourceAuthority: "source-code",
+    sourceAuthority,
     language: "english",
     title: `Local source artifact: ${file}`,
     body: sourceArtifactPreviewChunkBody(chunks),
@@ -186,9 +187,10 @@ const formatSearchDocumentCandidate = (
   file: string,
   artifactHash: string,
   chunks: readonly SourceArtifactPreviewChunk[],
-  persisted: boolean
+  persisted: boolean,
+  sourceAuthority: string
 ): string[] => {
-  const view = searchDocumentCandidateView(file, artifactHash, chunks);
+  const view = searchDocumentCandidateView(file, artifactHash, chunks, sourceAuthority);
 
   return [
     "searchDocumentCandidate:",
@@ -875,7 +877,8 @@ export const formatCandidateBridge = (
     file,
     artifactHash,
     chunks,
-    flags.searchDocumentPersisted
+    flags.searchDocumentPersisted,
+    command.sourceAuthority ?? "source-code"
   ));
   lines.push(...formatSourceClaimCandidate(
     command,
@@ -907,9 +910,10 @@ const searchDocumentCandidateJson = (
   file: string,
   artifactHash: string,
   chunks: readonly SourceArtifactPreviewChunk[],
-  persisted: boolean
+  persisted: boolean,
+  sourceAuthority: string
 ): Record<string, unknown> => {
-  const view = searchDocumentCandidateView(file, artifactHash, chunks);
+  const view = searchDocumentCandidateView(file, artifactHash, chunks, sourceAuthority);
 
   return {
     id: view.id,
@@ -1141,7 +1145,8 @@ export const candidateBridgeJson = (
     file,
     artifactHash,
     chunks,
-    flags.searchDocumentPersisted
+    flags.searchDocumentPersisted,
+    command.sourceAuthority ?? "source-code"
   ),
   sourceClaimCandidate: sourceClaimCandidateJson(
     command,

@@ -149,6 +149,9 @@ export interface DatabaseRuntime {
   > & Partial<Pick<
     SourceRepository,
     | "createSourceChunk"
+    | "getSourceArtifactByUriAndContentHash"
+    | "listSourceChunksForArtifact"
+    | "getSourceChunkForProject"
     | "deprecateSourceClaim"
     | "createSourceDecision"
     | "getSourceDecisionById"
@@ -724,6 +727,10 @@ const createDatabaseRuntimeTransactionRepositories = (
   sourceRepository: {
     createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
     createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
+    getSourceArtifactByUriAndContentHash: (...args) =>
+      sourceRepository.getSourceArtifactByUriAndContentHash(...args),
+    listSourceChunksForArtifact: (...args) => sourceRepository.listSourceChunksForArtifact(...args),
+    getSourceChunkForProject: (...args) => sourceRepository.getSourceChunkForProject(...args),
     deprecateSourceClaim: (...args) => sourceRepository.deprecateSourceClaim(...args),
     createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
     getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),

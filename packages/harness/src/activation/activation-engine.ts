@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
+
 import type {
+  ContextSupportingEvidence,
   AntiMemoryCandidate,
   AntiMemoryRecord,
   ActivationAbstentionReason,
@@ -26,6 +29,7 @@ import type {
   MemoryRepository,
   RecordActivationDecisionInput,
   RetrievalRepository,
+  SearchDocumentSearchResult,
   SourceRepository
 } from "@krn/core/repositories/internal";
 import {
@@ -212,18 +216,96 @@ const rejectedSearchCandidate = (
   return candidate;
 };
 
+const metadataRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+
+type SupportingEvidenceResolution =
+  | { readonly status: "absent" }
+  | { readonly status: "invalid" }
+  | { readonly status: "valid"; readonly evidence: ContextSupportingEvidence };
+
+const supportingEvidenceFor = (
+  resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" }>
+): SupportingEvidenceResolution => {
+  const rawMetadata = resolution.document.metadata["retrievalEvidence"];
+
+  if (rawMetadata === undefined) {
+    return { status: "absent" };
+  }
+
+  const metadata = metadataRecord(rawMetadata);
+
+  if (
+    metadata === undefined ||
+    typeof metadata["sourceArtifactId"] !== "string" ||
+    typeof metadata["sourceChunkId"] !== "string" ||
+    typeof metadata["contentHash"] !== "string" ||
+    typeof metadata["renderedContentHash"] !== "string" ||
+    (metadata["sourceRange"] !== undefined && typeof metadata["sourceRange"] !== "string") ||
+    typeof metadata["truncated"] !== "boolean"
+  ) {
+    return { status: "invalid" };
+  }
+
+  const renderedContentHash = createHash("sha256")
+    .update(resolution.document.body)
+    .digest("hex");
+
+  if (renderedContentHash !== metadata["renderedContentHash"]) {
+    return { status: "invalid" };
+  }
+
+  return {
+    status: "valid",
+    evidence: {
+      searchDocumentId: resolution.document.id,
+      sourceArtifactId: metadata["sourceArtifactId"],
+      sourceChunkId: metadata["sourceChunkId"],
+      contentHash: metadata["contentHash"],
+      renderedContentHash,
+      ...(metadata["sourceRange"] === undefined ? {} : { sourceRange: metadata["sourceRange"] }),
+      content: resolution.document.body,
+      truncated: metadata["truncated"]
+    }
+  };
+};
+
 const canonicalSearchProjection = (
   candidate: RankedActivationCandidate,
   resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" | "memory" }>,
   query: ActivationQuery
 ): RankedActivationCandidate => {
+  const supportingEvidenceResolution = resolution.kind === "source"
+    ? supportingEvidenceFor(resolution)
+    : { status: "absent" } as const;
+
+  if (supportingEvidenceResolution.status === "invalid") {
+    return markExcluded(
+      firstRankedCandidate([rejectedSearchCandidate(resolution.document)], query),
+      {
+        reason: "unsafe",
+        explanation: "SearchDocument retrieval evidence metadata or rendered content digest is invalid."
+      }
+    );
+  }
+
+  const supportingEvidence = supportingEvidenceResolution.status === "valid"
+    ? supportingEvidenceResolution.evidence
+    : undefined;
+  const searchTokenEstimate = toSearchCandidate(resolution.document).tokenEstimate;
   const projected = {
     ...candidate,
+    tokenEstimate: supportingEvidence === undefined
+      ? candidate.tokenEstimate
+      : candidate.tokenEstimate + searchTokenEstimate,
     lexicalScore: resolution.document.lexicalScore,
     ...(resolution.document.vectorScore === undefined
       ? {}
       : { vectorScore: resolution.document.vectorScore }),
     searchDocumentId: resolution.document.id,
+    ...(supportingEvidence === undefined ? {} : { supportingEvidence }),
     metadata: {
       ...candidate.metadata,
       ...searchDocumentProvenance(resolution)
@@ -522,10 +604,30 @@ const completeActivationTraceRun = async (
 const isExplicitMarkerTerm = (term: string): boolean =>
   term.length >= 8 && /[0-9]/u.test(term) && /^[a-z0-9]+$/u.test(term);
 
-const fallbackLexicalSearchQuery = (sourceQuery: ActivationQuery): string | undefined => {
-  const terms = sourceQuery.terms.filter(isExplicitMarkerTerm).slice(0, 5);
+const lexicalSearchQuery = (terms: readonly string[]): string | undefined =>
+  terms.length === 0 ? undefined : terms.join(" OR ");
 
-  return terms.length === 0 ? undefined : terms.join(" OR ");
+const markerLexicalSearchQuery = (sourceQuery: ActivationQuery): string | undefined =>
+  lexicalSearchQuery(sourceQuery.terms.filter(isExplicitMarkerTerm).slice(0, 5));
+
+const specialistLexicalSearchQuery = (sourceQuery: ActivationQuery): string | undefined =>
+  lexicalSearchQuery(
+    sourceQuery.terms
+      .filter((term) => term.length >= 4 && !isExplicitMarkerTerm(term))
+      .slice(0, 12)
+  );
+
+const appendUniqueSearchResults = (
+  target: SearchDocumentSearchResult[],
+  seenIds: Set<string>,
+  results: readonly SearchDocumentSearchResult[]
+): void => {
+  for (const result of results) {
+    if (!seenIds.has(result.id)) {
+      seenIds.add(result.id);
+      target.push(result);
+    }
+  }
 };
 
 const searchLexicalWithMarkerFallback = async (
@@ -533,29 +635,31 @@ const searchLexicalWithMarkerFallback = async (
   sourceQuery: ActivationQuery,
   now: string
 ) => {
-  const primaryResults = await input.repositories.retrievalRepository.searchLexical({
+  const search = (query: string, canonicalLinksOnly: boolean) =>
+    input.repositories.retrievalRepository.searchLexical({
     ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
-    query: sourceQuery.text,
+    query,
     now,
-    limit: input.limits.search
+    limit: input.limits.search,
+    ...(canonicalLinksOnly ? { canonicalLinksOnly: true } : {})
   });
 
-  if (primaryResults.length > 0) {
-    return primaryResults;
+  const markerQuery = markerLexicalSearchQuery(sourceQuery);
+  const specialistQuery = specialistLexicalSearchQuery(sourceQuery);
+  const resultBuckets = await Promise.all([
+    search(sourceQuery.text, false),
+    search(sourceQuery.text, true),
+    ...(markerQuery === undefined ? [] : [search(markerQuery, true)]),
+    ...(specialistQuery === undefined ? [] : [search(specialistQuery, true)])
+  ]);
+  const results: SearchDocumentSearchResult[] = [];
+  const seenIds = new Set<string>();
+
+  for (const bucket of resultBuckets) {
+    appendUniqueSearchResults(results, seenIds, bucket);
   }
 
-  const fallbackQuery = fallbackLexicalSearchQuery(sourceQuery);
-
-  if (fallbackQuery === undefined) {
-    return primaryResults;
-  }
-
-  return input.repositories.retrievalRepository.searchLexical({
-    ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
-    query: fallbackQuery,
-    now,
-    limit: input.limits.search
-  });
+  return results;
 };
 
 const sourceClaimEdgesForClaims = async (

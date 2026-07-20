@@ -18,6 +18,7 @@ export interface SourceDecisionEvidenceProvenance {
   path?: string;
   sourceArtifactId?: string;
   sourceChunkId?: string;
+  sourceRange?: string;
   sourceSnapshotId?: string;
 }
 

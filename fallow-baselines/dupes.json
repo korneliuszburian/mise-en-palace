@@ -1,10 +1,12 @@
 {
   "clone_groups": [
-    "packages/cli/src/decision-packet-engine.ts:242-255|packages/harness/src/compiler/compile-harness-plan.ts:136-152",
+    "packages/cli/src/decision-packet-engine.ts:235-251|packages/harness/src/compiler/compile-harness-plan.ts:129-145",
+    "packages/cli/src/decision-packet-engine.ts:235-244|packages/cli/src/decision-packet-engine.ts:759-768|packages/harness/src/compiler/compile-harness-plan.ts:129-138",
+    "packages/cli/src/decision-packet-engine.ts:245-258|packages/harness/src/compiler/compile-harness-plan.ts:139-155",
     "packages/cli/src/maintenance-preview-readback.ts:71-77|packages/db/src/repositories/drizzle-memory-repository.ts:2656-2678",
     "packages/core/src/source-consensus-timeline.ts:367-380|packages/core/src/source-consensus-timeline.ts:458-472",
-    "packages/db/src/repositories/drizzle-source-repository.ts:1084-1104|packages/db/src/repositories/drizzle-source-repository.ts:1119-1138",
-    "packages/db/src/repositories/drizzle-source-repository.ts:1107-1116|packages/db/src/repositories/drizzle-source-repository.ts:1140-1149",
-    "packages/db/src/repositories/drizzle-source-repository.ts:1339-1347|packages/db/src/repositories/drizzle-source-repository.ts:1382-1390"
+    "packages/db/src/repositories/drizzle-source-repository.ts:1121-1141|packages/db/src/repositories/drizzle-source-repository.ts:1156-1175",
+    "packages/db/src/repositories/drizzle-source-repository.ts:1144-1153|packages/db/src/repositories/drizzle-source-repository.ts:1177-1186",
+    "packages/db/src/repositories/drizzle-source-repository.ts:1376-1384|packages/db/src/repositories/drizzle-source-repository.ts:1419-1427"
   ]
 }

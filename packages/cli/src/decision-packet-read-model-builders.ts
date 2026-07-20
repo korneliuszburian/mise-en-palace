@@ -170,7 +170,10 @@ const contextInclusionResource = (
   reason: inclusion.reason,
   expectedUse: inclusion.expectedUse,
   sourceAuthority: inclusion.sourceAuthority,
-  ...(inclusion.tokenEstimate === undefined ? {} : { tokenEstimate: inclusion.tokenEstimate })
+  ...(inclusion.tokenEstimate === undefined ? {} : { tokenEstimate: inclusion.tokenEstimate }),
+  ...(inclusion.supportingEvidence === undefined
+    ? {}
+    : { supportingEvidence: inclusion.supportingEvidence })
 });
 
 const contextExclusionResource = (

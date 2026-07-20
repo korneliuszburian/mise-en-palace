@@ -1,5 +1,8 @@
+import { createHash } from "node:crypto";
+
 import {
   assessTemporalWindow,
+  decisionPacketSupportingEvidenceMaxCharacters,
   type MemoryRecord,
   type ProjectId,
   type SourceClaim
@@ -42,8 +45,77 @@ type SearchDocumentAuthorityRepositories = {
   sourceRepository: Pick<SourceRepository, "listClaimsForProject"> &
     Partial<Pick<
       SourceRepository,
-      "getSourceClaimForProject" | "getSourceDecisionForProject"
+      "getSourceClaimForProject" | "getSourceDecisionForProject" | "getSourceChunkForProject"
     >>;
+};
+
+const metadataRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+
+const normalizedContentHash = (value: string): string => value.replace(/^sha256:/u, "");
+
+const retrievalEvidenceExclusion = async (input: {
+  document: SearchDocumentSearchResult;
+  projectId: ProjectId;
+  repositories: SearchDocumentAuthorityRepositories;
+}): Promise<ActivationExclusion | undefined> => {
+  const rawEvidence = input.document.metadata["retrievalEvidence"];
+
+  if (rawEvidence === undefined) {
+    return undefined;
+  }
+
+  const evidence = metadataRecord(rawEvidence);
+  if (
+    evidence === undefined ||
+    typeof evidence["sourceArtifactId"] !== "string" ||
+    typeof evidence["sourceChunkId"] !== "string" ||
+    typeof evidence["contentHash"] !== "string" ||
+    typeof evidence["renderedContentHash"] !== "string" ||
+    typeof evidence["truncated"] !== "boolean" ||
+    input.repositories.sourceRepository.getSourceChunkForProject === undefined
+  ) {
+    return {
+      reason: "unsafe",
+      explanation: "SearchDocument retrieval evidence lacks verifiable project-scoped provenance."
+    };
+  }
+
+  const chunk = await input.repositories.sourceRepository.getSourceChunkForProject(
+    input.projectId,
+    evidence["sourceChunkId"]
+  );
+  const renderedHash = createHash("sha256").update(input.document.body).digest("hex");
+  const capturedHash = chunk === undefined
+    ? undefined
+    : createHash("sha256").update(chunk.content).digest("hex");
+  const expectedBody = chunk?.content.slice(0, decisionPacketSupportingEvidenceMaxCharacters);
+  const expectedTruncated = chunk === undefined
+    ? undefined
+    : chunk.content.length > decisionPacketSupportingEvidenceMaxCharacters;
+  const canonicalSourceRange = chunk?.metadata["sourceRange"];
+
+  if (
+    chunk === undefined ||
+    chunk.sourceArtifactId !== evidence["sourceArtifactId"] ||
+    capturedHash !== normalizedContentHash(chunk.contentHash) ||
+    normalizedContentHash(chunk.contentHash) !== normalizedContentHash(evidence["contentHash"]) ||
+    renderedHash !== normalizedContentHash(evidence["renderedContentHash"]) ||
+    input.document.body !== expectedBody ||
+    evidence["truncated"] !== expectedTruncated ||
+    (canonicalSourceRange === undefined
+      ? evidence["sourceRange"] !== undefined
+      : evidence["sourceRange"] !== canonicalSourceRange)
+  ) {
+    return {
+      reason: "unsafe",
+      explanation: "SearchDocument retrieval evidence does not match its project-scoped captured SourceChunk."
+    };
+  }
+
+  return undefined;
 };
 
 const canonicalLinkNames = [
@@ -160,6 +232,11 @@ const sourceClaimProvenanceExclusion = async (input: {
   projectId: ProjectId;
   repositories: SearchDocumentAuthorityRepositories;
 }): Promise<ActivationExclusion | undefined> => {
+  const evidenceExclusion = await retrievalEvidenceExclusion(input);
+  if (evidenceExclusion !== undefined) {
+    return evidenceExclusion;
+  }
+
   if (
     input.document.sourceArtifactId !== undefined &&
     input.document.sourceArtifactId !== input.claim.sourceArtifactId
@@ -191,7 +268,7 @@ const sourceClaimProvenanceExclusion = async (input: {
         input.document.sourceDecisionId
       );
 
-  return decision?.sourceClaimId === input.claim.id
+  return decision?.sourceClaimId === input.claim.id && decision.status === "adopt"
     ? undefined
     : {
         reason: "unsafe",
@@ -247,6 +324,14 @@ const resolveMemoryDocument = async (input: {
   repositories: SearchDocumentAuthorityRepositories;
   knownMemoryRecordsById: ReadonlyMap<string, MemoryRecord>;
 }): Promise<SearchDocumentAuthorityResolution> => {
+  if (input.document.metadata["retrievalEvidence"] !== undefined) {
+    return rejection(
+      input.document,
+      "unsafe",
+      "SearchDocument retrieval evidence is supported only beneath reviewed source authority."
+    );
+  }
+
   const record = await memoryRecordForProject(
     input.document,
     input.projectId,

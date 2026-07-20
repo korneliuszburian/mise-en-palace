@@ -5,7 +5,8 @@ import {
 } from "./feedback-delta.js";
 import { sourceClaimAuthorityStateFor } from "./source-authority.js";
 import type {
-  ContextSubjectType
+  ContextSubjectType,
+  ContextSupportingEvidence
 } from "./context-assembly.js";
 import type {
   ProjectStandardDecisionReadback
@@ -120,6 +121,7 @@ export interface DecisionPacketContextInclusion {
   reason: string;
   expectedUse: string;
   sourceAuthority: SourceAuthorityLabel;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface DecisionPacketContextExclusion {
@@ -555,6 +557,7 @@ export interface DecisionPacketContextInclusionInput {
   sourceAuthority: SourceAuthorityLabel;
   reason?: string;
   expectedUse?: string;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface DecisionPacketContextExclusionInput {
@@ -1273,7 +1276,10 @@ export const buildDecisionPacketFromReadModel = (
       subjectId: inclusion.subjectId,
       reason: inclusion.reason ?? "Selected by the current activation result.",
       expectedUse: inclusion.expectedUse ?? "Use only within the current task boundary.",
-      sourceAuthority: inclusion.sourceAuthority
+      sourceAuthority: inclusion.sourceAuthority,
+      ...(inclusion.supportingEvidence === undefined
+        ? {}
+        : { supportingEvidence: inclusion.supportingEvidence })
     })),
     contextExclusions: exclusions.map((exclusion) => ({
       subjectType: exclusion.subjectType,

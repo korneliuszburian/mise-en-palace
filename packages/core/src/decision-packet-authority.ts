@@ -669,7 +669,10 @@ export const buildDecisionPacketAuthorityProjection = (
         subjectId: inclusion.subjectId,
         reason: inclusion.reason,
         expectedUse: inclusion.expectedUse,
-        sourceAuthority: inclusion.sourceAuthority
+        sourceAuthority: inclusion.sourceAuthority,
+        ...(inclusion.supportingEvidence === undefined
+          ? {}
+          : { supportingEvidence: inclusion.supportingEvidence })
       })) ?? [],
       exclusionDetails: aggregate.contextAssembly?.exclusions.map((exclusion) => ({
         subjectType: exclusion.subjectType,

@@ -2,10 +2,11 @@ import { createHash } from "node:crypto";
 import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type {
-  ProjectId,
-  SourceClaim,
-  SourceDecision
+import {
+  decisionPacketSupportingEvidenceMaxCharacters,
+  type ProjectId,
+  type SourceClaim,
+  type SourceDecision
 } from "@krn/core";
 import type {
   SourceDecisionEvidenceFreshness,
@@ -58,6 +59,15 @@ interface PreparedSourceDecisionImportRow {
   readonly artifactContentHash: string;
   readonly chunkContent: string;
   readonly chunkContentHash: string;
+  readonly retrievalEvidence?: {
+    readonly content: string;
+    readonly sourceArtifactId: string;
+    readonly sourceChunkId: string;
+    readonly contentHash: string;
+    readonly renderedContentHash: string;
+    readonly sourceRange?: string;
+    readonly truncated: boolean;
+  };
 }
 
 export interface PersistedSourceDecisionImportRow {
@@ -604,6 +614,7 @@ const prepareImportRow = async (
   });
   const capturedContent = capturedContentForImport(input, evidence);
   const chunkContent = `${normalizeImportText(row.statement)}\n\n${normalizeImportText(row.noteText)}${capturedContent}`;
+  const retrievalEvidence = retrievalEvidenceForImport(input, evidence);
 
   return {
     row,
@@ -614,7 +625,8 @@ const prepareImportRow = async (
     uri: `source-decision-import://${input.importId}/${row.id}`,
     artifactContentHash: contentHash(`krn.source-decision-import.v2\n${normalizedRow}`),
     chunkContent,
-    chunkContentHash: contentHash(`krn.source-decision-import.chunk.v2\n${chunkContent}`)
+    chunkContentHash: contentHash(`krn.source-decision-import.chunk.v2\n${chunkContent}`),
+    ...(retrievalEvidence === undefined ? {} : { retrievalEvidence })
   };
 };
 
@@ -660,6 +672,44 @@ const capturedContentForImport = (
 ): string => evidence.content === undefined || input.requireCapturedProjectEvidence === true
   ? ""
   : `\n\nCaptured evidence (${evidence.evidenceRef}):\n${evidence.content}`;
+
+const retrievalEvidenceForImport = (
+  input: PersistSourceDecisionImportInput,
+  evidence: SourceDecisionEvidenceLookup
+): PreparedSourceDecisionImportRow["retrievalEvidence"] => {
+  const sourceArtifactId = evidence.provenance?.sourceArtifactId;
+  const sourceChunkId = evidence.provenance?.sourceChunkId;
+  const sourceRange = evidence.provenance?.sourceRange;
+
+  if (
+    input.requireCapturedProjectEvidence !== true ||
+    evidence.status !== "captured" ||
+    evidence.content === undefined ||
+    evidence.contentHash === undefined ||
+    sourceArtifactId === undefined ||
+    sourceChunkId === undefined
+  ) {
+    return undefined;
+  }
+
+  const truncated = evidence.content.length > decisionPacketSupportingEvidenceMaxCharacters;
+
+  const content = truncated
+    ? evidence.content.slice(0, decisionPacketSupportingEvidenceMaxCharacters)
+    : evidence.content;
+
+  return {
+    content,
+    sourceArtifactId,
+    sourceChunkId,
+    contentHash: evidence.contentHash,
+    renderedContentHash: contentHash(content),
+    ...(sourceRange === undefined
+      ? {}
+      : { sourceRange }),
+    truncated
+  };
+};
 
 const prepareImportRows = async (
   input: PersistSourceDecisionImportInput
@@ -720,6 +770,7 @@ const createDecisionSupport = async (
     readonly sourceClaimId: string;
     readonly sourceDecisionId: string;
     readonly metadata: Record<string, unknown>;
+    readonly retrievalEvidence?: PreparedSourceDecisionImportRow["retrievalEvidence"];
   }
 ): Promise<Pick<PersistedSourceDecisionImportRow, "sourceDecisionEdgeId" | "searchDocumentId">> => {
   const searchDocument = await input.retrievalRepository.createSearchDocument({
@@ -733,11 +784,12 @@ const createDecisionSupport = async (
     sourceAuthority: "project-decision",
     validityStatus: input.authorityLifecycleStatus === "stale" ? "expired" : "active",
     title: input.row.title,
-    body: `${input.row.statement}\n\n${input.row.noteText}`,
+    body: input.retrievalEvidence?.content ?? `${input.row.statement}\n\n${input.row.noteText}`,
     searchText: [
       input.row.title,
       input.row.statement,
       input.row.noteText,
+      input.retrievalEvidence?.content ?? "",
       input.row.falsifier,
       input.row.doesNotProve
     ].join(" "),
@@ -747,7 +799,21 @@ const createDecisionSupport = async (
     },
     metadata: {
       ...input.metadata,
-      sourceDecisionId: input.sourceDecisionId
+      sourceDecisionId: input.sourceDecisionId,
+      ...(input.retrievalEvidence === undefined
+        ? {}
+        : {
+            retrievalEvidence: {
+              sourceArtifactId: input.retrievalEvidence.sourceArtifactId,
+              sourceChunkId: input.retrievalEvidence.sourceChunkId,
+              contentHash: input.retrievalEvidence.contentHash,
+              renderedContentHash: input.retrievalEvidence.renderedContentHash,
+              ...(input.retrievalEvidence.sourceRange === undefined
+                ? {}
+                : { sourceRange: input.retrievalEvidence.sourceRange }),
+              truncated: input.retrievalEvidence.truncated
+            }
+          })
     }
   });
   const sourceDecisionEdge = input.authorityLifecycleStatus === "current"
@@ -1106,7 +1172,10 @@ const persistSourceDecisionImportRow = async (input: {
       sourceChunkId: sourceChunk.id,
       sourceClaimId: sourceClaim.id,
       sourceDecisionId: sourceDecision.id,
-      metadata: input.prepared.metadata
+      metadata: input.prepared.metadata,
+      ...(input.prepared.retrievalEvidence === undefined
+        ? {}
+        : { retrievalEvidence: input.prepared.retrievalEvidence })
     })
   };
 };

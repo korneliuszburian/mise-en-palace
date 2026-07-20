@@ -131,7 +131,10 @@ export const decisionPacketForCompiledPlan = (
     subjectId: item.subjectId,
     reason: item.reason,
     expectedUse: item.expectedUse,
-    sourceAuthority: item.sourceAuthority
+    sourceAuthority: item.sourceAuthority,
+    ...(item.supportingEvidence === undefined
+      ? {}
+      : { supportingEvidence: item.supportingEvidence })
   }));
   const contextExclusions = result.contextAssembly.exclusions.map((item) => ({
     subjectType: item.subjectType,

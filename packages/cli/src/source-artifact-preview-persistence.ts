@@ -30,7 +30,6 @@ import {
   hasCompleteSourceClaimCandidate,
   missingReviewedExtractionClaimCandidateFields,
   selectReviewedExtractionClaimCandidate,
-  sourceArtifactPreviewChunkBody
 } from "./source-artifact-preview-view.js";
 import type {
   CompleteGraphEdgeCommandInput,
@@ -58,6 +57,8 @@ export interface SourceArtifactPreviewPersistenceReadback {
   sourceChunks: readonly string[];
   searchDocument: {
     id: string;
+    ids: readonly string[];
+    count: number;
     lexicalReadbackQuery: string;
     lexicalReadback: "hit" | "missing";
     lexicalScore?: number;
@@ -115,9 +116,9 @@ interface SourceArtifactPersistenceRows {
 }
 
 interface SearchDocumentReadbackRows {
-  searchDocument: SearchDocumentRecord;
+  searchDocuments: SearchDocumentRecord[];
   readbackQuery: string;
-  readbackHit: SearchDocumentSearchResult | undefined;
+  readbackHits: SearchDocumentSearchResult[];
 }
 
 interface SourceClaimPersistenceRows {
@@ -133,8 +134,15 @@ interface SourceClaimEdgePersistenceRows {
 export const sha256 = (content: string): string =>
   `sha256:${createHash("sha256").update(content).digest("hex")}`;
 
-const localArtifactUri = (resolvedPath: string, artifactHash: string, now: string): string =>
-  `file://${resolvedPath}?krnPreviewHash=${encodeURIComponent(artifactHash)}&capturedAt=${encodeURIComponent(now)}`;
+const localArtifactUri = (input: {
+  projectId: string;
+  resolvedPath: string;
+  artifactHash: string;
+  capturedAt: string;
+  contentAddressed: boolean;
+}): string => input.contentAddressed
+  ? `krn-source://project/${input.projectId}/local-file/${encodeURIComponent(input.resolvedPath)}?sha256=${encodeURIComponent(input.artifactHash)}`
+  : `file://${input.resolvedPath}?krnPreviewHash=${encodeURIComponent(input.artifactHash)}&capturedAt=${encodeURIComponent(input.capturedAt)}`;
 
 const requireDatabaseUrl = (runtime: SourceArtifactPreviewCommandRuntime): string => {
   const databaseUrl = runtime.env?.KRN_DATABASE_URL?.trim();
@@ -149,7 +157,8 @@ const requireDatabaseUrl = (runtime: SourceArtifactPreviewCommandRuntime): strin
 const createPreviewDatabaseRuntime = async (
   runtime: SourceArtifactPreviewCommandRuntime,
   databaseUrl: string,
-  now: () => string
+  now: () => string,
+  repoPath: string | undefined
 ): Promise<DatabaseRuntime> => {
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
 
@@ -157,14 +166,16 @@ const createPreviewDatabaseRuntime = async (
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
-    repoPathHint: await findRepoRoot(runtime.cwd),
+    repoPathHint: repoPath ?? await findRepoRoot(runtime.cwd),
+    ...(repoPath === undefined ? {} : { requireConnectedRepoPath: true }),
     now,
     createId: (prefix) => `${prefix}-${Date.now()}`
   });
 };
 
 const requirePreviewPersistenceRepositories = (
-  databaseRuntime: DatabaseRuntime
+  databaseRuntime: DatabaseRuntime,
+  requireContentAddressed: boolean
 ): {
   retrievalRepository: RetrievalRepositoryRuntime;
   createSourceChunk: SourceChunkCreator;
@@ -182,6 +193,14 @@ const requirePreviewPersistenceRepositories = (
     throw new Error("SourceChunk persistence is unavailable in this database runtime");
   }
 
+  if (requireContentAddressed && (
+    databaseRuntime.sourceRepository.getSourceArtifactByUriAndContentHash === undefined ||
+    databaseRuntime.sourceRepository.listSourceChunksForArtifact === undefined ||
+    retrievalRepository.listSearchDocumentsForSourceLinks === undefined
+  )) {
+    throw new Error("Content-addressed source ingest readback is unavailable in this database runtime");
+  }
+
   return {
     retrievalRepository,
     createSourceChunk
@@ -196,14 +215,22 @@ const persistPreviewArtifactAndChunks = async (input: {
   artifactHash: string;
   capturedAt: string;
   chunks: readonly SourceArtifactPreviewChunk[];
+  sourceAuthority: string;
+  contentAddressed: boolean;
 }): Promise<SourceArtifactPersistenceRows> => {
-  const evidenceRef = localArtifactUri(input.resolvedPath, input.artifactHash, input.capturedAt);
+  const evidenceRef = localArtifactUri({
+    projectId: input.databaseRuntime.projectId,
+    resolvedPath: input.resolvedPath,
+    artifactHash: input.artifactHash,
+    capturedAt: input.capturedAt,
+    contentAddressed: input.contentAddressed
+  });
   const artifactInput = parseSourceArtifactInput({
     kind: "file",
     title: `Local source artifact: ${input.file}`,
     uri: evidenceRef,
     contentHash: input.artifactHash,
-    sourceAuthority: "source-code",
+    sourceAuthority: input.sourceAuthority,
     metadata: {
       file: input.file,
       resolvedPath: input.resolvedPath,
@@ -217,18 +244,44 @@ const persistPreviewArtifactAndChunks = async (input: {
       doesNotProve: "Persisted local source artifact does not prove source truth, source freshness, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
     }
   });
-  const sourceArtifact = await input.databaseRuntime.sourceRepository.createSourceArtifact({
-    projectId: input.databaseRuntime.projectId,
-    kind: artifactInput.kind,
-    sourceAuthority: artifactInput.sourceAuthority,
-    uri: artifactInput.uri,
-    title: artifactInput.title,
-    contentHash: artifactInput.contentHash ?? input.artifactHash,
-    metadata: artifactInput.metadata
-  });
+  const existingArtifact = input.contentAddressed
+    ? await input.databaseRuntime.sourceRepository
+      .getSourceArtifactByUriAndContentHash?.(artifactInput.uri, input.artifactHash)
+    : undefined;
+  const sourceArtifact = existingArtifact ??
+    await input.databaseRuntime.sourceRepository.createSourceArtifact({
+      projectId: input.databaseRuntime.projectId,
+      kind: artifactInput.kind,
+      sourceAuthority: artifactInput.sourceAuthority,
+      uri: artifactInput.uri,
+      title: artifactInput.title,
+      contentHash: artifactInput.contentHash ?? input.artifactHash,
+      metadata: artifactInput.metadata
+    });
+  if (
+    sourceArtifact.projectId !== input.databaseRuntime.projectId ||
+    sourceArtifact.sourceAuthority !== input.sourceAuthority
+  ) {
+    throw new Error("Content-addressed SourceArtifact does not match the target project or source authority");
+  }
+  const existingChunks = input.contentAddressed
+    ? await input.databaseRuntime.sourceRepository
+      .listSourceChunksForArtifact?.(sourceArtifact.id) ?? []
+    : [];
   const sourceChunks: SourceChunkRecord[] = [];
 
   for (const chunk of input.chunks) {
+    const existingChunk = existingChunks.find((candidate) => candidate.ordinal === chunk.ordinal);
+    if (existingChunk !== undefined) {
+      if (existingChunk.contentHash !== chunk.contentHash || existingChunk.content !== chunk.content) {
+        throw new Error(
+          `Content-addressed SourceChunk ${chunk.ordinal} does not match the captured corpus bytes`
+        );
+      }
+      sourceChunks.push(existingChunk);
+      continue;
+    }
+
     sourceChunks.push(await input.createSourceChunk({
       sourceArtifactId: sourceArtifact.id,
       ordinal: chunk.ordinal,
@@ -263,65 +316,81 @@ const persistPreviewSearchDocument = async (input: {
   artifactHash: string;
   chunks: readonly SourceArtifactPreviewChunk[];
   sourceArtifact: SourceArtifactRecord;
-  firstChunk: SourceChunkRecord | undefined;
   sourceChunks: readonly SourceChunkRecord[];
 }): Promise<SearchDocumentReadbackRows> => {
   const artifactHashPrefix = input.artifactHash.slice("sha256:".length, "sha256:".length + 16);
   const readbackQuery = `krn-source-artifact-preview ${artifactHashPrefix}`;
-  const body = sourceArtifactPreviewChunkBody(input.chunks);
-  const documentInput = parseSearchDocumentInput({
+  const searchDocuments: SearchDocumentRecord[] = [];
+  const existingDocuments = await input.retrievalRepository.listSearchDocumentsForSourceLinks?.({
     projectId: input.databaseRuntime.projectId,
-    subjectType: "source_artifact",
-    subjectId: input.sourceArtifact.id,
-    sourceArtifactId: input.sourceArtifact.id,
-    ...(input.firstChunk === undefined ? {} : { sourceChunkId: input.firstChunk.id }),
-    sourceAuthority: "source-code",
-    language: "english",
-    title: `Local source artifact: ${input.file}`,
-    body,
-    searchText: [
-      "krn-source-artifact-preview",
-      artifactHashPrefix,
-      input.file,
-      body
-    ].join("\n"),
-    metadataFilters: {
-      source: "local_source_artifact_preview",
-      file: input.file
-    },
-    metadata: {
-      file: input.file,
-      contentHash: input.artifactHash,
-      chunkIds: input.sourceChunks.map((chunk) => chunk.id),
-      source: "krn source artifact preview --persist",
-      doesNotProve: "Persisted SearchDocument readback does not prove embeddings, graph retrieval, source truth, source freshness, or Memory Core mutation."
+    sourceChunkIds: input.sourceChunks.map((chunk) => chunk.id),
+    limit: Math.max(20, input.sourceChunks.length)
+  }) ?? [];
+
+  for (const [index, chunk] of input.chunks.entries()) {
+    const sourceChunk = input.sourceChunks[index];
+    if (sourceChunk === undefined) {
+      throw new Error(`SourceChunk persistence is missing readback for chunk ${chunk.ordinal}`);
     }
-  });
-  const searchDocument = await input.retrievalRepository.createSearchDocument({
-    projectId: input.databaseRuntime.projectId,
-    subjectType: documentInput.subjectType,
-    subjectId: documentInput.subjectId,
-    sourceArtifactId: input.sourceArtifact.id,
-    ...(input.firstChunk === undefined ? {} : { sourceChunkId: input.firstChunk.id }),
-    sourceAuthority: documentInput.sourceAuthority,
-    validityStatus: documentInput.validityStatus,
-    language: documentInput.language,
-    title: documentInput.title,
-    body: documentInput.body,
-    searchText: documentInput.searchText,
-    metadataFilters: documentInput.metadataFilters,
-    metadata: documentInput.metadata
-  });
+    const documentInput = parseSearchDocumentInput({
+      projectId: input.databaseRuntime.projectId,
+      subjectType: "source_chunk",
+      subjectId: sourceChunk.id,
+      sourceArtifactId: input.sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      sourceAuthority: input.sourceArtifact.sourceAuthority,
+      language: "english",
+      title: `Local source artifact: ${input.file} (chunk ${chunk.ordinal})`,
+      body: chunk.content,
+      searchText: ["krn-source-artifact-preview", artifactHashPrefix, input.file, chunk.content].join("\n"),
+      metadataFilters: { source: "local_source_artifact_preview", file: input.file },
+      metadata: {
+        file: input.file,
+        contentHash: chunk.contentHash,
+        artifactContentHash: input.artifactHash,
+        sourceRange: `lines ${chunk.startLine}-${chunk.endLine}`,
+        source: "krn source artifact preview --persist",
+        doesNotProve: "Persisted SearchDocument readback does not prove embeddings, graph retrieval, source truth, source freshness, or Memory Core mutation."
+      }
+    });
+    const existingDocument = existingDocuments.find((document) =>
+      document.subjectType === "source_chunk" &&
+      document.subjectId === sourceChunk.id &&
+      document.sourceChunkId === sourceChunk.id &&
+      document.body === chunk.content &&
+      document.metadata["contentHash"] === chunk.contentHash);
+    if (existingDocument !== undefined) {
+      searchDocuments.push(existingDocument);
+      continue;
+    }
+
+    searchDocuments.push(await input.retrievalRepository.createSearchDocument({
+      projectId: input.databaseRuntime.projectId,
+      subjectType: documentInput.subjectType,
+      subjectId: documentInput.subjectId,
+      sourceArtifactId: input.sourceArtifact.id,
+      sourceChunkId: sourceChunk.id,
+      sourceAuthority: documentInput.sourceAuthority,
+      validityStatus: documentInput.validityStatus,
+      language: documentInput.language,
+      title: documentInput.title,
+      body: documentInput.body,
+      searchText: documentInput.searchText,
+      metadataFilters: documentInput.metadataFilters,
+      metadata: documentInput.metadata
+    }));
+  }
   const lexicalReadback = await input.retrievalRepository.searchLexical({
     projectId: input.databaseRuntime.projectId,
     query: readbackQuery,
-    limit: 5
+    limit: Math.max(5, searchDocuments.length)
   });
 
   return {
-    searchDocument,
+    searchDocuments,
     readbackQuery,
-    readbackHit: lexicalReadback.find((result) => result.id === searchDocument.id)
+    readbackHits: lexicalReadback.filter((result) =>
+      searchDocuments.some((document) => document.id === result.id))
   };
 };
 
@@ -533,12 +602,14 @@ const persistOptionalSourceClaimEdge = async (input: {
 const formatSearchDocumentReadbackLines = (
   search: SearchDocumentReadbackRows
 ): string[] => [
-  `searchDocument: ${search.searchDocument.id}`,
+  `searchDocument: ${search.searchDocuments[0]?.id ?? "none"}`,
+  `searchDocuments: ${search.searchDocuments.map((document) => document.id).join(", ")}`,
+  `searchDocumentCount: ${search.searchDocuments.length}`,
   `lexicalReadbackQuery: ${search.readbackQuery}`,
-  `lexicalReadback: ${search.readbackHit === undefined ? "missing" : "hit"}`,
-  ...(search.readbackHit === undefined
+  `lexicalReadback: ${search.readbackHits.length === 0 ? "missing" : "hit"}`,
+  ...(search.readbackHits[0] === undefined
     ? []
-    : [`lexicalScore: ${search.readbackHit.lexicalScore}`])
+    : [`lexicalScore: ${search.readbackHits[0].lexicalScore}`])
 ];
 
 const formatSourceClaimReadbackLines = (input: {
@@ -602,7 +673,10 @@ const ingestLoopReadback = (input: {
   edge: SourceClaimEdgePersistenceRows;
 }): SourceArtifactPreviewPersistenceReadback["ingestLoop"] => {
   const searchStatus: "ready" | "missing_readback" =
-    input.search.readbackHit === undefined ? "missing_readback" : "ready";
+    input.search.searchDocuments.length > 0 &&
+      input.search.readbackHits.length === input.search.searchDocuments.length
+      ? "ready"
+      : "missing_readback";
   const claimStatus = readbackStatus(
     input.claim.sourceClaim !== undefined,
     input.claim.sourceClaimReadback !== undefined
@@ -664,12 +738,14 @@ const persistenceReadback = (input: {
   },
   sourceChunks: input.artifact.sourceChunks.map((chunk) => chunk.id),
   searchDocument: {
-    id: input.search.searchDocument.id,
+    id: input.search.searchDocuments[0]?.id ?? "",
+    ids: input.search.searchDocuments.map((document) => document.id),
+    count: input.search.searchDocuments.length,
     lexicalReadbackQuery: input.search.readbackQuery,
-    lexicalReadback: input.search.readbackHit === undefined ? "missing" : "hit",
-    ...(input.search.readbackHit === undefined
+    lexicalReadback: input.search.readbackHits.length === 0 ? "missing" : "hit",
+    ...(input.search.readbackHits[0] === undefined
       ? {}
-      : { lexicalScore: input.search.readbackHit.lexicalScore })
+      : { lexicalScore: input.search.readbackHits[0].lexicalScore })
   },
   sourceClaim: input.claim.sourceClaim === undefined
     ? {
@@ -738,7 +814,8 @@ export const persistSourceArtifactPreview = async (
   file: string,
   resolvedPath: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[]
+  chunks: readonly SourceArtifactPreviewChunk[],
+  repoPath?: string
 ): Promise<SourceArtifactPreviewPersistenceResult> => {
   const databaseUrl = requireDatabaseUrl(runtime);
   const now = runtime.now ?? (() => new Date().toISOString());
@@ -758,32 +835,36 @@ export const persistSourceArtifactPreview = async (
     );
   }
 
-  const databaseRuntime = await createPreviewDatabaseRuntime(runtime, databaseUrl, now);
+  const databaseRuntime = await createPreviewDatabaseRuntime(runtime, databaseUrl, now, repoPath);
 
-  try {
+  const persistInRuntime = async (
+    activeRuntime: DatabaseRuntime
+  ): Promise<SourceArtifactPreviewPersistenceResult> => {
+    const contentAddressed = runtime.command.allChunks === true;
     const { retrievalRepository, createSourceChunk } =
-      requirePreviewPersistenceRepositories(databaseRuntime);
+      requirePreviewPersistenceRepositories(activeRuntime, contentAddressed);
     const artifact = await persistPreviewArtifactAndChunks({
-      databaseRuntime,
+      databaseRuntime: activeRuntime,
       createSourceChunk,
       file,
       resolvedPath,
       artifactHash,
       capturedAt,
-      chunks
+      chunks,
+      sourceAuthority: runtime.command.sourceAuthority ?? "source-code",
+      contentAddressed
     });
     const search = await persistPreviewSearchDocument({
-      databaseRuntime,
+      databaseRuntime: activeRuntime,
       retrievalRepository,
       file,
       artifactHash,
       chunks,
       sourceArtifact: artifact.sourceArtifact,
-      firstChunk: artifact.firstChunk,
       sourceChunks: artifact.sourceChunks
     });
     const claim = await persistOptionalSourceClaim({
-      databaseRuntime,
+      databaseRuntime: activeRuntime,
       command: runtime.command,
       file,
       artifactHash,
@@ -794,7 +875,7 @@ export const persistSourceArtifactPreview = async (
       reviewedExtractionClaimSelection
     });
     const edge = await persistOptionalSourceClaimEdge({
-      databaseRuntime,
+      databaseRuntime: activeRuntime,
       command: runtime.command,
       file,
       artifactHash,
@@ -803,7 +884,7 @@ export const persistSourceArtifactPreview = async (
       sourceClaim: claim.sourceClaim
     });
     const readback = persistenceReadback({
-      databaseRuntime,
+      databaseRuntime: activeRuntime,
       artifact,
       search,
       claim,
@@ -817,7 +898,7 @@ export const persistSourceArtifactPreview = async (
       sourceClaimEdgePersisted: edge.sourceClaimEdge !== undefined,
       readback,
       lines: formatPersistenceReadbackLines({
-        databaseRuntime,
+        databaseRuntime: activeRuntime,
         artifact,
         search,
         claim,
@@ -825,6 +906,25 @@ export const persistSourceArtifactPreview = async (
         reviewedExtractionClaimSelection
       })
     };
+  };
+
+  try {
+    if (runtime.command.allChunks !== true) {
+      return persistInRuntime(databaseRuntime);
+    }
+
+    if (databaseRuntime.withTransaction === undefined) {
+      throw new Error("Atomic source corpus ingest is unavailable in this database runtime");
+    }
+
+    return databaseRuntime.withTransaction(
+      `source-artifact-preview:${databaseRuntime.projectId}:${artifactHash}`,
+      async (transaction) => persistInRuntime({
+        ...databaseRuntime,
+        sourceRepository: transaction.sourceRepository,
+        retrievalRepository: transaction.retrievalRepository
+      })
+    );
   } finally {
     await databaseRuntime.close();
   }
@@ -847,6 +947,7 @@ export const sourceArtifactPreviewJson = (input: {
   lines: readonly string[];
   chunkSize: number;
   chunks: readonly SourceArtifactPreviewChunk[];
+  persistedChunkCount?: number;
   persistence?: SourceArtifactPreviewPersistenceResult;
 }): Record<string, unknown> => ({
   kind: "krn.sourceArtifactPreview.v1",
@@ -875,7 +976,8 @@ export const sourceArtifactPreviewJson = (input: {
     chunking: {
       strategy: "line-based",
       chunkLines: input.chunkSize,
-      renderedChunks: input.chunks.length
+      renderedChunks: input.chunks.length,
+      persistedChunks: input.persistedChunkCount ?? 0
     }
   },
   chunks: input.chunks.map((chunk) => ({

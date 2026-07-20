@@ -1,5 +1,6 @@
 import type {
   ContextAssemblyId,
+  ContextSupportingEvidence,
   ContextSubjectType,
   DiffRisk,
   HarnessPlanId,
@@ -94,6 +95,7 @@ export interface ExecutionBriefContextInclusion {
   reason: string;
   expectedUse: string;
   sourceAuthority: SourceAuthorityLabel;
+  supportingEvidence?: ContextSupportingEvidence | undefined;
 }
 
 export interface ExecutionBriefContextExclusion {

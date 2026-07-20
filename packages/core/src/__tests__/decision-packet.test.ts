@@ -693,6 +693,37 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("preserves bounded supporting evidence only on its selected context inclusion", () => {
+    const supportingEvidence = {
+      searchDocumentId: "search-course-slice-1",
+      sourceArtifactId: "artifact-course-1",
+      sourceChunkId: "chunk-course-17",
+      contentHash: "a".repeat(64),
+      renderedContentHash: "1d1ed0da7180bfaa578a13d8b6bdfbe2c22b2d6346b28542658affd087e90eb1",
+      sourceRange: "lines 641-680",
+      content: "Prefer intrinsic composition before component-specific breakpoints.",
+      truncated: false
+    };
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        inclusionDetails: readModel.context.inclusionDetails.map((inclusion) =>
+          inclusion.subjectId === "claim-current"
+            ? { ...inclusion, supportingEvidence }
+            : inclusion
+        )
+      }
+    });
+
+    expect(packet.contextInclusions.find(
+      (inclusion) => inclusion.subjectId === "claim-current"
+    )?.supportingEvidence).toEqual(supportingEvidence);
+    expect(packet.contextInclusions.find(
+      (inclusion) => inclusion.subjectId === "claim-caveated"
+    )?.supportingEvidence).toBeUndefined();
+  });
+
   it("keeps stale memory identity historical without promoting it into memoryRefs", () => {
     const packet = buildDecisionPacketFromReadModel({
       ...readModel,

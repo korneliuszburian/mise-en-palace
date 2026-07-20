@@ -59,6 +59,7 @@ export interface SearchLexicalInput {
   query: string;
   now?: string;
   limit?: number;
+  canonicalLinksOnly?: boolean;
 }
 
 export interface SearchVectorInput {
