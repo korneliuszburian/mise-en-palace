@@ -15,18 +15,12 @@ import type {
   SourceDecisionImportRepository
 } from "@krn/core/repositories/internal";
 import type {
-  DecisionCorpusImportFixture,
-  DecisionCorpusImportRow
-} from "./internal/eval/run-decision-corpus-import.js";
-import {
-  buildImportedDecisionCorpus
-} from "./internal/eval/run-decision-corpus-import.js";
+  ReviewedSourceDecisionCorpus,
+  ReviewedSourceDecisionRow
+} from "./reviewed-source-decision-corpus.js";
 import type {
   DatabaseRuntime
 } from "./database-runtime.js";
-import {
-  loadDecisionPacketEvalFixture
-} from "./decision-packet-fixture.js";
 
 type SourceDecisionImportRuntime = Pick<
   DatabaseRuntime,
@@ -50,8 +44,8 @@ interface SourceDecisionImportRepositories {
 }
 
 interface PreparedSourceDecisionImportRow {
-  readonly row: DecisionCorpusImportRow;
-  readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
+  readonly row: ReviewedSourceDecisionRow;
+  readonly authorityLifecycleStatus: ReviewedSourceDecisionRow["status"];
   readonly evidenceRef: string;
   readonly metadata: Record<string, unknown>;
   readonly evidenceStatus: SourceDecisionEvidenceLookup["status"];
@@ -89,13 +83,18 @@ export interface PersistedSourceDecisionImportRow {
 export interface PersistSourceDecisionImportInput {
   readonly runtime: SourceDecisionImportRuntime;
   readonly projectId: ProjectId;
-  readonly fixture: DecisionCorpusImportFixture;
+  readonly fixture: ReviewedSourceDecisionCorpus;
   readonly importId: string;
   readonly smokeId?: string;
   readonly importedBy: string;
   readonly now: string;
   readonly authorizedRepoRoot?: string;
   readonly resolveEvidence?: SourceDecisionEvidenceResolver;
+}
+
+export interface PersistSourceDecisionImportResult {
+  readonly importId: string;
+  readonly rows: readonly PersistedSourceDecisionImportRow[];
 }
 
 export type SourceDecisionEvidenceResolver = (input: {
@@ -108,28 +107,37 @@ export type SourceDecisionEvidenceResolver = (input: {
 
 export interface SourceDecisionImportCounts {
   readonly decisionCount: number;
-  readonly caseCount: number;
   readonly currentDecisionCount: number;
   readonly staleDecisionCount: number;
   readonly rejectedDecisionCount: number;
 }
 
 export const sourceDecisionImportCounts = (
-  fixture: DecisionCorpusImportFixture
+  fixture: ReviewedSourceDecisionCorpus
 ): SourceDecisionImportCounts => ({
   decisionCount: fixture.decisions.length,
-  caseCount: fixture.cases.length,
   currentDecisionCount: fixture.decisions.filter((row) => row.status === "current").length,
   staleDecisionCount: fixture.decisions.filter((row) => row.status === "stale").length,
   rejectedDecisionCount: fixture.decisions.filter((row) => row.status === "rejected").length
 });
 
 export const validateSourceDecisionImportFixture = (
-  fixture: DecisionCorpusImportFixture
+  fixture: ReviewedSourceDecisionCorpus
 ): void => {
-  const base = loadDecisionPacketEvalFixture(fixture.baseFixturePath);
+  const declaredDecisionIds = fixture.coverageScope?.declaredRows.map((row) => row.decisionId);
 
-  buildImportedDecisionCorpus(fixture, base);
+  if (declaredDecisionIds === undefined) {
+    return;
+  }
+
+  const decisionIds = new Set(fixture.decisions.map((row) => row.id));
+  const unknownDecisionIds = declaredDecisionIds.filter((decisionId) => !decisionIds.has(decisionId));
+
+  if (unknownDecisionIds.length > 0) {
+    throw new Error(
+      `source decision coverage references unknown decisions: ${unknownDecisionIds.join(", ")}`
+    );
+  }
 };
 
 const normalizeImportText = (value: string): string =>
@@ -145,14 +153,10 @@ const canonicalImportTextList = (values: readonly string[]): readonly string[] =
   values.map(normalizeImportText).sort(compareImportText);
 
 const canonicalSourceDecisionImportManifest = (
-  fixture: DecisionCorpusImportFixture
+  fixture: ReviewedSourceDecisionCorpus
 ) => ({
   version: fixture.version,
-  baseFixturePath: normalizeImportText(fixture.baseFixturePath),
   corpusName: normalizeImportText(fixture.corpusName),
-  topK: fixture.topK,
-  minimumKrnWinRate: fixture.minimumKrnWinRate,
-  maximumNotesWinRate: fixture.maximumNotesWinRate,
   coverageScope: fixture.coverageScope === undefined
     ? null
     : {
@@ -175,16 +179,6 @@ const canonicalSourceDecisionImportManifest = (
       doesNotProve: normalizeImportText(row.doesNotProve),
       noteText: normalizeImportText(row.noteText)
     }))
-    .sort((left, right) => compareImportText(left.id, right.id)),
-  cases: fixture.cases
-    .map((row) => ({
-      id: row.id,
-      task: normalizeImportText(row.task),
-      expectedDecisionId: normalizeImportText(row.expectedDecisionId),
-      staleDecisionIds: canonicalImportTextList(row.staleDecisionIds),
-      rejectedDecisionIds: canonicalImportTextList(row.rejectedDecisionIds),
-      baselineFailureRationale: normalizeImportText(row.baselineFailureRationale)
-    }))
     .sort((left, right) => compareImportText(left.id, right.id))
 });
 
@@ -196,7 +190,7 @@ const canonicalSourceDecisionImportManifest = (
  */
 export const deriveSourceDecisionImportIdentity = (input: {
   readonly projectIdentity: string;
-  readonly fixture: DecisionCorpusImportFixture;
+  readonly fixture: ReviewedSourceDecisionCorpus;
 }): string => {
   const projectIdentity = normalizeImportText(input.projectIdentity);
 
@@ -205,7 +199,7 @@ export const deriveSourceDecisionImportIdentity = (input: {
   }
 
   return `source-decision-import:${contentHash(
-    `krn.source-decision-import.identity.v1\n${JSON.stringify({
+    `krn.source-decision-import.identity.v2\n${JSON.stringify({
       projectIdentity,
       manifest: canonicalSourceDecisionImportManifest(input.fixture)
     })}`
@@ -257,7 +251,7 @@ const resolveEvidenceRef = (value: string, decisionId: string): string => {
 
 const metadataForRow = (
   input: PersistSourceDecisionImportInput,
-  row: DecisionCorpusImportRow,
+  row: ReviewedSourceDecisionRow,
   evidence: SourceDecisionEvidenceLookup
 ): Record<string, unknown> => ({
   importId: input.importId,
@@ -496,7 +490,7 @@ const resolveEvidence = async (input: {
 };
 
 const requireCapturedEvidenceForAuthority = (
-  row: DecisionCorpusImportRow,
+  row: ReviewedSourceDecisionRow,
   evidence: SourceDecisionEvidenceLookup
 ): void => {
   if (row.status !== "current" || evidence.status === "captured") {
@@ -511,9 +505,9 @@ const requireCapturedEvidenceForAuthority = (
 };
 
 const authorityLifecycleStatusFor = (
-  row: DecisionCorpusImportRow,
+  row: ReviewedSourceDecisionRow,
   evidence: SourceDecisionEvidenceLookup
-): DecisionCorpusImportRow["status"] =>
+): ReviewedSourceDecisionRow["status"] =>
   row.status === "current" &&
   evidence.status === "captured" &&
   evidence.freshness !== "current"
@@ -522,7 +516,7 @@ const authorityLifecycleStatusFor = (
 
 const prepareImportRow = async (
   input: PersistSourceDecisionImportInput,
-  row: DecisionCorpusImportRow,
+  row: ReviewedSourceDecisionRow,
   evidenceRef: string
 ): Promise<PreparedSourceDecisionImportRow> => {
   const evidence = await resolveEvidence({
@@ -628,8 +622,8 @@ const createDecisionSupport = async (
     readonly sourceRepository: SourceDecisionImportSourceRepository;
     readonly retrievalRepository: SourceDecisionImportRetrievalRepository;
     readonly projectId: ProjectId;
-    readonly row: DecisionCorpusImportRow;
-    readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
+    readonly row: ReviewedSourceDecisionRow;
+    readonly authorityLifecycleStatus: ReviewedSourceDecisionRow["status"];
     readonly sourceArtifactId: string;
     readonly sourceChunkId: string;
     readonly sourceClaimId: string;
@@ -691,7 +685,7 @@ const createRejectedPath = async (
   input: {
     readonly sourceRepository: SourceDecisionImportSourceRepository;
     readonly projectId: ProjectId;
-    readonly row: DecisionCorpusImportRow;
+    readonly row: ReviewedSourceDecisionRow;
     readonly sourceArtifactId: string;
     readonly sourceClaimId: string;
     readonly metadata: Record<string, unknown>;
@@ -771,7 +765,7 @@ const persistedRowFromReadback = (
 });
 
 const expectedDecisionStatusFor = (
-  authorityLifecycleStatus: DecisionCorpusImportRow["status"]
+  authorityLifecycleStatus: ReviewedSourceDecisionRow["status"]
 ): SourceDecision["status"] =>
   authorityLifecycleStatus === "rejected"
     ? "reject"
@@ -780,7 +774,7 @@ const expectedDecisionStatusFor = (
       : "adopt";
 
 const expectedClaimStatusFor = (
-  authorityLifecycleStatus: DecisionCorpusImportRow["status"]
+  authorityLifecycleStatus: ReviewedSourceDecisionRow["status"]
 ): SourceClaim["status"] =>
   authorityLifecycleStatus === "rejected"
     ? "rejected"
@@ -858,9 +852,22 @@ const existingImportRows = async (
   });
 };
 
+const sourceDecisionImportManifestLockKey = (input: {
+  projectId: ProjectId;
+  preparedRows: readonly PreparedSourceDecisionImportRow[];
+}): string => `source-decision-import-manifest:${contentHash(JSON.stringify({
+  projectId: input.projectId,
+  rows: input.preparedRows
+    .map((prepared) => ({
+      decisionId: prepared.row.id,
+      contentHash: prepared.artifactContentHash
+    }))
+    .sort((left, right) => compareImportText(left.decisionId, right.decisionId))
+}))}`;
+
 const deprecateImportedSourceClaimIfInactive = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
-  readonly authorityLifecycleStatus: DecisionCorpusImportRow["status"];
+  readonly authorityLifecycleStatus: ReviewedSourceDecisionRow["status"];
   readonly sourceClaimId: string;
   readonly metadata: Record<string, unknown>;
 }): Promise<void> => {
@@ -1047,7 +1054,7 @@ const persistSourceDecisionImportRows = async (
 
 export const persistSourceDecisionImport = async (
   input: PersistSourceDecisionImportInput
-): Promise<readonly PersistedSourceDecisionImportRow[]> => {
+): Promise<PersistSourceDecisionImportResult> => {
   validateSourceDecisionImportFixture(input.fixture);
   const preparedRows = await prepareImportRows(input);
 
@@ -1060,9 +1067,48 @@ export const persistSourceDecisionImport = async (
 
   const repositories = assertImportRepositories(input.runtime);
 
-  return repositories.withTransaction(input.importId, async (transactionRuntime) => {
+  const manifestLockKey = sourceDecisionImportManifestLockKey({
+    projectId: input.projectId,
+    preparedRows
+  });
+
+  return repositories.withTransaction(manifestLockKey, async (transactionRuntime) => {
     if (transactionRuntime.sourceDecisionImportRepository === undefined) {
       throw new Error("Source decision import transaction readback is unavailable");
+    }
+
+    const equivalentImportIds = await transactionRuntime.sourceDecisionImportRepository
+      .findEquivalentSourceDecisionImportIds({
+        projectId: input.projectId,
+        manifest: preparedRows.map((prepared) => ({
+          decisionId: prepared.row.id,
+          contentHash: prepared.artifactContentHash
+        }))
+      });
+
+    if (equivalentImportIds.length > 1) {
+      throw new Error(
+        `source decision import manifest already has competing equivalent imports: ${equivalentImportIds.join(", ")}`
+      );
+    }
+
+    const equivalentImportId = equivalentImportIds[0];
+
+    if (equivalentImportId !== undefined) {
+      const equivalentRows = await existingImportRows(
+        transactionRuntime.sourceDecisionImportRepository,
+        input.projectId,
+        equivalentImportId,
+        preparedRows
+      );
+
+      if (equivalentRows === undefined) {
+        throw new Error(
+          `source decision import equivalent manifest ${equivalentImportId} has no replayable rows`
+        );
+      }
+
+      return { importId: equivalentImportId, rows: equivalentRows };
     }
 
     const existingRows = await existingImportRows(
@@ -1073,14 +1119,18 @@ export const persistSourceDecisionImport = async (
     );
 
     if (existingRows !== undefined) {
-      return existingRows;
+      throw new Error(
+        `source decision import ${input.importId} exists but is absent from its semantic manifest lookup`
+      );
     }
 
-    return persistSourceDecisionImportRows({
+    const rows = await persistSourceDecisionImportRows({
       runtime: transactionRuntime,
       projectId: input.projectId,
       importId: input.importId,
       preparedRows
     });
+
+    return { importId: input.importId, rows };
   });
 };

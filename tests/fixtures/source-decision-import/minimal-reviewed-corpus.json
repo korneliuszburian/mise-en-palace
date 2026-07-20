@@ -1,0 +1,30 @@
+{
+  "version": "1",
+  "corpusName": "Minimal reviewed source corpus",
+  "coverageScope": {
+    "declaredRows": [
+      {
+        "decisionId": "frontend-layout-owner",
+        "evidenceRefs": [
+          "https://example.com/frontend-layout-owner"
+        ]
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "frontend-layout-owner",
+      "title": "The composition owns external layout",
+      "statement": "A reusable component must not own the layout around itself.",
+      "status": "current",
+      "taskScopes": [
+        "frontend",
+        "component-layout"
+      ],
+      "evidenceRef": "https://example.com/frontend-layout-owner",
+      "falsifier": "The component cannot be placed in two compositions without overriding its outer layout.",
+      "doesNotProve": "That one composition primitive fits every interface.",
+      "noteText": "Select the existing composition before introducing component-specific outer layout."
+    }
+  ]
+}

@@ -13,6 +13,11 @@ import {
   stringValue
 } from "../../fixture-parse-support.js";
 import {
+  parseReviewedSourceDecisionCorpus,
+  type ReviewedSourceDecisionCorpus,
+  type ReviewedSourceDecisionRow
+} from "../../reviewed-source-decision-corpus.js";
+import {
   runDecisionPacketEval
 } from "./run-decision-packet-eval.js";
 import type {
@@ -27,37 +32,20 @@ import {
   loadDecisionPacketEvalFixture,
   parseDecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
-import {
-  parseDecisionCorpusBaseRow
-} from "../../decision-corpus-status.js";
-import type {
-  DecisionCorpusStatus
-} from "../../decision-corpus-status.js";
 import type {
   DecisionPacketEvalFixture
 } from "../../decision-packet-fixture.js";
 import {
   evaluateSourceCoverage,
-  type SourceCoverageReport,
-  type SourceCoverageScope
+  type SourceCoverageReport
 } from "../../source-coverage.js";
 
-export type ImportedDecisionStatus = DecisionCorpusStatus;
+export type ImportedDecisionStatus = ReviewedSourceDecisionRow["status"];
 type ImportedDecision = DecisionPacketEvalFixture["decisions"][number];
 type ImportedNote = DecisionPacketEvalFixture["notes"][number];
 type ImportedCase = DecisionPacketEvalFixture["cases"][number];
 
-export interface DecisionCorpusImportRow {
-  readonly id: string;
-  readonly title: string;
-  readonly statement: string;
-  readonly status: ImportedDecisionStatus;
-  readonly taskScopes: readonly string[];
-  readonly evidenceRef: string;
-  readonly falsifier: string;
-  readonly doesNotProve: string;
-  readonly noteText: string;
-}
+export type DecisionCorpusImportRow = ReviewedSourceDecisionRow;
 
 export interface DecisionCorpusImportCase {
   readonly id: string;
@@ -68,15 +56,11 @@ export interface DecisionCorpusImportCase {
   readonly baselineFailureRationale: string;
 }
 
-export interface DecisionCorpusImportFixture {
-  readonly version: "1";
+export interface DecisionCorpusImportFixture extends ReviewedSourceDecisionCorpus {
   readonly baseFixturePath: string;
-  readonly corpusName: string;
   readonly topK: number;
   readonly minimumKrnWinRate: number;
   readonly maximumNotesWinRate: number;
-  readonly coverageScope?: SourceCoverageScope;
-  readonly decisions: readonly DecisionCorpusImportRow[];
   readonly cases: readonly DecisionCorpusImportCase[];
 }
 
@@ -110,17 +94,6 @@ export interface DecisionCorpusImportResult {
   };
 }
 
-const parseImportDecision = (
-  value: Record<string, unknown>,
-  index: number
-): DecisionCorpusImportRow => ({
-  ...parseDecisionCorpusBaseRow(value, index),
-  taskScopes: value["taskScopes"] === undefined
-    ? []
-    : stringArrayValue(value["taskScopes"], `decisions[${index}].taskScopes`),
-  noteText: stringValue(value["noteText"], `decisions[${index}].noteText`)
-});
-
 const parseImportCase = (
   value: Record<string, unknown>,
   index: number
@@ -133,32 +106,6 @@ const parseImportCase = (
   baselineFailureRationale: stringValue(value["baselineFailureRationale"], `cases[${index}].baselineFailureRationale`)
 });
 
-const parseCoverageScope = (
-  value: unknown
-): SourceCoverageScope | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (!isRecord(value)) {
-    throw new Error("coverageScope must be an object");
-  }
-
-  const scope = value;
-  const declaredRows = recordArray(scope["declaredRows"], "coverageScope.declaredRows")
-    .map((row, index) => ({
-      decisionId: stringValue(row["decisionId"], `coverageScope.declaredRows[${index}].decisionId`),
-      evidenceRefs: stringArrayValue(
-        row["evidenceRefs"],
-        `coverageScope.declaredRows[${index}].evidenceRefs`
-      )
-    }));
-
-  assertUniqueIds(declaredRows.map((row) => row.decisionId), "coverage scope rows");
-
-  return { declaredRows };
-};
-
 export const parseDecisionCorpusImportFixture = (
   value: unknown
 ): DecisionCorpusImportFixture => {
@@ -166,26 +113,17 @@ export const parseDecisionCorpusImportFixture = (
     throw new Error("decision corpus import fixture must be an object");
   }
 
-  if (value["version"] !== "1") {
-    throw new Error("decision corpus import fixture version must be 1");
-  }
-
-  const decisions = recordArray(value["decisions"], "decisions").map(parseImportDecision);
+  const corpus = parseReviewedSourceDecisionCorpus(value);
   const cases = recordArray(value["cases"], "cases").map(parseImportCase);
-  const coverageScope = parseCoverageScope(value["coverageScope"]);
 
-  assertUniqueIds(decisions.map((decision) => decision.id), "import decisions");
   assertUniqueIds(cases.map((testCase) => testCase.id), "import cases");
 
   return {
-    version: "1",
+    ...corpus,
     baseFixturePath: stringValue(value["baseFixturePath"], "baseFixturePath"),
-    corpusName: stringValue(value["corpusName"], "corpusName"),
     topK: numberValue(value["topK"], "topK"),
     minimumKrnWinRate: numberValue(value["minimumKrnWinRate"], "minimumKrnWinRate"),
     maximumNotesWinRate: numberValue(value["maximumNotesWinRate"], "maximumNotesWinRate"),
-    ...(coverageScope === undefined ? {} : { coverageScope }),
-    decisions,
     cases
   };
 };

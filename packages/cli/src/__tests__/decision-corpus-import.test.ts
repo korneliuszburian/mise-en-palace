@@ -18,6 +18,10 @@ import {
 import {
   buildDecisionPacketWithEngine
 } from "../decision-packet-engine.js";
+import type {
+  ReviewedSourceDecisionCorpus,
+  ReviewedSourceDecisionRow
+} from "../reviewed-source-decision-corpus.js";
 
 const fixturePath = fileURLToPath(
   new URL(
@@ -38,6 +42,20 @@ const now = "2026-07-06T00:00:00.000Z";
 const fixture = () => loadDecisionCorpusImportFixture(fixturePath);
 const baseFixture = () => loadDecisionPacketEvalFixture(baseFixturePath);
 
+const singleDecisionCorpus = (
+  decision: ReviewedSourceDecisionRow
+): ReviewedSourceDecisionCorpus => ({
+  version: "1",
+  corpusName: fixture().corpusName,
+  coverageScope: {
+    declaredRows: [{
+      decisionId: decision.id,
+      evidenceRefs: [decision.evidenceRef]
+    }]
+  },
+  decisions: [decision]
+});
+
 const importDecision = (
   id: string
 ) => {
@@ -51,7 +69,8 @@ const importDecision = (
 };
 
 const failOnPersistenceWriteRuntime = (
-  includeImportRepository = false
+  includeImportRepository = false,
+  equivalentImportIds: readonly string[] = []
 ) => {
   let writeCount = 0;
   const failWrite = async (): Promise<never> => {
@@ -92,6 +111,7 @@ const failOnPersistenceWriteRuntime = (
       evidenceRef
     }),
     getSourceDecisionImportRow: async () => ({ status: "missing" }),
+    findEquivalentSourceDecisionImportIds: async () => equivalentImportIds,
     listSourceDecisionImportReconciliation: async ({ limit }) => ({
       limit,
       afterImportId: null,
@@ -353,26 +373,6 @@ describe("runDecisionCorpusImport", () => {
     ).toThrow("case decision-corpus-import-task rejectedDecisionIds must reference rejected decisions");
   });
 
-  it("rejects missing import links before repository writes", async () => {
-    const { runtime, writeCount } = failOnPersistenceWriteRuntime();
-
-    await expect(persistDecisionCorpusImport({
-      runtime,
-      projectId: "project-1",
-      fixture: {
-        ...fixture(),
-        baseFixturePath,
-        cases: fixture().cases.map((testCase) => ({
-          ...testCase,
-          expectedDecisionId: "missing-import-decision"
-        }))
-      },
-      smokeId: "unit-smoke",
-      now
-    })).rejects.toThrow("case decision-corpus-import-task expectedDecisionId must reference a current decision");
-    expect(writeCount()).toBe(0);
-  });
-
   it("rejects an unresolvable evidence reference before repository writes", async () => {
     const { runtime, writeCount } = failOnPersistenceWriteRuntime();
 
@@ -383,8 +383,7 @@ describe("runDecisionCorpusImport", () => {
         ...fixture(),
         decisions: fixture().decisions.map((row, index) => index === 0
           ? { ...row, evidenceRef: "../outside-evidence.md" }
-          : row),
-        baseFixturePath
+          : row)
       },
       smokeId: "unit-smoke",
       now
@@ -403,15 +402,10 @@ describe("runDecisionCorpusImport", () => {
     await expect(persistDecisionCorpusImport({
       runtime,
       projectId: "project-1",
-      fixture: {
-        ...fixture(),
-        decisions: [{
+      fixture: singleDecisionCorpus({
           ...firstDecision,
           evidenceRef: "run-evidence/missing-captured-evidence.md"
-        }],
-        cases: [],
-        baseFixturePath
-      },
+      }),
       smokeId: "unit-smoke",
       now,
       authorizedRepoRoot: process.cwd()
@@ -420,15 +414,10 @@ describe("runDecisionCorpusImport", () => {
     await expect(persistDecisionCorpusImport({
       runtime,
       projectId: "project-1",
-      fixture: {
-        ...fixture(),
-        decisions: [{
+      fixture: singleDecisionCorpus({
           ...firstDecision,
           evidenceRef: "https://example.com/uncaptured-source"
-        }],
-        cases: [],
-        baseFixturePath
-      },
+      }),
       smokeId: "unit-smoke-url",
       now,
       authorizedRepoRoot: process.cwd()
@@ -437,15 +426,10 @@ describe("runDecisionCorpusImport", () => {
     await expect(persistDecisionCorpusImport({
       runtime,
       projectId: "project-1",
-      fixture: {
-        ...fixture(),
-        decisions: [{
+      fixture: singleDecisionCorpus({
           ...firstDecision,
           evidenceRef: "run-evidence/digest-mismatch.md"
-        }],
-        cases: [],
-        baseFixturePath
-      },
+      }),
       smokeId: "unit-smoke-digest",
       now,
       authorizedRepoRoot: process.cwd(),
@@ -462,6 +446,39 @@ describe("runDecisionCorpusImport", () => {
         }
       })
     })).rejects.toThrow("cannot create governing authority");
+    expect(writeCount()).toBe(0);
+  });
+
+  it("fails closed when one manifest already has competing import identities", async () => {
+    const { runtime, writeCount } = failOnPersistenceWriteRuntime(true, [
+      "source-decision-import:legacy",
+      "source-decision-import:current"
+    ]);
+    const firstDecision = fixture().decisions[0];
+
+    if (firstDecision === undefined) {
+      throw new Error("missing first decision corpus row");
+    }
+
+    await expect(persistDecisionCorpusImport({
+      runtime,
+      projectId: "project-1",
+      fixture: singleDecisionCorpus(firstDecision),
+      smokeId: "unit-smoke-competing-equivalents",
+      now,
+      resolveEvidence: async ({ evidenceRef, now: capturedAt }) => ({
+        status: "captured" as const,
+        evidenceRef,
+        content: "captured source",
+        capturedAt,
+        freshness: "current" as const,
+        provenance: {
+          kind: "source_artifact" as const,
+          uri: evidenceRef,
+          sourceArtifactId: "source-artifact-captured"
+        }
+      })
+    })).rejects.toThrow("competing equivalent imports");
     expect(writeCount()).toBe(0);
   });
 });

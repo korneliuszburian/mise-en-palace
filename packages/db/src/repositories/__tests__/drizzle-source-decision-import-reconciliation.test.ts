@@ -68,6 +68,14 @@ describe("source decision import reconciliation", () => {
         });
       }
 
+      expect(await reconciliationRepository.findEquivalentSourceDecisionImportIds({
+        projectId: project.id,
+        manifest: [{ decisionId: "shared-row", contentHash }]
+      })).toEqual([
+        `${marker}-00`,
+        `${marker}-01`
+      ]);
+
       measuring = true;
       const report = await reconciliationRepository.listSourceDecisionImportReconciliation({
         projectId: project.id,

@@ -151,6 +151,20 @@ const writeReorderedTaskScopesFixture = async (filePath: string): Promise<void> 
   await writeFile(filePath, reordered, "utf8");
 };
 
+const writeEquivalentIdentityVariantFixture = async (filePath: string): Promise<void> => {
+  const fixture = await readFile(fixturePath, "utf8");
+  const variant = fixture.replace(
+    '"corpusName": "source-import-retry-fixture"',
+    '"corpusName": "source-import-retry-equivalent-identity-variant"'
+  );
+
+  if (variant === fixture) {
+    throw new Error("source import retry fixture is missing a variant corpus name");
+  }
+
+  await writeFile(filePath, variant, "utf8");
+};
+
 const duplicateImportGraphCounts = async (
   client: ReturnType<typeof postgres>
 ): Promise<ImportGraphCounts> => {
@@ -370,15 +384,17 @@ describe("source decision import retry boundary", () => {
   );
 
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "keeps byte-identical and canonical-equivalent retries in one graph across independent CLI processes",
+    "keeps current, legacy-identity, and canonical-equivalent retries in one graph",
     async () => {
       const disposableDatabase = await createDisposableDatabase(databaseUrl!);
       const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
       const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "krn-source-import-retry-"));
       const reorderedFixturePath = path.join(temporaryDirectory, "reordered-task-scopes.json");
+      const identityVariantFixturePath = path.join(temporaryDirectory, "identity-variant.json");
 
       try {
         await writeReorderedTaskScopesFixture(reorderedFixturePath);
+        await writeEquivalentIdentityVariantFixture(identityVariantFixturePath);
         await migrateDatabase({
           databaseUrl: disposableDatabase.databaseUrl,
           migrationsFolder
@@ -400,12 +416,26 @@ describe("source decision import retry boundary", () => {
           }),
           runSourceImportCli({
             databaseUrl: disposableDatabase.databaseUrl,
+            filePath: identityVariantFixturePath,
             persist: true
           })
         ]);
         const previewResult = sourceDecisionImportOutput(preview.stdout);
         const firstResult = sourceDecisionImportOutput(first.stdout);
         const secondResult = sourceDecisionImportOutput(second.stdout);
+        const legacyImportId = `source-decision-import:${"a".repeat(64)}`;
+
+        await client`
+          update source_artifacts
+          set import_id = ${legacyImportId}
+          where import_row_id = 'source-import-retry-fixture'
+        `;
+
+        const legacyReplay = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          persist: true
+        });
+        const legacyReplayResult = sourceDecisionImportOutput(legacyReplay.stdout);
         const reordered = await runSourceImportCli({
           databaseUrl: disposableDatabase.databaseUrl,
           filePath: reorderedFixturePath,
@@ -423,10 +453,11 @@ describe("source decision import retry boundary", () => {
         expect(firstResult.persistence).toBe("enabled");
         expect(secondResult.persistence).toBe("enabled");
         expect(reorderedResult.persistence).toBe("enabled");
-        expect(firstResult.importId).toBe(previewResult.importId);
+        expect(firstResult.importId).toMatch(/^source-decision-import:[a-f0-9]{64}$/u);
         expect(secondResult.importId).toBe(firstResult.importId);
-        expect(reorderedResult.importId).toBe(firstResult.importId);
-        expect(importRows.map((row) => row.importId)).toEqual([firstResult.importId]);
+        expect(legacyReplayResult.importId).toBe(legacyImportId);
+        expect(reorderedResult.importId).toBe(legacyImportId);
+        expect(importRows.map((row) => row.importId)).toEqual([legacyImportId]);
         expect(await duplicateImportGraphCounts(client)).toEqual({
           artifactCount: 1,
           projectCount: 1,
