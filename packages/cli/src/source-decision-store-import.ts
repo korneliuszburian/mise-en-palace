@@ -89,6 +89,7 @@ export interface PersistSourceDecisionImportInput {
   readonly importedBy: string;
   readonly now: string;
   readonly authorizedRepoRoot?: string;
+  readonly requireCapturedProjectEvidence?: boolean;
   readonly resolveEvidence?: SourceDecisionEvidenceResolver;
 }
 
@@ -231,6 +232,36 @@ const requireHttpEvidenceRef = (evidenceRef: string, decisionId: string): string
   return evidenceRef;
 };
 
+const capturedSourceHashEvidenceRefPattern = /^krn-source:\/\/sha256\/([a-f0-9]{64})$/u;
+
+const capturedSourceContentHash = (evidenceRef: string): string | undefined =>
+  capturedSourceHashEvidenceRefPattern.exec(evidenceRef)?.[1];
+
+const requireFileEvidenceRef = (evidenceRef: string, decisionId: string): string => {
+  try {
+    const url = new URL(evidenceRef);
+
+    if (url.protocol !== "file:") {
+      throw new Error("unsupported URL protocol");
+    }
+  } catch {
+    throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+  }
+
+  return evidenceRef;
+};
+
+const requireCapturedSourceEvidenceRef = (
+  evidenceRef: string,
+  decisionId: string
+): string => {
+  if (capturedSourceContentHash(evidenceRef) === undefined) {
+    throw new Error(`decision ${decisionId} has an unresolvable evidenceRef: ${evidenceRef}`);
+  }
+
+  return evidenceRef;
+};
+
 const resolveEvidenceRef = (value: string, decisionId: string): string => {
   const evidenceRef = normalizeImportText(value);
 
@@ -240,6 +271,14 @@ const resolveEvidenceRef = (value: string, decisionId: string): string => {
 
   if (evidenceRef.startsWith("https://") || evidenceRef.startsWith("http://")) {
     return requireHttpEvidenceRef(evidenceRef, decisionId);
+  }
+
+  if (evidenceRef.startsWith("file://")) {
+    return requireFileEvidenceRef(evidenceRef, decisionId);
+  }
+
+  if (evidenceRef.startsWith("krn-source://")) {
+    return requireCapturedSourceEvidenceRef(evidenceRef, decisionId);
   }
 
   if (isSafeLocalEvidenceRef(evidenceRef)) {
@@ -442,6 +481,7 @@ const resolveEvidence = async (input: {
   authorizedRepoRoot?: string;
   resolveEvidence?: SourceDecisionEvidenceResolver;
   sourceDecisionImportRepository?: SourceDecisionImportRepository;
+  requireCapturedProjectEvidence?: boolean;
 }): Promise<SourceDecisionEvidenceLookup> => {
   if (input.resolveEvidence !== undefined) {
     return capturedEvidenceWithCanonicalHash(
@@ -458,35 +498,55 @@ const resolveEvidence = async (input: {
     );
   }
 
-  if (input.evidenceRef.startsWith("http://") || input.evidenceRef.startsWith("https://")) {
-    const capturedEvidence = input.sourceDecisionImportRepository?.getCapturedSourceEvidence;
-
-    if (capturedEvidence === undefined) {
-      return {
-        status: "externally_unverified",
-        evidenceRef: input.evidenceRef,
-        reason: "URL evidence requires a project-scoped captured SourceArtifact or SourceSnapshot"
-      };
-    }
-
-    const lookup = await capturedEvidence.call(input.sourceDecisionImportRepository, {
-      projectId: input.projectId,
-      evidenceRef: input.evidenceRef
-    });
-
-    return capturedEvidenceWithCanonicalHash(
-      lookup.status === "missing"
-        ? {
-            ...lookup,
-            status: "externally_unverified",
-            reason: lookup.reason ?? "URL has no project-scoped captured SourceArtifact or SourceSnapshot"
-          }
-        : lookup,
-      input.decisionId
-    );
+  if (requiresCapturedEvidenceLookup(input)) {
+    return resolveCapturedEvidence(input);
   }
 
   return resolveLocalEvidence(input);
+};
+
+const requiresCapturedEvidenceLookup = (input: {
+  readonly evidenceRef: string;
+  readonly requireCapturedProjectEvidence?: boolean;
+}): boolean =>
+  input.requireCapturedProjectEvidence === true ||
+  input.evidenceRef.startsWith("file://") ||
+  input.evidenceRef.startsWith("http://") ||
+  input.evidenceRef.startsWith("https://");
+
+const resolveCapturedEvidence = async (input: {
+  readonly decisionId: string;
+  readonly evidenceRef: string;
+  readonly projectId: ProjectId;
+  readonly sourceDecisionImportRepository?: SourceDecisionImportRepository;
+}): Promise<SourceDecisionEvidenceLookup> => {
+  const capturedEvidence = input.sourceDecisionImportRepository?.getCapturedSourceEvidence;
+
+  if (capturedEvidence === undefined) {
+    return {
+      status: "externally_unverified",
+      evidenceRef: input.evidenceRef,
+      reason: "URL evidence requires a project-scoped captured SourceArtifact or SourceSnapshot"
+    };
+  }
+
+  const evidenceContentHash = capturedSourceContentHash(input.evidenceRef);
+  const lookup = await capturedEvidence.call(input.sourceDecisionImportRepository, {
+    projectId: input.projectId,
+    evidenceRef: input.evidenceRef,
+    ...(evidenceContentHash === undefined ? {} : { contentHash: evidenceContentHash })
+  });
+
+  return capturedEvidenceWithCanonicalHash(
+    lookup.status === "missing"
+      ? {
+          ...lookup,
+          status: "externally_unverified",
+          reason: lookup.reason ?? "evidence has no project-scoped captured SourceArtifact or SourceSnapshot"
+        }
+      : lookup,
+    input.decisionId
+  );
 };
 
 const requireCapturedEvidenceForAuthority = (
@@ -519,19 +579,9 @@ const prepareImportRow = async (
   row: ReviewedSourceDecisionRow,
   evidenceRef: string
 ): Promise<PreparedSourceDecisionImportRow> => {
-  const evidence = await resolveEvidence({
-    decisionId: row.id,
-    evidenceRef,
-    now: input.now,
-    projectId: input.projectId,
-    ...(input.authorizedRepoRoot === undefined
-      ? {}
-      : { authorizedRepoRoot: input.authorizedRepoRoot }),
-    ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence }),
-    ...(input.runtime.sourceDecisionImportRepository === undefined
-      ? {}
-      : { sourceDecisionImportRepository: input.runtime.sourceDecisionImportRepository })
-  });
+  requireContentAddressedProjectEvidence(input, row.id, evidenceRef);
+
+  const evidence = await resolveEvidence(evidenceResolutionInputFor(input, row.id, evidenceRef));
 
   requireCapturedEvidenceForAuthority(row, evidence);
   const authorityLifecycleStatus = authorityLifecycleStatusFor(row, evidence);
@@ -552,9 +602,7 @@ const prepareImportRow = async (
     taskScopes: canonicalImportTextList(row.taskScopes),
     title: normalizeImportText(row.title)
   });
-  const capturedContent = evidence.content === undefined
-    ? ""
-    : `\n\nCaptured evidence (${evidence.evidenceRef}):\n${evidence.content}`;
+  const capturedContent = capturedContentForImport(input, evidence);
   const chunkContent = `${normalizeImportText(row.statement)}\n\n${normalizeImportText(row.noteText)}${capturedContent}`;
 
   return {
@@ -569,6 +617,49 @@ const prepareImportRow = async (
     chunkContentHash: contentHash(`krn.source-decision-import.chunk.v2\n${chunkContent}`)
   };
 };
+
+const requireContentAddressedProjectEvidence = (
+  input: PersistSourceDecisionImportInput,
+  decisionId: string,
+  evidenceRef: string
+): void => {
+  if (
+    input.requireCapturedProjectEvidence === true &&
+    capturedSourceContentHash(evidenceRef) === undefined
+  ) {
+    throw new Error(
+      `decision ${decisionId} requires content-addressed project evidence: krn-source://sha256/<digest>`
+    );
+  }
+};
+
+const evidenceResolutionInputFor = (
+  input: PersistSourceDecisionImportInput,
+  decisionId: string,
+  evidenceRef: string
+): Parameters<typeof resolveEvidence>[0] => ({
+  decisionId,
+  evidenceRef,
+  now: input.now,
+  projectId: input.projectId,
+  ...(input.authorizedRepoRoot === undefined
+    ? {}
+    : { authorizedRepoRoot: input.authorizedRepoRoot }),
+  ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence }),
+  ...(input.runtime.sourceDecisionImportRepository === undefined
+    ? {}
+    : { sourceDecisionImportRepository: input.runtime.sourceDecisionImportRepository }),
+  ...(input.requireCapturedProjectEvidence === undefined
+    ? {}
+    : { requireCapturedProjectEvidence: input.requireCapturedProjectEvidence })
+});
+
+const capturedContentForImport = (
+  input: PersistSourceDecisionImportInput,
+  evidence: SourceDecisionEvidenceLookup
+): string => evidence.content === undefined || input.requireCapturedProjectEvidence === true
+  ? ""
+  : `\n\nCaptured evidence (${evidence.evidenceRef}):\n${evidence.content}`;
 
 const prepareImportRows = async (
   input: PersistSourceDecisionImportInput

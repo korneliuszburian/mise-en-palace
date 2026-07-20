@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import crypto from "node:crypto";
 import {
   mkdtemp,
+  mkdir,
   readFile,
   rm,
   writeFile
@@ -85,6 +86,7 @@ const runSourceImportCli = async (input: {
   readonly databaseUrl?: string;
   readonly filePath?: string;
   readonly persist: boolean;
+  readonly repoPath?: string;
 }) =>
   execFileAsync("pnpm", [
     "--silent",
@@ -96,6 +98,7 @@ const runSourceImportCli = async (input: {
     "import",
     "--file",
     input.filePath ?? fixturePath,
+    ...(input.repoPath === undefined ? [] : ["--repo", input.repoPath]),
     ...(input.persist ? ["--persist"] : []),
     "--json"
   ], {
@@ -104,6 +107,55 @@ const runSourceImportCli = async (input: {
     env: {
       ...process.env,
       ...(input.databaseUrl === undefined ? {} : { KRN_DATABASE_URL: input.databaseUrl })
+    }
+  });
+
+const runPlanCli = async (input: {
+  readonly databaseUrl: string;
+  readonly repoPath: string;
+  readonly task: string;
+}) =>
+  execFileAsync("pnpm", [
+    "--silent",
+    "--filter",
+    "@krn/cli",
+    "krn",
+    "plan",
+    "--repo",
+    input.repoPath,
+    "--task",
+    input.task,
+    "--persist",
+    "--json"
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      KRN_DATABASE_URL: input.databaseUrl
+    }
+  });
+
+const runDecisionPacketCli = async (input: {
+  readonly databaseUrl: string;
+  readonly runId: string;
+}) =>
+  execFileAsync("pnpm", [
+    "--silent",
+    "--filter",
+    "@krn/cli",
+    "krn",
+    "decision",
+    "packet",
+    "--run-id",
+    input.runId,
+    "--json"
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      KRN_DATABASE_URL: input.databaseUrl
     }
   });
 
@@ -135,6 +187,41 @@ const sourceDecisionImportOutput = (stdout: string): SourceDecisionImportOutput 
       ? { projectId: parsed["projectId"] }
       : {})
   };
+};
+
+const executionRunIdFromPlan = (stdout: string): string => {
+  const parsed: unknown = JSON.parse(stdout);
+
+  if (!isRecord(parsed)) {
+    throw new Error("plan CLI did not emit an object");
+  }
+  const handoff = parsed["handoff"];
+  if (!isRecord(handoff) || handoff["kind"] !== "persisted") {
+    throw new Error("plan CLI did not emit a persisted handoff");
+  }
+  const identity = handoff["identity"];
+  if (!isRecord(identity) || typeof identity["executionRunId"] !== "string") {
+    throw new Error("plan CLI did not emit an execution run identity");
+  }
+
+  return identity["executionRunId"];
+};
+
+const sourceDecisionIdsFromPacket = (stdout: string): readonly string[] => {
+  const parsed: unknown = JSON.parse(stdout);
+
+  if (!isRecord(parsed) || !isRecord(parsed["packet"])) {
+    throw new Error("decision packet CLI did not emit a packet");
+  }
+  const sourceDecisionIds = parsed["packet"]["sourceDecisionIds"];
+  if (
+    !Array.isArray(sourceDecisionIds) ||
+    !sourceDecisionIds.every((value) => typeof value === "string")
+  ) {
+    throw new Error("decision packet CLI did not emit source decision identities");
+  }
+
+  return sourceDecisionIds;
 };
 
 const writeReorderedTaskScopesFixture = async (filePath: string): Promise<void> => {
@@ -232,6 +319,231 @@ const duplicateImportGraphCounts = async (
 };
 
 describe("source decision import retry boundary", () => {
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "installs one content-addressed corpus independently into connected projects",
+    async () => {
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+      const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "krn-source-import-connected-"));
+      const firstRepo = path.join(temporaryDirectory, "first-repo");
+      const secondRepo = path.join(temporaryDirectory, "second-repo");
+      const corpusPath = path.join(temporaryDirectory, "reviewed-corpus.json");
+
+      try {
+        await mkdir(firstRepo);
+        await mkdir(secondRepo);
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        const workspaceId = crypto.randomUUID();
+        const firstProjectId = crypto.randomUUID();
+        const secondProjectId = crypto.randomUUID();
+        const evidenceContent = "Composition owns external layout; blocks expose bounded custom-property inputs.";
+        const evidenceHash = crypto.createHash("sha256").update(evidenceContent).digest("hex");
+        const storedEvidenceHash = `sha256:${evidenceHash}`;
+        const corpus = {
+          version: "1",
+          corpusName: "Connected frontend authority",
+          coverageScope: {
+            declaredRows: [{
+              decisionId: "composition-owns-layout",
+              evidenceRefs: [`krn-source://sha256/${evidenceHash}`]
+            }]
+          },
+          decisions: [{
+            id: "composition-owns-layout",
+            title: "Composition owns external layout",
+            statement: "Reusable compositions own inter-component placement; blocks expose only bounded configuration inputs.",
+            status: "current",
+            taskScopes: ["frontend", "component", "layout"],
+            evidenceRef: `krn-source://sha256/${evidenceHash}`,
+            falsifier: "A block must duplicate external layout declarations to work in two supported contexts.",
+            doesNotProve: "This decision does not prove one composition fits every art-directed layout.",
+            noteText: "Prefer an existing composition and configure it through intentional CSS custom properties before adding block-local layout."
+          }]
+        };
+
+        await writeFile(corpusPath, `${JSON.stringify(corpus, null, 2)}\n`, "utf8");
+        await client`
+          insert into workspaces (id, slug, display_name)
+          values (${workspaceId}, ${`connected-${workspaceId}`}, 'Connected corpus test')
+        `;
+
+        for (const [projectId, repoPath, suffix] of [
+          [firstProjectId, firstRepo, "first"],
+          [secondProjectId, secondRepo, "second"]
+        ] as const) {
+          const sourceArtifactId = crypto.randomUUID();
+
+          await client`
+            insert into projects (id, workspace_id, slug, display_name)
+            values (${projectId}, ${workspaceId}, ${`connected-${suffix}`}, ${`Connected ${suffix}`})
+          `;
+          await client`
+            insert into repo_installations (
+              id,
+              project_id,
+              provider,
+              repo_url,
+              default_branch,
+              local_path_hint
+            ) values (
+              ${crypto.randomUUID()},
+              ${projectId},
+              'local',
+              ${`file://${repoPath}`},
+              'main',
+              ${repoPath}
+            )
+          `;
+          await client`
+            insert into source_artifacts (
+              id,
+              project_id,
+              kind,
+              trust_tier,
+              uri,
+              title,
+              content_hash,
+              metadata
+            ) values (
+              ${sourceArtifactId},
+              ${projectId},
+              'file',
+              'practitioner',
+              ${`file:///private/complete-css-${suffix}.html`},
+              'Captured Complete CSS slice',
+              ${`sha256:${crypto.createHash("sha256").update(`${suffix}\n${evidenceContent}`).digest("hex")}`},
+              ${JSON.stringify({ evidenceFreshness: "current" })}::jsonb
+            )
+          `;
+          await client`
+            insert into source_chunks (
+              id,
+              source_artifact_id,
+              ordinal,
+              content,
+              content_hash
+            ) values
+              (${crypto.randomUUID()}, ${sourceArtifactId}, 1, ${suffix}, ${`sha256:${crypto.createHash("sha256").update(suffix).digest("hex")}`}),
+              (${crypto.randomUUID()}, ${sourceArtifactId}, 2, ${evidenceContent}, ${storedEvidenceHash})
+          `;
+        }
+
+        const first = sourceDecisionImportOutput((await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: corpusPath,
+          persist: true,
+          repoPath: firstRepo
+        })).stdout);
+        const firstRetry = sourceDecisionImportOutput((await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: corpusPath,
+          persist: true,
+          repoPath: firstRepo
+        })).stdout);
+        const second = sourceDecisionImportOutput((await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: corpusPath,
+          persist: true,
+          repoPath: secondRepo
+        })).stdout);
+        const imported = await client<{
+          projectId: string;
+          importId: string;
+          sourceDecisionIds: string[];
+          importedArtifactCount: number;
+          importedClaimCount: number;
+          importedDecisionCount: number;
+          importedChunkContainsRawEvidence: boolean;
+        }[]>`
+          select
+            source_artifacts.project_id as "projectId",
+            source_artifacts.import_id as "importId",
+            array_agg(distinct source_decisions.id)::text[] as "sourceDecisionIds",
+            count(distinct source_artifacts.id)::int as "importedArtifactCount",
+            count(distinct source_claims.id)::int as "importedClaimCount",
+            count(distinct source_decisions.id)::int as "importedDecisionCount",
+            bool_or(source_chunks.content like ${`%${evidenceContent}%`}) as "importedChunkContainsRawEvidence"
+          from source_artifacts
+          join source_chunks on source_chunks.source_artifact_id = source_artifacts.id
+          join source_claims on source_claims.source_artifact_id = source_artifacts.id
+          join source_decisions on source_decisions.source_claim_id = source_claims.id
+          where source_artifacts.import_id is not null
+          group by source_artifacts.project_id, source_artifacts.import_id
+          order by source_artifacts.project_id
+        `;
+
+        const task = "Implement a frontend component layout with reusable composition and CSS custom properties.";
+        const firstRunId = executionRunIdFromPlan((await runPlanCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          repoPath: firstRepo,
+          task
+        })).stdout);
+        const secondRunId = executionRunIdFromPlan((await runPlanCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          repoPath: secondRepo,
+          task
+        })).stdout);
+        const firstPacketDecisionIds = sourceDecisionIdsFromPacket((await runDecisionPacketCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          runId: firstRunId
+        })).stdout);
+        const secondPacketDecisionIds = sourceDecisionIdsFromPacket((await runDecisionPacketCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          runId: secondRunId
+        })).stdout);
+        const firstImported = imported.find((row) => row.projectId === firstProjectId);
+        const secondImported = imported.find((row) => row.projectId === secondProjectId);
+
+        if (firstImported === undefined || secondImported === undefined) {
+          throw new Error("both connected projects must have an imported authority graph");
+        }
+
+        expect(first.projectId).toBe(firstProjectId);
+        expect(firstRetry.projectId).toBe(firstProjectId);
+        expect(firstRetry.importId).toBe(first.importId);
+        expect(second.projectId).toBe(secondProjectId);
+        expect(second.importId).not.toBe(first.importId);
+        expect(imported).toHaveLength(2);
+        expect(imported).toEqual(expect.arrayContaining([
+          expect.objectContaining({
+            projectId: firstProjectId,
+            importId: first.importId,
+            sourceDecisionIds: [expect.any(String)],
+            importedArtifactCount: 1,
+            importedClaimCount: 1,
+            importedDecisionCount: 1,
+            importedChunkContainsRawEvidence: false
+          }),
+          expect.objectContaining({
+            projectId: secondProjectId,
+            importId: second.importId,
+            sourceDecisionIds: [expect.any(String)],
+            importedArtifactCount: 1,
+            importedClaimCount: 1,
+            importedDecisionCount: 1,
+            importedChunkContainsRawEvidence: false
+          })
+        ]));
+        expect(firstPacketDecisionIds).toEqual(firstImported.sourceDecisionIds);
+        expect(firstPacketDecisionIds).not.toEqual(expect.arrayContaining(
+          secondImported.sourceDecisionIds
+        ));
+        expect(secondPacketDecisionIds).toEqual(secondImported.sourceDecisionIds);
+        expect(secondPacketDecisionIds).not.toEqual(expect.arrayContaining(
+          firstImported.sourceDecisionIds
+        ));
+      } finally {
+        await client.end();
+        await rm(temporaryDirectory, { recursive: true, force: true });
+        await disposableDatabase.cleanup();
+      }
+    },
+    60_000
+  );
+
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
     "converges concurrent first-use fallback project initialization",
     async () => {

@@ -10,6 +10,7 @@ import type {
 } from "./database-runtime.js";
 import {
   findRepoRoot,
+  pathExists,
   readJsonObjectResult,
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
@@ -226,12 +227,21 @@ const createSourceDecisionImportRuntime = async (
   databaseUrl: string
 ): Promise<DatabaseRuntime> => {
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const repoPathHint = command.repo === undefined
+    ? undefined
+    : path.resolve(runtime.cwd, command.repo);
+
+  if (repoPathHint !== undefined && !(await pathExists(repoPathHint))) {
+    throw new Error(`Target repo does not exist: ${repoPathHint}`);
+  }
 
   return createRuntime({
     databaseUrl,
     workspaceSlug: defaultWorkspaceSlug,
     projectSlug: defaultProjectSlug,
     ...(command.projectId === undefined ? {} : { projectId: command.projectId }),
+    ...(repoPathHint === undefined ? {} : { repoPathHint }),
+    ...(command.repo === undefined ? {} : { requireConnectedRepoPath: true }),
     now: runtime.now,
     createId: runtime.createId
   });
@@ -252,7 +262,8 @@ const persistLoadedSourceDecisionImport = async (
     importId,
     importedBy: "krn source decision import",
     now: runtime.now(),
-    authorizedRepoRoot: loaded.repoRoot
+    ...(command.repo === undefined ? { authorizedRepoRoot: loaded.repoRoot } : {}),
+    ...(command.repo === undefined ? {} : { requireCapturedProjectEvidence: true })
   });
 
   return {
@@ -301,16 +312,21 @@ export const runSourceDecisionImportCommand = async (
   runtime: SourceDecisionImportCommandRuntime
 ): Promise<SourceDecisionImportCommandResult> => {
   const command = runtime.command;
+
+  if (command.repo !== undefined && !command.persist) {
+    throw new Error("krn source decision import --repo requires --persist");
+  }
+
   const loaded = await resolveImportFixture(runtime.cwd, command.file ?? "");
 
   validateSourceDecisionImportFixture(loaded.fixture);
-  const importId = deriveSourceDecisionImportIdentity({
+  const previewImportId = deriveSourceDecisionImportIdentity({
     projectIdentity: sourceDecisionImportProjectIdentity(command),
     fixture: loaded.fixture
   });
 
   if (!command.persist) {
-    return { stdout: previewSourceDecisionImport(command, loaded, importId) };
+    return { stdout: previewSourceDecisionImport(command, loaded, previewImportId) };
   }
 
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
@@ -322,6 +338,12 @@ export const runSourceDecisionImportCommand = async (
   const databaseRuntime = await createSourceDecisionImportRuntime(runtime, command, databaseUrl);
 
   try {
+    const importId = deriveSourceDecisionImportIdentity({
+      projectIdentity: command.repo === undefined
+        ? sourceDecisionImportProjectIdentity(command)
+        : databaseRuntime.projectId,
+      fixture: loaded.fixture
+    });
     const persisted = await persistLoadedSourceDecisionImport(
       runtime,
       command,

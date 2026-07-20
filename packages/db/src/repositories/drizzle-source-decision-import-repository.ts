@@ -37,8 +37,11 @@ type SourceEvidenceQueryRow = {
     uri: string;
     contentHash: string;
     capturedAt: Date;
+    metadata: Record<string, unknown>;
   };
   sourceChunk: {
+    id: string;
+    ordinal: number;
     content: string;
     contentHash: string;
   } | null;
@@ -47,6 +50,7 @@ type SourceEvidenceQueryRow = {
     snapshotUri: string;
     contentHash: string;
     capturedAt: Date;
+    metadata: Record<string, unknown>;
   } | null;
 };
 
@@ -55,7 +59,7 @@ const missingSourceEvidence = (
 ): SourceDecisionEvidenceLookup => ({
   status: "missing",
   evidenceRef,
-  reason: "no project-scoped captured SourceArtifact or SourceSnapshot matches the URL"
+  reason: "no project-scoped captured SourceChunk, SourceArtifact, or SourceSnapshot matches the evidence reference"
 });
 
 const mismatchedSourceEvidence = (
@@ -67,11 +71,33 @@ const mismatchedSourceEvidence = (
   reason
 });
 
-const sourceEvidenceHash = (row: SourceEvidenceQueryRow): string =>
-  row.sourceSnapshot?.contentHash ?? row.sourceArtifact.contentHash;
+const sourceEvidenceHash = (
+  row: SourceEvidenceQueryRow,
+  contentAddressed: boolean
+): string => contentAddressed
+  ? row.sourceChunk?.contentHash ?? ""
+  : row.sourceSnapshot?.contentHash ?? row.sourceArtifact.contentHash;
 
 const sourceEvidenceCapturedAt = (row: SourceEvidenceQueryRow): string =>
   (row.sourceSnapshot?.capturedAt ?? row.sourceArtifact.capturedAt).toISOString();
+
+const evidenceFreshnessFromMetadata = (
+  metadata: Record<string, unknown>
+): SourceDecisionEvidenceFreshness => {
+  const freshness = metadata["evidenceFreshness"];
+
+  return freshness === "current" || freshness === "stale" || freshness === "unknown"
+    ? freshness
+    : "unknown";
+};
+
+const sourceEvidenceFreshness = (
+  row: SourceEvidenceQueryRow
+): SourceDecisionEvidenceFreshness => {
+  return row.sourceSnapshot === null
+    ? evidenceFreshnessFromMetadata(row.sourceArtifact.metadata)
+    : evidenceFreshnessFromMetadata(row.sourceSnapshot.metadata);
+};
 
 const sourceEvidenceProvenance = (
   row: SourceEvidenceQueryRow
@@ -80,7 +106,8 @@ const sourceEvidenceProvenance = (
     return {
       kind: "source_artifact",
       uri: row.sourceArtifact.uri,
-      sourceArtifactId: row.sourceArtifact.id
+      sourceArtifactId: row.sourceArtifact.id,
+      ...(row.sourceChunk === null ? {} : { sourceChunkId: row.sourceChunk.id })
     };
   }
 
@@ -88,13 +115,15 @@ const sourceEvidenceProvenance = (
     kind: "source_snapshot",
     uri: row.sourceSnapshot.snapshotUri,
     sourceArtifactId: row.sourceArtifact.id,
+    ...(row.sourceChunk === null ? {} : { sourceChunkId: row.sourceChunk.id }),
     sourceSnapshotId: row.sourceSnapshot.id
   };
 };
 
 const sourceEvidenceLookupFromRow = (
   evidenceRef: string,
-  row: SourceEvidenceQueryRow | undefined
+  row: SourceEvidenceQueryRow | undefined,
+  contentAddressed: boolean
 ): SourceDecisionEvidenceLookup => {
   if (row === undefined) {
     return missingSourceEvidence(evidenceRef);
@@ -103,13 +132,14 @@ const sourceEvidenceLookupFromRow = (
   if (row.sourceChunk === null) {
     return mismatchedSourceEvidence(
       evidenceRef,
-      "captured source has no ordinal-zero SourceChunk containing the captured bytes"
+      "captured source has no SourceChunk containing the captured bytes"
     );
   }
 
-  const capturedHash = sourceEvidenceHash(row);
+  const capturedHash = sourceEvidenceHash(row, contentAddressed);
+  const actualHash = createHash("sha256").update(row.sourceChunk.content).digest("hex");
 
-  if (row.sourceChunk.contentHash !== capturedHash) {
+  if (capturedHash.replace(/^sha256:/u, "") !== actualHash) {
     return mismatchedSourceEvidence(
       evidenceRef,
       "captured source digest does not match the stored SourceChunk bytes"
@@ -122,7 +152,7 @@ const sourceEvidenceLookupFromRow = (
     content: row.sourceChunk.content,
     contentHash: capturedHash,
     capturedAt: sourceEvidenceCapturedAt(row),
-    freshness: "unknown",
+    freshness: sourceEvidenceFreshness(row),
     provenance: sourceEvidenceProvenance(row)
   };
 };
@@ -207,6 +237,7 @@ const sourceEvidenceProvenanceFromMetadata = (
     uri: candidate.uri,
     ...(typeof candidate.path === "string" ? { path: candidate.path } : {}),
     ...(typeof candidate.sourceArtifactId === "string" ? { sourceArtifactId: candidate.sourceArtifactId } : {}),
+    ...(typeof candidate.sourceChunkId === "string" ? { sourceChunkId: candidate.sourceChunkId } : {}),
     ...(typeof candidate.sourceSnapshotId === "string" ? { sourceSnapshotId: candidate.sourceSnapshotId } : {})
   };
 };
@@ -520,7 +551,18 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
   async getCapturedSourceEvidence(input: {
     projectId: string;
     evidenceRef: string;
+    contentHash?: string;
   }): Promise<SourceDecisionEvidenceLookup> {
+    const contentHashes = input.contentHash === undefined
+      ? undefined
+      : [input.contentHash, `sha256:${input.contentHash}`];
+    const snapshotMatch = eq(sourceSnapshots.snapshotUri, input.evidenceRef);
+    const evidenceMatch = input.contentHash === undefined
+      ? or(
+          eq(sourceArtifacts.uri, input.evidenceRef),
+          eq(sourceSnapshots.snapshotUri, input.evidenceRef)
+        )
+      : inArray(sourceChunks.contentHash, contentHashes ?? []);
     const rows = await this.db
       .select({
         sourceArtifact: sourceArtifacts,
@@ -528,25 +570,27 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
         sourceSnapshot: sourceSnapshots
       })
       .from(sourceArtifacts)
-      .leftJoin(sourceChunks, and(
-        eq(sourceChunks.sourceArtifactId, sourceArtifacts.id),
-        eq(sourceChunks.ordinal, 0)
-      ))
+      .leftJoin(sourceChunks, eq(sourceChunks.sourceArtifactId, sourceArtifacts.id))
       .leftJoin(sourceSnapshots, and(
         eq(sourceSnapshots.sourceArtifactId, sourceArtifacts.id),
-        eq(sourceSnapshots.snapshotUri, input.evidenceRef)
+        snapshotMatch
       ))
       .where(and(
         eq(sourceArtifacts.projectId, input.projectId),
         ne(sourceArtifacts.sourceAuthority, "project-decision"),
-        or(
-          eq(sourceArtifacts.uri, input.evidenceRef),
-          eq(sourceSnapshots.snapshotUri, input.evidenceRef)
-        )
+        evidenceMatch
       ))
-      .orderBy(desc(sourceSnapshots.capturedAt), desc(sourceArtifacts.capturedAt))
+      .orderBy(
+        desc(sourceSnapshots.capturedAt),
+        desc(sourceArtifacts.capturedAt),
+        asc(sourceChunks.ordinal)
+      )
       .limit(1);
-    return sourceEvidenceLookupFromRow(input.evidenceRef, rows[0]);
+    return sourceEvidenceLookupFromRow(
+      input.evidenceRef,
+      rows[0],
+      input.contentHash !== undefined
+    );
   }
 
   async findEquivalentSourceDecisionImportIds(input: {

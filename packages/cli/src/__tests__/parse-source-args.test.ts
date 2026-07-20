@@ -289,6 +289,37 @@ describe("parseSourceArgs", () => {
         json: true
       }
     });
+
+    expect(parseSourceArgs([
+      "decision",
+      "import",
+      "--file",
+      "source-decisions.json",
+      "--repo",
+      "../frontend-app",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "sourceDecisionImport",
+        file: "source-decisions.json",
+        repo: "../frontend-app",
+        persist: true
+      }
+    });
+
+    expect(parseSourceArgs([
+      "decision",
+      "import",
+      "--file",
+      "source-decisions.json",
+      "--project",
+      "project-explicit",
+      "--repo",
+      "../frontend-app",
+      "--persist"
+    ])).toEqual({
+      error: expect.stringContaining("--project <project-id>|--repo <path>")
+    });
   });
 
   it("parses bounded source decision reconciliation options", () => {
