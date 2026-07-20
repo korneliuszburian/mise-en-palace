@@ -192,7 +192,7 @@ describe("parseSourceArgs", () => {
       "--falsifier",
       "fails if stale",
       "--revisit-when",
-      "2026-07-01",
+      "2026-07-01T00:00:00.000Z",
       "--krn-implication",
       "Use it carefully",
       "--metadata",
@@ -213,7 +213,7 @@ describe("parseSourceArgs", () => {
         type: "blog",
         runId: "run-1",
         falsifier: "fails if stale",
-        revisitWhen: "2026-07-01",
+        revisitWhen: "2026-07-01T00:00:00.000Z",
         krnImplication: "Use it carefully",
         metadata: {
           slice: "QG-04B"
