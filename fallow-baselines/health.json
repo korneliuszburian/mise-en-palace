@@ -5,11 +5,6 @@
         "count": 1
       }
     },
-    "packages/cli/src/__tests__/tracked-paired-live-codex-repair.test.ts": {
-      "crap_high": {
-        "count": 1
-      }
-    },
     "packages/cli/src/database-runtime.ts": {
       "crap_moderate": {
         "count": 1
@@ -26,37 +21,6 @@
     "packages/cli/src/index.ts": {
       "crap_moderate": {
         "count": 1
-      }
-    },
-    "packages/cli/src/internal/eval/paired-live-codex-repair.ts": {
-      "crap_high": {
-        "count": 1
-      }
-    },
-    "packages/cli/src/internal/eval/persist-paired-live-codex-repair.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "packages/cli/src/internal/eval/run-paired-live-aggregate.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "packages/cli/src/internal/eval/run-paired-live-codex-repair.ts": {
-      "crap_moderate": {
-        "count": 1
-      }
-    },
-    "packages/cli/src/internal/eval/tracked-paired-live-codex-repair.ts": {
-      "complexity_moderate": {
-        "count": 2
-      },
-      "crap_high": {
-        "count": 1
-      },
-      "crap_moderate": {
-        "count": 3
       }
     },
     "packages/cli/src/run-db-smoke-command.ts": {
@@ -139,7 +103,6 @@
   },
   "runtime_coverage_findings": [],
   "target_keys": [
-    "packages/cli/src/internal/eval/tracked-paired-live-codex-repair.ts:high impact",
     "packages/cli/src/doctor-static-checks.ts:complexity",
     "packages/cli/src/internal/smoke/decision-packet-return-loop-smoke.ts:complexity",
     "packages/db/src/dev/smoke/activation-smoke.ts:complexity",
