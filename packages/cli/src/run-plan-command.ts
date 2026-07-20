@@ -8,7 +8,8 @@ import type {
   ContextExclusion,
   ContextInclusion,
   DecisionPacket,
-  DecisionPacketContractReadback
+  DecisionPacketContractReadback,
+  ContextInclusionUsefulnessOutcomeFeedback
 } from "@krn/core";
 import {
   activationRetrievalDiagnosticsFromMetadata,
@@ -17,7 +18,8 @@ import {
   decisionPacketForCompiledPlan,
   formatActivationRetrievalDiagnostics,
   searchKnowledgeReadModels,
-  tokenizeActivationText
+  tokenizeActivationText,
+  targetSourceSeedSubjectId
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
@@ -29,6 +31,7 @@ import type {
   RepoInstallationRecord
 } from "@krn/core/repositories";
 import {
+  contextInclusionUsefulnessOutcomesFromMetadata,
   decisionPacketNextActionMetadataKey,
   parseHarnessCompileInput,
   parseOperatorIntentInput,
@@ -148,7 +151,7 @@ interface CompilerRuntimeResolution {
   harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun"> &
     Partial<Pick<
       HarnessRunRepository,
-      "issueDecisionPacketForExecutionRun" | "listFeedbackDeltasForSubjects"
+      "issueDecisionPacketForExecutionRun" | "listFeedbackDeltasForSubjects" | "listFeedbackDeltasForProject"
     >>;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
   close(): Promise<void>;
@@ -909,6 +912,49 @@ const compilePlanForCommand = (
     compilerRuntime.compilerDependencies
   );
 
+const contextNoiseOutcomes = new Set<ContextInclusionUsefulnessOutcomeFeedback["outcome"]>([
+  "noise",
+  "stale",
+  "hurt",
+  "rejected"
+]);
+
+export const applyTargetSeedUsefulnessFeedback = async (
+  readModel: TargetActivationReadModel | undefined,
+  projectId: string,
+  repository: Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">> | undefined
+): Promise<TargetActivationReadModel | undefined> => {
+  const listFeedback = repository?.listFeedbackDeltasForProject;
+  if (readModel === undefined || listFeedback === undefined) {
+    return readModel;
+  }
+
+  const feedbackDeltas = await listFeedback.call(
+    repository,
+    projectId,
+    100
+  );
+  const latestOutcomeBySubject = new Map<string, ContextInclusionUsefulnessOutcomeFeedback>();
+
+  for (const feedbackDelta of feedbackDeltas) {
+    for (const outcome of contextInclusionUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)) {
+      if (outcome.subjectType === "search_document" && !latestOutcomeBySubject.has(outcome.subjectId)) {
+        latestOutcomeBySubject.set(outcome.subjectId, outcome);
+      }
+    }
+  }
+
+  return {
+    ...readModel,
+    sourceSeeds: readModel.sourceSeeds.filter((seed) => {
+      const subjectId = targetSourceSeedSubjectId(seed, readModel, projectId);
+      const latestOutcome = latestOutcomeBySubject.get(subjectId);
+
+      return latestOutcome === undefined || !contextNoiseOutcomes.has(latestOutcome.outcome);
+    })
+  };
+};
+
 const renderPlanExecutionBrief = (
   result: CompiledHarnessPlan,
   issuedDecisionPacket: DecisionPacket | undefined
@@ -1056,8 +1102,10 @@ export const runPlanCommand = async (
       baseCompileInput,
       knowledgeSelection
     );
-    const targetReadModel = await buildTargetActivationReadModel(
-      compilerRuntime.projectScopedMetadata
+    const targetReadModel = await applyTargetSeedUsefulnessFeedback(
+      await buildTargetActivationReadModel(compilerRuntime.projectScopedMetadata),
+      compilerRuntime.projectId,
+      compilerRuntime.harnessRunRepository
     );
     const result = await compilePlanForCommand(compilerRuntime, compileInput, targetReadModel);
     const targetOwnerFileRecall =

@@ -1,4 +1,5 @@
 import type {
+  ContextInclusionUsefulnessOutcomeFeedback,
   ContextAssembly,
   ContextAssemblyCurrentStatus,
   ContextExclusion,
@@ -185,6 +186,7 @@ export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
   projectId: ProjectId;
   captureIdentity: string;
   semanticRequest?: {
+    contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
     decisionPacketClaim?: DecisionPacketClaim;
     sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
     knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
@@ -193,6 +195,7 @@ export interface CreateEvidenceFeedbackOnceInput extends RepositoryMetadata {
     };
   };
   decisionPacketClaim?: DecisionPacketClaim;
+  contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
   evidence: Omit<CreateEvidenceBundleInput, "executionRunId">;

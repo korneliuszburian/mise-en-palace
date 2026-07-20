@@ -1,4 +1,5 @@
 import type {
+  ContextInclusionUsefulnessOutcomeFeedback,
   EvidenceCommandStatus,
   KnowledgeUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback,
@@ -9,6 +10,7 @@ import type {
   EvidenceCommandCaptureInput
 } from "./evidence-command-artifacts.js";
 import {
+  contextSubjectTypes,
   isIsoTimestamp,
   isSourceUsefulnessOutcome
 } from "@krn/core";
@@ -24,6 +26,7 @@ const evidenceUsage = [
   "Example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Source usefulness example: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "Memory usefulness example: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
+  "Context usefulness: --context-usefulness \"search_document:<subject-id>=noise|reason|packet:<checksum>|doesNotProve[|application-id[|applied-at]]\"",
   "Application phase 1: pass application-id without applied-at; persisted output returns the database-issued application-id|applied-at token.",
   "Application phase 2: after verification, pass the returned application-id|applied-at pair on the helped outcome.",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
@@ -535,6 +538,38 @@ const parseKnowledgeUsefulness = (
   };
 };
 
+const parseContextInclusionUsefulness = (
+  value: string
+): { outcome?: ContextInclusionUsefulnessOutcomeFeedback; error?: string } => {
+  const separatorIndex = value.indexOf("=");
+  const selector = separatorIndex < 0 ? "" : value.slice(0, separatorIndex).trim();
+  const subjectSeparatorIndex = selector.indexOf(":");
+  const subjectType = subjectSeparatorIndex < 0 ? "" : selector.slice(0, subjectSeparatorIndex);
+  const subjectId = subjectSeparatorIndex < 0 ? "" : selector.slice(subjectSeparatorIndex + 1).trim();
+
+  if (!contextSubjectTypes.some((candidate) => candidate === subjectType) || subjectId.length === 0) {
+    return { error: "--context-usefulness requires <subject-type:subject-id=outcome|reason|evidence-ref[,ref]|doesNotProve>" };
+  }
+
+  const body = parseSourceUsefulnessBody(value.slice(separatorIndex + 1));
+  if (!body.ok) {
+    return { error: body.error.replaceAll("--source-usefulness", "--context-usefulness") };
+  }
+
+  return {
+    outcome: {
+      subjectType: subjectType as ContextInclusionUsefulnessOutcomeFeedback["subjectType"],
+      subjectId,
+      outcome: body.value.outcome,
+      reason: body.value.reason,
+      evidenceRefs: body.value.evidenceRefs,
+      doesNotProve: body.value.doesNotProve,
+      ...(body.value.applicationId === undefined ? {} : { applicationId: body.value.applicationId }),
+      ...(body.value.appliedAt === undefined ? {} : { appliedAt: body.value.appliedAt })
+    }
+  };
+};
+
 const parseTargetChangedFile = (
   value: string
 ): { changedFile?: TargetEvidenceChangedFileInput; none?: true; error?: string } => {
@@ -683,6 +718,7 @@ type EvidenceParseState = {
   targetCommands: string[];
   sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes: KnowledgeUsefulnessOutcomeFeedback[];
+  contextInclusionUsefulnessOutcomes: ContextInclusionUsefulnessOutcomeFeedback[];
 };
 
 type EvidenceOptionResult =
@@ -725,6 +761,7 @@ const evidenceOptionNames = [
   "--verification",
   "--source-usefulness",
   "--memory-usefulness",
+  "--context-usefulness",
   "--status",
   "--exit-code",
   "--started-at",
@@ -1098,6 +1135,16 @@ const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> 
       nextIndex: parsed.nextIndex
     };
   },
+  "--context-usefulness": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--context-usefulness");
+    if (!parsed.ok) return parsed;
+    const outcomeResult = parseContextInclusionUsefulness(parsed.value);
+    if (outcomeResult.error !== undefined || outcomeResult.outcome === undefined) {
+      return { ok: false, error: outcomeResult.error ?? evidenceUsage };
+    }
+    state.contextInclusionUsefulnessOutcomes.push(outcomeResult.outcome);
+    return { ok: true, nextIndex: parsed.nextIndex };
+  },
   "--status": (rest, index, state) => {
     const parsed = parseEvidenceOption(rest, index, "--status");
 
@@ -1406,7 +1453,8 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     targetChangedFilesExplicitNone: false,
     targetCommands: [],
     sourceUsefulnessOutcomes: [],
-    knowledgeUsefulnessOutcomes: []
+    knowledgeUsefulnessOutcomes: [],
+    contextInclusionUsefulnessOutcomes: []
   };
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -1456,7 +1504,8 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
       ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),
       ...(state.sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes: state.sourceUsefulnessOutcomes }),
-      ...(state.knowledgeUsefulnessOutcomes.length === 0 ? {} : { knowledgeUsefulnessOutcomes: state.knowledgeUsefulnessOutcomes })
+      ...(state.knowledgeUsefulnessOutcomes.length === 0 ? {} : { knowledgeUsefulnessOutcomes: state.knowledgeUsefulnessOutcomes }),
+      ...(state.contextInclusionUsefulnessOutcomes.length === 0 ? {} : { contextInclusionUsefulnessOutcomes: state.contextInclusionUsefulnessOutcomes })
     }
   };
 };

@@ -160,6 +160,7 @@ interface EvidencePersistenceCapture {
   sourceRunLifecycleRevision?: number;
   sourceUsefulnessOutcomes?: CreateEvidenceFeedbackOnceInput["sourceUsefulnessOutcomes"];
   knowledgeUsefulnessOutcomes?: CreateEvidenceFeedbackOnceInput["knowledgeUsefulnessOutcomes"];
+  contextInclusionUsefulnessOutcomes?: CreateEvidenceFeedbackOnceInput["contextInclusionUsefulnessOutcomes"];
   sourceDecisions?: CreateFeedbackDeltaInput["sourceDecisions"];
   memoryCandidates?: CreateFeedbackDeltaInput["memoryCandidates"];
   feedbackDeltaMetadata?: CreateFeedbackDeltaInput["metadata"];
@@ -295,6 +296,12 @@ export const createEvidencePersistenceAggregate = (): HarnessRunAggregate => ({
       expectedUse: "Use for current task evidence.",
       sourceAuthority: "project-decision"
     }, {
+      subjectType: "search_document",
+      subjectId: "target-seed-docs",
+      reason: "Selected target source seed.",
+      expectedUse: "Inspect only when relevant.",
+      sourceAuthority: "project-decision"
+    }, {
       subjectType: "memory_record",
       subjectId: "knowledge:frontend-template",
       reason: "Selected retained knowledge.",
@@ -356,7 +363,10 @@ const admittedUsefulnessMetadataForCapturedEvidence = (
         : { sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes }),
       ...(input.knowledgeUsefulnessOutcomes === undefined
         ? {}
-        : { knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes })
+        : { knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes }),
+      ...(input.contextInclusionUsefulnessOutcomes === undefined
+        ? {}
+        : { contextInclusionUsefulnessOutcomes: input.contextInclusionUsefulnessOutcomes })
     };
 
 const createCapturingAtomicEvidenceFeedbackResult = (
@@ -492,6 +502,7 @@ const createCapturingEvidenceHarnessRunRepository = (
     capture.decisionPacketClaim = input.decisionPacketClaim;
     capture.sourceUsefulnessOutcomes = input.sourceUsefulnessOutcomes;
     capture.knowledgeUsefulnessOutcomes = input.knowledgeUsefulnessOutcomes;
+    capture.contextInclusionUsefulnessOutcomes = input.contextInclusionUsefulnessOutcomes;
     const persisted = createCapturingAtomicEvidenceFeedbackResult(input);
     capture.evidenceBundle = {
       ...input.evidence,
@@ -736,13 +747,14 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--context-usefulness \"<subject-type>:<subject-id>=noise|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
     expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
     expect(result.stdout).toContain("memory usefulness: krn evidence capture --memory-usefulness");
+    expect(result.stdout).toContain("context usefulness: krn evidence capture --context-usefulness");
     expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
@@ -2671,6 +2683,66 @@ describe("runCli", () => {
         evidenceRefs: [packetBinding.packetEvidenceRef]
       }]
     });
+  });
+
+  it("persists packet-bound context inclusion usefulness without promoting source or memory", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const capture: EvidencePersistenceCapture = {};
+    const aggregate = createEvidencePersistenceAggregate();
+    const packetBinding = currentDecisionPacketBindingForAggregate(aggregate, now);
+    const harnessRunRepository = createCapturingEvidenceHarnessRunRepository(
+      dependencies,
+      aggregate,
+      capture
+    );
+    const result = await runCli([
+      "evidence", "capture",
+      "--run-id", "execution-run-1",
+      "--decision-packet-checksum", packetBinding.packetChecksum,
+      "--decision-packet-generated-at", packetBinding.packetGeneratedAt,
+      "--context-usefulness",
+      `search_document:target-seed-docs=noise|Broad docs seed caused irrelevant inspection|${packetBinding.packetEvidenceRef}|Does not reject the document as source truth`,
+      "--persist"
+    ], {
+      env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => "",
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: { ...dependencies, harnessRunRepository },
+        harnessRunRepository,
+        sourceRepository: unusedSourceRepository,
+        memoryRepository: unusedMemoryRepository,
+        maintenanceQueueRepository: createCapturingMaintenanceQueueRepository(capture),
+        async close() { return undefined; }
+      })
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(capture.contextInclusionUsefulnessOutcomes).toEqual([{
+      subjectType: "search_document",
+      subjectId: "target-seed-docs",
+      outcome: "noise",
+      reason: "Broad docs seed caused irrelevant inspection",
+      evidenceRefs: [packetBinding.packetEvidenceRef],
+      doesNotProve: "Does not reject the document as source truth"
+    }]);
+    expect(capture.feedbackDeltaMetadata).toMatchObject({
+      contextInclusionUsefulnessOutcomes: [{
+        subjectType: "search_document",
+        subjectId: "target-seed-docs",
+        outcome: "noise"
+      }]
+    });
+    expect(capture.sourceUsefulnessOutcomes).toBeUndefined();
+    expect(capture.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(result.stdout).toContain("context=search_document:target-seed-docs");
   });
 
   it("preserves packet checksum for evidence-only capture", async () => {

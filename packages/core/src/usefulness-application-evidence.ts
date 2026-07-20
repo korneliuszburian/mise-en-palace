@@ -10,6 +10,7 @@ import type { IsoTimestamp } from "./time.js";
 
 export const usefulnessApplicationSubjectKinds = [
   "knowledge",
+  "context_inclusion",
   "source_claim",
   "source_decision"
 ] as const;

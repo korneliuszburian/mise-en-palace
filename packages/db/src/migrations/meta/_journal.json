@@ -421,6 +421,13 @@
       "when": 1784442871967,
       "tag": "0059_bizarre_hobgoblin",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1784506440425,
+      "tag": "0060_glorious_george_stacy",
+      "breakpoints": true
     }
   ]
 }

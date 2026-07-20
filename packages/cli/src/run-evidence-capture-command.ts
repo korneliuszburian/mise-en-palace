@@ -9,6 +9,7 @@ import {
   promisify
 } from "node:util";
 import type {
+  ContextInclusionUsefulnessOutcomeFeedback,
   DecisionPacketAuthorization,
   DecisionPacketBinding,
   DecisionPacketContractReadback,
@@ -41,6 +42,8 @@ import {
   decisionPacketUsefulnessAuthorizationDowngradeReason,
   isReviewableFeedbackOutcome,
   knowledgeUsefulnessOutcomesFromMetadata,
+  contextInclusionUsefulnessOutcomesFromMetadata,
+  contextInclusionUsefulnessSubjectId,
   projectDecisionPacketUsefulnessSubjects,
   sourceUsefulnessOutcomesFromMetadata,
   targetEvidenceClaimsFreshOwnedPatch,
@@ -104,6 +107,7 @@ export interface EvidenceCaptureRuntime extends BaseCommandRuntime {
   targetEvidence?: TargetEvidenceInput;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
   evalCandidateProposals?: readonly EvalCandidateProposal[];
   readGitStatus?(): Promise<string>;
   readTargetStateSnapshot?(targetRepo: string): Promise<TargetStateSnapshot>;
@@ -115,6 +119,7 @@ export interface EvidenceCaptureResult {
   persistence?: {
     feedbackDeltaId: string;
     sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
+    contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
     usefulnessApplications?: readonly Pick<
       UsefulnessApplicationEvidence,
       "applicationId" | "appliedAt"
@@ -148,6 +153,7 @@ interface PersistedEvidenceIdentity {
   feedbackMaintenanceQueueRecordId?: string;
   sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+  contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
   decisionPacketChecksum?: string;
   decisionPacketEvidenceRef?: string;
   decisionPacketGeneratedAt?: string;
@@ -208,6 +214,7 @@ const evidenceCaptureIdentityFor = (input: {
   readonly targetEvidence: TargetEvidence | undefined;
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextInclusionUsefulnessOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
   readonly sourceDecisionCandidates: readonly SourceDecision[];
   readonly memoryCandidateProposals: readonly MemoryCandidateProposal[];
   readonly evalCandidateProposals: readonly EvalCandidateProposal[];
@@ -888,6 +895,23 @@ const renderKnowledgeUsefulnessOutcomes = (
   ]);
 };
 
+const renderContextInclusionUsefulnessOutcomes = (
+  outcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined
+): string[] => {
+  if (outcomes === undefined || outcomes.length === 0) {
+    return ["- none"];
+  }
+
+  return outcomes.flatMap((outcome) => [
+    `- outcome=${outcome.outcome} context=${outcome.subjectType}:${outcome.subjectId}`,
+    `  reason: ${outcome.reason}`,
+    ...(outcome.evidenceRefs.length === 0
+      ? ["  evidenceRef: none"]
+      : outcome.evidenceRefs.map((evidenceRef) => `  evidenceRef: ${evidenceRef}`)),
+    `  doesNotProve: ${outcome.doesNotProve}`
+  ]);
+};
+
 const renderMemoryCandidateProposals = (
   proposals: readonly (MemoryCandidateProposal | MemoryCandidate)[]
 ): string[] => {
@@ -1289,6 +1313,20 @@ const downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence = (
         }
   );
 
+const downgradeContextInclusionUsefulnessOutcomesWithoutCurrentEvidence = (
+  outcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined,
+  currentEvidenceRefs: ReadonlySet<string>
+): readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined =>
+  outcomes?.map((outcome) =>
+    outcome.outcome === "unknown" || outcomeHasCurrentEvidenceRef(outcome.evidenceRefs, currentEvidenceRefs)
+      ? outcome
+      : {
+          ...outcome,
+          outcome: "unknown",
+          reason: downgradeReason(outcome.reason)
+        }
+  );
+
 const currentEvidenceRefsForUsefulness = (
   captureIdentity: string,
   changedFiles: readonly ChangedFile[],
@@ -1320,6 +1358,7 @@ interface PreparedUsefulnessOutcomes {
   authorization: UsefulnessAuthorization | undefined;
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
 }
 
 const callerPacketBinding = (input: {
@@ -1543,10 +1582,12 @@ const prepareUsefulnessOutcomes = (input: {
   readonly runId: string;
   readonly runtimeProjectId: string;
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextInclusionUsefulnessOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
 }): PreparedUsefulnessOutcomes => {
   const usefulnessSubjects = projectDecisionPacketUsefulnessSubjects({
     sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes,
-    knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes
+    knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes,
+    contextInclusionUsefulnessOutcomes: input.contextInclusionUsefulnessOutcomes
   });
   const authorization = input.packetAuthorization?.authorized === false || usefulnessSubjects.length === 0
     ? input.packetAuthorization
@@ -1584,13 +1625,15 @@ const prepareUsefulnessOutcomes = (input: {
   return {
     authorization,
     sourceOutcomes: downgradeUnauthorized(input.sourceUsefulnessOutcomes),
-    knowledgeOutcomes: downgradeUnauthorized(input.knowledgeUsefulnessOutcomes)
+    knowledgeOutcomes: downgradeUnauthorized(input.knowledgeUsefulnessOutcomes),
+    contextOutcomes: downgradeUnauthorized(input.contextInclusionUsefulnessOutcomes)
   };
 };
 
 interface EvidenceBackedUsefulnessOutcomes {
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
 }
 
 const applicationTargetState = (
@@ -1613,8 +1656,25 @@ const explicitUsefulnessApplications = (input: {
   targetEvidence: TargetEvidence | undefined;
   sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
 }): UsefulnessApplicationEvidenceIdentity[] => {
   const targetState = applicationTargetState(input.targetEvidence);
+  const applicationIdentity = (
+    applicationId: string,
+    subjectKind: UsefulnessApplicationEvidenceIdentity["subjectKind"],
+    subjectId: string
+  ): UsefulnessApplicationEvidenceIdentity => ({
+    applicationId,
+    subjectKind,
+    subjectId,
+    projectId: input.projectId,
+    executionRunId: input.runId,
+    taskContractId: input.aggregate.taskContract.id,
+    packetChecksum: input.binding.packetChecksum,
+    packetGeneratedAt: input.binding.packetGeneratedAt,
+    sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
+    ...(targetState === undefined ? {} : { targetState })
+  });
 
   return [
     ...(input.sourceOutcomes ?? []).flatMap((outcome) => {
@@ -1625,36 +1685,27 @@ const explicitUsefulnessApplications = (input: {
       ) {
         return [];
       }
-      return [{
-        applicationId: outcome.applicationId,
-        subjectKind: outcome.sourceDecisionId === undefined
+      return [applicationIdentity(
+        outcome.applicationId,
+        outcome.sourceDecisionId === undefined
           ? "source_claim" as const
           : "source_decision" as const,
-        subjectId: outcome.sourceDecisionId ?? outcome.sourceClaimId,
-        projectId: input.projectId,
-        executionRunId: input.runId,
-        taskContractId: input.aggregate.taskContract.id,
-        packetChecksum: input.binding.packetChecksum,
-        packetGeneratedAt: input.binding.packetGeneratedAt,
-        sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
-        ...(targetState === undefined ? {} : { targetState })
-      }];
+        outcome.sourceDecisionId ?? outcome.sourceClaimId
+      )];
     }),
     ...(input.knowledgeOutcomes ?? []).flatMap((outcome) =>
     outcome.applicationId === undefined || outcome.appliedAt !== undefined
       ? []
-      : [{
-          applicationId: outcome.applicationId,
-          subjectKind: "knowledge" as const,
-          subjectId: outcome.knowledgeId,
-          projectId: input.projectId,
-          executionRunId: input.runId,
-          taskContractId: input.aggregate.taskContract.id,
-          packetChecksum: input.binding.packetChecksum,
-          packetGeneratedAt: input.binding.packetGeneratedAt,
-          sourceRunLifecycleRevision: input.binding.sourceRunLifecycleRevision,
-          ...(targetState === undefined ? {} : { targetState })
-        }]
+      : [applicationIdentity(outcome.applicationId, "knowledge", outcome.knowledgeId)]
+    ),
+    ...(input.contextOutcomes ?? []).flatMap((outcome) =>
+      outcome.applicationId === undefined || outcome.appliedAt !== undefined
+        ? []
+        : [applicationIdentity(
+            outcome.applicationId,
+            "context_inclusion",
+            contextInclusionUsefulnessSubjectId(outcome.subjectType, outcome.subjectId)
+          )]
     )
   ];
 };
@@ -1682,7 +1733,8 @@ const admitEvidenceBackedUsefulness = (
   ? usefulness
   : {
       sourceOutcomes: undefined,
-      knowledgeOutcomes: undefined
+      knowledgeOutcomes: undefined,
+      contextOutcomes: undefined
     };
 
 const usefulnessApplicationsForPersistence = (input: {
@@ -1704,7 +1756,8 @@ const usefulnessApplicationsForPersistence = (input: {
     runId: input.runId,
     targetEvidence: input.targetEvidence,
     sourceOutcomes: input.usefulness.sourceOutcomes,
-    knowledgeOutcomes: input.usefulness.knowledgeOutcomes
+    knowledgeOutcomes: input.usefulness.knowledgeOutcomes,
+    contextOutcomes: input.usefulness.contextOutcomes
   });
 };
 
@@ -1717,6 +1770,7 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
   readonly helpedProof: CaptureHelpedProof;
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
 }): EvidenceBackedUsefulnessOutcomes => {
   const currentEvidenceRefs = currentEvidenceRefsForUsefulness(
@@ -1731,6 +1785,10 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
   );
   const evidenceLinkedKnowledgeOutcomes = downgradeKnowledgeUsefulnessOutcomesWithoutCurrentEvidence(
     input.knowledgeOutcomes,
+    currentEvidenceRefs
+  );
+  const evidenceLinkedContextOutcomes = downgradeContextInclusionUsefulnessOutcomesWithoutCurrentEvidence(
+    input.contextOutcomes,
     currentEvidenceRefs
   );
   const evidenceClass = usefulnessEvidenceClassFor({
@@ -1749,6 +1807,11 @@ const evidenceBackedUsefulnessOutcomesFor = (input: {
     ),
     knowledgeOutcomes: downgradeUsefulnessOutcomesWithoutApplicationProof(
       evidenceLinkedKnowledgeOutcomes,
+      evidenceClass,
+      input.helpedProof.assessment
+    ),
+    contextOutcomes: downgradeUsefulnessOutcomesWithoutApplicationProof(
+      evidenceLinkedContextOutcomes,
       evidenceClass,
       input.helpedProof.assessment
     )
@@ -1820,13 +1883,14 @@ const usefulnessAuthorizationIdentityFor = (
 const usefulnessOutcomesIdentityFor = (input: {
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
 }): Pick<
   PersistedEvidenceIdentity,
-  "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes"
+  "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes" | "contextInclusionUsefulnessOutcomes"
 > => {
   const identity: Pick<
     PersistedEvidenceIdentity,
-    "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes"
+    "knowledgeUsefulnessOutcomes" | "sourceUsefulnessOutcomes" | "contextInclusionUsefulnessOutcomes"
   > = {};
 
   if (input.sourceOutcomes !== undefined) {
@@ -1837,15 +1901,21 @@ const usefulnessOutcomesIdentityFor = (input: {
     identity.knowledgeUsefulnessOutcomes = input.knowledgeOutcomes;
   }
 
+  if (input.contextOutcomes !== undefined) {
+    identity.contextInclusionUsefulnessOutcomes = input.contextOutcomes;
+  }
+
   return identity;
 };
 
 const usefulnessApplicationsFromPersistedOutcomes = (input: {
   readonly knowledgeOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[];
   readonly sourceOutcomes: readonly SourceUsefulnessOutcomeFeedback[];
+  readonly contextOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[];
 }): Pick<UsefulnessApplicationEvidence, "applicationId" | "appliedAt">[] => [
   ...input.sourceOutcomes,
-  ...input.knowledgeOutcomes
+  ...input.knowledgeOutcomes,
+  ...input.contextOutcomes
 ].flatMap((outcome) =>
   outcome.applicationId === undefined || outcome.appliedAt === undefined
     ? []
@@ -1872,9 +1942,13 @@ const buildPersistedEvidenceIdentity = (input: {
   const knowledgeOutcomes = knowledgeUsefulnessOutcomesFromMetadata(
     input.atomicResult.feedbackDelta.metadata
   );
+  const contextOutcomes = contextInclusionUsefulnessOutcomesFromMetadata(
+    input.atomicResult.feedbackDelta.metadata
+  );
   const persistedOutcomeApplications = usefulnessApplicationsFromPersistedOutcomes({
     sourceOutcomes,
-    knowledgeOutcomes
+    knowledgeOutcomes,
+    contextOutcomes
   });
   const applications = [
     ...input.applications,
@@ -1907,7 +1981,8 @@ const buildPersistedEvidenceIdentity = (input: {
     ),
     ...usefulnessOutcomesIdentityFor({
       sourceOutcomes: sourceOutcomes.length === 0 ? undefined : sourceOutcomes,
-      knowledgeOutcomes: knowledgeOutcomes.length === 0 ? undefined : knowledgeOutcomes
+      knowledgeOutcomes: knowledgeOutcomes.length === 0 ? undefined : knowledgeOutcomes,
+      contextOutcomes: contextOutcomes.length === 0 ? undefined : contextOutcomes
     })
   };
 };
@@ -1974,6 +2049,7 @@ const renderEvidenceCaptureOutput = (input: {
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly targetEvidence: TargetEvidence | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextInclusionUsefulnessOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
   readonly environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>;
 }): string => [
   "KRN Evidence Capture",
@@ -2013,6 +2089,8 @@ const renderEvidenceCaptureOutput = (input: {
   ...renderSourceUsefulnessOutcomes(input.sourceUsefulnessOutcomes),
   "knowledgeUsefulnessOutcomes:",
   ...renderKnowledgeUsefulnessOutcomes(input.knowledgeUsefulnessOutcomes),
+  "contextInclusionUsefulnessOutcomes:",
+  ...renderContextInclusionUsefulnessOutcomes(input.contextInclusionUsefulnessOutcomes),
   ...renderPersistedEvidenceIdentity(input.persistedIdentity)
 ].join("\n") + "\n";
 
@@ -2099,8 +2177,25 @@ const evidenceFeedbackOnceInputForCapture = (input: {
   readonly sourceRunLifecycleRevision: number;
   readonly sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined;
   readonly knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined;
+  readonly contextInclusionUsefulnessOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined;
   readonly environmentFingerprint: Awaited<ReturnType<typeof collectEnvironmentFingerprint>>;
-}): CreateEvidenceFeedbackOnceInput => ({
+}): CreateEvidenceFeedbackOnceInput => {
+  const usefulnessFields = (outcomes: EvidenceBackedUsefulnessOutcomes): Pick<
+    CreateEvidenceFeedbackOnceInput,
+    "sourceUsefulnessOutcomes" | "knowledgeUsefulnessOutcomes" | "contextInclusionUsefulnessOutcomes"
+  > => ({
+    ...(outcomes.sourceOutcomes === undefined
+      ? {}
+      : { sourceUsefulnessOutcomes: outcomes.sourceOutcomes }),
+    ...(outcomes.knowledgeOutcomes === undefined
+      ? {}
+      : { knowledgeUsefulnessOutcomes: outcomes.knowledgeOutcomes }),
+    ...(outcomes.contextOutcomes === undefined
+      ? {}
+      : { contextInclusionUsefulnessOutcomes: outcomes.contextOutcomes })
+  });
+
+  return ({
   executionRunId: input.runId,
   sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
   projectId: input.projectId,
@@ -2115,12 +2210,11 @@ const evidenceFeedbackOnceInputForCapture = (input: {
             generatedAt: input.packet.callerPacketGeneratedAt
           }
         }),
-    ...(input.sourceUsefulnessOutcomes === undefined
-      ? {}
-      : { sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes }),
-    ...(input.knowledgeUsefulnessOutcomes === undefined
-      ? {}
-      : { knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes }),
+    ...usefulnessFields({
+      sourceOutcomes: input.sourceUsefulnessOutcomes,
+      knowledgeOutcomes: input.knowledgeUsefulnessOutcomes,
+      contextOutcomes: input.contextInclusionUsefulnessOutcomes
+    }),
     ...evidenceFeedbackMaintenanceFor({
       sourceOutcomes: input.sourceUsefulnessOutcomes,
       knowledgeOutcomes: input.knowledgeUsefulnessOutcomes
@@ -2134,12 +2228,7 @@ const evidenceFeedbackOnceInputForCapture = (input: {
           generatedAt: input.packet.binding.packetGeneratedAt
         }
       }),
-  ...(input.admittedUsefulness.sourceOutcomes === undefined
-    ? {}
-    : { sourceUsefulnessOutcomes: input.admittedUsefulness.sourceOutcomes }),
-  ...(input.admittedUsefulness.knowledgeOutcomes === undefined
-    ? {}
-    : { knowledgeUsefulnessOutcomes: input.admittedUsefulness.knowledgeOutcomes }),
+  ...usefulnessFields(input.admittedUsefulness),
   ...evidenceFeedbackMaintenanceFor({
     sourceOutcomes: input.admittedUsefulness.sourceOutcomes,
     knowledgeOutcomes: input.admittedUsefulness.knowledgeOutcomes
@@ -2155,7 +2244,8 @@ const evidenceFeedbackOnceInputForCapture = (input: {
     input.evalCandidateProposals,
     input.environmentFingerprint
   )
-});
+  });
+};
 
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
@@ -2167,6 +2257,7 @@ const persistEvidenceCapture = async (
   targetEvidence: TargetEvidence | undefined,
   sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   knowledgeUsefulnessOutcomes: readonly KnowledgeUsefulnessOutcomeFeedback[] | undefined,
+  contextInclusionUsefulnessOutcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[],
   evalCandidateProposals: readonly EvalCandidateProposal[],
@@ -2214,6 +2305,7 @@ const persistEvidenceCapture = async (
       targetEvidence,
       sourceUsefulnessOutcomes,
       knowledgeUsefulnessOutcomes,
+      contextInclusionUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals,
       evalCandidateProposals
@@ -2238,6 +2330,7 @@ const persistEvidenceCapture = async (
       callerPacketGeneratedAt: packet.callerPacketGeneratedAt,
       issuedPacket: packet.issuedPacket,
       knowledgeUsefulnessOutcomes,
+      contextInclusionUsefulnessOutcomes,
       packetAuthorization: packet.authorization,
       runId,
       runtimeProjectId: projectId,
@@ -2273,6 +2366,7 @@ const persistEvidenceCapture = async (
       decisionPacketChecksum: packet.binding?.packetChecksum,
       helpedProof,
       knowledgeOutcomes: usefulness.knowledgeOutcomes,
+      contextOutcomes: usefulness.contextOutcomes,
       sourceOutcomes: usefulness.sourceOutcomes,
       targetEvidence
     });
@@ -2312,6 +2406,7 @@ const persistEvidenceCapture = async (
           packet.binding?.sourceRunLifecycleRevision ?? aggregate.executionRun.lifecycleRevision,
         sourceUsefulnessOutcomes,
         knowledgeUsefulnessOutcomes,
+        contextInclusionUsefulnessOutcomes,
         environmentFingerprint
       })
     );
@@ -2330,7 +2425,8 @@ const persistEvidenceCapture = async (
 
 const hasApplicationBoundOutcome = (runtime: EvidenceCaptureRuntime): boolean => [
     ...(runtime.sourceUsefulnessOutcomes ?? []),
-    ...(runtime.knowledgeUsefulnessOutcomes ?? [])
+    ...(runtime.knowledgeUsefulnessOutcomes ?? []),
+    ...(runtime.contextInclusionUsefulnessOutcomes ?? [])
   ].some((outcome) => outcome.applicationId !== undefined);
 
 const applicationTargetEvidence = async (
@@ -2378,6 +2474,9 @@ const evidenceCapturePersistence = (
     ...(persistedIdentity.sourceUsefulnessOutcomes === undefined
       ? {}
       : { sourceUsefulnessOutcomes: persistedIdentity.sourceUsefulnessOutcomes }),
+    ...(persistedIdentity.contextInclusionUsefulnessOutcomes === undefined
+      ? {}
+      : { contextInclusionUsefulnessOutcomes: persistedIdentity.contextInclusionUsefulnessOutcomes }),
     ...(persistedIdentity.usefulnessApplications === undefined
       ? {}
       : { usefulnessApplications: persistedIdentity.usefulnessApplications })
@@ -2388,6 +2487,21 @@ const feedbackCandidateFor = (changedFiles: readonly ChangedFile[]): string =>
   changedFiles.length === 0
     ? "No changed files; no feedback candidate proposed."
     : "Review changed files and command evidence before promoting memory/source/eval candidates.";
+
+const usefulnessOutcomesForRendering = (
+  runtime: EvidenceCaptureRuntime,
+  persistedIdentity: PersistedEvidenceIdentity | undefined
+) => persistedIdentity === undefined
+  ? {
+      sourceUsefulnessOutcomes: runtime.sourceUsefulnessOutcomes,
+      knowledgeUsefulnessOutcomes: runtime.knowledgeUsefulnessOutcomes,
+      contextInclusionUsefulnessOutcomes: runtime.contextInclusionUsefulnessOutcomes
+    }
+  : {
+      sourceUsefulnessOutcomes: persistedIdentity.sourceUsefulnessOutcomes,
+      knowledgeUsefulnessOutcomes: persistedIdentity.knowledgeUsefulnessOutcomes,
+      contextInclusionUsefulnessOutcomes: persistedIdentity.contextInclusionUsefulnessOutcomes
+    };
 
 export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
@@ -2432,6 +2546,7 @@ export const runEvidenceCaptureCommand = async (
       targetEvidence,
       runtime.sourceUsefulnessOutcomes,
       runtime.knowledgeUsefulnessOutcomes,
+      runtime.contextInclusionUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals,
       runtime.evalCandidateProposals ?? [],
@@ -2439,12 +2554,7 @@ export const runEvidenceCaptureCommand = async (
     )
     : undefined;
   const feedbackCandidate = feedbackCandidateFor(changedFiles);
-  const renderedSourceUsefulnessOutcomes = persistedIdentity === undefined
-    ? runtime.sourceUsefulnessOutcomes
-    : persistedIdentity.sourceUsefulnessOutcomes;
-  const renderedKnowledgeUsefulnessOutcomes = persistedIdentity === undefined
-    ? runtime.knowledgeUsefulnessOutcomes
-    : persistedIdentity.knowledgeUsefulnessOutcomes;
+  const renderedUsefulness = usefulnessOutcomesForRendering(runtime, persistedIdentity);
   const persistence = evidenceCapturePersistence(persistedIdentity);
 
   return {
@@ -2459,14 +2569,15 @@ export const runEvidenceCaptureCommand = async (
         : { packetBindingRejectionReason: persistedIdentity.packetBindingRejectionReason }),
       diffRisk,
       feedbackCandidate,
-      knowledgeUsefulnessOutcomes: renderedKnowledgeUsefulnessOutcomes,
+      knowledgeUsefulnessOutcomes: renderedUsefulness.knowledgeUsefulnessOutcomes,
+      contextInclusionUsefulnessOutcomes: renderedUsefulness.contextInclusionUsefulnessOutcomes,
       memoryCandidateProposals:
         persistedIdentity?.memoryCandidates ?? memoryCandidateProposals,
       persistedIdentity,
       runtime,
       sourceDecisionCandidates:
         persistedIdentity?.sourceDecisionCandidates ?? sourceDecisionCandidates,
-      sourceUsefulnessOutcomes: renderedSourceUsefulnessOutcomes,
+      sourceUsefulnessOutcomes: renderedUsefulness.sourceUsefulnessOutcomes,
       targetEvidence,
       evalCandidateProposals:
         persistedIdentity?.evalCandidateProposals ?? runtime.evalCandidateProposals ?? [],

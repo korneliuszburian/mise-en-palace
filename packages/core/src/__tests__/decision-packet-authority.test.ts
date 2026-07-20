@@ -36,8 +36,20 @@ describe("DecisionPacket authority projections", () => {
         reason: "The knowledge record supplied a constraint.",
         evidenceRefs: ["evidence:knowledge-1"],
         doesNotProve: "The knowledge remains current forever."
+      }],
+      contextInclusionUsefulnessOutcomes: [{
+        subjectType: "search_document",
+        subjectId: "target-seed-1",
+        outcome: "noise",
+        reason: "The broad seed caused irrelevant inspection.",
+        evidenceRefs: ["evidence:target-seed-1"],
+        doesNotProve: "The target document is never useful."
       }]
     })).toEqual([{
+      kind: "context_inclusion",
+      id: "search_document:target-seed-1",
+      evidenceRefs: ["evidence:target-seed-1"]
+    }, {
       kind: "source_claim",
       id: "source-claim-1",
       evidenceRefs: ["evidence:claim-1"]
