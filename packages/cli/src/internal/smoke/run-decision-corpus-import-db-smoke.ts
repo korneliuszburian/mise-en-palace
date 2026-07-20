@@ -304,7 +304,7 @@ type PersistDecisionCorpusImportInput =
 export const persistDecisionCorpusImport = async (
   input: PersistDecisionCorpusImportInput
 ): Promise<readonly PersistedDecisionCorpusRow[]> => {
-  return persistSourceDecisionImport({
+  const persisted = await persistSourceDecisionImport({
     runtime: input.runtime,
     projectId: input.projectId,
     fixture: input.fixture,
@@ -317,6 +317,8 @@ export const persistDecisionCorpusImport = async (
       : { authorizedRepoRoot: input.authorizedRepoRoot }),
     ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence })
   });
+
+  return persisted.rows;
 };
 
 const countValue = (value: unknown): number => {

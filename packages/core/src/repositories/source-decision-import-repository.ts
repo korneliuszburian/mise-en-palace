@@ -139,6 +139,14 @@ export interface SourceDecisionImportRepository {
     input: SourceDecisionImportLookupInput
   ): Promise<SourceDecisionImportLookup>;
 
+  findEquivalentSourceDecisionImportIds(input: {
+    projectId: ProjectId;
+    manifest: readonly {
+      decisionId: string;
+      contentHash: string;
+    }[];
+  }): Promise<readonly string[]>;
+
   listSourceDecisionImportReconciliation(input: {
     projectId: ProjectId;
     limit: number;

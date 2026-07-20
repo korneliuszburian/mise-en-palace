@@ -549,6 +549,41 @@ export class DrizzleSourceDecisionImportRepository implements SourceDecisionImpo
     return sourceEvidenceLookupFromRow(input.evidenceRef, rows[0]);
   }
 
+  async findEquivalentSourceDecisionImportIds(input: {
+    projectId: string;
+    manifest: readonly { decisionId: string; contentHash: string }[];
+  }): Promise<readonly string[]> {
+    if (input.manifest.length === 0) {
+      return [];
+    }
+
+    const manifest = Object.fromEntries(
+      [...input.manifest]
+        .sort((left, right) => left.decisionId.localeCompare(right.decisionId))
+        .map((row) => [row.decisionId, row.contentHash])
+    );
+    const rows = await this.db
+      .select({ importId: sourceArtifacts.importId })
+      .from(sourceArtifacts)
+      .where(and(
+        eq(sourceArtifacts.projectId, input.projectId),
+        isNotNull(sourceArtifacts.importId)
+      ))
+      .groupBy(sourceArtifacts.importId)
+      .having(sql`
+        count(*) = ${input.manifest.length}
+        and count(*) filter (where ${sourceArtifacts.importRowId} is null) = 0
+        and jsonb_object_agg(
+          ${sourceArtifacts.importRowId},
+          ${sourceArtifacts.contentHash}
+        ) = ${JSON.stringify(manifest)}::jsonb
+      `)
+      .orderBy(asc(sourceArtifacts.importId))
+      .limit(2);
+
+    return rows.flatMap((row) => row.importId === null ? [] : [row.importId]);
+  }
+
   // fallow-ignore-next-line complexity -- replay readback enforces duplicate and status-specific graph completeness at the store boundary
   async getSourceDecisionImportRow(
     input: SourceDecisionImportLookupInput

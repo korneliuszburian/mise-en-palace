@@ -39,6 +39,9 @@ describe("runSourceDecisionReconcileCommand", () => {
         async getSourceDecisionImportRow() {
           throw new Error("getSourceDecisionImportRow should not be called");
         },
+        async findEquivalentSourceDecisionImportIds() {
+          throw new Error("findEquivalentSourceDecisionImportIds should not be called");
+        },
         async listSourceDecisionImportReconciliation(readInput) {
           readCount += 1;
           expect(readInput).toEqual({

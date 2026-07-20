@@ -10,7 +10,6 @@ import type {
 } from "./database-runtime.js";
 import {
   findRepoRoot,
-  pathExists,
   readJsonObjectResult,
   resolveRepoInputFile
 } from "./cli-file-boundary.js";
@@ -30,12 +29,12 @@ import {
   type SourceCoverageEvidence,
   type SourceCoverageReport
 } from "./source-coverage.js";
-import {
-  parseDecisionCorpusImportFixture
-} from "./internal/eval/run-decision-corpus-import.js";
 import type {
-  DecisionCorpusImportFixture
-} from "./internal/eval/run-decision-corpus-import.js";
+  ReviewedSourceDecisionCorpus
+} from "./reviewed-source-decision-corpus.js";
+import {
+  parseReviewedSourceDecisionCorpus
+} from "./reviewed-source-decision-corpus.js";
 import {
   deriveSourceDecisionImportIdentity,
   persistSourceDecisionImport,
@@ -63,8 +62,7 @@ export type CreateSourceDecisionImportDatabaseRuntime = (
 interface LoadedSourceDecisionImportFixture {
   readonly filePath: string;
   readonly repoRoot: string;
-  readonly identityFixture: DecisionCorpusImportFixture;
-  readonly fixture: DecisionCorpusImportFixture;
+  readonly fixture: ReviewedSourceDecisionCorpus;
 }
 
 interface PersistedSourceDecisionImport {
@@ -93,30 +91,13 @@ const resolveImportFixture = async (
     throw new Error(`Unable to read source decision import file: ${readResult.reason}`);
   }
 
-  const parsed = parseDecisionCorpusImportFixture(readResult.value);
+  const parsed = parseReviewedSourceDecisionCorpus(readResult.value);
   const repoRoot = await findRepoRoot(cwd);
-  const baseCandidates = [
-    path.resolve(cwd, parsed.baseFixturePath),
-    path.resolve(repoRoot, parsed.baseFixturePath),
-    path.resolve(path.dirname(filePath), parsed.baseFixturePath),
-    path.resolve(repoRoot, "packages/cli", parsed.baseFixturePath)
-  ];
-  const baseFixturePath =
-    (await Promise.all(baseCandidates.map(async (candidate) => ({
-      candidate,
-      exists: await pathExists(candidate)
-    })))).find((candidate) => candidate.exists)?.candidate ??
-    baseCandidates[0] ??
-    parsed.baseFixturePath;
 
   return {
     filePath,
     repoRoot,
-    identityFixture: parsed,
-    fixture: {
-      ...parsed,
-      baseFixturePath
-    }
+    fixture: parsed
   };
 };
 
@@ -135,7 +116,7 @@ const summarizeRows = (
   ].join(" "));
 
 const coverageFor = (
-  fixture: DecisionCorpusImportFixture,
+  fixture: ReviewedSourceDecisionCorpus,
   evidence: readonly SourceCoverageEvidence[]
 ): SourceCoverageReport => evaluateSourceCoverage({
   ...(fixture.coverageScope === undefined ? {} : { scope: fixture.coverageScope }),
@@ -143,14 +124,14 @@ const coverageFor = (
 });
 
 const previewCoverageFor = (
-  fixture: DecisionCorpusImportFixture
+  fixture: ReviewedSourceDecisionCorpus
 ): SourceCoverageReport => coverageFor(fixture, []);
 
 const formatSourceDecisionImportText = (
   input: {
     readonly persistenceLabel: string;
     readonly filePath: string;
-    readonly fixture: DecisionCorpusImportFixture;
+    readonly fixture: ReviewedSourceDecisionCorpus;
     readonly coverage: SourceCoverageReport;
     readonly importId: string;
     readonly projectId?: string;
@@ -167,7 +148,6 @@ const formatSourceDecisionImportText = (
     `file: ${path.relative(process.cwd(), input.filePath)}`,
     `corpus: ${input.fixture.corpusName}`,
     `decisions: ${counts.decisionCount} (current=${counts.currentDecisionCount}, stale=${counts.staleDecisionCount}, rejected=${counts.rejectedDecisionCount})`,
-    `cases: ${counts.caseCount}`,
     ...(input.rows === undefined
       ? ["DB writes: none"]
       : [
@@ -188,7 +168,7 @@ const formatSourceDecisionImportJson = (
   input: {
     readonly persisted: boolean;
     readonly filePath: string;
-    readonly fixture: DecisionCorpusImportFixture;
+    readonly fixture: ReviewedSourceDecisionCorpus;
     readonly coverage: SourceCoverageReport;
     readonly importId: string;
     readonly projectId?: string;
@@ -265,7 +245,7 @@ const persistLoadedSourceDecisionImport = async (
   importId: string
 ): Promise<PersistedSourceDecisionImport> => {
   const projectId = command.projectId ?? databaseRuntime.projectId;
-  const rows = await persistSourceDecisionImport({
+  const persisted = await persistSourceDecisionImport({
     runtime: databaseRuntime,
     projectId,
     fixture: loaded.fixture,
@@ -277,9 +257,9 @@ const persistLoadedSourceDecisionImport = async (
 
   return {
     projectId,
-    importId,
-    rows,
-    coverage: coverageFor(loaded.fixture, rows.map((row) => ({
+    importId: persisted.importId,
+    rows: persisted.rows,
+    coverage: coverageFor(loaded.fixture, persisted.rows.map((row) => ({
       decisionId: row.decisionId,
       evidenceRef: row.evidenceRef,
       status: row.evidenceStatus,
@@ -326,7 +306,7 @@ export const runSourceDecisionImportCommand = async (
   validateSourceDecisionImportFixture(loaded.fixture);
   const importId = deriveSourceDecisionImportIdentity({
     projectIdentity: sourceDecisionImportProjectIdentity(command),
-    fixture: loaded.identityFixture
+    fixture: loaded.fixture
   });
 
   if (!command.persist) {

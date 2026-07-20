@@ -514,6 +514,41 @@ describe("runCli", () => {
     expect(result.stdout).toContain("doesNotProve: source truth");
   });
 
+  it("previews a reviewed source corpus without eval policy", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "import",
+        "--file",
+        "tests/fixtures/source-decision-import/minimal-reviewed-corpus.json",
+        "--json"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+
+    const readback = JSON.parse(result.stdout) as {
+      corpusName?: string;
+      counts?: Record<string, number>;
+    };
+
+    expect(readback.corpusName).toBe("Minimal reviewed source corpus");
+    expect(readback.counts).toEqual({
+      decisionCount: 1,
+      currentDecisionCount: 1,
+      staleDecisionCount: 0,
+      rejectedDecisionCount: 0
+    });
+    expect(readback.counts).not.toHaveProperty("caseCount");
+  });
+
   it("requires database config for source decision import --persist", async () => {
     const result = await runCli(
       [
