@@ -9,7 +9,8 @@ import type {
   ContextInclusion,
   DecisionPacket,
   DecisionPacketContractReadback,
-  ContextInclusionUsefulnessOutcomeFeedback
+  ContextInclusionUsefulnessOutcomeFeedback,
+  FeedbackDelta
 } from "@krn/core";
 import {
   activationRetrievalDiagnosticsFromMetadata,
@@ -33,6 +34,7 @@ import type {
 import {
   contextInclusionUsefulnessOutcomesFromMetadata,
   decisionPacketNextActionMetadataKey,
+  feedbackTaskObjectiveMetadataKey,
   parseHarnessCompileInput,
   parseOperatorIntentInput,
   parseTaskContractInput
@@ -891,7 +893,8 @@ const buildHarnessCompileInput = (
 const compilePlanForCommand = (
   compilerRuntime: CompilerRuntimeResolution,
   compileInput: HarnessCompileInput,
-  targetReadModel: TargetActivationReadModel | undefined
+  targetReadModel: TargetActivationReadModel | undefined,
+  compilerDependencies = compilerRuntime.compilerDependencies
 ): Promise<CompiledHarnessPlan> =>
   compileHarnessPlan(
     {
@@ -909,7 +912,7 @@ const compilePlanForCommand = (
       ...(compileInput.tokenBudget === undefined ? {} : { tokenBudget: compileInput.tokenBudget }),
       metadata: compileInput.metadata
     },
-    compilerRuntime.compilerDependencies
+    compilerDependencies
   );
 
 const contextNoiseOutcomes = new Set<ContextInclusionUsefulnessOutcomeFeedback["outcome"]>([
@@ -919,40 +922,230 @@ const contextNoiseOutcomes = new Set<ContextInclusionUsefulnessOutcomeFeedback["
   "rejected"
 ]);
 
-export const applyTargetSeedUsefulnessFeedback = async (
-  readModel: TargetActivationReadModel | undefined,
-  projectId: string,
-  repository: Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">> | undefined
-): Promise<TargetActivationReadModel | undefined> => {
-  const listFeedback = repository?.listFeedbackDeltasForProject;
-  if (readModel === undefined || listFeedback === undefined) {
-    return readModel;
-  }
+interface ContextNoiseSubjects {
+  memoryRecordIds: ReadonlySet<string>;
+  searchDocumentIds: ReadonlySet<string>;
+  sourceClaimIds: ReadonlySet<string>;
+}
 
-  const feedbackDeltas = await listFeedback.call(
-    repository,
-    projectId,
-    100
-  );
+const emptyContextNoiseSubjects = (): ContextNoiseSubjects => ({
+  memoryRecordIds: new Set<string>(),
+  searchDocumentIds: new Set<string>(),
+  sourceClaimIds: new Set<string>()
+});
+
+const contextOutcomeAppliesToTask = (
+  outcome: ContextInclusionUsefulnessOutcomeFeedback,
+  feedbackTaskObjective: unknown,
+  task: string
+): boolean => outcome.subjectType === "search_document"
+  ? feedbackTaskObjective === undefined || feedbackTaskObjective === task
+  : (outcome.subjectType === "source_claim" || outcome.subjectType === "memory_record") &&
+    feedbackTaskObjective === task;
+
+const latestContextOutcomesForTask = (
+  feedbackDeltas: readonly FeedbackDelta[],
+  task: string
+): readonly ContextInclusionUsefulnessOutcomeFeedback[] => {
   const latestOutcomeBySubject = new Map<string, ContextInclusionUsefulnessOutcomeFeedback>();
 
   for (const feedbackDelta of feedbackDeltas) {
+    const feedbackTaskObjective = feedbackDelta.metadata[feedbackTaskObjectiveMetadataKey];
+
     for (const outcome of contextInclusionUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)) {
-      if (outcome.subjectType === "search_document" && !latestOutcomeBySubject.has(outcome.subjectId)) {
-        latestOutcomeBySubject.set(outcome.subjectId, outcome);
+      const subjectKey = `${outcome.subjectType}:${outcome.subjectId}`;
+
+      if (
+        !latestOutcomeBySubject.has(subjectKey) &&
+        contextOutcomeAppliesToTask(outcome, feedbackTaskObjective, task)
+      ) {
+        latestOutcomeBySubject.set(subjectKey, outcome);
       }
     }
   }
 
-  return {
-    ...readModel,
-    sourceSeeds: readModel.sourceSeeds.filter((seed) => {
-      const subjectId = targetSourceSeedSubjectId(seed, readModel, projectId);
-      const latestOutcome = latestOutcomeBySubject.get(subjectId);
+  return [...latestOutcomeBySubject.values()];
+};
 
-      return latestOutcome === undefined || !contextNoiseOutcomes.has(latestOutcome.outcome);
-    })
+const noiseSubjectsFromOutcomes = (
+  outcomes: readonly ContextInclusionUsefulnessOutcomeFeedback[]
+): ContextNoiseSubjects => {
+  const memoryRecordIds = new Set<string>();
+  const searchDocumentIds = new Set<string>();
+  const sourceClaimIds = new Set<string>();
+
+  for (const outcome of outcomes.filter(({ outcome }) => contextNoiseOutcomes.has(outcome))) {
+    const target = outcome.subjectType === "memory_record"
+      ? memoryRecordIds
+      : outcome.subjectType === "search_document"
+        ? searchDocumentIds
+        : sourceClaimIds;
+
+    target.add(outcome.subjectId);
+  }
+
+  return { memoryRecordIds, searchDocumentIds, sourceClaimIds };
+};
+
+const contextNoiseSubjectsForTask = async (
+  projectId: string,
+  task: string,
+  repository: Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">> | undefined
+): Promise<ContextNoiseSubjects> => {
+  const listFeedback = repository?.listFeedbackDeltasForProject;
+
+  if (listFeedback === undefined) {
+    return emptyContextNoiseSubjects();
+  }
+
+  const feedbackDeltas = await listFeedback.call(repository, projectId, 100);
+
+  return noiseSubjectsFromOutcomes(latestContextOutcomesForTask(feedbackDeltas, task));
+};
+
+const applyContextNoiseToTargetReadModel = (
+  readModel: TargetActivationReadModel | undefined,
+  projectId: string,
+  noiseSubjects: ContextNoiseSubjects
+): TargetActivationReadModel | undefined => readModel === undefined
+  ? undefined
+  : {
+      ...readModel,
+      sourceSeeds: readModel.sourceSeeds.filter((seed) =>
+        !noiseSubjects.searchDocumentIds.has(targetSourceSeedSubjectId(seed, readModel, projectId))
+      )
+    };
+
+const applyContextNoiseToCompilerDependencies = (
+  dependencies: HarnessCompilerDependencies,
+  noiseSubjects: ContextNoiseSubjects
+): HarnessCompilerDependencies => {
+  if (noiseSubjects.sourceClaimIds.size === 0 && noiseSubjects.memoryRecordIds.size === 0) {
+    return dependencies;
+  }
+
+  const memoryRepository = dependencies.memoryRepository;
+  const listActiveMemory = memoryRepository.listActiveMemory;
+  const getMemoryRecordById = memoryRepository.getMemoryRecordById;
+  const sourceRepository = dependencies.sourceRepository;
+  const listClaimsForProject = sourceRepository.listClaimsForProject;
+  const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
+  const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
+  const listHistoricalClaimWarningsForProject =
+    sourceRepository.listHistoricalClaimWarningsForProject;
+  const listSourceRejectionsForClaim = sourceRepository.listSourceRejectionsForClaim;
+
+  return {
+    ...dependencies,
+    memoryRepository: {
+      listAntiMemoryForProject: (...args) =>
+        memoryRepository.listAntiMemoryForProject(...args),
+      async listActiveMemory(...args) {
+        const records = await listActiveMemory.call(memoryRepository, ...args);
+
+        return records.filter((record) => !noiseSubjects.memoryRecordIds.has(record.id));
+      },
+      ...(getMemoryRecordById === undefined
+        ? {}
+        : {
+            async getMemoryRecordById(...args: Parameters<typeof getMemoryRecordById>) {
+              if (noiseSubjects.memoryRecordIds.has(args[0])) {
+                return undefined;
+              }
+
+              return getMemoryRecordById.call(memoryRepository, ...args);
+            }
+          })
+    },
+    sourceRepository: {
+      listSourceClaimEdgesForProject: (...args) =>
+        sourceRepository.listSourceClaimEdgesForProject(...args),
+      listSourceDecisionEdgesForClaim: (...args) =>
+        sourceRepository.listSourceDecisionEdgesForClaim(...args),
+      async listClaimsForProject(...args) {
+        const claims = await listClaimsForProject.call(sourceRepository, ...args);
+
+        return claims.filter((claim) => !noiseSubjects.sourceClaimIds.has(claim.id));
+      },
+      ...(getSourceClaimForProject === undefined
+        ? {}
+        : {
+            async getSourceClaimForProject(...args: Parameters<typeof getSourceClaimForProject>) {
+              if (noiseSubjects.sourceClaimIds.has(args[1])) {
+                return undefined;
+              }
+
+              return getSourceClaimForProject.call(sourceRepository, ...args);
+            }
+          }),
+      ...(getSourceDecisionForProject === undefined
+        ? {}
+        : {
+            getSourceDecisionForProject: (...args: Parameters<typeof getSourceDecisionForProject>) =>
+              getSourceDecisionForProject.call(sourceRepository, ...args)
+          }),
+      ...(listSourceRejectionsForClaim === undefined
+        ? {}
+        : {
+            listSourceRejectionsForClaim: (...args: Parameters<typeof listSourceRejectionsForClaim>) =>
+              listSourceRejectionsForClaim.call(sourceRepository, ...args)
+          }),
+      ...(listHistoricalClaimWarningsForProject === undefined
+        ? {}
+        : {
+            async listHistoricalClaimWarningsForProject(
+              ...args: Parameters<typeof listHistoricalClaimWarningsForProject>
+            ) {
+              const claims = await listHistoricalClaimWarningsForProject.call(
+                sourceRepository,
+                ...args
+              );
+
+              return claims.filter((claim) => !noiseSubjects.sourceClaimIds.has(claim.id));
+            }
+          })
+    }
   };
+};
+
+export const applyPlanContextUsefulnessFeedback = async (input: {
+  readModel: TargetActivationReadModel | undefined;
+  projectId: string;
+  task: string;
+  repository: Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">> | undefined;
+  compilerDependencies: HarnessCompilerDependencies;
+}): Promise<{
+  targetReadModel: TargetActivationReadModel | undefined;
+  compilerDependencies: HarnessCompilerDependencies;
+}> => {
+  const noiseSubjects = await contextNoiseSubjectsForTask(
+    input.projectId,
+    input.task,
+    input.repository
+  );
+
+  return {
+    targetReadModel: applyContextNoiseToTargetReadModel(
+      input.readModel,
+      input.projectId,
+      noiseSubjects
+    ),
+    compilerDependencies: applyContextNoiseToCompilerDependencies(
+      input.compilerDependencies,
+      noiseSubjects
+    )
+  };
+};
+
+export const applyTargetSeedUsefulnessFeedback = async (
+  readModel: TargetActivationReadModel | undefined,
+  projectId: string,
+  repository: Partial<Pick<HarnessRunRepository, "listFeedbackDeltasForProject">> | undefined,
+  task = ""
+): Promise<TargetActivationReadModel | undefined> => {
+  const noiseSubjects = await contextNoiseSubjectsForTask(projectId, task, repository);
+
+  return applyContextNoiseToTargetReadModel(readModel, projectId, noiseSubjects);
 };
 
 const renderPlanExecutionBrief = (
@@ -1102,12 +1295,20 @@ export const runPlanCommand = async (
       baseCompileInput,
       knowledgeSelection
     );
-    const targetReadModel = await applyTargetSeedUsefulnessFeedback(
-      await buildTargetActivationReadModel(compilerRuntime.projectScopedMetadata),
-      compilerRuntime.projectId,
-      compilerRuntime.harnessRunRepository
+    const contextUsefulness = await applyPlanContextUsefulnessFeedback({
+      readModel: await buildTargetActivationReadModel(compilerRuntime.projectScopedMetadata),
+      projectId: compilerRuntime.projectId,
+      task,
+      repository: compilerRuntime.harnessRunRepository,
+      compilerDependencies: compilerRuntime.compilerDependencies
+    });
+    const targetReadModel = contextUsefulness.targetReadModel;
+    const result = await compilePlanForCommand(
+      compilerRuntime,
+      compileInput,
+      targetReadModel,
+      contextUsefulness.compilerDependencies
     );
-    const result = await compilePlanForCommand(compilerRuntime, compileInput, targetReadModel);
     const targetOwnerFileRecall =
       targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(targetReadModel);
     const persistedPlan = await createPersistedPlanOutput(

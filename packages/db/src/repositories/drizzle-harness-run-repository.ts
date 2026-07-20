@@ -55,6 +55,8 @@ import {
   executionRunLifecycleTransitionedEvent,
   executionRunLifecycleTransitionedEventType,
   ExecutionRunLifecycleConflictError,
+  feedbackTaskContractIdMetadataKey,
+  feedbackTaskObjectiveMetadataKey,
   isAdmittedCurrentDecisionPacketAuthorityMetadata,
   isIsoTimestamp,
   isReviewableFeedbackOutcome,
@@ -3466,7 +3468,9 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     const rows = await this.db
       .select({
         feedbackDelta: feedbackDeltas,
-        captureChannel: evidenceBundles.captureChannel
+        captureChannel: evidenceBundles.captureChannel,
+        taskContractId: taskContracts.id,
+        taskObjective: taskContracts.objective
       })
       .from(feedbackDeltas)
       .innerJoin(
@@ -3493,10 +3497,21 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
       .orderBy(desc(feedbackDeltas.createdAt))
       .limit(limit);
 
-    return rows.map((row) => mapFeedbackDeltaForAuthorityRead(
-      row.feedbackDelta,
-      row.captureChannel
-    ));
+    return rows.map((row) => {
+      const feedbackDelta = mapFeedbackDeltaForAuthorityRead(
+        row.feedbackDelta,
+        row.captureChannel
+      );
+
+      return {
+        ...feedbackDelta,
+        metadata: {
+          ...feedbackDelta.metadata,
+          [feedbackTaskContractIdMetadataKey]: row.taskContractId,
+          [feedbackTaskObjectiveMetadataKey]: row.taskObjective
+        }
+      };
+    });
   }
 
   async getFeedbackDeltaForProject(
