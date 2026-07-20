@@ -392,7 +392,6 @@ interface DecisionCorpusImportReconciliationProofInput {
 }
 
 interface DecisionCorpusImportReconciliationProof {
-  readonly equivalentSmokeId: string;
   readonly reconciliation: SourceDecisionImportReconciliationReport;
   readonly reconciliationReadOnly: boolean;
 }
@@ -400,16 +399,6 @@ interface DecisionCorpusImportReconciliationProof {
 const proveDecisionCorpusImportReconciliation = async (
   input: DecisionCorpusImportReconciliationProofInput
 ): Promise<DecisionCorpusImportReconciliationProof> => {
-  const equivalentSmokeId = `${input.smokeId}-equivalent`;
-  await persistDecisionCorpusImport({
-    runtime: input.runtime,
-    projectId: input.projectId,
-    fixture: input.fixture,
-    smokeId: equivalentSmokeId,
-    now: input.now,
-    authorizedRepoRoot: input.repoRoot,
-    resolveEvidence: input.resolveEvidence
-  });
   const countsBefore = await importReconciliationTableCounts(input.client, input.projectId);
   const withReadSnapshot = input.runtime.withSourceDecisionImportReadSnapshot;
 
@@ -436,11 +425,8 @@ const proveDecisionCorpusImportReconciliation = async (
   });
   const currentImport = requiredReconciledImport(readback.full, input.smokeId);
   const partialImport = requiredReconciledImport(readback.full, input.partialSmokeId);
-  const equivalentImport = requiredReconciledImport(readback.full, equivalentSmokeId);
   const boundedImport = requiredReconciledImport(readback.bounded, input.smokeId);
-  const pagedImport = requiredReconciledImport(readback.paged, equivalentSmokeId);
-  const expectedEquivalentImportIds = [equivalentSmokeId, input.partialSmokeId].sort();
-  const expectedBoundedEquivalentImportIds = expectedEquivalentImportIds.slice(0, 1);
+  const pagedImport = requiredReconciledImport(readback.paged, input.partialSmokeId);
   const decisionCount = input.fixture.decisions.length;
   const partialRow = partialImport.rows.items.find(
     (row) => row.sourceArtifactId === input.partialSourceArtifactId
@@ -451,15 +437,15 @@ const proveDecisionCorpusImportReconciliation = async (
   }
 
   requireSmokeEqual(readback.full.imports.truncated, false, "full reconciliation truncation");
-  requireSmokeEqual(readback.full.imports.totalCount, 3, "full reconciliation total count");
-  requireSmokeEqual(readback.full.imports.returnedCount, 3, "full reconciliation import count");
+  requireSmokeEqual(readback.full.imports.totalCount, 2, "full reconciliation total count");
+  requireSmokeEqual(readback.full.imports.returnedCount, 2, "full reconciliation import count");
   requireSmokeEqual(currentImport.lifecycle, "complete", "current import lifecycle");
   requireSmokeEqual(currentImport.rowCount, decisionCount, "current import row count");
   requireSmokeEqual(currentImport.completeRowCount, decisionCount, "current complete row count");
   requireSmokeEqual(currentImport.partialRowCount, 0, "current partial row count");
   requireSmokeEqual(
     currentImport.equivalentImportIds.items,
-    expectedEquivalentImportIds,
+    [],
     "current equivalent import IDs"
   );
   requireSmokeEqual(partialImport.lifecycle, "partial", "partial import lifecycle");
@@ -491,12 +477,6 @@ const proveDecisionCorpusImportReconciliation = async (
     0,
     "partial tuple search document count"
   );
-  requireSmokeEqual(equivalentImport.lifecycle, "complete", "equivalent import lifecycle");
-  requireSmokeEqual(
-    equivalentImport.corpusDigest,
-    currentImport.corpusDigest,
-    "equivalent corpus digest"
-  );
   requireSmokeEqual(readback.bounded.imports.truncated, true, "bounded reconciliation truncation");
   requireSmokeEqual(readback.bounded.imports.returnedCount, 1, "bounded import count");
   requireSmokeEqual(readback.bounded.afterImportId, null, "bounded reconciliation cursor start");
@@ -507,18 +487,18 @@ const proveDecisionCorpusImportReconciliation = async (
   );
   requireSmokeEqual(
     boundedImport.equivalentImportIds.items,
-    expectedBoundedEquivalentImportIds,
+    [],
     "bounded equivalent import IDs"
   );
   requireSmokeEqual(readback.paged.afterImportId, input.smokeId, "paged reconciliation cursor");
-  requireSmokeEqual(readback.paged.imports.totalCount, 2, "paged reconciliation remaining count");
+  requireSmokeEqual(readback.paged.imports.totalCount, 1, "paged reconciliation remaining count");
   requireSmokeEqual(readback.paged.imports.returnedCount, 1, "paged reconciliation import count");
   requireSmokeEqual(
     readback.paged.nextAfterImportId,
-    equivalentSmokeId,
+    null,
     "paged reconciliation next cursor"
   );
-  requireSmokeEqual(pagedImport.importId, equivalentSmokeId, "paged reconciliation import ID");
+  requireSmokeEqual(pagedImport.importId, input.partialSmokeId, "paged reconciliation import ID");
   const countsAfter = await importReconciliationTableCounts(input.client, input.projectId);
   const reconciliationReadOnly = JSON.stringify(countsAfter) === JSON.stringify(countsBefore);
 
@@ -527,7 +507,6 @@ const proveDecisionCorpusImportReconciliation = async (
   }
 
   return {
-    equivalentSmokeId,
     reconciliation: readback.full,
     reconciliationReadOnly
   };
@@ -539,7 +518,6 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
   const client = postgres(input.databaseUrl, { max: 1 });
   const createId = createUniqueSmokeCreateId(input.smokeId);
   const cleanupSmokeIds = [
-    `${input.smokeId}-equivalent`,
     `${input.smokeId}-partial-replay`,
     input.smokeId
   ];
@@ -601,10 +579,17 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     `;
     const replayPersistedArtifactCount = replayArtifactRows[0]?.count ?? 0;
     const partialSmokeId = `${input.smokeId}-partial-replay`;
+    const partialFixture = {
+      ...fixture,
+      decisions: fixture.decisions.map((row) => ({
+        ...row,
+        noteText: `${row.noteText} partial-replay-falsifier`
+      }))
+    };
     const partialRows = await persistDecisionCorpusImport({
       runtime,
       projectId,
-      fixture,
+      fixture: partialFixture,
       smokeId: partialSmokeId,
       now: input.now,
       authorizedRepoRoot: input.repoRoot,
@@ -664,7 +649,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       await persistDecisionCorpusImport({
         runtime,
         projectId,
-        fixture,
+        fixture: partialFixture,
         smokeId: partialSmokeId,
         now: input.now,
         authorizedRepoRoot: input.repoRoot,
@@ -688,7 +673,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       repoRoot: input.repoRoot,
       resolveEvidence
     });
-    const { equivalentSmokeId, reconciliation, reconciliationReadOnly } = reconciliationProof;
+    const { reconciliation, reconciliationReadOnly } = reconciliationProof;
     const changedFixture = {
       ...fixture,
       decisions: fixture.decisions.map((row, index) => index === 0
@@ -719,6 +704,13 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
     }
 
     const failureImportId = `${input.smokeId}:atomic-failure`;
+    const failureFixture = {
+      ...fixture,
+      decisions: fixture.decisions.map((row) => ({
+        ...row,
+        noteText: `${row.noteText} atomic-failure-falsifier`
+      }))
+    };
     const failureWithTransaction: NonNullable<typeof runtime.withTransaction> = async <T>(
       lockKey: string,
       work: (transactionRuntime: DatabaseRuntimeTransaction) => Promise<T>
@@ -759,7 +751,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       await persistSourceDecisionImport({
         runtime: failureRuntime,
         projectId,
-        fixture,
+        fixture: failureFixture,
         importId: failureImportId,
         smokeId: input.smokeId,
         importedBy: "krn db smoke decision-corpus-import atomic-failure",
@@ -930,7 +922,6 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       }))
     });
 
-    await cleanupSourceSmokeMarkers(client, markerTables, equivalentSmokeId, smokeSource);
     await cleanupSourceSmokeMarkers(client, markerTables, partialSmokeId, smokeSource);
     const markerCleanup = await finalizeSourceSmokeMarkerCleanup(
       client,
