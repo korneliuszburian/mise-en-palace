@@ -1016,6 +1016,46 @@ describe("tracked paired live Codex repair", () => {
     }
   });
 
+  it("fails closed when an enumerated untracked file cannot be captured", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-missing-untracked-"));
+    const source = await makeRunnableTargetSource();
+    const binRoot = join(root, "bin");
+    await mkdir(binRoot, { recursive: true });
+    await makeFakeCodex(join(binRoot, "codex"), "exit 1");
+    await makeFakeContainment(join(binRoot, "bwrap"), "exec \"$@\"");
+    await writeExecutable(join(binRoot, "git"), [
+      "#!/bin/sh",
+      "if [ \"$1\" = \"rev-parse\" ]; then printf 'fixture-commit\\n'; exit 0; fi",
+      "if [ \"$1\" = \"ls-files\" ]; then printf 'missing.css\\0'; exit 0; fi",
+      "if [ \"$1\" = \"diff\" ] && [ \"$2\" = \"--no-index\" ]; then printf 'error: Could not access missing.css\\n' >&2; exit 1; fi",
+      "exit 0"
+    ].join("\n"));
+
+    try {
+      const trialManifest = runnableManifest(binRoot, 1_000);
+      const result = await withProcessEnvironment({
+        KRN_TRIAL_CODEX_HOME: binRoot,
+        PATH: `${binRoot}${delimiter}${process.env.PATH ?? ""}`
+      }, () => runTrackedPairedTrial({
+        manifest: trialManifest,
+        sourceRoot: source,
+        checkerRoot: process.cwd(),
+        packet: { ...packet, request: { runId: trialManifest.runId } },
+        attemptDirectory: join(root, "attempt")
+      }, passingChecker));
+
+      expect(result.execution.targets?.baseline.before).toMatchObject({
+        status: "unknown",
+        untrackedFiles: ["missing.css"]
+      });
+      expect(result.execution.targets?.baseline.before.patchHash).toBeUndefined();
+      expect(result.status).toBe("invalid");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(source, { recursive: true, force: true });
+    }
+  });
+
   it("accepts a passed artifact only after both arms and the held-out checker are bound", async () => {
     const root = await mkdtemp(join(tmpdir(), "krn-tracked-trial-passed-"));
     const source = await makeRunnableTargetSource();
@@ -1023,7 +1063,7 @@ describe("tracked paired live Codex repair", () => {
     const packetPromptMarker = join(root, "packet-prompt.txt");
     await mkdir(binRoot, { recursive: true });
     await makeFakeCodex(join(binRoot, "codex"), [
-      `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; fi`,
+      `if printf '%s\\n' "$@" | grep -q 'BEGIN KRN DECISION PACKET'; then printf packet > "${packetPromptMarker}"; head -c 70000 /dev/zero | tr '\\0' k > untracked-output.txt; printf krn-tail >> untracked-output.txt; else head -c 70000 /dev/zero | tr '\\0' b > untracked-output.txt; printf baseline-tail >> untracked-output.txt; fi`,
       "printf '%s\\n' 'KRN_OBEDIENCE_JSON:{\"decisionId\":[\"decision-1\",\"decision-2\"],\"rejectedPath\":\"rejected-path-1\",\"staleBoundary\":\"no stale decisions\",\"nonProof\":\"does not prove live execution\",\"action\":\"validate\"}'",
       "exit 0"
     ].join("\n"));
@@ -1085,6 +1125,15 @@ describe("tracked paired live Codex repair", () => {
       expect(fetchCalls).toBe(1);
       expect(applicationRecorderCalls).toBe(1);
       expect(await readFile(packetPromptMarker, "utf8")).toBe("packet");
+      const baselineAfter = result.execution.targets?.baseline.after;
+      if (baselineAfter === undefined) throw new Error("baseline after-state is required");
+      const krnAfter = result.execution.targets?.krn.after;
+      if (krnAfter === undefined) throw new Error("KRN after-state is required");
+      expect(baselineAfter.untrackedFiles).toContain("untracked-output.txt");
+      expect(baselineAfter.commands.patch.stdout).toContain("baseline-tail");
+      expect(krnAfter.commands.patch.stdout).toContain("krn-tail");
+      expect(baselineAfter.patchHash).not.toBe(krnAfter.patchHash);
+      expect(baselineAfter.patchHash).toBe(sha256(baselineAfter.commands.patch.stdout));
       expect(verifyTrackedTrialArtifact(result)).toBe(true);
       expect(await readTrackedTrialArtifact(join(root, "attempt"))).toEqual(result);
 
