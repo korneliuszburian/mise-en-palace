@@ -225,6 +225,14 @@ const isJsonValue = (value: unknown): value is JsonValue => {
   return isRecord(value) && Object.values(value).every(isJsonValue);
 };
 
+const requireJsonValue = (value: unknown): JsonValue => {
+  if (!isJsonValue(value)) {
+    throw new Error("DecisionPacket MCP output must be JSON-serializable");
+  }
+
+  return value;
+};
+
 const textResult = (
   text: string,
   isError = false
@@ -252,9 +260,9 @@ const briefResult = (
       brief.trimEnd()
     ].join("\n")
   }],
-  structuredContent: readback.packetIdentity as unknown as JsonValue,
+  structuredContent: requireJsonValue(readback.packetIdentity),
   _meta: {
-    decisionPacketReadback: readback as unknown as JsonValue
+    decisionPacketReadback: requireJsonValue(readback)
   },
   isError: false
 });
