@@ -15,6 +15,54 @@ import {
 } from "../run-plan-command.js";
 
 describe("target seed usefulness selection", () => {
+  it("keeps context when the packet-bound feedback proposal is not authorized", async () => {
+    const readModel = {
+      projectId: "project-1",
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-1"],
+      localPathHints: ["/target"],
+      sourceSeeds: [{ path: "docs", kind: "docs", reason: "broad documentation" }],
+      trustExclusions: []
+    };
+    const noisySubjectId = targetSourceSeedSubjectId(
+      readModel.sourceSeeds[0]!,
+      readModel,
+      "project-1"
+    );
+    const feedback = (status: "candidate" | "rejected") => ({
+      id: `feedback-${status}`,
+      reviewAssessmentId: `review-${status}`,
+      status,
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: stampCurrentDecisionPacketAuthorityMetadata({
+        contextInclusionUsefulnessOutcomes: [{
+          subjectType: "search_document",
+          subjectId: noisySubjectId,
+          outcome: "noise",
+          reason: "The broad docs root caused irrelevant inspection.",
+          evidenceRefs: ["packet:prior"],
+          doesNotProve: "The docs root is never useful."
+        }]
+      }, {
+        checksum: "prior-packet",
+        generatedAt: "2026-07-20T00:00:00.000Z",
+        sourceRunLifecycleRevision: 1
+      }),
+      createdAt: "2026-07-20T00:00:00.000Z",
+      updatedAt: "2026-07-20T00:00:00.000Z"
+    } satisfies FeedbackDelta);
+
+    const selected = await applyTargetSeedUsefulnessFeedback(readModel, "project-1", {
+      async listFeedbackDeltasForProject() {
+        return [feedback("candidate"), feedback("rejected")];
+      }
+    });
+
+    expect(selected?.sourceSeeds).toEqual(readModel.sourceSeeds);
+  });
+
   it("removes the latest noisy seed while retaining useful seeds and trust exclusions", async () => {
     const readModel = {
       projectId: "project-1",
