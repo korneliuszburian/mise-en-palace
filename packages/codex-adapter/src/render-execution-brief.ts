@@ -20,6 +20,18 @@ import {
   executionBriefFormatVersion,
   executionBriefSectionProfiles
 } from "./contracts.js";
+
+export class ExecutionBriefRenderBudgetError extends Error {
+  readonly utf8Bytes: number;
+  readonly maxUtf8Bytes: number;
+
+  constructor(utf8Bytes: number, maxUtf8Bytes: number) {
+    super(`ExecutionBrief render is ${utf8Bytes} UTF-8 bytes; maximum is ${maxUtf8Bytes}.`);
+    this.name = "ExecutionBriefRenderBudgetError";
+    this.utf8Bytes = utf8Bytes;
+    this.maxUtf8Bytes = maxUtf8Bytes;
+  }
+}
 export interface RenderExecutionBriefInput {
   packet: DecisionPacket;
 }
@@ -148,9 +160,11 @@ export const describeExecutionBriefProfile = (
   const renderedSections = sections.filter((section) => section.rendered).length;
   const renderedItems = sections.reduce((sum, section) =>
     section.rendered ? sum + section.itemCount : sum, 0);
+  const utf8Bytes = Buffer.byteLength(renderExecutionBriefTextUnchecked(brief), "utf8");
   const status =
     renderedSections <= executionBriefProfileBudget.maxRenderedSections &&
-    renderedItems <= executionBriefProfileBudget.maxRenderedItems
+    renderedItems <= executionBriefProfileBudget.maxRenderedItems &&
+    utf8Bytes <= executionBriefProfileBudget.maxUtf8Bytes
       ? "within_budget"
       : "over_budget";
 
@@ -162,6 +176,7 @@ export const describeExecutionBriefProfile = (
       ...executionBriefProfileBudget,
       renderedSections,
       renderedItems,
+      utf8Bytes,
       status
     },
     doesNotProve: [
@@ -366,7 +381,7 @@ const renderOptionalSection = (
   items: readonly string[]
 ): string[] => (items.length === 0 ? [] : [label, ...items, ""]);
 
-export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
+const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
   const observationPrefixLines =
     brief.observationPrefix.length === 0 && brief.observationPrefixWarnings.length === 0
       ? []
@@ -424,6 +439,20 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   ];
 
   return `${lines.join("\n")}\n`;
+};
+
+export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
+  const rendered = renderExecutionBriefTextUnchecked(brief);
+  const utf8Bytes = Buffer.byteLength(rendered, "utf8");
+
+  if (utf8Bytes > executionBriefProfileBudget.maxUtf8Bytes) {
+    throw new ExecutionBriefRenderBudgetError(
+      utf8Bytes,
+      executionBriefProfileBudget.maxUtf8Bytes
+    );
+  }
+
+  return rendered;
 };
 
 export const renderExecutionBrief = (input: RenderExecutionBriefInput): string =>

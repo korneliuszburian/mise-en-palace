@@ -97,8 +97,10 @@ describe("Codex adapter contracts", () => {
       budget: {
         maxRenderedSections: 23,
         maxRenderedItems: 80,
+        maxUtf8Bytes: 32 * 1024,
         renderedSections: 12,
         renderedItems: 20,
+        utf8Bytes: 2048,
         status: "within_budget"
       },
       doesNotProve: [

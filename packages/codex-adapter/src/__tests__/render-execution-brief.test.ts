@@ -14,7 +14,8 @@ import {
   createExecutionBrief,
   describeExecutionBriefProfile,
   renderExecutionBriefText,
-  renderExecutionBrief
+  renderExecutionBrief,
+  ExecutionBriefRenderBudgetError
 } from "../render-execution-brief.js";
 import {
   executionBriefFormatVersion
@@ -326,8 +327,10 @@ describe("renderExecutionBrief", () => {
     expect(profile.budget).toMatchObject({
       maxRenderedSections: 23,
       maxRenderedItems: 80,
+      maxUtf8Bytes: 32 * 1024,
       status: "within_budget"
     });
+    expect(profile.budget.utf8Bytes).toBeGreaterThan(0);
     expect(profile.sections.find((section) => section.id === "observation_prefix")).toMatchObject({
       kind: "optional",
       rendered: false,
@@ -623,6 +626,27 @@ describe("renderExecutionBrief", () => {
 
     expect(profile.budget.renderedItems).toBeGreaterThan(profile.budget.maxRenderedItems);
     expect(profile.budget.status).toBe("over_budget");
+  });
+
+  it("refuses to emit a model-facing brief above the UTF-8 budget", () => {
+    const brief = createExecutionBrief({
+      packet: packetForBrief({
+        taskContract: {
+          ...taskContract,
+          objective: "x".repeat(40 * 1024)
+        },
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Reduce the governed packet before rendering it."
+      })
+    });
+
+    expect(describeExecutionBriefProfile(brief).budget).toMatchObject({
+      status: "over_budget",
+      maxUtf8Bytes: 32 * 1024
+    });
+    expect(() => renderExecutionBriefText(brief)).toThrow(ExecutionBriefRenderBudgetError);
   });
 
   it("warns when selected context is not a trusted tier", () => {

@@ -55,7 +55,8 @@ export const executionBriefSectionProfiles = [
 
 export const executionBriefProfileBudget = {
   maxRenderedSections: executionBriefSectionProfiles.length,
-  maxRenderedItems: 80
+  maxRenderedItems: 80,
+  maxUtf8Bytes: 32 * 1024
 } as const;
 
 export type ExecutionBriefSectionId = (typeof executionBriefSectionProfiles)[number]["id"];
@@ -78,8 +79,10 @@ export interface ExecutionBriefProfileReadback {
   budget: {
     maxRenderedSections: number;
     maxRenderedItems: number;
+    maxUtf8Bytes: number;
     renderedSections: number;
     renderedItems: number;
+    utf8Bytes: number;
     status: ExecutionBriefProfileBudgetStatus;
   };
   doesNotProve: string[];
