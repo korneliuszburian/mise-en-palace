@@ -17,6 +17,7 @@ export interface SourceDecisionEvidenceProvenance {
   uri: string;
   path?: string;
   sourceArtifactId?: string;
+  sourceChunkId?: string;
   sourceSnapshotId?: string;
 }
 
@@ -133,6 +134,7 @@ export interface SourceDecisionImportRepository {
   getCapturedSourceEvidence(input: {
     projectId: ProjectId;
     evidenceRef: string;
+    contentHash?: string;
   }): Promise<SourceDecisionEvidenceLookup>;
 
   getSourceDecisionImportRow(

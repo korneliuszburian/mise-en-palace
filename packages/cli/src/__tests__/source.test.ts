@@ -573,6 +573,29 @@ describe("runCli", () => {
     );
   });
 
+  it("requires persistence before resolving a target repo source decision import", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "import",
+        "--file",
+        "tests/fixtures/source-decision-import/minimal-reviewed-corpus.json",
+        "--repo",
+        "."
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("krn source decision import --repo requires --persist");
+  });
+
   it("previews source decision adoption without DB writes", async () => {
     const result = await runCli(
       [

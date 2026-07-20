@@ -114,17 +114,18 @@ export const formatSourceQuarantineListUsage = (): string =>
 
 export const formatSourceDecisionImportUsage = (): string =>
   [
-    "Usage: krn source decision import --file <source-decision-import.json> [--project <project-id>] [--persist] [--json]",
+    "Usage: krn source decision import --file <source-decision-import.json> [--project <project-id>|--repo <path>] [--persist] [--json]",
     "",
     "Required:",
     "--file",
     "",
     "Optional:",
     "--project <project-id>",
+    "--repo <path>",
     "--persist",
     "--json",
     "",
-    "Note: imports compact source-to-decision rows into existing SourceArtifact, SourceClaim, SourceDecision, SourceDecisionEdge, SearchDocument, and SourceRejection paths. It does not crawl, execute Codex, promote Memory Core truth, or create a markdown knowledge store."
+    "Note: imports compact source-to-decision rows into existing SourceArtifact, SourceClaim, SourceDecision, SourceDecisionEdge, SearchDocument, and SourceRejection paths. --repo resolves a connected target project and admits local evidence only through a target-owned SourceArtifact referenced as krn-source://sha256/<digest>. It never dereferences file:// input. It does not crawl, execute Codex, promote Memory Core truth, or create a markdown knowledge store."
   ].join("\n") + "\n";
 
 export const formatSourceArtifactPreviewUsage = (): string =>
@@ -1149,9 +1150,46 @@ const parseSourceDecisionImportProjectOption: SourceDecisionImportOptionParser =
   };
 };
 
+const parseSourceDecisionImportRepoOption: SourceDecisionImportOptionParser = (
+  rest,
+  index,
+  arg,
+  sourceCommand
+) => {
+  if (!optionMatches(arg, "--repo")) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = optionValue(rest, index, "--repo");
+
+  if (parsed.error !== undefined || parsed.value === undefined) {
+    return {
+      error: parsed.error ?? formatSourceDecisionImportUsage()
+    };
+  }
+
+  const repo = parsed.value.trim();
+
+  if (repo.length === 0) {
+    return {
+      error: "--repo requires a non-empty path"
+    };
+  }
+
+  sourceCommand.repo = repo;
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
 const sourceDecisionImportOptionParsers: readonly SourceDecisionImportOptionParser[] = [
   parseSourceDecisionImportFileOption,
-  parseSourceDecisionImportProjectOption
+  parseSourceDecisionImportProjectOption,
+  parseSourceDecisionImportRepoOption
 ];
 
 const parseSourceDecisionImportToken = (
@@ -2005,10 +2043,20 @@ const parseSourceDecisionImportArgs = (rest: readonly string[]): ParseArgsResult
     };
   }
 
+  if (hasCompetingSourceDecisionImportTargets(sourceCommand)) {
+    return {
+      error: formatSourceDecisionImportUsage()
+    };
+  }
+
   return {
     command: sourceCommand
   };
 };
+
+const hasCompetingSourceDecisionImportTargets = (
+  command: SourceDecisionImportCommand
+): boolean => command.projectId !== undefined && command.repo !== undefined;
 
 type SourceArgsParser = (rest: readonly string[]) => ParseArgsResult;
 

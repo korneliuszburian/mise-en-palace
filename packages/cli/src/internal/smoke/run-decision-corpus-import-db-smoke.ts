@@ -315,6 +315,9 @@ export const persistDecisionCorpusImport = async (
     ...(input.authorizedRepoRoot === undefined
       ? {}
       : { authorizedRepoRoot: input.authorizedRepoRoot }),
+    ...(input.requireCapturedProjectEvidence === undefined
+      ? {}
+      : { requireCapturedProjectEvidence: input.requireCapturedProjectEvidence }),
     ...(input.resolveEvidence === undefined ? {} : { resolveEvidence: input.resolveEvidence })
   });
 

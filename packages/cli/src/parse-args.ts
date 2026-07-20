@@ -589,6 +589,7 @@ export type CliCommand =
       persist: boolean;
       file?: string;
       projectId?: string;
+      repo?: string;
       json?: boolean;
     }
   | {
@@ -666,7 +667,7 @@ const usage = [
   "krn source decision adopt --source-claim-id <id> --decision \"...\" --rationale \"...\" --falsifier \"...\" --consumer \"...\" [--persist]",
   "krn source decision link --source-claim-id <id> --source-decision-id <id> --target-type <type> --target-id <id> --support-type <type> --confidence <low|medium|high> --notes \"...\" [--persist]",
   "krn source decision reconcile --project <project-id> [--limit <n>] [--after <import-id>] [--json]",
-  "krn source decision import --file source-decisions.json [--project <project-id>] [--persist] [--json]",
+  "krn source decision import --file source-decisions.json [--project <project-id>|--repo <path>] [--persist] [--json]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
   "  revision: add --source-memory-id <id> --reason \"...\" to atomically supersede one active predecessor",

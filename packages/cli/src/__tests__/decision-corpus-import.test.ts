@@ -427,6 +427,18 @@ describe("runDecisionCorpusImport", () => {
       runtime,
       projectId: "project-1",
       fixture: singleDecisionCorpus({
+        ...firstDecision,
+        evidenceRef: "file:///outside-repo/complete-css.html?capture=reviewed"
+      }),
+      smokeId: "unit-smoke-file-uri",
+      now,
+      requireCapturedProjectEvidence: true
+    })).rejects.toThrow("requires content-addressed project evidence");
+
+    await expect(persistDecisionCorpusImport({
+      runtime,
+      projectId: "project-1",
+      fixture: singleDecisionCorpus({
           ...firstDecision,
           evidenceRef: "run-evidence/digest-mismatch.md"
       }),
