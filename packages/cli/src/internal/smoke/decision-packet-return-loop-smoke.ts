@@ -991,9 +991,19 @@ const readMcpDecisionPacket = (
     "structuredContent",
     "DecisionPacket MCP smoke reply missed structuredContent"
   );
+  const metadata = readRequiredRecord(
+    result,
+    "_meta",
+    "DecisionPacket MCP smoke reply missed metadata"
+  );
+  const decisionPacketReadback = readRequiredRecord(
+    metadata,
+    "decisionPacketReadback",
+    "DecisionPacket MCP smoke reply missed hidden DecisionPacket readback metadata"
+  );
 
   return {
-    packet: readPacket(structuredContent),
+    packet: readPacket(decisionPacketReadback),
     messageUtf8Bytes: measureDecisionPacketTransport(reply).utf8Bytes,
     structuredContentMeasurement: measureDecisionPacketTransport(structuredContent)
   };

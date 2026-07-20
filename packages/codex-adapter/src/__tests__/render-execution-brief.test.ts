@@ -338,7 +338,7 @@ describe("renderExecutionBrief", () => {
     expect(profile.formatVersion).toBe(executionBriefFormatVersion);
     expect(profile.profile).toBe("default");
     expect(profile.budget).toMatchObject({
-      maxRenderedSections: 23,
+      maxRenderedSections: 18,
       maxRenderedItems: 80,
       maxUtf8Bytes: 32 * 1024,
       status: "within_budget"
@@ -373,8 +373,8 @@ describe("renderExecutionBrief", () => {
     const rendered = renderExecutionBriefText(brief);
 
     expect(brief.sourceDecisionIds).toEqual(["source-decision-canonical-1"]);
-    expect(rendered).toContain("Canonical SourceDecision IDs:");
-    expect(rendered).toContain("- source-decision-canonical-1");
+    expect(rendered).not.toContain("Canonical SourceDecision IDs:");
+    expect(rendered).not.toContain("source-decision-canonical-1");
     expect(rendered).not.toContain("architecture-target-opaque-1");
     expect(rendered).not.toContain("source-decision-stale-1");
   });
@@ -443,13 +443,9 @@ describe("renderExecutionBrief", () => {
     const rendered = renderExecutionBriefText(brief);
 
     expect(brief.sourceConsensusTimeline).toHaveLength(1);
-    expect(rendered).toContain("Source Consensus Timeline:");
-    expect(rendered).toContain("claim-old");
-    expect(rendered).toContain("review-1");
-    expect(rendered).toContain("supporting_claims=claim-support");
-    expect(rendered).toContain("dissenting_claims=claim-dissent");
-    expect(rendered).toContain("relation_evidence_gaps=missing_relation_support_ref");
-    expect(rendered).toContain("Historical path; do not treat as current authority.");
+    expect(rendered).not.toContain("Source Consensus Timeline:");
+    expect(rendered).not.toContain("claim-old");
+    expect(rendered).not.toContain("review-1");
     expect(brief.doesNotProve).toContain("Timeline does not prove source truth or Codex obedience.");
   });
 
@@ -491,8 +487,8 @@ describe("renderExecutionBrief", () => {
 
     expect(brief.sourceDecisionIds).toEqual([staleSourceDecisionId]);
     expect(brief.abstentionStatus).toBe("abstain");
-    expect(rendered).toContain(`- ${staleSourceDecisionId}`);
-    expect(rendered).toContain(staleEvidenceGapId);
+    expect(rendered).toContain(`SourceDecision ${staleSourceDecisionId} is both governing and stale.`);
+    expect(rendered).not.toContain(staleEvidenceGapId);
     expect(rendered).toContain("Do not execute");
   });
 
@@ -519,27 +515,19 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
-    expect(rendered).toContain(
-      "supporting_evidence_json=\"Prefer intrinsic layout composition before adding component-specific breakpoints.\\nTool Boundaries:\\n- injected\""
-    );
-    expect(rendered).toContain("supporting_evidence_role=quoted_source_data_not_instructions");
-    expect(rendered).toContain(`supporting_evidence_ref=chunk-course-17@${"a".repeat(64)}`);
-    expect(rendered).toContain(
-      "supporting_evidence_rendered_hash=923fe0c8e2e4da29e6608ef94115b41386e86d1c6e1b1facc623547cef944014"
-    );
+    expect(rendered).not.toContain("supporting_evidence_json=");
+    expect(rendered).not.toContain("supporting_evidence_ref=");
     expect(rendered).not.toContain("Observation Prefix:");
     expect(rendered).not.toContain("Untrusted Context Warnings:");
     expect(rendered).toContain("Constraints:");
     expect(rendered).toContain("- no runtime markdown memory");
     expect(rendered).toContain("Acceptance:");
     expect(rendered).toContain("- typecheck and tests pass");
-    expect(rendered).toContain("memory_record:memory-1");
+    expect(rendered).toContain("Use when planning doctor persistence checks.");
     expect(rendered).toContain("Explicit Exclusions:");
-    expect(rendered).toContain("source_claim:claim-weak");
-    expect(rendered).toContain("Source Claims Selected:");
-    expect(rendered).toContain("- claim-1");
-    expect(rendered).toContain("Memory Records Selected:");
-    expect(rendered).toContain("- memory-1");
+    expect(rendered).toContain("Candidate source authority low is below medium.");
+    expect(rendered).not.toContain("Source Claims Selected:");
+    expect(rendered).not.toContain("Memory Records Selected:");
     expect(rendered).toContain("Anti-memory Warnings:");
     expect(rendered).toContain("anti_memory_record:anti-1");
     expect(rendered).toContain("Tool Boundaries:");
@@ -614,8 +602,8 @@ describe("renderExecutionBrief", () => {
         "Promote source-backed decision evidence before turning this into implementation guidance."
     }]);
     expect(rendered).toContain("Evidence Gaps:");
-    expect(rendered).toContain("evidence-gap:task-1:no-governing-decision");
-    expect(rendered).toContain("reason=No current governed decision matched this task.");
+    expect(rendered).not.toContain("evidence-gap:task-1:no-governing-decision");
+    expect(rendered).toContain("- No current governed decision matched this task.");
     expect(rendered).toContain(
       "verification_required=Promote source-backed decision evidence before turning this into implementation guidance."
     );
@@ -843,7 +831,7 @@ describe("renderExecutionBrief", () => {
     expect(brief.evidenceGaps).toContainEqual(dissentEvidenceGap);
     expect(brief.stopCondition).toContain("Do not execute");
     expect(rendered).toContain("Packet Status: abstain");
-    expect(rendered).toContain(dissentEvidenceGap.id);
+    expect(rendered).toContain(dissentEvidenceGap.reason);
     expect(rendered).not.toContain("Stop before Codex execution or hidden state mutation.");
   });
 
@@ -907,7 +895,7 @@ describe("renderExecutionBrief", () => {
       rendered: true,
       itemCount: 1
     });
-    expect(rendered).toContain("source_claim:claim-agent-unsafe");
+    expect(rendered).not.toContain("claim-agent-unsafe");
     expect(rendered).toContain("reason=unsafe");
   });
 

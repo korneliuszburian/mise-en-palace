@@ -5,6 +5,13 @@ import {
   Buffer
 } from "node:buffer";
 import {
+  ExecutionBriefRenderBudgetError,
+  renderExecutionBrief
+} from "@krn/codex-adapter";
+import type {
+  DecisionPacketContractReadback
+} from "@krn/core";
+import {
   isCliEntrypoint
 } from "../eval/eval-main.js";
 import {
@@ -16,7 +23,7 @@ import type {
   CreateRunShowDatabaseRuntime
 } from "../../run-run-show-command.js";
 import {
-  decisionPacketContractOutputSchema,
+  decisionPacketIdentityOutputSchema,
   parseDecisionPacketContractReadback,
   type DecisionPacketJsonObject as JsonObject,
   type DecisionPacketJsonValue as JsonValue
@@ -51,6 +58,7 @@ type ToolCallResult = JsonObject & {
     readonly text: string;
   }];
   readonly structuredContent?: JsonValue;
+  readonly _meta?: JsonObject;
   readonly isError?: boolean;
 };
 
@@ -217,6 +225,14 @@ const isJsonValue = (value: unknown): value is JsonValue => {
   return isRecord(value) && Object.values(value).every(isJsonValue);
 };
 
+const requireJsonValue = (value: unknown): JsonValue => {
+  if (!isJsonValue(value)) {
+    throw new Error("DecisionPacket MCP output must be JSON-serializable");
+  }
+
+  return value;
+};
+
 const textResult = (
   text: string,
   isError = false
@@ -225,100 +241,31 @@ const textResult = (
     type: "text",
     text
   }],
-  ...(isError ? { isError: true } : {})
+  isError
 });
-
-const jsonResult = (
-  value: JsonValue
-): ToolCallResult => {
-  const packetIdentity = isRecord(value) ? value["packetIdentity"] : undefined;
-  const checksum = isRecord(packetIdentity) ? packetIdentity["checksum"] : undefined;
-  const identity = typeof checksum === "string" ? ` Checksum: ${checksum}.` : "";
-
-  return {
-    // MCP 2025-06-18 recommends full JSON text only for backward compatibility.
-    // Codex consumes the declared structured output, so keep text identity-only
-    // instead of charging the bounded DecisionPacket to context twice.
-    content: [{
-      type: "text",
-      text: `KRN DecisionPacket is available in structuredContent.${identity}`
-    }],
-    structuredContent: value,
-    isError: false
-  };
-};
 
 const outputLimitResult = (): ToolCallResult =>
   textResult(decisionPacketOutputLimitErrorText, true);
 
-const isJsonObject = (
-  value: JsonValue | undefined
-): value is JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const stringArray = (
-  value: JsonValue | undefined
-): string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === "string")
-    ? [...value]
-    : [];
-
-const appendUnique = (
-  values: string[],
-  value: string
-): string[] =>
-  values.includes(value) ? values : [...values, value];
-
-const annotateMcpTransportProof = (
-  value: JsonValue
-): JsonValue => {
-  if (!isJsonObject(value) || value["kind"] !== "krn.decisionPacketReadback.v1") {
-    return value;
-  }
-
-  const proof = value["proof"];
-
-  if (!isJsonObject(proof)) {
-    return value;
-  }
-
-  return {
-    ...value,
-    proof: {
-      ...proof,
-      proves: appendUnique(
-        stringArray(proof["proves"]),
-        "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
-      ),
-      doesNotProve: appendUnique(
-        stringArray(proof["doesNotProve"]).filter((item) => item !== "MCP integration"),
-        "broad MCP product readiness"
-      )
-    }
-  };
-};
-
-const boundedReadback = (value: JsonValue): JsonValue => {
-  if (!isJsonObject(value)) {
-    return value;
-  }
-
-  const allowedKeys = new Set([
-    "kind",
-    "access",
-    "mutation",
-    "surface",
-    "request",
-    "packetIdentity",
-    "packet",
-    "returnChannels",
-    "proof"
-  ]);
-
-  return Object.fromEntries(
-    Object.entries(value).filter(([key]) => allowedKeys.has(key))
-  ) as JsonObject;
-};
+const briefResult = (
+  readback: DecisionPacketContractReadback,
+  brief: string
+): ToolCallResult => ({
+  content: [{
+    type: "text",
+    text: [
+      `KRN DecisionPacket checksum: ${readback.packetIdentity.checksum}.`,
+      "Read-only context; no memory or source authority was mutated.",
+      "",
+      brief.trimEnd()
+    ].join("\n")
+  }],
+  structuredContent: requireJsonValue(readback.packetIdentity),
+  _meta: {
+    decisionPacketReadback: requireJsonValue(readback)
+  },
+  isError: false
+});
 
 const response = (
   id: JsonRpcId | null,
@@ -350,7 +297,7 @@ const toolDefinition = (): JsonValue => ({
   name: decisionPacketToolName,
   title: "KRN DecisionPacket",
   description:
-    "Return the read-only KRN DecisionPacket contract and evidence/feedback return channels for a persisted run.",
+    "Return a compact read-only DecisionPacket execution brief and exact issuance identity for a persisted run.",
   inputSchema: {
     type: "object",
     properties: {
@@ -362,7 +309,7 @@ const toolDefinition = (): JsonValue => ({
     required: ["runId"],
     additionalProperties: false
   },
-  outputSchema: decisionPacketContractOutputSchema,
+  outputSchema: decisionPacketIdentityOutputSchema,
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,
@@ -389,7 +336,7 @@ const initializeResult = (
       version: serverVersion
     },
     instructions:
-      "Use krn_decision_packet to fetch a read-only KRN DecisionPacket for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Evidence and feedback remain explicit return channels in the response."
+      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Exact issuance identity remains structured; evidence and feedback return channels remain machine-readable metadata."
   };
 };
 
@@ -406,9 +353,9 @@ const runDecisionPacket = async (
       ? {}
       : { createDatabaseRuntime: runtime.createDatabaseRuntime })
   };
-  const result = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
+  const commandResult = await (runtime.runDecisionPacket ?? runDecisionPacketCommand)(commandRuntime);
 
-  const parsed: unknown = JSON.parse(result.stdout);
+  const parsed: unknown = JSON.parse(commandResult.stdout);
   const readback = parseDecisionPacketContractReadback(parsed, runId);
 
   if (readback === undefined) {
@@ -418,17 +365,18 @@ const runDecisionPacket = async (
     );
   }
 
-  const bounded = boundedReadback(annotateMcpTransportProof(readback));
-  const measurement = measureDecisionPacketTransport(bounded);
+  const brief = renderExecutionBrief({ packet: readback.packet });
+
+  const result = briefResult(readback, brief);
 
   if (
-    measurement.collectionLength.maximum
-      > decisionPacketTransportBudget.maximumCollectionElements
+    measureDecisionPacketTransport(result).utf8Bytes
+      > decisionPacketTransportBudget.maximumMessageUtf8Bytes
   ) {
     return outputLimitResult();
   }
 
-  return jsonResult(bounded);
+  return result;
 };
 
 // fallow-ignore-next-line complexity -- protocol boundary distinguishes schema, tool, argument, and execution failure channels
@@ -507,10 +455,12 @@ const runToolCall = async (
       kind: "result",
       result: await runDecisionPacket(runtime, runId)
     };
-  } catch {
+  } catch (error) {
     return {
       kind: "result",
-      result: textResult(decisionPacketExecutionErrorText, true)
+      result: error instanceof ExecutionBriefRenderBudgetError
+        ? outputLimitResult()
+        : textResult(decisionPacketExecutionErrorText, true)
     };
   }
 };

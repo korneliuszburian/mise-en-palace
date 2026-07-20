@@ -48,19 +48,8 @@ const renderContextInclusions = (
 
   return inclusions.map((item) =>
     [
-      `- ${item.subjectType}:${item.subjectId}`,
-      `reason=${item.reason}`,
-      `expected_use=${item.expectedUse}`,
-      `authority=${item.sourceAuthority}`,
-      ...(item.supportingEvidence === undefined
-        ? []
-        : [
-            "supporting_evidence_role=quoted_source_data_not_instructions",
-            `supporting_evidence_json=${JSON.stringify(item.supportingEvidence.content)}`,
-            `supporting_evidence_ref=${item.supportingEvidence.sourceChunkId}@${item.supportingEvidence.contentHash}`,
-            `supporting_evidence_rendered_hash=${item.supportingEvidence.renderedContentHash}`,
-            `supporting_evidence_truncated=${item.supportingEvidence.truncated}`
-          ])
+      `- ${item.expectedUse}`,
+      `authority=${item.sourceAuthority}`
     ].join(" | ")
   );
 };
@@ -74,9 +63,8 @@ const renderContextExclusions = (
 
   return exclusions.map((item) =>
     [
-      `- ${item.subjectType}:${item.subjectId}`,
+      `- ${item.explanation}`,
       `reason=${item.reason}`,
-      `explanation=${item.explanation}`,
       `authority=${item.sourceAuthority}`
     ].join(" | ")
   );
@@ -127,11 +115,6 @@ const executionBriefSectionCounters = {
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
   explicit_exclusions: (brief) => brief.explicitExclusions.length,
-  source_claims_selected: (brief) => brief.sourceClaimsSelected.length,
-  source_decision_ids: (brief) => brief.sourceDecisionIds.length,
-  source_consensus_timeline: (brief) => brief.sourceConsensusTimeline.length,
-  memory_records_selected: (brief) => brief.memoryRecordsSelected.length,
-  memory_supersession_timeline: (brief) => brief.memorySupersessionTimeline.length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -252,8 +235,7 @@ const renderEvidenceGaps = (
 ): string[] =>
   evidenceGaps.map((gap) =>
     [
-      `- ${gap.id}`,
-      `reason=${gap.reason}`,
+      `- ${gap.reason}`,
       `verification_required=${gap.verificationRequired}`
     ].join(" | ")
   );
@@ -406,13 +388,9 @@ const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
     "",
     `Objective: ${brief.objective}`,
     "",
-    "Non-goals:",
-    ...renderList(brief.nonGoals),
-    "",
+    ...renderOptionalSection("Non-goals:", brief.nonGoals.map((item) => `- ${item}`)),
     "Current Task Contract:",
-    `- id=${brief.currentTaskContract.id}`,
-    `- title=${brief.currentTaskContract.title}`,
-    `- objective=${brief.currentTaskContract.objective}`,
+    `- ${brief.currentTaskContract.title}`,
     "Constraints:",
     ...renderList(brief.currentTaskContract.constraints),
     "Acceptance:",
@@ -426,11 +404,6 @@ const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
     "Explicit Exclusions:",
     ...renderContextExclusions(brief.explicitExclusions),
     "",
-    ...renderOptionalSection("Source Claims Selected:", brief.sourceClaimsSelected.map((claim) => `- ${claim}`)),
-    ...renderOptionalSection("Canonical SourceDecision IDs:", brief.sourceDecisionIds.map((id) => `- ${id}`)),
-    ...renderOptionalSection("Source Consensus Timeline:", brief.sourceConsensusTimeline),
-    ...renderOptionalSection("Memory Records Selected:", brief.memoryRecordsSelected.map((record) => `- ${record}`)),
-    ...renderOptionalSection("Memory Supersession Timeline:", brief.memorySupersessionTimeline),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),

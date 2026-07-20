@@ -715,7 +715,7 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(names).not.toContain("krn_candidate_persist");
   });
 
-  it("advertises validated structured output with compact identity text", async () => {
+  it("advertises one read-only text tool and renders exact packet identity", async () => {
     const listed = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: "list-output-schema",
@@ -726,12 +726,8 @@ describe("DecisionPacket MCP wrapper", () => {
     const listedResult = requiredRecord(listedResponse["result"], "tools/list result");
     const tools = requiredArray(listedResult["tools"], "tools/list tools");
     const tool = requiredRecord(tools[0], "listed tool");
-    const outputSchema = requiredRecord(
-      tool["outputSchema"],
-      "krn_decision_packet outputSchema"
-    );
-
-    const validator = z.fromJSONSchema(outputSchema);
+    const outputSchema = requiredRecord(tool["outputSchema"], "identity output schema");
+    const identityValidator = z.fromJSONSchema(outputSchema);
 
     for (const fixture of [
       packetJson,
@@ -750,21 +746,14 @@ describe("DecisionPacket MCP wrapper", () => {
       }, runtime(async () => ({ stdout: JSON.stringify(fixture) })));
       const calledResponse = requiredRecord(called, "tools/call response");
       const callResult = requiredRecord(calledResponse["result"], "tools/call result");
-      const structuredContent = callResult["structuredContent"];
       const content = requiredArray(callResult["content"], "tool result content");
       const contentItem = requiredRecord(content[0], "tool content item");
       const text = requiredString(contentItem["text"], "tool content text");
 
-      expect(validator.safeParse(structuredContent).success).toBe(true);
-      expect(text).toBe(
-        `KRN DecisionPacket is available in structuredContent. Checksum: ${fixture.packetIdentity.checksum}.`
-      );
+      expect(identityValidator.safeParse(callResult["structuredContent"]).success).toBe(true);
+      expect(text).toContain(`KRN DecisionPacket checksum: ${fixture.packetIdentity.checksum}.`);
+      expect(text).toContain("KRN Codex Execution Brief");
     }
-
-    expect(validator.safeParse({
-      kind: "krn.decisionPacketReadback.v1",
-      packet: []
-    }).success).toBe(false);
   });
 
   it("measures packet bounds across successful fixtures", async () => {
@@ -787,28 +776,17 @@ describe("DecisionPacket MCP wrapper", () => {
       }, runtime(async () => ({ stdout: JSON.stringify(fixture) })));
       const calledResponse = requiredRecord(called, "measured tools/call response");
       const result = requiredRecord(calledResponse["result"], "measured tools/call result");
-      const structuredContent = requiredRecord(
-        result["structuredContent"],
-        "measured structuredContent"
-      );
-
       measurements.push({
         messageUtf8Bytes: measureDecisionPacketTransport(called).utf8Bytes,
-        structuredContent: measureDecisionPacketTransport(structuredContent)
+        content: measureDecisionPacketTransport(result["content"])
       });
     }
 
     for (const measured of measurements) {
-      const envelopeBytes = measured.messageUtf8Bytes - measured.structuredContent.utf8Bytes;
-
-      expect(envelopeBytes).toBeGreaterThan(0);
-      expect(envelopeBytes).toBeLessThan(512);
       expect(measured.messageUtf8Bytes).toBeLessThan(
         decisionPacketTransportBudget.maximumMessageUtf8Bytes
       );
-      expect(measured.structuredContent.collectionLength.maximum).toBeLessThan(
-        decisionPacketTransportBudget.maximumCollectionElements
-      );
+      expect(measured.content.collectionLength.maximum).toBe(1);
     }
 
     const unboundedProbe = measureDecisionPacketTransport({
@@ -901,13 +879,13 @@ describe("DecisionPacket MCP wrapper", () => {
       "boundary result"
     );
 
-    expect(measureDecisionPacketTransport(boundaryResponse).utf8Bytes).toBe(
+    expect(measureDecisionPacketTransport(boundaryResponse).utf8Bytes).toBeLessThan(
       decisionPacketTransportBudget.maximumMessageUtf8Bytes
     );
-    expect(requiredRecord(
-      boundaryResult["structuredContent"],
-      "boundary structuredContent"
-    )["packetIdentity"]).toMatchObject({ checksum: boundaryPacket.packetIdentity.checksum });
+    expect(boundaryResult).toMatchObject({
+      isError: true,
+      content: [{ type: "text", text: outputLimitText }]
+    });
 
     const oversizedByteResponse = await callPacket(
       boundaryPacket,
@@ -943,12 +921,12 @@ describe("DecisionPacket MCP wrapper", () => {
       "boundary collection result"
     );
 
-    expect(requiredRecord(
-      boundaryCollectionResult["structuredContent"],
-      "boundary collection structuredContent"
-    )["packetIdentity"]).toMatchObject({
-      checksum: boundaryCollectionPacket.packetIdentity.checksum
+    expect(boundaryCollectionResult).toMatchObject({
+      isError: false
     });
+    expect(JSON.stringify(boundaryCollectionResult)).toContain(
+      boundaryCollectionPacket.packetIdentity.checksum
+    );
 
     const oversizedCollectionPacket = collectionPacket(
       decisionPacketTransportBudget.maximumCollectionElements + 1
@@ -958,13 +936,8 @@ describe("DecisionPacket MCP wrapper", () => {
       "output-collection-boundary"
     );
 
-    expect(oversizedCollectionResponse).toMatchObject({
-      result: {
-        isError: true,
-        content: [{ type: "text", text: outputLimitText }]
-      }
-    });
-    expect(JSON.stringify(oversizedCollectionResponse)).not.toContain(
+    expect(oversizedCollectionResponse).toMatchObject({ result: { isError: false } });
+    expect(JSON.stringify(oversizedCollectionResponse)).toContain(
       oversizedCollectionPacket.packetIdentity.checksum
     );
 
@@ -1031,7 +1004,7 @@ describe("DecisionPacket MCP wrapper", () => {
     ]);
   });
 
-  it("wraps the existing DecisionPacket contract as structured tool output", async () => {
+  it("renders the exact DecisionPacket as compact Codex-facing text", async () => {
     const seenRunIds: string[] = [];
     const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
@@ -1056,48 +1029,22 @@ describe("DecisionPacket MCP wrapper", () => {
       jsonrpc: "2.0",
       id: "call-1",
       result: {
-        isError: false,
-        structuredContent: {
-          kind: "krn.decisionPacketReadback.v1",
-          packetIdentity: {
-            checksum: packetJson.packetIdentity.checksum,
-            evidenceRef: packetJson.packetIdentity.evidenceRef
-          },
-          returnChannels: {
-            evidence: {
-              persistedCommand: expect.stringContaining("--decision-packet-checksum")
-            },
-            feedback: {
-              sourceDecisionUsefulnessExample: expect.stringContaining(
-                "decision:<id>=selected"
-              )
-            }
-          },
-          proof: {
-            proves: expect.arrayContaining([
-              "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
-            ]),
-            doesNotProve: expect.arrayContaining(["memory/source promotion", "broad MCP product readiness"])
-          },
-          packet: {
-            sourceDecisionIds: ["source-decision:frontend-project-standard-packet"],
-            abstentionScore: {
-              status: "ready",
-              reasons: []
-            }
-          }
-        }
+        isError: false
       }
     });
 
     const result = isRecord(reply) ? reply["result"] : undefined;
-    expect(isRecord(result) ? result["content"] : undefined).toEqual([{
-      type: "text",
-      text:
-        `KRN DecisionPacket is available in structuredContent. Checksum: ${packetJson.packetIdentity.checksum}.`
-    }]);
-    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
-    expect(isRecord(structuredContent) && !("readModel" in structuredContent)).toBe(true);
+    expect(JSON.stringify(isRecord(result) ? result["content"] : undefined)).toContain(
+      `KRN DecisionPacket checksum: ${packetJson.packetIdentity.checksum}.`
+    );
+    expect(JSON.stringify(result)).toContain("Objective: Use the governed frontend bootstrap standard.");
+    expect(JSON.stringify(isRecord(result) ? result["content"] : undefined)).not.toContain(
+      "source-decision-edge:frontend-project-standard-packet"
+    );
+    expect(isRecord(result) ? result["structuredContent"] : undefined).toMatchObject({
+      checksum: packetJson.packetIdentity.checksum,
+      evidenceRef: packetJson.packetIdentity.evidenceRef
+    });
   });
 
   it.each([
@@ -1196,7 +1143,7 @@ describe("DecisionPacket MCP wrapper", () => {
     });
   });
 
-  it("preserves abstention and evidence gaps in structured tool output", async () => {
+  it("preserves abstention and evidence gaps in compact tool output", async () => {
     const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: "call-weak",
@@ -1211,45 +1158,10 @@ describe("DecisionPacket MCP wrapper", () => {
       stdout: `${JSON.stringify(weakPacketJson)}\n`
     })));
     const result = isRecord(reply) ? reply["result"] : undefined;
-    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
-
-    expect(structuredContent).toMatchObject({
-      kind: "krn.decisionPacketReadback.v1",
-      packetIdentity: {
-        checksum: weakPacketJson.packetIdentity.checksum,
-        evidenceRef: weakPacketJson.packetIdentity.evidenceRef
-      },
-      proof: {
-        proves: expect.arrayContaining([
-          "DecisionPacket was served through the read-only krn_decision_packet MCP tool"
-        ]),
-        doesNotProve: expect.arrayContaining(["broad MCP product readiness"])
-      },
-      packet: {
-        governingDecisionIds: [],
-        evidenceGaps: [{
-          id: weakContextEvidenceGapId,
-          reason: "No governed decision is present in this read-only packet.",
-          verificationRequired:
-            "Capture or promote source-backed decision evidence before treating this packet as task guidance."
-        }],
-        sourceConsensus: {
-          evidenceGapIds: [weakContextEvidenceGapId]
-        },
-        abstentionScore: {
-          status: "abstain",
-          score: 0,
-          reasons: [
-            "missing_governing_decision",
-            "evidence_gap"
-          ],
-          evidenceGapIds: [weakContextEvidenceGapId]
-        },
-        brief: {
-          evidenceGapIds: [weakContextEvidenceGapId]
-        }
-      }
-    });
+    const text = JSON.stringify(isRecord(result) ? result["content"] : undefined);
+    expect(text).toContain(`KRN DecisionPacket checksum: ${weakPacketJson.packetIdentity.checksum}.`);
+    expect(text).toContain("Packet Status: abstain");
+    expect(text).toContain("No governed decision is present in this read-only packet.");
   });
 
   it("preserves unresolved accepted source dissent as abstaining review context", async () => {
@@ -1267,39 +1179,10 @@ describe("DecisionPacket MCP wrapper", () => {
       stdout: `${JSON.stringify(unresolvedSourceDissentPacketJson)}\n`
     })));
     const result = isRecord(reply) ? reply["result"] : undefined;
-    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
-
-    expect(structuredContent).toMatchObject({
-      kind: "krn.decisionPacketReadback.v1",
-      packetIdentity: {
-        checksum: unresolvedSourceDissentPacketJson.packetIdentity.checksum,
-        evidenceRef: unresolvedSourceDissentPacketJson.packetIdentity.evidenceRef
-      },
-      packet: {
-        governingDecisionIds: [],
-        sourceClaimIds: ["claim-candidate", "claim-dissenting"],
-        evidenceGaps: [{
-          id: unresolvedSourceDissentEvidenceGapId
-        }],
-        sourceConsensus: {
-          decisionLinkedSourceClaimIds: [],
-          conflictingSourceClaimIds: ["claim-candidate"],
-          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
-        },
-        abstentionScore: {
-          status: "abstain",
-          reasons: expect.arrayContaining([
-            "conflicting_authority",
-            "unresolved_accepted_source_dissent"
-          ]),
-          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
-        },
-        brief: {
-          includedSourceClaimIds: ["claim-candidate", "claim-dissenting"],
-          evidenceGapIds: [unresolvedSourceDissentEvidenceGapId]
-        }
-      }
-    });
+    const text = JSON.stringify(isRecord(result) ? result["content"] : undefined);
+    expect(text).toContain("Packet Status: abstain");
+    expect(text).toContain("unresolved_accepted_source_dissent");
+    expect(text).toContain("selected with accepted dissent");
   });
 
   it("preserves typed unsafe context without inventing formal rejection evidence", async () => {
@@ -1317,38 +1200,10 @@ describe("DecisionPacket MCP wrapper", () => {
       stdout: `${JSON.stringify(noFormalNegativePacketJson)}\n`
     })));
     const result = isRecord(reply) ? reply["result"] : undefined;
-    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
-
-    expect(structuredContent).toMatchObject({
-      kind: "krn.decisionPacketReadback.v1",
-      packetIdentity: {
-        checksum: noFormalNegativePacketJson.packetIdentity.checksum,
-        evidenceRef: noFormalNegativePacketJson.packetIdentity.evidenceRef
-      },
-      packet: {
-        governingDecisionIds: ["frontend-project-standard-packet"],
-        contextExclusions: [{
-          subjectType: "source_claim",
-          subjectId: "source-claim:unsafe",
-          reason: "unsafe",
-          explanation: "Unsafe source remains explicit but is not formal rejection evidence.",
-          sourceAuthority: "project-decision"
-        }],
-        sourceRejectionIds: [],
-        rejectedPathIds: [],
-        sourceConsensus: {
-          sourceRejectionIds: [],
-          rejectedPathIds: [],
-          supersededPathIds: []
-        },
-        abstentionScore: {
-          status: "weak_context",
-          score: 90,
-          reasons: ["missing_rejected_path_evidence"],
-          evidenceGapIds: []
-        }
-      }
-    });
+    const text = JSON.stringify(isRecord(result) ? result["content"] : undefined);
+    expect(text).toContain("Packet Status: abstain");
+    expect(text).toContain("Unsafe source remains explicit but is not formal rejection evidence.");
+    expect(text).toContain("missing_rejected_path_evidence");
   });
 
   it("reports invalid tool input as a protocol error instead of inventing a packet", async () => {
@@ -1416,10 +1271,7 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(reply).toMatchObject({
       id: "call-with-meta",
       result: {
-        isError: false,
-        structuredContent: {
-          kind: "krn.decisionPacketReadback.v1"
-        }
+        isError: false
       }
     });
   });
@@ -1447,14 +1299,9 @@ describe("DecisionPacket MCP wrapper", () => {
         }]
       }
     });
-    expect(isRecord(toolCall) && isRecord(toolCall["result"])
-      ? toolCall["result"]["structuredContent"]
-      : undefined).toMatchObject({
-        kind: "krn.decisionPacketReadback.v1",
-        packetIdentity: {
-          checksum: packetJson.packetIdentity.checksum
-        }
-    });
+    expect(JSON.stringify(toolCall)).toContain(
+      `KRN DecisionPacket checksum: ${packetJson.packetIdentity.checksum}.`
+    );
   });
 
   it("preserves a multibyte runId at every stdio byte split", async () => {
@@ -1517,7 +1364,7 @@ describe("DecisionPacket MCP wrapper", () => {
     }]);
   });
 
-  it("replaces the CLI-only MCP non-proof with the transport proof", async () => {
+  it("states the read-only MCP boundary in compact output", async () => {
     const reply = await handleDecisionPacketMcpMessage({
       jsonrpc: "2.0",
       id: "call-2",
@@ -1530,14 +1377,7 @@ describe("DecisionPacket MCP wrapper", () => {
       }
     }, runtime());
     const result = isRecord(reply) ? reply["result"] : undefined;
-    const structuredContent = isRecord(result) ? result["structuredContent"] : undefined;
-    const proof = isRecord(structuredContent) ? structuredContent["proof"] : undefined;
-    const proves = isRecord(proof) && Array.isArray(proof["proves"]) ? proof["proves"] : [];
-    const doesNotProve = isRecord(proof) && Array.isArray(proof["doesNotProve"]) ? proof["doesNotProve"] : [];
-
-    expect(proves).toContain("DecisionPacket was served through the read-only krn_decision_packet MCP tool");
-    expect(doesNotProve).not.toContain("MCP integration");
-    expect(doesNotProve).toContain("broad MCP product readiness");
+    expect(JSON.stringify(result)).toContain("Read-only context; no memory or source authority was mutated.");
   });
 
   it("keeps stdio framing deterministic for notifications, malformed input, and invalid IDs", async () => {

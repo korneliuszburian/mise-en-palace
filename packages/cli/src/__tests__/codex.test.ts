@@ -294,10 +294,10 @@ describe("runCli", () => {
       "- knowledge=ts-boundary-unknown-first-result-state | readModel=knowledge:ts-boundary-unknown-first-result-state"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
-    expect(result.stdout).toContain("Source Claims Selected:");
-    expect(result.stdout).toContain("- source-claim-1");
-    expect(result.stdout).toContain("Memory Records Selected:");
-    expect(result.stdout).toContain("- memory-record-1");
+    expect(result.stdout).not.toContain("Source Claims Selected:");
+    expect(result.stdout).not.toContain("Memory Records Selected:");
+    expect(result.stdout).toContain("Use in the execution brief.");
+    expect(result.stdout).toContain("Keep output bounded.");
     expect(result.stdout).toContain("Anti-memory Warnings:");
     expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
     expect(result.stdout).toContain("Evidence Contract:");
