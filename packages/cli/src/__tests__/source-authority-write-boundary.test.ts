@@ -184,11 +184,11 @@ const cleanupMarker = async (
 
 describe("source authority write boundary", () => {
   it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
-    "rejects generic CLI authority without captured evidence",
+    "captures generic CLI authority before adoption",
     async () => {
       const client = postgres(databaseUrl!, { max: 1, onnotice: () => undefined });
       const marker = `source-authority-cli-boundary-${crypto.randomUUID()}`;
-      const sourceTitle = `Uncaptured governing source ${marker}`;
+      const sourceTitle = `Captured governing source ${marker}`;
       const createScopedRuntime = ({
         databaseUrl: runtimeDatabaseUrl,
         projectId,
@@ -254,7 +254,10 @@ describe("source authority write boundary", () => {
           from source_claims
           where id = ${sourceClaimId}
         `;
-        expect(previewClaim).toEqual([{ sourceChunkId: null, status: "proposed" }]);
+        expect(previewClaim).toEqual([{
+          sourceChunkId: expect.any(String),
+          status: "proposed"
+        }]);
         const sourceDecisionAdopt = await runCli(
           [
             "source",
@@ -263,11 +266,11 @@ describe("source authority write boundary", () => {
             "--source-claim-id",
             sourceClaimId,
             "--decision",
-            "Adopt uncaptured source authority.",
+            "Adopt captured source authority.",
             "--rationale",
-            "This should be rejected before authority is persisted.",
+            "The generic CLI captured one inspectable evidence chain.",
             "--falsifier",
-            "The uncaptured source claim becomes governing.",
+            "The captured source claim cannot become governing.",
             "--consumer",
             "source authority CLI write boundary",
             "--metadata",
@@ -283,7 +286,7 @@ describe("source authority write boundary", () => {
             "--link-confidence",
             "high",
             "--link-notes",
-            "This edge must not exist without captured evidence."
+            "This edge must use the captured evidence identity."
           ],
           {
             env: { KRN_DATABASE_URL: databaseUrl },
@@ -295,16 +298,27 @@ describe("source authority write boundary", () => {
           stderr: sourceDecisionAdopt.stderr,
           stdout: sourceDecisionAdopt.stdout
         }).toEqual({
-          exitCode: 1,
-          stderr: expect.stringContaining(
-            "SourceDecision adopt requires coherent captured-current evidence"
-          ),
-          stdout: ""
+          exitCode: 0,
+          stderr: "",
+          stdout: expect.stringContaining("sourceDecisionEdge:")
         });
-        const claimReadback = await client<{ sourceChunkId: string | null; status: string }[]>`
-          select source_chunk_id::text as "sourceChunkId", status::text as status
-          from source_claims
-          where id = ${sourceClaimId}
+        const claimReadback = await client<{
+          artifactHash: string;
+          chunkHash: string;
+          evidenceHash: string;
+          sourceChunkId: string;
+          status: string;
+        }[]>`
+          select
+            artifact.content_hash as "artifactHash",
+            chunk.content_hash as "chunkHash",
+            artifact.metadata->>'evidenceContentHash' as "evidenceHash",
+            claim.source_chunk_id::text as "sourceChunkId",
+            claim.status::text as status
+          from source_claims claim
+          join source_artifacts artifact on artifact.id = claim.source_artifact_id
+          join source_chunks chunk on chunk.id = claim.source_chunk_id
+          where claim.id = ${sourceClaimId}
         `;
         const decisionCount = await client<{ count: number }[]>`
           select count(*)::int as count
@@ -321,27 +335,25 @@ describe("source authority write boundary", () => {
           from source_chunks
           where source_artifact_id = (select source_artifact_id from source_claims where id = ${sourceClaimId})
         `;
-        const outboxTopics = await client<{ topic: string }[]>`
-          select topic
-          from outbox_events
-          where payload->>'smokeId' = ${marker}
-          order by topic, id
-        `;
-
+        const artifactHash = claimReadback[0]?.artifactHash;
         expect({
+          artifactHash,
           claimStatus: claimReadback[0]?.status,
+          chunkHash: claimReadback[0]?.chunkHash,
+          evidenceHash: claimReadback[0]?.evidenceHash,
           sourceChunkId: claimReadback[0]?.sourceChunkId,
           decisionCount: decisionCount[0]?.count,
           edgeCount: edgeCount[0]?.count,
-          sourceChunkCount: sourceChunkCount[0]?.count,
-          outboxTopics: outboxTopics.map((row) => row.topic)
+          sourceChunkCount: sourceChunkCount[0]?.count
         }).toEqual({
-          claimStatus: "proposed",
-          sourceChunkId: null,
-          decisionCount: 0,
-          edgeCount: 0,
-          sourceChunkCount: 0,
-          outboxTopics: []
+          artifactHash: expect.any(String),
+          claimStatus: "accepted",
+          chunkHash: artifactHash,
+          evidenceHash: artifactHash,
+          sourceChunkId: expect.any(String),
+          decisionCount: 1,
+          edgeCount: 1,
+          sourceChunkCount: 1
         });
       } finally {
         await cleanupMarker(client, marker);

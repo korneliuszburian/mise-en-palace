@@ -245,6 +245,11 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`
     });
     let capturedRepoPathHint: string | undefined;
+    let capturedArtifactHash: string | undefined;
+    let capturedChunkId: string | undefined;
+    let capturedChunkHash: string | undefined;
+    let capturedEvidenceHash: unknown;
+    let capturedClaimChunkId: string | undefined;
     const result = await runCli(
       [
         "source",
@@ -279,13 +284,15 @@ describe("runCli", () => {
         createDatabaseRuntime: async (input) => {
           capturedRepoPathHint = input.repoPathHint;
 
-          return {
+          return withSourceTransaction({
             workspaceId: "workspace-1",
             projectId: "project-1",
             compilerDependencies: dependencies,
             sourceRepository: {
               ...unusedSourceRepository,
               async createSourceArtifact(sourceArtifactInput) {
+                capturedArtifactHash = sourceArtifactInput.contentHash;
+
                 return {
                   id: "source-artifact-1",
                   ...(sourceArtifactInput.projectId === undefined
@@ -302,10 +309,47 @@ describe("runCli", () => {
                   updatedAt: now
                 };
               },
+              async createSourceChunk(sourceChunkInput) {
+                capturedChunkId = "source-chunk-1";
+                capturedChunkHash = sourceChunkInput.contentHash;
+                capturedEvidenceHash = sourceChunkInput.metadata?.["evidenceContentHash"];
+
+                expect(sourceChunkInput).toMatchObject({
+                  sourceArtifactId: "source-artifact-1",
+                  ordinal: 0,
+                  heading: "Postgres edge table decision",
+                  metadata: {
+                    evidenceStatus: "captured",
+                    evidenceFreshness: "current",
+                    evidenceProvenance: "explicit operator input"
+                  }
+                });
+
+                return {
+                  id: capturedChunkId,
+                  sourceArtifactId: sourceChunkInput.sourceArtifactId,
+                  ordinal: sourceChunkInput.ordinal,
+                  ...(sourceChunkInput.heading === undefined
+                    ? {}
+                    : { heading: sourceChunkInput.heading }),
+                  content: sourceChunkInput.content,
+                  ...(sourceChunkInput.tokenCount === undefined
+                    ? {}
+                    : { tokenCount: sourceChunkInput.tokenCount }),
+                  contentHash: sourceChunkInput.contentHash,
+                  metadata: sourceChunkInput.metadata ?? {},
+                  createdAt: now
+                };
+              },
               async createSourceClaim(sourceClaimInput) {
+                capturedClaimChunkId = sourceClaimInput.sourceChunkId;
+
                 return {
                   id: "source-claim-1",
                   sourceArtifactId: sourceClaimInput.sourceArtifactId,
+                  ...(sourceClaimInput.sourceChunkId === undefined
+                    ? {}
+                    : { sourceChunkId: sourceClaimInput.sourceChunkId }),
                   ...(sourceClaimInput.executionRunId === undefined
                     ? {}
                     : { executionRunId: sourceClaimInput.executionRunId }),
@@ -328,7 +372,7 @@ describe("runCli", () => {
             async close() {
               return undefined;
             }
-          };
+          }, dependencies.retrievalRepository);
         }
       }
     );
@@ -338,10 +382,15 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
     expect(result.stdout).toContain("Persisted IDs:");
     expect(result.stdout).toContain("sourceArtifact: source-artifact-1");
+    expect(result.stdout).toContain("sourceChunk: source-chunk-1");
     expect(result.stdout).toContain("sourceClaim: source-claim-1");
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
     expect(capturedRepoPathHint).toBe(expectedRepoPathHint);
+    expect(capturedArtifactHash).toBe(capturedChunkHash);
+    expect(capturedEvidenceHash).toBe(capturedArtifactHash);
+    expect(capturedChunkId).toBe("source-chunk-1");
+    expect(capturedClaimChunkId).toBe("source-chunk-1");
   });
 
   it("prints source decision link help", async () => {
