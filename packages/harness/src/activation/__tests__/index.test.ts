@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryRecord,
@@ -1623,6 +1625,15 @@ describe("activation engine", () => {
   });
 
   it("rejects incoherent SearchDocument provenance", async () => {
+    const legacyCapturedContent = [
+      "Use intrinsic sizing in the switcher before introducing component breakpoints.",
+      "legacy supporting detail ".repeat(140)
+    ].join(" ");
+    const legacyRenderedContent = legacyCapturedContent.slice(0, 2_400);
+    const legacyContentHash = createHash("sha256").update(legacyCapturedContent).digest("hex");
+    const legacyRenderedContentHash = createHash("sha256")
+      .update(legacyRenderedContent)
+      .digest("hex");
     const currentSourceClaim = sourceClaim({
       id: "claim-provenance-a",
       sourceArtifactId: "artifact-provenance-a",
@@ -1680,15 +1691,15 @@ describe("activation engine", () => {
         sourceArtifactId: currentSourceClaim.sourceArtifactId,
         sourceChunkId: currentSourceClaim.sourceChunkId,
         sourceDecisionId: currentDecision.id,
-        body: "Use intrinsic sizing in the switcher before introducing component breakpoints.",
+        body: legacyRenderedContent,
         metadata: {
           retrievalEvidence: {
             sourceArtifactId: "captured-course-artifact",
             sourceChunkId: "captured-course-chunk-17",
-            contentHash: "a4ae0efa65addd8014f60433e52f7befdff76b1181437db518529e856c43325c",
-            renderedContentHash: "a4ae0efa65addd8014f60433e52f7befdff76b1181437db518529e856c43325c",
+            contentHash: legacyContentHash,
+            renderedContentHash: legacyRenderedContentHash,
             sourceRange: "lines 641-680",
-            truncated: false
+            truncated: true
           }
         }
       }),
@@ -1777,8 +1788,8 @@ describe("activation engine", () => {
                 id,
                 sourceArtifactId: "captured-course-artifact",
                 ordinal: 17,
-                content: "Use intrinsic sizing in the switcher before introducing component breakpoints.",
-                contentHash: "a4ae0efa65addd8014f60433e52f7befdff76b1181437db518529e856c43325c",
+                content: legacyCapturedContent,
+                contentHash: legacyContentHash,
                 metadata: { sourceRange: "lines 641-680" },
                 createdAt: now
               };
@@ -1856,11 +1867,11 @@ describe("activation engine", () => {
           searchDocumentId: "search-coherent-provenance",
           sourceArtifactId: "captured-course-artifact",
           sourceChunkId: "captured-course-chunk-17",
-          contentHash: "a4ae0efa65addd8014f60433e52f7befdff76b1181437db518529e856c43325c",
-          renderedContentHash: "a4ae0efa65addd8014f60433e52f7befdff76b1181437db518529e856c43325c",
+          contentHash: legacyContentHash,
+          renderedContentHash: legacyRenderedContentHash,
           sourceRange: "lines 641-680",
-          content: "Use intrinsic sizing in the switcher before introducing component breakpoints.",
-          truncated: false
+          content: legacyRenderedContent,
+          truncated: true
         }
       },
       {

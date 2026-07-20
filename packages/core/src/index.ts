@@ -7,6 +7,7 @@ export * from "./context-assembly.js";
 export * from "./decision-packet.js";
 export * from "./decision-packet-authority.js";
 export * from "./decision-packet-contract.js";
+export * from "./decision-packet-supporting-evidence.js";
 export * from "./eval.js";
 export * from "./evidence-contract.js";
 export * from "./evidence-bundle.js";

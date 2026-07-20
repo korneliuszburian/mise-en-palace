@@ -19,6 +19,9 @@ import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 
 import {
+  projectDecisionPacketSupportingEvidence
+} from "@krn/core";
+import {
   createDatabaseRuntime,
   defaultProjectSlug,
   defaultWorkspaceSlug
@@ -392,11 +395,25 @@ describe("source decision import retry boundary", () => {
         const workspaceId = crypto.randomUUID();
         const firstProjectId = crypto.randomUUID();
         const secondProjectId = crypto.randomUUID();
-        const evidenceContent = [
+        const evidenceBody = [
           "Composition owns external layout; blocks expose bounded custom-property inputs.",
           "course-detail ".repeat(220)
         ].join(" ");
-        const renderedEvidenceContent = evidenceContent.slice(0, 2_400);
+        const evidenceContent = [
+          `<p>${evidenceBody}</p>`,
+          '<a class="block-action"><span>Next lesson</span><img src="data:image/jpeg;base64,course-navigation-noise"></a>'
+        ].join("");
+        const renderedEvidenceContent = projectDecisionPacketSupportingEvidence(
+          evidenceContent
+        ).content;
+        expect(projectDecisionPacketSupportingEvidence(
+          "<p>Current authority &AMP; invalid entity &#x110000; remains inspectable.</p>"
+        ).content).toBe(
+          "Current authority & invalid entity &#x110000; remains inspectable."
+        );
+        expect(projectDecisionPacketSupportingEvidence(
+          `<p>Keep this mechanism ${"QUJD".repeat(40)} without copied payload.</p>`
+        ).content).toBe("Keep this mechanism without copied payload.");
         const task = "Implement a frontend component layout with reusable composition and CSS custom properties.";
         const evidenceHash = crypto.createHash("sha256").update(evidenceContent).digest("hex");
         const renderedEvidenceHash = crypto.createHash("sha256")

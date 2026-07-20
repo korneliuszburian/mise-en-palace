@@ -55,9 +55,14 @@ const confidenceToSourceAuthority = (confidence: number): ActivationCandidate["s
 
 const estimateTokens = (text: string): number => Math.max(24, Math.ceil(text.length / 4));
 
-const lexicalScore = (candidateText: string, query: ActivationQuery): number => {
+const matchedQueryTerms = (candidateText: string, query: ActivationQuery): string[] => {
   const candidateTerms = new Set(tokenizeActivationText(candidateText));
-  const hits = query.terms.filter((term) => candidateTerms.has(term)).length;
+
+  return query.terms.filter((term) => candidateTerms.has(term));
+};
+
+const lexicalScore = (candidateText: string, query: ActivationQuery): number => {
+  const hits = matchedQueryTerms(candidateText, query).length;
 
   return hits * 20;
 };
@@ -177,6 +182,18 @@ const evidenceCandidate = (
     second.totalScore - first.totalScore ||
     (first.searchDocumentId ?? "").localeCompare(second.searchDocumentId ?? ""))[0];
 
+const mergedSelectionMetadata = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate
+): Record<string, readonly string[]> => {
+  const entries = ["taskScopes", "taskConcerns", "matchedQueryTerms", "activationQueryTerms"]
+    .map((key) => [key, mergedMetadataStrings(left, right, key, "", "")
+      .filter((value) => value.length > 0)] as const)
+    .filter((entry) => entry[1].length > 0);
+
+  return Object.fromEntries(entries);
+};
+
 const mergeTwoCandidates = (
   left: RankedActivationCandidate,
   right: RankedActivationCandidate
@@ -222,6 +239,7 @@ const mergeTwoCandidates = (
       ...right.metadata,
       mergedCandidateIds,
       mergedKinds,
+      ...mergedSelectionMetadata(left, right),
       ...(searchDocumentIds.length === 0 ? {} : { mergedSearchDocumentIds: searchDocumentIds })
     }
   };
@@ -529,6 +547,12 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
   const taxonomy = classifySourceClaimTaxonomy(claim);
   const temporalMetadata = readSourceRelationMetadataReadback(claim.metadata);
   const validUntil = temporalMetadata.validUntil ?? claim.revisitWhen;
+  const taskScopes = Array.isArray(claim.metadata["taskScopes"])
+    ? claim.metadata["taskScopes"].filter((item): item is string => typeof item === "string")
+    : [];
+  const taskConcerns = Array.isArray(claim.metadata["taskConcerns"])
+    ? claim.metadata["taskConcerns"].filter((item): item is string => typeof item === "string")
+    : [];
 
   return {
     id: claim.id,
@@ -567,6 +591,8 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
       sourceUse: taxonomy.sourceUse,
       decisionGrade: taxonomy.decisionGrade,
       consumer: claim.consumer,
+      ...(taskScopes.length === 0 ? {} : { taskScopes }),
+      ...(taskConcerns.length === 0 ? {} : { taskConcerns }),
       ...canonicalRevisionMetadata({
         subjectType: "source_claim",
         subjectId: claim.id,
@@ -668,7 +694,12 @@ export const rankCandidates = (
         temporalScore: temporal,
         contextRoiScore: contextRoi,
         feedbackScore: feedback,
-        totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust
+        totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust,
+        metadata: {
+          ...candidate.metadata,
+          activationQueryTerms: query.terms,
+          matchedQueryTerms: matchedQueryTerms(candidate.text, query)
+        }
       };
     })
     .sort((left, right) => right.totalScore - left.totalScore);
