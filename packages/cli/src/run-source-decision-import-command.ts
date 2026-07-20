@@ -112,6 +112,9 @@ const summarizeRows = (
     `sourceClaim=${row.sourceClaimId}`,
     `sourceDecision=${row.sourceDecisionId}`,
     ...(row.sourceDecisionEdgeId === undefined ? [] : [`sourceDecisionEdge=${row.sourceDecisionEdgeId}`]),
+    ...(row.sourceClaimSupersessionEdgeIds === undefined
+      ? []
+      : [`sourceClaimSupersessionEdges=${row.sourceClaimSupersessionEdgeIds.join(",")}`]),
     ...(row.searchDocumentId === undefined ? [] : [`searchDocument=${row.searchDocumentId}`]),
     ...(row.sourceRejectionId === undefined ? [] : [`sourceRejection=${row.sourceRejectionId}`])
   ].join(" "));

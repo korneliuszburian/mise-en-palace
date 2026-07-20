@@ -20,6 +20,7 @@ export interface ReviewedSourceDecisionRow {
   readonly status: DecisionCorpusStatus;
   readonly taskScopes: readonly string[];
   readonly taskConcerns?: readonly string[];
+  readonly supersedesSourceClaimIds?: readonly string[];
   readonly evidenceRef: string;
   readonly falsifier: string;
   readonly doesNotProve: string;
@@ -44,6 +45,12 @@ const parseDecision = (
   taskConcerns: value["taskConcerns"] === undefined
     ? []
     : stringArrayValue(value["taskConcerns"], `decisions[${index}].taskConcerns`),
+  supersedesSourceClaimIds: value["supersedesSourceClaimIds"] === undefined
+    ? []
+    : stringArrayValue(
+        value["supersedesSourceClaimIds"],
+        `decisions[${index}].supersedesSourceClaimIds`
+      ),
   noteText: stringValue(value["noteText"], `decisions[${index}].noteText`)
 });
 

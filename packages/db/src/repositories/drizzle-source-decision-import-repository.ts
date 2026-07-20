@@ -222,6 +222,13 @@ const sourceEvidenceProvenanceKind = (
   }
 };
 
+const optionalSourceEvidenceProvenanceFields = (
+  candidate: Record<string, unknown>
+): Record<string, string> => Object.fromEntries(
+  ["path", "sourceArtifactId", "sourceChunkId", "sourceRange", "sourceSnapshotId"]
+    .flatMap((key) => typeof candidate[key] === "string" ? [[key, candidate[key]]] : [])
+);
+
 const sourceEvidenceProvenanceFromMetadata = (
   metadata: Record<string, unknown>
 ): SourceDecisionEvidenceProvenance | undefined => {
@@ -244,10 +251,7 @@ const sourceEvidenceProvenanceFromMetadata = (
   return {
     kind,
     uri: candidate.uri,
-    ...(typeof candidate.path === "string" ? { path: candidate.path } : {}),
-    ...(typeof candidate.sourceArtifactId === "string" ? { sourceArtifactId: candidate.sourceArtifactId } : {}),
-    ...(typeof candidate.sourceChunkId === "string" ? { sourceChunkId: candidate.sourceChunkId } : {}),
-    ...(typeof candidate.sourceSnapshotId === "string" ? { sourceSnapshotId: candidate.sourceSnapshotId } : {})
+    ...optionalSourceEvidenceProvenanceFields(candidate)
   };
 };
 
