@@ -185,7 +185,17 @@ describe("trial source preflight", () => {
     const root = await mkdtemp(join(tmpdir(), "krn-source-preflight-"));
     try {
       await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "pnpm test" } }), "utf8");
-      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false });
+      await expect(observeSourceCommands(root)).resolves.toEqual({ test: true, typecheck: false, css: false });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("observes the public CSS build used by frontend families", async () => {
+    const root = await mkdtemp(join(tmpdir(), "krn-frontend-source-preflight-"));
+    try {
+      await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { css: "postcss input.css -o output.css" } }), "utf8");
+      await expect(observeSourceCommands(root)).resolves.toEqual({ test: false, typecheck: false, css: true });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

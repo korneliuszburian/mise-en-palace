@@ -160,6 +160,7 @@ export const isTrackedTrialChecker = (value: unknown): boolean =>
   isRecord(value) && value["heldOut"] === true && value["outcome"] === "win|tie|loss|invalid";
 
 const decisionApplicationCheckNameValues = [
+  "family_contract",
   "preflight",
   "invalid_json",
   "missing_email",

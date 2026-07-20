@@ -9,11 +9,13 @@ import {
   createBoundedStreamCollector,
   startCommandDeadline
 } from "../../bounded-command-execution.js";
+import { runFrontendCourseCardsChecker } from "./frontend-course-cards-checker.js";
+import { captureHeldOutTargetState } from "./held-out-target-state.js";
 
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
 /** Canonical held-out checker identity bound into every new tracked artifact. */
-export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v3" as const;
+export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v4" as const;
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;
@@ -86,7 +88,8 @@ export const pairedEvalFamilies = [
   "weak-json",
   "user-create",
   "temporal-policy-drift",
-  "temporal-policy-hidden-source"
+  "temporal-policy-hidden-source",
+  "frontend-course-cards"
 ] as const;
 
 export type PairedEvalFamily = typeof pairedEvalFamilies[number];
@@ -100,6 +103,7 @@ export type HeldOutFamilyContract = {
 
 export const resolvePairedEvalFamily = (scenario: string): PairedEvalFamily => {
   const normalized = scenario.toLowerCase();
+  if (normalized.includes("frontend-course-cards")) return "frontend-course-cards";
   if (normalized.includes("env-config")) return "env-config";
   if (normalized.includes("async-job")) return "async-job";
   if (
@@ -150,6 +154,21 @@ export const pairedEvalFamilyContract = (family: PairedEvalFamily): HeldOutFamil
         sourcePaths: ["src/config.ts", "src/userService.ts", "tests/userService.test.ts"],
         allowedPrefixes: ["src/", "tests/", "docs/"],
         requiredChecks: ["held_out_runtime", "target_test", "target_typecheck", "target_diff_check"]
+      };
+    case "frontend-course-cards":
+      return {
+        family,
+        sourcePaths: [
+          "index.html",
+          "css/blocks/course-card.css",
+          "css/compositions/grid.css",
+          "css/compositions/flow.css",
+          "css/compositions/wrapper.css",
+          "css/utilities/region.css",
+          "css/global.css"
+        ],
+        allowedPrefixes: ["index.html", "css/blocks/course-card.css", "css/global.css"],
+        requiredChecks: ["held_out_runtime", "target_test", "target_diff_check"]
       };
   }
 };
@@ -339,6 +358,12 @@ const familyPromptGuidance = (family: PairedEvalFamily): FamilyPromptGuidance =>
         "Use the task and target contract to make the smallest surgical repair. Meet every observable acceptance requirement without assuming an implementation shape. Preserve the existing package shape; do not add frameworks or unrelated cleanup.",
         "Preserve existing focused tests and their distinct invalid-input vectors; do not weaken, replace, or collapse a missing-property, malformed-JSON, or unsupported-role assertion. Add coverage only when it strengthens the existing contract."
       ];
+    case "frontend-course-cards":
+      return [
+        "Build the supplied course collection into a resilient reusable frontend card section.",
+        "Preserve all supplied content, links, source order, and semantics. Keep the visual language consistent with the starter tokens, support variable content and card counts across narrow and wide viewports, and minimize duplication and special cases. Do not copy an external implementation or hardcode checker-specific content.",
+        "Keep the change inside the preregistered HTML, course-card stylesheet, and global CSS entry. The held-out checker will exercise the dependency-free public build and varied content and viewport conditions. Do not add tests, dependencies, or framework configuration."
+      ];
   }
 };
 
@@ -347,13 +372,16 @@ const basePrompt = (
   family: PairedEvalFamily = "weak-json"
 ): string => {
   const familyGuidance = familyPromptGuidance(family);
+  const verificationGuidance = family === "frontend-course-cards"
+    ? "Run the target CSS build and HTML validation command before finishing. Do not stage, commit, or push."
+    : "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.";
   return [
     familyGuidance[0],
     "Read AGENTS.md and the contract documentation present in the target first. Do not assume a filename that is not present. Work only in the allowed target files and do not touch the parent repository, other repos, generated caches, secrets, or network.",
     familyGuidance[1],
     familyGuidance[2],
     "If the runtime offers a read-only context tool, inspect it before editing; do not assume its presence or invent one, and never treat tool availability as authority by itself.",
-    "Run the target test command and TypeScript typecheck before finishing. Do not stage, commit, or push.",
+    verificationGuidance,
     "At the end, report changed files, commands and outcomes, what the checks prove, and what they do not prove. Do not claim product readiness.",
     `Task: ${task}`
   ].join("\n");
@@ -453,6 +481,8 @@ const runtimeObservationPassed = (
         observationPassed(observations.invalidJson) &&
         observationPassed(observations.missingEmail) &&
         observationPassed(observations.invalidRole);
+    case "frontend-course-cards":
+      return false;
   }
 };
 
@@ -506,6 +536,8 @@ const familySourceContractPassed = (
     case "user-create":
       return userCreateSourceContractPassed(source(files, "src/userService.ts"));
     case "weak-json":
+      return false;
+    case "frontend-course-cards":
       return false;
   }
 };
@@ -1011,40 +1043,11 @@ const targetEnvironment = (sandboxRoot: string): NodeJS.ProcessEnv => ({
 const targetCommandTimeoutMs = 120_000;
 
 const targetPreflight = async (input: HeldOutCheckerInput): Promise<TargetChangeManifest> => {
-  const [status, head, tracked, untracked] = await Promise.all([
-    runCommand("git", ["status", "--porcelain=v1", "--untracked-files=all"], input.targetRoot),
-    runCommand("git", ["rev-parse", "HEAD"], input.targetRoot),
-    runCommand("git", ["diff", input.initialCommit, "--name-only"], input.targetRoot),
-    runCommand("git", ["ls-files", "--others", "--exclude-standard"], input.targetRoot)
-  ]);
-  const trackedFiles = tracked.exitCode === 0
-    ? tracked.stdout.split("\n").map((path) => path.trim()).filter(Boolean)
-    : [];
-  const untrackedFiles = untracked.exitCode === 0
-    ? untracked.stdout.split("\n").map((path) => path.trim()).filter(Boolean)
-    : [];
-  const changedFiles = [...new Set([...trackedFiles, ...untrackedFiles])];
-  const forbiddenFiles = changedFiles.filter((path) =>
-    !path.startsWith("src/") &&
-    !path.startsWith("tests/") &&
-    !path.startsWith("docs/")
+  return captureHeldOutTargetState(
+    input,
+    runCommand,
+    (path) => path.startsWith("src/") || path.startsWith("tests/") || path.startsWith("docs/")
   );
-  const statusKnown = status.exitCode === 0 &&
-    head.exitCode === 0 &&
-    tracked.exitCode === 0 &&
-    untracked.exitCode === 0;
-
-  return {
-    status: statusKnown ? "known" : "unknown",
-    ...(head.exitCode === 0
-      ? { headMatchesInitialCommit: head.stdout.trim() === input.initialCommit }
-      : {}),
-    trackedFiles,
-    untrackedFiles,
-    changedFiles,
-    forbiddenFiles,
-    statusOutput: status.stdout
-  };
 };
 
 const readTargetSourceFiles = async (
@@ -1283,6 +1286,8 @@ const runtimeModulePathFor = (family: PairedEvalFamily): string => {
     case "weak-json":
     case "user-create":
       return "src/userService.js";
+    case "frontend-course-cards":
+      throw new Error("frontend-course-cards uses its dedicated browser observer");
   }
 };
 
@@ -1326,6 +1331,8 @@ const parseFamilyRuntimeObservations = (
           ? { validCreation: observations["validCreation"] === true }
           : {})
       };
+    case "frontend-course-cards":
+      throw new Error("frontend-course-cards observations are scored by its dedicated checker");
   }
 };
 
@@ -1666,6 +1673,9 @@ export const runHeldOutTargetRepairChecker = async (
   input: HeldOutCheckerInput
 ): Promise<HeldOutArmScore> => {
   const family = input.family ?? "weak-json";
+  if (family === "frontend-course-cards") {
+    return runFrontendCourseCardsChecker(input, runCommand);
+  }
   const preflight = await targetPreflight(input);
   const sourceFiles = await readTargetSourceFiles(input.targetRoot, family);
   const skipped = (command: string): CommandResult => ({

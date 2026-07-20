@@ -1,0 +1,278 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import type {
+  CommandResult,
+  HeldOutArmScore,
+  HeldOutCheckerInput,
+  HeldOutCheck,
+  TargetChangeManifest
+} from "./paired-live-codex-repair.js";
+import {
+  captureHeldOutTargetState,
+  type HeldOutRunCommand
+} from "./held-out-target-state.js";
+
+type RunCommand = HeldOutRunCommand;
+
+const htmlPath = "index.html";
+const cardPath = "css/blocks/course-card.css";
+const globalCssPath = "css/global.css";
+const builtCssPath = "dist/global.css";
+const allowedFiles = new Set([htmlPath, cardPath, globalCssPath]);
+const timeoutMs = 120_000;
+
+const passed = (result: CommandResult): boolean => result.exitCode === 0;
+const skipped = (command: string, reason: string): CommandResult => ({
+  command,
+  args: [],
+  exitCode: null,
+  stdout: "",
+  stderr: reason,
+  durationMs: 0
+});
+const courseSeam = /(?:\.course-card\b|\[data-course-card\]|\.course-list\b)/u;
+
+const cssRuleEntries = (css: string): readonly { readonly selector: string; readonly body: string }[] =>
+  [...css.replace(/\/\*[\s\S]*?\*\//gu, "").matchAll(/([^{}]+)\{([^{}]*)\}/gu)]
+    .map((match) => ({ selector: (match[1] ?? "").trim(), body: match[2] ?? "" }));
+
+const atRuleAffectsCourseSeam = (css: string, atRule: string): boolean => {
+  const source = css.replace(/\/\*[\s\S]*?\*\//gu, "");
+  let cursor = 0;
+  while ((cursor = source.indexOf(atRule, cursor)) >= 0) {
+    const open = source.indexOf("{", cursor + atRule.length);
+    if (open < 0) return false;
+    let depth = 1;
+    let close = open + 1;
+    while (close < source.length && depth > 0) {
+      if (source[close] === "{") depth += 1;
+      if (source[close] === "}") depth -= 1;
+      close += 1;
+    }
+    if (courseSeam.test(source.slice(open + 1, close - 1))) return true;
+    cursor = close;
+  }
+  return false;
+};
+
+const readOptional = async (root: string, path: string): Promise<string> => {
+  try {
+    return await readFile(join(root, path), "utf8");
+  } catch {
+    return "";
+  }
+};
+
+const ownedTarget = (manifest: TargetChangeManifest): boolean =>
+  manifest.status === "known" &&
+  manifest.headMatchesInitialCommit === true &&
+  manifest.forbiddenFiles.length === 0 &&
+  !manifest.statusOutput.split("\n").some((line) => line.length >= 2 && line[0] !== " " && line[0] !== "?");
+
+export type FrontendCourseCardsSourceResult = {
+  readonly passed: boolean;
+  readonly failures: readonly string[];
+};
+
+export const evaluateFrontendCourseCardsSources = (input: {
+  readonly html: string;
+  readonly initialHtml?: string;
+  readonly cardCss: string;
+  readonly builtCss: string;
+}): FrontendCourseCardsSourceResult => {
+  const failures: string[] = [];
+  const require = (condition: boolean, message: string): void => {
+    if (!condition) failures.push(message);
+  };
+  const utilityToken = /(?:^|\s)(?:sm:|md:|lg:|xl:|2xl:|hover:|group-hover:)?(?:grid-cols-|flex(?:-\w+)?|items-|justify-|gap-\d|p[trblxy]?-\d|m[trblxy]?-\d|w-\d|h-\d|min-h-|max-w-|text-(?:\d|[a-z])|bg-|rounded-|shadow-|border(?:-|$)|transition-|duration-|translate-)/u;
+  const classValues = [...input.html.matchAll(/class=["']([^"']*)["']/gu)].map((match) => match[1] ?? "");
+  const publicVariables = [...new Set([...input.builtCss.matchAll(/--course-card-[a-z0-9-]+/gu)].map((match) => match[0]))];
+  const builtCourseRules = cssRuleEntries(input.builtCss).filter((rule) => courseSeam.test(rule.selector));
+  const ownedBaseRule = cssRuleEntries(input.cardCss).find((rule) =>
+    rule.selector.split(",").some((selector) => selector.trim() === ".course-card")
+  );
+  const courseIdentities = (html: string): readonly string[] =>
+    [...html.matchAll(/<li\b[^>]*data-course-card[^>]*>([\s\S]*?)<\/li>/gu)].map((match) => {
+      const card = match[1] ?? "";
+      const href = card.match(/<a\b[^>]*href=["']([^"']+)["']/u)?.[1] ?? "";
+      const heading = card.match(/<h3\b[^>]*>([\s\S]*?)<\/h3>/u)?.[1]?.replace(/<[^>]+>/gu, "").trim() ?? "";
+      const copy = card.match(/<p\b[^>]*data-course-copy[^>]*>([\s\S]*?)<\/p>/u)?.[1]?.replace(/<[^>]+>/gu, "").trim() ?? "";
+      return JSON.stringify([href, heading, copy]);
+    });
+
+  require(/<section\b[^>]*aria-labelledby=/u.test(input.html), "The course-card region must have an accessible section name.");
+  require(/<ul\b/u.test(input.html) && /<li\b/u.test(input.html), "The repeated course collection must use list semantics.");
+  require(/<a\b[^>]*href=["'][^"']+["']/u.test(input.html) && /<h3\b/u.test(input.html), "Each course card must expose a named link and heading.");
+  require(/data-course-card\b/u.test(input.html), "The stable repeated card seam must be machine-observable.");
+  if (input.initialHtml !== undefined) {
+    require(
+      JSON.stringify(courseIdentities(input.html)) === JSON.stringify(courseIdentities(input.initialHtml)),
+      "The supplied course links, headings, descriptions, and source order must be preserved."
+    );
+  }
+  for (const token of ["grid", "flow", "wrapper", "region", "course-card"]) {
+    require(classValues.some((value) => value.split(/\s+/u).includes(token)), `The output must reuse the ${token} owner.`);
+  }
+  require(!classValues.some((value) => value.split(/\s+/u).some((token) => utilityToken.test(token))), "Markup must not encode a utility-token architecture.");
+  require(!/(?:^|\s)(?:c|u)-[a-z]/mu.test(classValues.join(" ")), "CUBE must not be cargo-culted as c-/u- prefixes.");
+  require(
+    ownedBaseRule !== undefined &&
+      /[a-z-]+\s*:/u.test(ownedBaseRule.body) &&
+      /var\(\s*--course-card-[a-z0-9-]+\s*,/u.test(ownedBaseRule.body),
+    "The course-card block stylesheet must own a load-bearing base rule and consume its API."
+  );
+  require(
+    !builtCourseRules.some((rule) => /:nth-(?:child|of-type)\s*\(/u.test(rule.selector)),
+    "The card implementation must not fork by item position."
+  );
+  require(!atRuleAffectsCourseSeam(input.builtCss, "@media"), "The card implementation must remain intrinsically responsive.");
+  require(
+    !builtCourseRules.some((rule) => /\b(?:min-)?height\s*:/u.test(rule.body)),
+    "The card implementation must not force uniform copy height."
+  );
+  require(publicVariables.length >= 1 && publicVariables.length <= 8, "The course-card API must expose between one and eight bounded variables.");
+  require(publicVariables.every((name) => new RegExp(`var\\(\\s*${name}\\s*,`, "u").test(input.builtCss)), "Every course-card variable must be consumed with a fallback.");
+  require(/\.course-card\b/u.test(input.builtCss), "The public CSS build must contain the course-card block.");
+  return { passed: failures.length === 0, failures };
+};
+
+const browserDocument = (html: string, css: string, count: number): string => {
+  const style = `<style>${css.replaceAll("</style", "<\\/style")}html{font-size:150%}body{margin:0}</style>`;
+const script = `<script>
+const expectedCount=${count};
+const list=document.querySelector('ul');
+const seed=list?.querySelector('[data-course-card]');
+if(list&&seed){while(list.children.length<expectedCount)list.append(seed.cloneNode(true));while(list.children.length>expectedCount)list.lastElementChild.remove();}
+[...document.querySelectorAll('[data-course-card]')].forEach((card,index)=>{const heading=card.querySelector('h3');const copy=card.querySelector('[data-course-copy]');const link=card.querySelector('a');if(heading)heading.textContent=index===1?'Projektowanie odpornych interfejsów dla bardzo złożonych produktów':('Moduł '+(index+1));if(copy)copy.textContent=index===2?'supercalifragilisticexpialidocioussupercalifragilisticexpialidocious':index===3?'':'Praktyczny opis modułu';if(link)link.href='#module-'+index;});
+const cards=[...document.querySelectorAll('[data-course-card]')];
+const nodes=[...document.querySelectorAll('body *')];
+const fits=document.documentElement.scrollWidth<=window.innerWidth+1&&nodes.every(node=>node.getBoundingClientRect().right<=window.innerWidth+1&&node.getBoundingClientRect().left>=-1);
+const named=cards.every(card=>{const link=card.querySelector('a');return link&&link.textContent.trim().length>0;});
+const ordered=cards.every((card,index)=>card.querySelector('a')?.getAttribute('href')==='#module-'+index);
+document.body.dataset.layoutOk=String(cards.length===expectedCount&&fits&&named&&ordered);
+</script>`;
+  return html.replace("</head>", `${style}</head>`).replace("</body>", `${script}</body>`);
+};
+
+const runRenderMatrix = async (
+  input: HeldOutCheckerInput,
+  runCommand: RunCommand,
+  scratchRoot: string,
+  html: string,
+  css: string
+): Promise<CommandResult> => {
+  const failures: string[] = [];
+  let durationMs = 0;
+  for (const count of [1, 3, 8]) {
+    for (const width of [320, 480, 768, 1440]) {
+      const documentPath = join(scratchRoot, `course-cards-${count}-${width}.html`);
+      await writeFile(documentPath, browserDocument(html, css, count), "utf8");
+      const browser = await runCommand("chromium", [
+        "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-background-networking",
+        "--host-resolver-rules=MAP * 0.0.0.0", `--window-size=${width},1200`, "--virtual-time-budget=1000",
+        "--dump-dom", `file://${documentPath}`
+      ], input.checkerRoot, { timeoutMs });
+      durationMs += browser.durationMs ?? 0;
+      if (!passed(browser) || !/data-layout-ok="true"/u.test(browser.stdout)) failures.push(`layout:${count}:${width}`);
+    }
+  }
+  return {
+    command: "frontend-course-cards-render-matrix",
+    args: ["counts=1,3,8", "widths=320,480,768,1440", "text=150%"],
+    exitCode: failures.length === 0 ? 0 : 1,
+    stdout: failures.length === 0 ? "All 12 content and viewport observations passed." : "",
+    stderr: failures.join(", "),
+    durationMs
+  };
+};
+
+const observeRenderMatrix = async (input: {
+  readonly checkerInput: HeldOutCheckerInput;
+  readonly runCommand: RunCommand;
+  readonly scratchRoot: string;
+  readonly html: string;
+  readonly css: string;
+  readonly prerequisitesPassed: boolean;
+}): Promise<CommandResult> => input.prerequisitesPassed
+  ? runRenderMatrix(input.checkerInput, input.runCommand, input.scratchRoot, input.html, input.css)
+  : skipped("frontend-course-cards-render-matrix", "public build or HTML syntax failed");
+
+export const runFrontendCourseCardsChecker = async (
+  input: HeldOutCheckerInput,
+  runCommand: RunCommand
+): Promise<HeldOutArmScore> => {
+  const before = await captureHeldOutTargetState(input, runCommand, (path) => allowedFiles.has(path));
+  if (!ownedTarget(before)) {
+    const command = skipped("frontend-course-cards", "target preflight violated identity or write ownership");
+    return {
+      status: "invalid",
+      score: 0,
+      checks: [{ name: "preflight", passed: false, details: "Target identity, staging state, or preregistered write ownership was violated before checking." }],
+      changedFiles: before.changedFiles,
+      changeManifest: before,
+      commands: { test: command, typecheck: command, diffCheck: command },
+      runtimeCommand: command
+    };
+  }
+
+  const [cssBuild, htmlSyntax, diffCheck] = await Promise.all([
+    runCommand("npm", ["run", "css"], input.targetRoot, { env: { ...process.env, CI: "1" }, timeoutMs }),
+    runCommand("node", ["scripts/check-html.mjs"], input.targetRoot, { env: { ...process.env, CI: "1" }, timeoutMs }),
+    runCommand("git", ["diff", "--check"], input.targetRoot, { timeoutMs })
+  ]);
+  const initialHtmlRead = await runCommand("git", ["show", `${input.initialCommit}:${htmlPath}`], input.targetRoot, { timeoutMs });
+  const [html, cardCss, builtCss] = await Promise.all([
+    readOptional(input.targetRoot, htmlPath),
+    readOptional(input.targetRoot, cardPath),
+    passed(cssBuild) ? readOptional(input.targetRoot, builtCssPath) : Promise.resolve("")
+  ]);
+  const evaluatedSources = evaluateFrontendCourseCardsSources({
+    html,
+    ...(passed(initialHtmlRead) ? { initialHtml: initialHtmlRead.stdout } : {}),
+    cardCss,
+    builtCss
+  });
+  const sourceResult = passed(initialHtmlRead)
+    ? evaluatedSources
+    : {
+        passed: false,
+        failures: [...evaluatedSources.failures, "The initial course identity could not be read from the frozen target commit."]
+      };
+  const scratchRoot = await mkdtemp(join(tmpdir(), "krn-frontend-course-cards-checker-"));
+  let runtime: CommandResult;
+  try {
+    runtime = await observeRenderMatrix({
+      checkerInput: input,
+      runCommand,
+      scratchRoot,
+      html,
+      css: builtCss,
+      prerequisitesPassed: passed(cssBuild) && passed(htmlSyntax)
+    });
+  } finally {
+    await rm(scratchRoot, { recursive: true, force: true });
+  }
+  const after = await captureHeldOutTargetState(input, runCommand, (path) => allowedFiles.has(path));
+  const checks: HeldOutCheck[] = [
+    { name: "preflight", passed: ownedTarget(after), details: ownedTarget(after) ? "All target changes are owned and inside the preregistered example boundary." : "Target identity, staging state, or write boundary was violated." },
+    { name: "forbidden_files", passed: after.forbiddenFiles.length === 0, details: after.forbiddenFiles.length === 0 ? "Only preregistered example files changed." : `Forbidden target changes: ${after.forbiddenFiles.join(", ")}` },
+    { name: "target_typecheck", passed: passed(htmlSyntax), details: passed(htmlSyntax) ? "The example HTML passed its deterministic syntax/landmark check." : "The example HTML failed its syntax/landmark check." },
+    { name: "target_test", passed: passed(cssBuild), details: passed(cssBuild) ? "The dependency-free public CSS build passed." : "The public CSS build failed." },
+    { name: "target_diff_check", passed: passed(diffCheck), details: passed(diffCheck) ? "The target diff passed whitespace validation." : "The target diff failed whitespace validation." },
+    { name: "family_contract", passed: sourceResult.passed, details: sourceResult.passed ? "Course cards satisfy the bounded semantic, ownership, and resilience contract." : sourceResult.failures.join(" ") },
+    { name: "held_out_runtime", passed: passed(runtime), details: passed(runtime) ? runtime.stdout : `Content/viewport matrix failed: ${runtime.stderr}` }
+  ];
+  const validityNames = new Set<HeldOutCheck["name"]>(["preflight", "forbidden_files", "target_typecheck", "target_test", "target_diff_check", "held_out_runtime"]);
+  const invalid = checks.some((check) => validityNames.has(check.name) && !check.passed);
+  return {
+    status: invalid ? "invalid" : sourceResult.passed ? "pass" : "fail",
+    score: checks.filter((check) => check.passed).length,
+    checks,
+    changedFiles: after.changedFiles,
+    changeManifest: after,
+    commands: { test: cssBuild, typecheck: htmlSyntax, diffCheck },
+    runtimeCommand: runtime
+  };
+};
