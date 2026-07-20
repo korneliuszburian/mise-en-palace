@@ -409,6 +409,12 @@ const executionCommandRows = (artifact: TrackedTrialArtifact) =>
       : [row];
   });
 
+const targetPatchCommandRows = (artifact: TrackedTrialArtifact) =>
+  (["baseline", "krn"] as const).flatMap((arm) => {
+    const patch = artifact.execution.targets?.[arm].after?.commands.patch;
+    return patch === undefined ? [] : [pairedCommandEvidence(arm, "target-patch", patch)];
+  });
+
 const targetEvidenceFor = (
   manifest: PairedTrialManifest,
   artifact: TrackedTrialArtifact,
@@ -514,7 +520,11 @@ export const preparePairedTrialPersistence = (input: {
     }
   }
 
-  const commandRows = [...executionCommandRows(input.artifact), ...scoreCommandRows(input.artifact)];
+  const commandRows = [
+    ...executionCommandRows(input.artifact),
+    ...targetPatchCommandRows(input.artifact),
+    ...scoreCommandRows(input.artifact)
+  ];
   return {
     candidate,
     commandRows,

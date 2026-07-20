@@ -230,8 +230,12 @@ describe("paired live Codex repair persistence", () => {
       "checker:paired-live-codex-repair.v1",
       `environment:sha256:${environmentHash}`
     ]));
-    expect(prepared.commandRows).toHaveLength(18);
+    expect(prepared.commandRows).toHaveLength(20);
     expect(prepared.commandRows.every((row) => row.command.status === "passed")).toBe(true);
+    expect(prepared.commandRows.map((row) => row.command.command)).toEqual(expect.arrayContaining([
+      expect.stringContaining("baseline:target-patch"),
+      expect.stringContaining("krn:target-patch")
+    ]));
     expect(JSON.stringify(prepared.commandRows)).not.toContain("PROMPT_SENTINEL");
     expect(prepared.commandRows[0]?.command.command).toContain(
       `prompt:sha256:${sha256("PROMPT_SENTINEL")}`

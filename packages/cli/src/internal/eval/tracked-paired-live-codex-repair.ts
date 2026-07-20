@@ -899,35 +899,83 @@ const environmentProfileHash = (
 }));
 
 const pathLines = (result: CommandResult): readonly string[] =>
-  result.stdout.split("\n").map((path) => path.trim()).filter(Boolean);
+  (result.stdout.includes("\0") ? result.stdout.split("\0") : result.stdout.split("\n"))
+    .filter((path) => path.length > 0);
+
+const captureCompleteTargetPatch = async (input: {
+  readonly targetRoot: string;
+  readonly initialCommit: string;
+  readonly environment: NodeJS.ProcessEnv;
+  readonly untrackedFiles: readonly string[];
+}): Promise<CommandResult> => {
+  const tracked = await runProcess("git", ["diff", input.initialCommit, "--binary"], {
+    cwd: input.targetRoot,
+    env: input.environment,
+    timeoutMs: 30_000
+  });
+  const untracked = await Promise.all([...input.untrackedFiles].sort().map(async (path) => ({
+    path,
+    result: await runProcess("git", ["diff", "--no-index", "--binary", "--", "/dev/null", path], {
+      cwd: input.targetRoot,
+      env: input.environment,
+      timeoutMs: 30_000
+    })
+  })));
+  const validUntracked = untracked.every(({ result }) =>
+    result.exitCode === 0 ||
+    (result.exitCode === 1 && result.stdout.length > 0 && result.stderr.length === 0)
+  );
+  const startedAt = [tracked, ...untracked.map(({ result }) => result)]
+    .map((result) => result.startedAt)
+    .find((value): value is string => value !== undefined);
+  const completedAt = [...untracked.map(({ result }) => result), tracked]
+    .reverse()
+    .map((result) => result.completedAt)
+    .find((value): value is string => value !== undefined);
+
+  return {
+    command: "krn-complete-git-patch",
+    args: [input.initialCommit, ...input.untrackedFiles.slice().sort()],
+    exitCode: tracked.exitCode === 0 && validUntracked ? 0 : 1,
+    stdout: canonicalJson({
+      tracked: tracked.stdout,
+      untracked: untracked.map(({ path, result }) => ({ path, patch: result.stdout }))
+    }),
+    stderr: [tracked.stderr, ...untracked.map(({ result }) => result.stderr)].filter(Boolean).join("\n"),
+    ...(startedAt === undefined ? {} : { startedAt }),
+    ...(completedAt === undefined ? {} : { completedAt }),
+    durationMs: [tracked, ...untracked.map(({ result }) => result)]
+      .reduce((total, result) => total + (result.durationMs ?? 0), 0)
+  };
+};
 
 const captureTargetState = async (input: {
   readonly targetRoot: string;
   readonly initialCommit: string;
   readonly environment: NodeJS.ProcessEnv;
 }): Promise<TrialTargetState> => {
-  const [status, tracked, untracked, patch] = await Promise.all([
+  const [status, tracked, untracked] = await Promise.all([
     runProcess("git", ["status", "--porcelain=v1", "--untracked-files=all"], {
       cwd: input.targetRoot,
       env: input.environment,
       timeoutMs: 30_000
     }),
-    runProcess("git", ["diff", input.initialCommit, "--name-only"], {
+    runProcess("git", ["diff", input.initialCommit, "--name-only", "-z"], {
       cwd: input.targetRoot,
       env: input.environment,
       timeoutMs: 30_000
     }),
-    runProcess("git", ["ls-files", "--others", "--exclude-standard"], {
-      cwd: input.targetRoot,
-      env: input.environment,
-      timeoutMs: 30_000
-    }),
-    runProcess("git", ["diff", input.initialCommit, "--binary"], {
+    runProcess("git", ["ls-files", "--others", "--exclude-standard", "-z"], {
       cwd: input.targetRoot,
       env: input.environment,
       timeoutMs: 30_000
     })
   ]);
+  const untrackedFiles = untracked.exitCode === 0 ? pathLines(untracked) : [];
+  const patch = await captureCompleteTargetPatch({
+    ...input,
+    untrackedFiles
+  });
   const known = [status, tracked, untracked, patch].every((result) => result.exitCode === 0);
   let treeHash: string | undefined;
 
@@ -938,7 +986,7 @@ const captureTargetState = async (input: {
       status: "unknown",
       statusOutput: status.stdout,
       trackedFiles: pathLines(tracked),
-      untrackedFiles: pathLines(untracked),
+      untrackedFiles,
       commands: { status, tracked, untracked, patch }
     };
   }
@@ -948,7 +996,7 @@ const captureTargetState = async (input: {
     ...(treeHash === undefined ? {} : { treeHash }),
     statusOutput: status.stdout,
     trackedFiles: pathLines(tracked),
-    untrackedFiles: pathLines(untracked),
+    untrackedFiles,
     ...(patch.exitCode === 0 ? { patchHash: sha256(patch.stdout) } : {}),
     commands: { status, tracked, untracked, patch }
   };
