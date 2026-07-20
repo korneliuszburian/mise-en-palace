@@ -977,7 +977,7 @@ const parseDecisionPacket = (stdout: string): DecisionPacketSmokeJson => {
 const readMcpDecisionPacket = (
   reply: unknown
 ): {
-  readonly packet: DecisionPacketSmokeJson["packet"];
+  readonly brief: string;
   readonly messageUtf8Bytes: number;
   readonly structuredContentMeasurement: DecisionPacketTransportMeasurement;
 } => {
@@ -991,19 +991,19 @@ const readMcpDecisionPacket = (
     "structuredContent",
     "DecisionPacket MCP smoke reply missed structuredContent"
   );
-  const metadata = readRequiredRecord(
-    result,
-    "_meta",
-    "DecisionPacket MCP smoke reply missed metadata"
-  );
-  const decisionPacketReadback = readRequiredRecord(
-    metadata,
-    "decisionPacketReadback",
-    "DecisionPacket MCP smoke reply missed hidden DecisionPacket readback metadata"
-  );
+  const content = result["content"];
+  const firstContent = Array.isArray(content) ? content[0] : undefined;
+
+  if (!isRecord(firstContent)) {
+    throw new Error("DecisionPacket MCP smoke reply missed text content");
+  }
 
   return {
-    packet: readPacket(decisionPacketReadback),
+    brief: readRequiredString(
+      firstContent,
+      "text",
+      "DecisionPacket MCP smoke reply missed brief text"
+    ),
     messageUtf8Bytes: measureDecisionPacketTransport(reply).utf8Bytes,
     structuredContentMeasurement: measureDecisionPacketTransport(structuredContent)
   };
@@ -1013,18 +1013,23 @@ const standaloneAntiMemoryTransportReadback = (input: {
   readonly antiMemoryRecordId: string;
   readonly cliExclusions: readonly DecisionPacketSmokeExclusion[];
   readonly cliPacket: DecisionPacketSmokeJson["packet"];
-  readonly mcpPacket: DecisionPacketSmokeJson["packet"];
-}): { readonly cliPreserved: boolean; readonly mcpPreserved: boolean } => ({
-  cliPreserved:
-    input.cliExclusions.length === 1 &&
-    input.cliPacket.rejectedPathIds.filter((id) => id === input.antiMemoryRecordId).length === 1 &&
-    input.cliPacket.memoryRefs.length === 0 &&
-    input.cliPacket.governingDecisionIds.length === 0,
-  mcpPreserved:
-    input.mcpPacket.rejectedPathIds.filter((id) => id === input.antiMemoryRecordId).length === 1 &&
-    input.mcpPacket.memoryRefs.length === 0 &&
-    input.mcpPacket.governingDecisionIds.length === 0
-});
+  readonly mcpBrief: string;
+}): { readonly cliPreserved: boolean; readonly mcpPreserved: boolean } => {
+  const exclusionExplanation = input.cliExclusions[0]?.explanation;
+
+  return {
+    cliPreserved:
+      input.cliExclusions.length === 1 &&
+      input.cliPacket.rejectedPathIds.filter((id) => id === input.antiMemoryRecordId).length === 1 &&
+      input.cliPacket.memoryRefs.length === 0 &&
+      input.cliPacket.governingDecisionIds.length === 0,
+    mcpPreserved:
+      input.cliExclusions.length === 1 &&
+      typeof exclusionExplanation === "string" &&
+      exclusionExplanation.length > 0 &&
+      input.mcpBrief.includes(exclusionExplanation)
+  };
+};
 
 const countReadOnlyUsefulnessRows = async (input: {
   readonly client: Sql;
@@ -2243,7 +2248,7 @@ const runStandaloneAntiMemoryProof = async (
     antiMemoryRecordId: antiMemory.id,
     cliExclusions,
     cliPacket: packet.packet,
-    mcpPacket: mcpReadback.packet
+    mcpBrief: mcpReadback.brief
   });
 
   return {
@@ -3068,7 +3073,6 @@ const runUnresolvedAcceptedSourceDissentProof = async (
     runId: proofRun.id
   });
   const { mcpReadback, packet } = transportProof;
-  const mcpPacket = mcpReadback.packet;
   const brief = await runCodexBriefCommand({
     ...input.baseRuntime,
     runId: proofRun.id,
@@ -3081,13 +3085,15 @@ const runUnresolvedAcceptedSourceDissentProof = async (
   const unresolvedAcceptedDissentEvidenceGapId =
     `evidence-gap:${proofRun.id}:unresolved-accepted-source-dissent:${governingClaim.id}`;
   const mcpPreservesDissentAndGap = [
-    mcpPacket.sourceClaimIds.includes(governingClaim.id),
-    mcpPacket.sourceClaimIds.includes(dissentingClaim.id),
-    mcpPacket.memoryRefs.includes(input.memoryRecordId),
-    mcpPacket.sourceConsensus.conflictingSourceClaimIds.includes(governingClaim.id),
-    mcpPacket.sourceConsensus.evidenceGapIds.includes(unresolvedAcceptedDissentEvidenceGapId),
-    mcpPacket.abstentionScore.status === "abstain",
-    mcpPacket.abstentionScore.reasons.includes("unresolved_accepted_source_dissent")
+    packet.packet.sourceClaimIds.includes(governingClaim.id),
+    packet.packet.sourceClaimIds.includes(dissentingClaim.id),
+    packet.packet.memoryRefs.includes(input.memoryRecordId),
+    packet.packet.sourceConsensus.conflictingSourceClaimIds.includes(governingClaim.id),
+    packet.packet.sourceConsensus.evidenceGapIds.includes(unresolvedAcceptedDissentEvidenceGapId),
+    packet.packet.abstentionScore.status === "abstain",
+    packet.packet.abstentionScore.reasons.includes("unresolved_accepted_source_dissent"),
+    mcpReadback.brief.includes("unresolved_accepted_source_dissent"),
+    mcpReadback.brief.includes("Do not execute; the DecisionPacket abstains")
   ].every(Boolean);
 
   if (contextAssembly.metadata.retrievalRunId !== retrievalRun.id) {

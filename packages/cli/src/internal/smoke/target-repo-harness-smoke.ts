@@ -18,6 +18,8 @@ import type {
 } from "@krn/core/repositories";
 import type {
   CommandOutputArtifact,
+  DecisionPacket,
+  DecisionPacketIdentity,
   EvidenceCommand,
   EvalCandidateProposal,
   MemoryRecord
@@ -41,8 +43,7 @@ import {
 import {
   isRecord,
   readRequiredRecord,
-  readRequiredString,
-  readRequiredStringArray
+  readRequiredString
 } from "./json-readers.js";
 import {
   assertBrainStoreReady,
@@ -100,12 +101,12 @@ export interface TargetRepoHarnessSmokeReport {
   decisionPacketEvidenceRef: string;
   decisionPacketMcpInitialized: boolean;
   decisionPacketMcpToolListed: boolean;
-  decisionPacketMcpReadbackMatched: boolean;
-  decisionPacketMemoryIncluded: boolean;
+  decisionPacketMcpIdentityMatched: boolean;
+  decisionPacketMcpBriefMatched: boolean;
+  decisionPacketIssuanceMemoryIncluded: boolean;
   decisionPacketGoverningDecisionId: string;
   decisionPacketSourceDecisionId: string;
   decisionPacketAbstentionStatus: "ready" | "weak_context";
-  decisionPacketReturnChannelBound: boolean;
   consumerTargetCommand: string;
   consumerTargetCommandStatus: "passed";
   consumerEvidenceBoundToPacket: boolean;
@@ -165,13 +166,13 @@ interface DecisionPacketConsumerProof {
   checksum: string;
   generatedAt: string;
   evidenceRef: string;
-  sourceUsefulnessExample: string;
   governingDecisionIds: readonly string[];
   sourceDecisionIds: readonly string[];
   abstentionStatus: string;
   abstentionReasons: readonly string[];
   memoryIncluded: boolean;
-  returnChannelBound: boolean;
+  mcpIdentityMatched: boolean;
+  mcpBriefMatched: boolean;
 }
 
 interface TargetCommandProof {
@@ -674,6 +675,9 @@ const readMcpDecisionPacketProof = async (input: {
   readonly databaseUrl: string;
   readonly executionRunId: string;
   readonly memoryRecordId: string;
+  readonly packet: DecisionPacket;
+  readonly packetIdentity: DecisionPacketIdentity;
+  readonly renderedBrief: string;
   readonly repoRoot: string;
 }): Promise<DecisionPacketConsumerProof> => {
   const responses = await runExternalDecisionPacketMcpClient({
@@ -717,35 +721,17 @@ const readMcpDecisionPacketProof = async (input: {
   }
 
   const packetIdentity = structuredContent;
-  const metadata = readRequiredRecord(
-    callResult,
-    "_meta",
-    "Target repo harness smoke expected MCP metadata"
-  );
-  const decisionPacketReadback = readRequiredRecord(
-    metadata,
-    "decisionPacketReadback",
-    "Target repo harness smoke expected hidden DecisionPacket readback metadata"
-  );
-  const packet = readRequiredRecord(
-    decisionPacketReadback,
-    "packet",
-    "Target repo harness smoke expected packet object in DecisionPacket MCP output"
-  );
-  const returnChannels = readRequiredRecord(
-    decisionPacketReadback,
-    "returnChannels",
-    "Target repo harness smoke expected returnChannels object in DecisionPacket MCP output"
-  );
-  const evidence = readRequiredRecord(
-    returnChannels,
-    "evidence",
-    "Target repo harness smoke expected evidence object in DecisionPacket MCP output"
-  );
-  const feedback = readRequiredRecord(
-    returnChannels,
-    "feedback",
-    "Target repo harness smoke expected feedback object in DecisionPacket MCP output"
+  const content = callResult["content"];
+  const firstContent = Array.isArray(content) ? content[0] : undefined;
+
+  if (!isRecord(firstContent)) {
+    throw new Error("Target repo harness smoke expected MCP brief content");
+  }
+
+  const brief = readRequiredString(
+    firstContent,
+    "text",
+    "Target repo harness smoke expected MCP brief text"
   );
   const checksum = readRequiredString(
     packetIdentity,
@@ -762,46 +748,7 @@ const readMcpDecisionPacketProof = async (input: {
     "evidenceRef",
     "Target repo harness smoke expected evidenceRef string in DecisionPacket MCP output"
   );
-  const memoryRefs = readRequiredStringArray(
-    packet,
-    "memoryRefs",
-    "Target repo harness smoke expected memoryRefs string array in DecisionPacket MCP output"
-  );
-  const governingDecisionIds = readRequiredStringArray(
-    packet,
-    "governingDecisionIds",
-    "Target repo harness smoke expected governingDecisionIds string array in DecisionPacket MCP output"
-  );
-  const sourceDecisionIds = readRequiredStringArray(
-    packet,
-    "sourceDecisionIds",
-    "Target repo harness smoke expected sourceDecisionIds string array in DecisionPacket MCP output"
-  );
-  const abstentionScore = readRequiredRecord(
-    packet,
-    "abstentionScore",
-    "Target repo harness smoke expected abstentionScore object in DecisionPacket MCP output"
-  );
-  const abstentionStatus = readRequiredString(
-    abstentionScore,
-    "status",
-    "Target repo harness smoke expected abstention status in DecisionPacket MCP output"
-  );
-  const abstentionReasons = readRequiredStringArray(
-    abstentionScore,
-    "reasons",
-    "Target repo harness smoke expected abstention reasons in DecisionPacket MCP output"
-  );
-  const persistedCommand = readRequiredString(
-    evidence,
-    "persistedCommand",
-    "Target repo harness smoke expected persistedCommand string in DecisionPacket MCP output"
-  );
-  const sourceUsefulnessExample = readRequiredString(
-    feedback,
-    "sourceUsefulnessExample",
-    "Target repo harness smoke expected sourceUsefulnessExample string in DecisionPacket MCP output"
-  );
+  const packet = input.packet;
 
   return {
     initialized: instructions.includes("Use krn_decision_packet"),
@@ -809,17 +756,16 @@ const readMcpDecisionPacketProof = async (input: {
     checksum,
     generatedAt,
     evidenceRef,
-    sourceUsefulnessExample,
-    governingDecisionIds,
-    sourceDecisionIds,
-    abstentionStatus,
-    abstentionReasons,
-    memoryIncluded: memoryRefs.includes(input.memoryRecordId),
-    returnChannelBound:
+    governingDecisionIds: packet.governingDecisionIds,
+    sourceDecisionIds: packet.sourceDecisionIds,
+    abstentionStatus: packet.abstentionScore.status,
+    abstentionReasons: packet.abstentionScore.reasons,
+    memoryIncluded: packet.memoryRefs.includes(input.memoryRecordId),
+    mcpIdentityMatched:
       evidenceRef === `packet:${checksum}` &&
-      persistedCommand.includes(checksum) &&
-      persistedCommand.includes(`--decision-packet-generated-at ${generatedAt}`) &&
-      sourceUsefulnessExample.includes(evidenceRef)
+      generatedAt === input.packetIdentity.generatedAt &&
+      checksum === input.packetIdentity.checksum,
+    mcpBriefMatched: brief.includes(input.renderedBrief.trim())
   };
 };
 
@@ -1209,12 +1155,12 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `DecisionPacket evidence ref: ${report.decisionPacketEvidenceRef}`,
   `DecisionPacket MCP initialized: ${matchedWhen(report.decisionPacketMcpInitialized)}`,
   `DecisionPacket MCP tool listed: ${matchedWhen(report.decisionPacketMcpToolListed)}`,
-  `DecisionPacket MCP readback: ${matchedWhen(report.decisionPacketMcpReadbackMatched)}`,
-  `DecisionPacket memory included: ${yesNo(report.decisionPacketMemoryIncluded)}`,
+  `DecisionPacket MCP identity: ${matchedWhen(report.decisionPacketMcpIdentityMatched)}`,
+  `DecisionPacket MCP brief: ${matchedWhen(report.decisionPacketMcpBriefMatched)}`,
+  `DecisionPacket issuance memory included: ${yesNo(report.decisionPacketIssuanceMemoryIncluded)}`,
   `DecisionPacket governing decision: ${report.decisionPacketGoverningDecisionId}`,
   `DecisionPacket canonical source decision: ${report.decisionPacketSourceDecisionId}`,
   `DecisionPacket abstention status: ${report.decisionPacketAbstentionStatus}`,
-  `DecisionPacket return channel bound: ${yesNo(report.decisionPacketReturnChannelBound)}`,
   `Consumer target command: ${report.consumerTargetCommand}`,
   `Consumer target command status: ${report.consumerTargetCommandStatus}`,
   `Consumer evidence bound to packet: ${yesNo(report.consumerEvidenceBoundToPacket)}`,
@@ -1334,7 +1280,8 @@ const assertDecisionPacketConsumerProof = (
     containsOnly(proof.governingDecisionIds, expected.governingDecisionId),
     containsOnly(proof.sourceDecisionIds, expected.sourceDecisionId),
     permitsExecution(proof),
-    proof.returnChannelBound
+    proof.mcpIdentityMatched,
+    proof.mcpBriefMatched
   ];
 
   if (checks.includes(false)) {
@@ -1740,6 +1687,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
       databaseUrl: input.databaseUrl,
       executionRunId: executionRun.id,
       memoryRecordId: memoryRecord.id,
+      packet: issuance.packet,
+      packetIdentity: issuance.packetIdentity,
+      renderedBrief,
       repoRoot: input.repoRoot
     });
 
@@ -1790,14 +1740,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
       decisionPacketEvidenceRef: decisionPacketProof.evidenceRef,
       decisionPacketMcpInitialized: decisionPacketProof.initialized,
       decisionPacketMcpToolListed: decisionPacketProof.toolListed,
-      decisionPacketMcpReadbackMatched:
-        decisionPacketProof.memoryIncluded && decisionPacketProof.returnChannelBound,
-      decisionPacketMemoryIncluded: decisionPacketProof.memoryIncluded,
+      decisionPacketMcpIdentityMatched: decisionPacketProof.mcpIdentityMatched,
+      decisionPacketMcpBriefMatched: decisionPacketProof.mcpBriefMatched,
+      decisionPacketIssuanceMemoryIncluded: decisionPacketProof.memoryIncluded,
       decisionPacketGoverningDecisionId: governingDecisionId,
       decisionPacketSourceDecisionId: sourceDecision.id,
       decisionPacketAbstentionStatus:
         decisionPacketProof.abstentionStatus === "ready" ? "ready" : "weak_context",
-      decisionPacketReturnChannelBound: decisionPacketProof.returnChannelBound,
       consumerTargetCommand: evidenceProof.targetCommand,
       consumerTargetCommandStatus: "passed",
       consumerEvidenceBoundToPacket: evidenceProof.consumerEvidenceBoundToPacket,

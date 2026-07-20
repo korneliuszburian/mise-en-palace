@@ -114,17 +114,10 @@ describe("DecisionPacket MCP PostgreSQL role boundary", () => {
               isError: false,
               structuredContent: {
                 checksumAlgorithm: "sha256"
-              },
-              _meta: {
-                decisionPacketReadback: {
-                  kind: "krn.decisionPacketReadback.v1",
-                  access: "read_only",
-                  mutation: "none",
-                  request: { runId: compiled.executionRun.id }
-                }
               }
             }
           });
+          expect(Object.keys((mcpReply as { readonly result: object }).result)).not.toContain("_meta");
 
           const readOnlyClient = postgres(readOnlyDatabaseUrl, { max: 1, onnotice: () => undefined });
           try {
