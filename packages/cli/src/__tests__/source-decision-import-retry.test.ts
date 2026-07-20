@@ -904,4 +904,195 @@ describe("source decision import retry boundary", () => {
     },
     60_000
   );
+
+  it.skipIf(databaseUrl === undefined || databaseUrl.length === 0)(
+    "replays reviewed supersession and rolls back a missing predecessor",
+    async () => {
+      const disposableDatabase = await createDisposableDatabase(databaseUrl!);
+      const client = postgres(disposableDatabase.databaseUrl, { max: 1, onnotice: () => undefined });
+      const temporaryDirectory = await mkdtemp(path.join(tmpdir(), "krn-source-import-supersession-"));
+      const connectedRepo = path.join(temporaryDirectory, "repo");
+      const evidencePath = path.join(temporaryDirectory, "evidence.txt");
+      const predecessorPath = path.join(temporaryDirectory, "predecessor.json");
+      const replacementPath = path.join(temporaryDirectory, "replacement.json");
+      const duplicatePath = path.join(temporaryDirectory, "duplicate.json");
+      const invalidPath = path.join(temporaryDirectory, "invalid.json");
+
+      try {
+        await migrateDatabase({
+          databaseUrl: disposableDatabase.databaseUrl,
+          migrationsFolder
+        });
+        const setupRuntime = await createDatabaseRuntime({
+          databaseUrl: disposableDatabase.databaseUrl,
+          workspaceSlug: defaultWorkspaceSlug,
+          projectSlug: defaultProjectSlug,
+          requireProjectKernelForExplicitProject: false,
+          now: () => "2026-07-20T00:00:00.000Z",
+          createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
+        });
+        const projectId = setupRuntime.projectId;
+        await setupRuntime.close();
+        await mkdir(connectedRepo);
+        const evidence = "Reviewed corpus revisions retain exact supersession lineage.";
+        const evidenceHash = crypto.createHash("sha256").update(evidence).digest("hex");
+        await writeFile(evidencePath, evidence, "utf8");
+        await client`
+          insert into repo_installations (
+            id,
+            project_id,
+            provider,
+            repo_url,
+            default_branch,
+            local_path_hint
+          ) values (
+            ${crypto.randomUUID()},
+            ${projectId},
+            'local',
+            ${`file://${connectedRepo}`},
+            'main',
+            ${connectedRepo}
+          )
+        `;
+        await runSourcePreviewCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: evidencePath,
+          repoPath: connectedRepo
+        });
+        const evidenceRef = `krn-source://sha256/${evidenceHash}`;
+        const baseDecision = (decisionId: string) => ({
+          id: decisionId,
+          title: "Reviewed source authority",
+          statement: "A reviewed replacement supersedes its exact predecessor without deleting history.",
+          status: "current",
+          taskScopes: ["source-authority", "supersession"],
+          evidenceRef,
+          falsifier: "The predecessor remains governing or retry duplicates the supersession edge.",
+          doesNotProve: "Supersession lineage does not prove source truth.",
+          noteText: "Use the reviewed replacement for future selection and retain its predecessor as history."
+        });
+        const corpus = (decisionId: string, predecessorId?: string) => ({
+          version: "1",
+          corpusName: `source-import-supersession-${decisionId}`,
+          coverageScope: {
+            declaredRows: [{ decisionId, evidenceRefs: [evidenceRef] }]
+          },
+          decisions: [{
+            ...baseDecision(decisionId),
+            ...(predecessorId === undefined
+              ? {}
+              : { supersedesSourceClaimIds: [predecessorId] })
+          }]
+        });
+        await writeFile(
+          predecessorPath,
+          `${JSON.stringify(corpus("reviewed-predecessor"), null, 2)}\n`,
+          "utf8"
+        );
+        await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: predecessorPath,
+          persist: true,
+          repoPath: connectedRepo
+        });
+        const [predecessor] = await client<{ id: string }[]>`
+          select source_claims.id
+          from source_claims
+          join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
+          where source_artifacts.import_row_id = 'reviewed-predecessor'
+        `;
+
+        if (predecessor === undefined) {
+          throw new Error("missing predecessor SourceClaim for supersession test");
+        }
+
+        await writeFile(
+          replacementPath,
+          `${JSON.stringify(corpus("reviewed-replacement", predecessor.id), null, 2)}\n`,
+          "utf8"
+        );
+
+        const first = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: replacementPath,
+          persist: true,
+          repoPath: connectedRepo
+        });
+        const retry = await runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: replacementPath,
+          persist: true,
+          repoPath: connectedRepo
+        });
+        const firstOutput = JSON.parse(first.stdout) as Record<string, unknown>;
+        const retryOutput = JSON.parse(retry.stdout) as Record<string, unknown>;
+        const firstRows = firstOutput["rows"];
+        const retryRows = retryOutput["rows"];
+
+        expect(Array.isArray(firstRows) && isRecord(firstRows[0])
+          ? firstRows[0]["sourceClaimSupersessionEdgeIds"]
+          : undefined).toEqual([expect.any(String)]);
+        expect(retryRows).toEqual(firstRows);
+        const [edgeCount] = await client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_claim_edges
+          where to_source_claim_id = ${predecessor.id}
+            and kind = 'supersedes'
+        `;
+        expect(edgeCount?.count).toBe(1);
+        await client`
+          update source_claim_edges
+          set metadata = jsonb_set(metadata, '{consumer}', '"tampered"'::jsonb)
+          where to_source_claim_id = ${predecessor.id}
+            and kind = 'supersedes'
+        `;
+        await expect(runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: replacementPath,
+          persist: true,
+          repoPath: connectedRepo
+        })).rejects.toThrow(/conflicting reviewed supersession provenance/u);
+
+        const duplicate = corpus("canonical-duplicate", predecessor.id);
+        duplicate.decisions[0]!.supersedesSourceClaimIds = [
+          predecessor.id,
+          ` ${predecessor.id} `
+        ];
+        await writeFile(
+          duplicatePath,
+          `${JSON.stringify(duplicate, null, 2)}\n`,
+          "utf8"
+        );
+        await expect(runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: duplicatePath,
+          persist: true,
+          repoPath: connectedRepo
+        })).rejects.toThrow(/duplicate supersedesSourceClaimIds/u);
+
+        await writeFile(
+          invalidPath,
+          `${JSON.stringify(corpus("missing-predecessor", crypto.randomUUID()), null, 2)}\n`,
+          "utf8"
+        );
+        await expect(runSourceImportCli({
+          databaseUrl: disposableDatabase.databaseUrl,
+          filePath: invalidPath,
+          persist: true,
+          repoPath: connectedRepo
+        })).rejects.toThrow(/did not return a row/u);
+        const [invalidArtifacts] = await client<{ count: number }[]>`
+          select count(*)::int as count
+          from source_artifacts
+          where import_row_id = 'missing-predecessor'
+        `;
+        expect(invalidArtifacts?.count).toBe(0);
+      } finally {
+        await client.end();
+        await disposableDatabase.cleanup();
+        await rm(temporaryDirectory, { recursive: true, force: true });
+      }
+    },
+    60_000
+  );
 });

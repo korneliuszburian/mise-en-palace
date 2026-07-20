@@ -87,6 +87,7 @@ export interface PersistedSourceDecisionImportRow {
   readonly sourceClaimStatus: string;
   readonly sourceDecisionId: string;
   readonly sourceDecisionStatus: string;
+  readonly sourceClaimSupersessionEdgeIds?: readonly string[];
   readonly sourceDecisionEdgeId?: string;
   readonly searchDocumentId?: string;
   readonly sourceRejectionId?: string;
@@ -137,6 +138,14 @@ export const sourceDecisionImportCounts = (
 export const validateSourceDecisionImportFixture = (
   fixture: ReviewedSourceDecisionCorpus
 ): void => {
+  for (const row of fixture.decisions) {
+    const supersedesSourceClaimIds = canonicalSourceClaimSupersessionIds(row);
+
+    if (row.status !== "current" && supersedesSourceClaimIds.length > 0) {
+      throw new Error(`decision ${row.id} must be current to supersede SourceClaims`);
+    }
+  }
+
   const declaredDecisionIds = fixture.coverageScope?.declaredRows.map((row) => row.decisionId);
 
   if (declaredDecisionIds === undefined) {
@@ -165,6 +174,26 @@ const compareImportText = (left: string, right: string): number =>
 const canonicalImportTextList = (values: readonly string[]): readonly string[] =>
   values.map(normalizeImportText).sort(compareImportText);
 
+const canonicalSourceClaimSupersessionIds = (
+  row: ReviewedSourceDecisionRow
+): readonly string[] => {
+  const ids = canonicalImportTextList(row.supersedesSourceClaimIds ?? []);
+
+  if (new Set(ids).size !== ids.length) {
+    throw new Error(`decision ${row.id} has duplicate supersedesSourceClaimIds`);
+  }
+
+  return ids;
+};
+
+const sourceClaimSupersessionMetadata = (
+  row: ReviewedSourceDecisionRow
+): { readonly supersedesSourceClaimIds?: readonly string[] } => {
+  const supersedesSourceClaimIds = canonicalSourceClaimSupersessionIds(row);
+
+  return supersedesSourceClaimIds.length === 0 ? {} : { supersedesSourceClaimIds };
+};
+
 const canonicalSourceDecisionImportManifest = (
   fixture: ReviewedSourceDecisionCorpus
 ) => ({
@@ -190,6 +219,7 @@ const canonicalSourceDecisionImportManifest = (
       ...((row.taskConcerns?.length ?? 0) === 0
         ? {}
         : { taskConcerns: canonicalImportTextList(row.taskConcerns ?? []) }),
+      ...sourceClaimSupersessionMetadata(row),
       evidenceRef: normalizeImportText(row.evidenceRef),
       falsifier: normalizeImportText(row.falsifier),
       doesNotProve: normalizeImportText(row.doesNotProve),
@@ -318,6 +348,7 @@ const metadataForRow = (
   ...((row.taskConcerns?.length ?? 0) === 0
     ? {}
     : { taskConcerns: canonicalImportTextList(row.taskConcerns ?? []) }),
+  ...sourceClaimSupersessionMetadata(row),
   evidenceRef: evidence.evidenceRef,
   ...sourceEvidenceFields(evidence)
 });
@@ -627,6 +658,7 @@ const prepareImportRow = async (
     statement: normalizeImportText(row.statement),
     taskScopes: canonicalImportTextList(row.taskScopes),
     ...taskConcernMetadata(row),
+    ...sourceClaimSupersessionMetadata(row),
     title: normalizeImportText(row.title)
   });
   const capturedContent = capturedContentForImport(input, evidence);
@@ -1082,6 +1114,85 @@ const projectScopedImportedSourceClaimReadback = async (input: {
   return sourceClaim;
 };
 
+const createImportedSupersessionEdges = async (input: {
+  readonly sourceRepository: SourceDecisionImportSourceRepository;
+  readonly row: ReviewedSourceDecisionRow;
+  readonly sourceClaimId: string;
+  readonly sourceDecisionId: string;
+  readonly evidenceRef: string;
+  readonly metadata: Record<string, unknown>;
+}): Promise<readonly string[]> => Promise.all(
+  canonicalSourceClaimSupersessionIds(input.row).map(async (predecessorId) => {
+    const edge = await input.sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: input.sourceClaimId,
+      toSourceClaimId: predecessorId,
+      kind: "supersedes",
+      metadata: {
+        ...input.metadata,
+        consumer: "source decision import",
+        doesNotProve: "Reviewed corpus supersession preserves authority lineage; it does not prove either claim is true or useful.",
+        evidenceRef: input.evidenceRef,
+        sourceDecisionRef: input.sourceDecisionId
+      }
+    });
+
+    return edge.id;
+  })
+);
+
+const requireImportedSupersessionEdges = async (input: {
+  readonly sourceRepository: SourceDecisionImportSourceRepository;
+  readonly rows: readonly PersistedSourceDecisionImportRow[];
+  readonly preparedRows: readonly PreparedSourceDecisionImportRow[];
+}): Promise<readonly PersistedSourceDecisionImportRow[]> => {
+  const preparedById = new Map(
+    input.preparedRows.map((prepared) => [prepared.row.id, prepared] as const)
+  );
+
+  return Promise.all(input.rows.map(async (row) => {
+    const prepared = preparedById.get(row.decisionId);
+
+    if (prepared === undefined) {
+      throw new Error(`source decision import ${row.decisionId} has no prepared replay row`);
+    }
+
+    const expectedTargets = canonicalSourceClaimSupersessionIds(prepared.row);
+
+    if (expectedTargets.length === 0) return row;
+
+    const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(row.sourceClaimId);
+    const edgesByTarget = new Map(edges
+      .filter((edge) => edge.fromSourceClaimId === row.sourceClaimId && edge.kind === "supersedes")
+      .map((edge) => [edge.toSourceClaimId, edge] as const));
+    const matching = expectedTargets.map((targetId) => edgesByTarget.get(targetId));
+
+    if (matching.some((edge) => edge === undefined)) {
+      throw new Error(
+        `source decision import ${row.decisionId} is missing reviewed supersession edges`
+      );
+    }
+    const hasExpectedProvenance = matching.every((edge) =>
+      edge?.metadata.consumer === "source decision import" &&
+      edge.metadata.doesNotProve ===
+        "Reviewed corpus supersession preserves authority lineage; it does not prove either claim is true or useful." &&
+      edge.metadata.evidenceRef === prepared.evidenceRef &&
+      edge.metadata.sourceDecisionRef === row.sourceDecisionId &&
+      edge.metadata.decisionCorpusImportId === row.decisionId
+    );
+
+    if (!hasExpectedProvenance) {
+      throw new Error(
+        `source decision import ${row.decisionId} has conflicting reviewed supersession provenance`
+      );
+    }
+
+    return {
+      ...row,
+      sourceClaimSupersessionEdgeIds: matching.map((edge) => edge!.id)
+    };
+  }));
+};
+
 const persistedEvidenceFields = (
   prepared: PreparedSourceDecisionImportRow
 ): Pick<PersistedSourceDecisionImportRow, "evidenceRef" | "evidenceStatus" | "evidenceContentHash" | "evidenceCapturedAt" | "evidenceFreshness" | "evidenceProvenance" | "evidenceReason"> => ({
@@ -1095,6 +1206,11 @@ const persistedEvidenceFields = (
     ? {}
     : { evidenceContentHash: prepared.evidenceContentHash })
 });
+
+const persistedSupersessionEdges = (
+  sourceClaimSupersessionEdgeIds: readonly string[]
+): Pick<PersistedSourceDecisionImportRow, "sourceClaimSupersessionEdgeIds"> =>
+  sourceClaimSupersessionEdgeIds.length === 0 ? {} : { sourceClaimSupersessionEdgeIds };
 
 const persistSourceDecisionImportRow = async (input: {
   readonly createSourceDecision: CreateSourceDecision;
@@ -1148,6 +1264,14 @@ const persistSourceDecisionImportRow = async (input: {
     decisionId: row.id,
     sourceClaimId: sourceClaim.id
   });
+  const sourceClaimSupersessionEdgeIds = await createImportedSupersessionEdges({
+    sourceRepository: input.sourceRepository,
+    row,
+    sourceClaimId: sourceClaim.id,
+    sourceDecisionId: sourceDecision.id,
+    evidenceRef: input.prepared.evidenceRef,
+    metadata: input.prepared.metadata
+  });
 
   if (authorityLifecycleStatus === "rejected") {
     return {
@@ -1159,6 +1283,7 @@ const persistSourceDecisionImportRow = async (input: {
       sourceClaimStatus: sourceClaimReadback.status,
       sourceDecisionId: sourceDecision.id,
       sourceDecisionStatus: sourceDecision.status,
+      ...persistedSupersessionEdges(sourceClaimSupersessionEdgeIds),
       sourceRejectionId: await createRejectedPath({
         sourceRepository: input.sourceRepository,
         projectId: input.projectId,
@@ -1179,6 +1304,7 @@ const persistSourceDecisionImportRow = async (input: {
     sourceClaimStatus: sourceClaimReadback.status,
     sourceDecisionId: sourceDecision.id,
     sourceDecisionStatus: sourceDecision.status,
+    ...persistedSupersessionEdges(sourceClaimSupersessionEdgeIds),
     ...await createDecisionSupport({
       sourceRepository: input.sourceRepository,
       retrievalRepository: input.retrievalRepository,
@@ -1285,7 +1411,14 @@ export const persistSourceDecisionImport = async (
         );
       }
 
-      return { importId: equivalentImportId, rows: equivalentRows };
+      return {
+        importId: equivalentImportId,
+        rows: await requireImportedSupersessionEdges({
+          sourceRepository: transactionRuntime.sourceRepository,
+          rows: equivalentRows,
+          preparedRows
+        })
+      };
     }
 
     const existingRows = await existingImportRows(
