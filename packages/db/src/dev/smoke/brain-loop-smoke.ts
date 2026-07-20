@@ -140,7 +140,7 @@ export interface BrainLoopSmokeReport {
   revisionPacketSupersessionEvidenceStatus: string;
   revisionPacketSupersessionEvidenceRefCount: number;
   revisionPacketSupersessionSourceClaimCount: number;
-  revisionBriefIncludesSupersession: boolean;
+  revisionBriefIncludesReplacementGuidance: boolean;
   runEventCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -1371,10 +1371,11 @@ export const runBrainLoopSmokeCheck = async (
     const revisionPacketSupersessionSourceClaimCount =
       revisionPacketSupersessionEntry?.evidence.sourceClaimIds.length ?? 0;
     const revisionRenderedBrief = input.renderExecutionBrief(revisionDecisionPacket);
-    const revisionBriefIncludesSupersession =
-      revisionRenderedBrief.includes("Memory Supersession Timeline:") &&
-      revisionRenderedBrief.includes(memoryRecord.id) &&
-      revisionRenderedBrief.includes(revisionReplacementMemory.id);
+    const revisionBriefIncludesReplacementGuidance =
+      revisionRunSourceMemoryInclusions.length === 0 &&
+      revisionRunReplacementInclusions.some((inclusion) =>
+        revisionRenderedBrief.includes(inclusion.expectedUse)
+      );
     const decisionPacketRejectedPathIds = antiMemoryRejectedPathIdsFromActivationDecisions(
       consolidationRunActivationDecisions
     );
@@ -1640,8 +1641,8 @@ export const runBrainLoopSmokeCheck = async (
         passed: revisionPacketSupersessionExplanation
       },
       {
-        label: "revision Codex brief preserves supersession explanation",
-        passed: revisionBriefIncludesSupersession
+        label: "revision Codex brief includes replacement guidance",
+        passed: revisionBriefIncludesReplacementGuidance
       },
       {
         label: "revision supersession evidence round-trips",
@@ -1746,7 +1747,7 @@ export const runBrainLoopSmokeCheck = async (
       revisionPacketSupersessionEvidenceStatus,
       revisionPacketSupersessionEvidenceRefCount,
       revisionPacketSupersessionSourceClaimCount,
-      revisionBriefIncludesSupersession,
+      revisionBriefIncludesReplacementGuidance,
       runEventCount: aggregate?.runEvents.length ?? 0,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
