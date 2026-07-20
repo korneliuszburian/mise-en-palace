@@ -220,6 +220,7 @@ type TrialConditions = {
     readonly sourceCommands?: {
       readonly test: boolean;
       readonly typecheck: boolean;
+      readonly css: boolean;
     };
     readonly checkerRuntime?: {
       readonly nodeVersion: string;
@@ -1166,7 +1167,8 @@ const isObservedTrialConditions = (value: unknown): boolean => {
     optionalValue(value, "sourceCommands", (commands) =>
       isRecord(commands) &&
       typeof commands["test"] === "boolean" &&
-      typeof commands["typecheck"] === "boolean"
+      typeof commands["typecheck"] === "boolean" &&
+      (commands["css"] === undefined || typeof commands["css"] === "boolean")
     ) &&
     isObservedCheckerRuntime(value["checkerRuntime"]);
 };
@@ -1789,7 +1791,7 @@ const hasChatGptAuthentication = (result: CommandResult): boolean =>
 
 export const observeSourceCommands = async (
   sourceRoot: string
-): Promise<{ readonly test: boolean; readonly typecheck: boolean }> => {
+): Promise<{ readonly test: boolean; readonly typecheck: boolean; readonly css: boolean }> => {
   try {
     const packageJson: unknown = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8"));
     const scripts = isRecord(packageJson) && isRecord(packageJson["scripts"])
@@ -1797,10 +1799,11 @@ export const observeSourceCommands = async (
       : undefined;
     return {
       test: typeof scripts?.["test"] === "string" && scripts["test"].trim().length > 0,
-      typecheck: typeof scripts?.["typecheck"] === "string" && scripts["typecheck"].trim().length > 0
+      typecheck: typeof scripts?.["typecheck"] === "string" && scripts["typecheck"].trim().length > 0,
+      css: typeof scripts?.["css"] === "string" && scripts["css"].trim().length > 0
     };
   } catch {
-    return { test: false, typecheck: false };
+    return { test: false, typecheck: false, css: false };
   }
 };
 
@@ -1810,7 +1813,7 @@ type TrialPreparationObservations = {
   readonly codex: TrialToolObservation;
   readonly authentication: CommandResult;
   readonly runtimePermissionFlag: HeldOutRuntimePermissionFlag | undefined;
-  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean };
+  readonly sourceCommands: { readonly test: boolean; readonly typecheck: boolean; readonly css: boolean };
   readonly checkerRuntime: {
     readonly nodeVersion: string;
     readonly permissionFlag: HeldOutRuntimePermissionFlag | "unsupported";
@@ -1886,8 +1889,21 @@ const trialPreparationRejection = (input: {
   if (!hasChatGptAuthentication(authentication)) {
     return { kind: "rejected", status: "blocked", reason: "host Codex ChatGPT authentication is unavailable", conditions };
   }
-  if (input.enforceSourceCommands === true && (!sourceCommands.test || !sourceCommands.typecheck)) {
-    return { kind: "rejected", status: "invalid", reason: "source fixture must define test and typecheck scripts", conditions };
+  if (input.enforceSourceCommands === true) {
+    const family = resolvePairedEvalFamily(input.manifest.scenario);
+    const commandsAvailable = family === "frontend-course-cards"
+      ? sourceCommands.css
+      : sourceCommands.test && sourceCommands.typecheck;
+    if (!commandsAvailable) {
+      return {
+        kind: "rejected",
+        status: "invalid",
+        reason: family === "frontend-course-cards"
+          ? "frontend source fixture must define the public css build script"
+          : "source fixture must define test and typecheck scripts",
+        conditions
+      };
+    }
   }
   const prerequisite = trialPrerequisiteFailure({ containment, codex, manifest: input.manifest, runtimePermissionFlag });
   return prerequisite === undefined ? undefined : { kind: "rejected", ...prerequisite, conditions };
