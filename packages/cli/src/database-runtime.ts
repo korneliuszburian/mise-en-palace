@@ -1,3 +1,7 @@
+import { execFile } from "node:child_process";
+import { realpath } from "node:fs/promises";
+import path from "node:path";
+import { promisify } from "node:util";
 import postgres from "postgres";
 import {
   createKrnDatabase,
@@ -48,11 +52,14 @@ import type {
 } from "@krn/db/adapters";
 
 type PostgresClient = ReturnType<typeof postgres>;
+const execFileAsync = promisify(execFile);
 
 /**
- * CLI fallback project scope used when no explicit --project is given and no
- * connected repo path resolves. Single source of truth for the default
- * workspace/project slugs; command files must import these instead of
+ * CLI fallback project scope used when no explicit --project and no repo path
+ * hint is available. Once a command carries a repo path hint, runtime project
+ * resolution must use a connected repository identity or fail closed instead of
+ * creating shadow source/memory authority. Single source of truth for the
+ * default workspace/project slugs; command files must import these instead of
  * hardcoding the literals.
  */
 export const defaultWorkspaceSlug = "local";
@@ -343,6 +350,102 @@ const trimmedValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
+const uniqueValues = (values: readonly string[]): string[] => [...new Set(values)];
+
+const canonicalRealPath = async (repoPath: string): Promise<string | undefined> => {
+  try {
+    return await realpath(repoPath);
+  } catch {
+    return undefined;
+  }
+};
+
+const gitCommonDirectory = async (repoPath: string): Promise<string | undefined> => {
+  try {
+    const result = await execFileAsync("git", ["rev-parse", "--git-common-dir"], {
+      cwd: repoPath,
+      encoding: "utf8"
+    });
+    const output = typeof result.stdout === "string" ? result.stdout.trim() : "";
+
+    return output.length === 0
+      ? undefined
+      : path.resolve(repoPath, output);
+  } catch {
+    return undefined;
+  }
+};
+
+const primaryCheckoutPathFromGitCommonDirectory = (
+  commonDirectory: string | undefined
+): string | undefined => (
+  commonDirectory !== undefined && path.basename(commonDirectory) === ".git"
+    ? path.dirname(commonDirectory)
+    : undefined
+);
+
+const lexicalPrimaryCheckoutAlias = async (input: {
+  readonly repoPath: string;
+  readonly repoRealPath: string | undefined;
+  readonly primaryCheckoutPath: string | undefined;
+}): Promise<string | undefined> => {
+  if (input.repoRealPath === undefined || input.primaryCheckoutPath === undefined) {
+    return undefined;
+  }
+
+  const repoRealParent = path.dirname(input.repoRealPath);
+  const primaryCheckoutRealParent = path.dirname(input.primaryCheckoutPath);
+
+  if (repoRealParent !== primaryCheckoutRealParent) {
+    return undefined;
+  }
+
+  const lexicalCandidate = path.join(
+    path.dirname(input.repoPath),
+    path.basename(input.primaryCheckoutPath)
+  );
+  const lexicalCandidateRealPath = await canonicalRealPath(lexicalCandidate);
+
+  return lexicalCandidateRealPath === input.primaryCheckoutPath
+    ? lexicalCandidate
+    : undefined;
+};
+
+const connectedRepoPathCandidates = async (
+  repoPathHint: string | undefined
+): Promise<string[]> => {
+  const trimmedRepoPathHint = trimmedValue(repoPathHint);
+
+  if (trimmedRepoPathHint === undefined) {
+    return [];
+  }
+
+  const repoPath = path.resolve(trimmedRepoPathHint);
+  const repoRealPath = await canonicalRealPath(repoPath);
+  const primaryCheckoutPath = primaryCheckoutPathFromGitCommonDirectory(
+    await gitCommonDirectory(repoPath)
+  );
+  const primaryCheckoutAlias = await lexicalPrimaryCheckoutAlias({
+    repoPath,
+    repoRealPath,
+    primaryCheckoutPath
+  });
+
+  return uniqueValues([
+    repoPath,
+    ...(repoRealPath === undefined ? [] : [repoRealPath]),
+    ...(primaryCheckoutPath === undefined ? [] : [primaryCheckoutPath]),
+    ...(primaryCheckoutAlias === undefined ? [] : [primaryCheckoutAlias])
+  ]);
+};
+
+const shouldRequireConnectedRepoPath = (
+  input: Pick<DatabaseRuntimeInput, "projectId" | "repoPathHint" | "requireConnectedRepoPath">
+): boolean => (
+  input.requireConnectedRepoPath === true ||
+  (trimmedValue(input.projectId) === undefined && trimmedValue(input.repoPathHint) !== undefined)
+);
+
 const projectResolutionFor = (input: {
   explicitProject: ProjectRecord | undefined;
   connectedProject: ProjectRecord | undefined;
@@ -361,9 +464,7 @@ const projectResolutionFor = (input: {
   if (input.connectedProject !== undefined) {
     return {
       kind: "connected_repo_path",
-      reason: input.requireConnectedRepoPath === true
-        ? "Resolved explicit --repo from repo_installations.local_path_hint."
-        : "Resolved from repo_installations.local_path_hint matching the current repo root.",
+      reason: "Resolved from repo_installations.local_path_hint matching the current repo identity.",
       doesNotProve:
         "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
       ...(input.repoPathHint === undefined ? {} : { repoPathHint: input.repoPathHint })
@@ -418,7 +519,19 @@ const resolveConnectedProject = async (
     return undefined;
   }
 
-  return repository.getProjectByRepoPath(repoPathHint);
+  const projectsById = new Map<string, ProjectRecord>();
+
+  for (const candidate of await connectedRepoPathCandidates(repoPathHint)) {
+    const project = await repository.getProjectByRepoPath(candidate);
+
+    if (project !== undefined) {
+      projectsById.set(project.id, project);
+    }
+  }
+
+  return projectsById.size === 1
+    ? projectsById.values().next().value
+    : undefined;
 };
 
 const findOrCreateWorkspace = async (
@@ -539,17 +652,16 @@ const resolveRuntimeProjectWithFallbackLock = async (
   repository: ProjectRepository,
   input: DatabaseRuntimeInput
 ): Promise<RuntimeProjectResolution> => {
+  const requireConnectedRepoPath = shouldRequireConnectedRepoPath(input);
   const existingResolution = await resolveRuntimeProject(repository, input, {
     createSlugFallback: false,
-    ...(input.requireConnectedRepoPath === undefined
-      ? {}
-      : { requireConnectedRepoPath: input.requireConnectedRepoPath })
+    requireConnectedRepoPath
   });
 
   if (existingResolution.kind !== "unresolved") {
     return existingResolution;
   }
-  if (input.requireConnectedRepoPath === true) {
+  if (requireConnectedRepoPath) {
     return existingResolution;
   }
 
@@ -567,7 +679,7 @@ const resolveRuntimeProjectWithFallbackLock = async (
 };
 
 const unresolvedProjectError = (input: DatabaseRuntimeInput): Error =>
-  input.requireConnectedRepoPath === true
+  shouldRequireConnectedRepoPath(input)
     ? new Error(`No connected project found for repo path ${input.repoPathHint ?? "<missing>"}`)
     : new Error("Unable to resolve project for database runtime");
 
