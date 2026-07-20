@@ -788,6 +788,49 @@ describe("compileHarnessPlan", () => {
     ]));
   });
 
+  it("uses canonical supported graph precedence in compiled context", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+    const currentClaim = sourceClaim({ id: "claim-current-authority" });
+    const rejectedClaim = sourceClaim({
+      id: "claim-rejected-and-superseded",
+      status: "rejected"
+    });
+    const supersedesEdge: SourceClaimEdge = {
+      id: "edge-current-supersedes-rejected",
+      fromSourceClaimId: currentClaim.id,
+      toSourceClaimId: rejectedClaim.id,
+      kind: "supersedes",
+      metadata: {
+        evidenceRefs: ["source:reviewed-relation"]
+      },
+      createdAt: now
+    };
+
+    const result = await compileHarnessPlan(
+      { ...compileInput, tokenBudget: 500 },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository(
+          [currentClaim, rejectedClaim],
+          [supersedesEdge],
+          [sourceDecisionEdge({ sourceClaimId: currentClaim.id })]
+        ),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-canonical-source-precedence`
+      }
+    );
+
+    expect(result.contextAssembly.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: rejectedClaim.id,
+        reason: "superseded",
+        explanation: expect.stringContaining(supersedesEdge.id)
+      })
+    ]));
+  });
+
   it("keeps an unsafe source exclusion out of formal rejected paths in a compiled packet", async () => {
     const result = await compileHarnessPlan(
       {
