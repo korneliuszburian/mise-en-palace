@@ -299,11 +299,10 @@ const toTargetSeedCandidate = (
   readModel: TargetActivationReadModel,
   projectId: ProjectId
 ): ActivationCandidate => {
-  const boundaryKey = targetBoundaryKey(readModel, projectId);
   const boundarySlug = targetBoundarySlug(readModel, projectId);
   const boundaryLabel = targetBoundaryLabel(readModel);
   const candidateSlug = candidatePathId(seed.path);
-  const subjectId = deterministicUuid(`target-source-seed:${boundaryKey}:${seed.path}`);
+  const subjectId = targetSourceSeedSubjectId(seed, readModel, projectId);
 
   return {
     id: `target-source-seed:${boundarySlug}:${candidateSlug}`,
@@ -333,6 +332,14 @@ const toTargetSeedCandidate = (
     }
   };
 };
+
+export const targetSourceSeedSubjectId = (
+  seed: TargetActivationSourceSeed,
+  readModel: TargetActivationReadModel,
+  projectId: ProjectId
+): string => deterministicUuid(
+  `target-source-seed:${targetBoundaryKey(readModel, projectId)}:${seed.path}`
+);
 
 const targetOwnerFileMatchCount = (
   taskTerms: ReadonlySet<string>,

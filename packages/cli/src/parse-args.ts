@@ -1,4 +1,5 @@
 import type {
+  ContextInclusionUsefulnessOutcomeFeedback,
   KnowledgeUsefulnessOutcomeFeedback,
   SourceClaimEdgeKind,
   SourceUsefulnessOutcomeFeedback,
@@ -137,6 +138,7 @@ export type CliCommand =
       targetEvidence?: TargetEvidenceInput;
       sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
       knowledgeUsefulnessOutcomes?: readonly KnowledgeUsefulnessOutcomeFeedback[];
+      contextInclusionUsefulnessOutcomes?: readonly ContextInclusionUsefulnessOutcomeFeedback[];
     }
   | {
       kind: "evidenceCaptureHelp";
@@ -631,10 +633,11 @@ const usage = [
   "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
   "krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "krn doctor",
-  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--persist]",
+  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--memory-usefulness \"<knowledge-id>=helped|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--context-usefulness \"<subject-type>:<subject-id>=noise|reason|evidence|doesNotProve[|application-id[|applied-at]]\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/run-evidence-capture-command.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "  source usefulness: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "  memory usefulness: krn evidence capture --memory-usefulness \"knowledge:ts-boundary-unknown-first-result-state=helped|Memory selected the unknown-first parser shape|evidence-1|Does not prove future memory recall quality\"",
+  "  context usefulness: krn evidence capture --context-usefulness \"search_document:seed-id=noise|Broad seed caused irrelevant inspection|packet:<checksum>|Does not reject the document as source truth\"",
   "  application phase 1: pass application-id alone; persisted output returns application-id|applied-at",
   "  application phase 2: run verification, then pass the returned application-id|applied-at pair",
   "  target: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",

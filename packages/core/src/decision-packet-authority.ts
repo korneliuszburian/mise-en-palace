@@ -11,6 +11,9 @@ import type {
 import {
   buildDecisionPacketContractReadback
 } from "./decision-packet.js";
+import type {
+  ContextSubjectType
+} from "./context-assembly.js";
 import {
   parseMemorySupersessionTimelineReadback,
   parseSourceConsensusTimelineReadback
@@ -24,6 +27,7 @@ import {
   sourceUsefulnessOutcomesFromMetadata
 } from "./feedback-delta.js";
 import type {
+  ContextInclusionUsefulnessOutcomeFeedback,
   KnowledgeUsefulnessOutcomeFeedback,
   SourceUsefulnessOutcomeFeedback
 } from "./feedback-delta.js";
@@ -77,6 +81,7 @@ export const decisionPacketReadModelDoesNotProve = [
 ] as const;
 
 export type DecisionPacketUsefulnessSubjectKind =
+  | "context_inclusion"
   | "source_claim"
   | "source_decision"
   | "knowledge"
@@ -89,6 +94,9 @@ export interface DecisionPacketUsefulnessSubject {
 }
 
 export interface DecisionPacketUsefulnessSubjectProjectionInput {
+  readonly contextInclusionUsefulnessOutcomes?:
+    | readonly ContextInclusionUsefulnessOutcomeFeedback[]
+    | undefined;
   readonly sourceUsefulnessOutcomes:
     | readonly SourceUsefulnessOutcomeFeedback[]
     | undefined;
@@ -100,6 +108,11 @@ export interface DecisionPacketUsefulnessSubjectProjectionInput {
 export const projectDecisionPacketUsefulnessSubjects = (
   input: DecisionPacketUsefulnessSubjectProjectionInput
 ): DecisionPacketUsefulnessSubject[] => [
+  ...(input.contextInclusionUsefulnessOutcomes ?? []).map((outcome) => ({
+    kind: "context_inclusion" as const,
+    id: contextInclusionUsefulnessSubjectId(outcome.subjectType, outcome.subjectId),
+    evidenceRefs: [...outcome.evidenceRefs]
+  })),
   ...(input.sourceUsefulnessOutcomes ?? []).flatMap((outcome) => {
     const id = outcome.sourceDecisionId ?? outcome.sourceClaimId;
 
@@ -119,6 +132,11 @@ export const projectDecisionPacketUsefulnessSubjects = (
     evidenceRefs: [...outcome.evidenceRefs]
   }))
 ];
+
+export const contextInclusionUsefulnessSubjectId = (
+  subjectType: ContextSubjectType,
+  subjectId: string
+): string => `${subjectType}:${subjectId}`;
 
 export interface DecisionPacketBinding {
   packetChecksum: string;
@@ -778,6 +796,9 @@ const selectedSubjectIds = (
   const staleSourceDecisionIds = new Set(packet.staleDecisionIds);
 
   return new Map([
+    ["context_inclusion", new Set(packet.contextInclusions.map((inclusion) =>
+      contextInclusionUsefulnessSubjectId(inclusion.subjectType, inclusion.subjectId)
+    ))],
     ["source_claim", new Set([
       ...packet.sourceClaimIds,
       ...packet.brief.includedSourceClaimIds

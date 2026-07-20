@@ -1,0 +1,1 @@
+ALTER TYPE "public"."usefulness_application_subject_kind" ADD VALUE 'context_inclusion' BEFORE 'source_claim';

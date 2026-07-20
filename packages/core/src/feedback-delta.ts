@@ -1,4 +1,10 @@
 import type {
+  ContextSubjectType
+} from "./context-assembly.js";
+import {
+  contextSubjectTypes
+} from "./context-assembly.js";
+import type {
   FeedbackDeltaId,
   ReviewAssessmentId,
   SourceClaimId,
@@ -112,6 +118,17 @@ export type SourceUsefulnessOutcomeFeedback = SourceUsefulnessOutcomeFeedbackFie
 
 export interface KnowledgeUsefulnessOutcomeFeedback {
   knowledgeId: string;
+  applicationId?: string;
+  appliedAt?: IsoTimestamp;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+}
+
+export interface ContextInclusionUsefulnessOutcomeFeedback {
+  subjectType: ContextSubjectType;
+  subjectId: string;
   applicationId?: string;
   appliedAt?: IsoTimestamp;
   outcome: SourceUsefulnessOutcome;
@@ -379,6 +396,38 @@ const knowledgeUsefulnessOutcomeFromMetadata = (
   };
 };
 
+const contextInclusionUsefulnessOutcomeFromMetadata = (
+  item: Record<string, unknown>
+): ContextInclusionUsefulnessOutcomeFeedback | undefined => {
+  const subjectType = readMetadataString(item, "subjectType");
+  const subjectId = readMetadataString(item, "subjectId");
+  const reason = readMetadataString(item, "reason");
+  const doesNotProve = readMetadataString(item, "doesNotProve");
+  const application = usefulnessApplicationReferenceFromMetadata(item);
+
+  if (
+    subjectType === undefined ||
+    !contextSubjectTypes.some((candidate) => candidate === subjectType) ||
+    subjectId === undefined ||
+    reason === undefined ||
+    doesNotProve === undefined ||
+    !application.valid
+  ) {
+    return undefined;
+  }
+  const { valid: _valid, ...applicationFields } = application;
+
+  return {
+    subjectType: subjectType as ContextSubjectType,
+    subjectId,
+    ...applicationFields,
+    outcome: sourceUsefulnessOutcomeField(item),
+    reason,
+    evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
+    doesNotProve
+  };
+};
+
 export const sourceUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
 ): SourceUsefulnessOutcomeFeedback[] => {
@@ -403,6 +452,20 @@ export const knowledgeUsefulnessOutcomesFromMetadata = (
   return readMetadataObjectList(metadata, "knowledgeUsefulnessOutcomes")
     .flatMap((item) => {
       const outcome = knowledgeUsefulnessOutcomeFromMetadata(item);
+      return outcome === undefined ? [] : [outcome];
+    });
+};
+
+export const contextInclusionUsefulnessOutcomesFromMetadata = (
+  metadata: Record<string, unknown>
+): ContextInclusionUsefulnessOutcomeFeedback[] => {
+  if (!isAdmittedCurrentDecisionPacketAuthorityMetadata(metadata)) {
+    return [];
+  }
+
+  return readMetadataObjectList(metadata, "contextInclusionUsefulnessOutcomes")
+    .flatMap((item) => {
+      const outcome = contextInclusionUsefulnessOutcomeFromMetadata(item);
       return outcome === undefined ? [] : [outcome];
     });
 };

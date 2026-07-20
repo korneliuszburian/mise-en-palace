@@ -46,6 +46,7 @@ import {
   authorizeIssuedDecisionPacketUsefulness,
   buildDecisionPacketIssuance,
   canonicalTargetRepoPath,
+  contextInclusionUsefulnessSubjectId,
   collectTargetStateSnapshot,
   decideEvidenceContractActivation,
   decisionPacketAuthorityAdmissionCurrent,
@@ -1219,6 +1220,7 @@ const evidenceFeedbackSemanticInput = (
     decisionPacketClaim: _decisionPacketClaim,
     sourceUsefulnessOutcomes: _sourceUsefulnessOutcomes,
     knowledgeUsefulnessOutcomes: _knowledgeUsefulnessOutcomes,
+    contextInclusionUsefulnessOutcomes: _contextInclusionUsefulnessOutcomes,
     maintenance: _maintenance,
     semanticRequest,
     ...identityInput
@@ -1235,6 +1237,9 @@ const evidenceFeedbackSemanticInput = (
     ...(semanticRequest.knowledgeUsefulnessOutcomes === undefined
       ? {}
       : { knowledgeUsefulnessOutcomes: semanticRequest.knowledgeUsefulnessOutcomes }),
+    ...(semanticRequest.contextInclusionUsefulnessOutcomes === undefined
+      ? {}
+      : { contextInclusionUsefulnessOutcomes: semanticRequest.contextInclusionUsefulnessOutcomes }),
     ...(semanticRequest.maintenance === undefined
       ? {}
       : { maintenance: semanticRequest.maintenance })
@@ -1253,6 +1258,8 @@ const evidenceFeedbackRequestFingerprint = (
     decisionPacketClaim: semanticInput.decisionPacketClaim ?? null,
     sourceUsefulnessOutcomes: semanticInput.sourceUsefulnessOutcomes ?? null,
     knowledgeUsefulnessOutcomes: semanticInput.knowledgeUsefulnessOutcomes ?? null,
+    contextInclusionUsefulnessOutcomes:
+      semanticInput.contextInclusionUsefulnessOutcomes ?? null,
     evidence: semanticInput.evidence,
     review: semanticInput.review,
     feedback: semanticInput.feedback,
@@ -1406,6 +1413,7 @@ const verificationFollowsApplication = (input: {
 };
 
 const returnChannelUsefulnessSubjectKinds = new Set<string>([
+  "context_inclusion",
   "knowledge",
   "source_claim",
   "source_decision"
@@ -1573,6 +1581,7 @@ const admitDecisionPacketIdentity = async (
     callerPacketChecksum: claim.checksum,
     callerPacketGeneratedAt: claim.generatedAt,
     subjects: projectDecisionPacketUsefulnessSubjects({
+      contextInclusionUsefulnessOutcomes: input.contextInclusionUsefulnessOutcomes,
       sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes,
       knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes
     }),
@@ -1596,6 +1605,7 @@ const admitDecisionPacketIdentity = async (
       callerPacketGeneratedAt: claim.generatedAt,
       callerSourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
       subjects: projectDecisionPacketUsefulnessSubjects({
+        contextInclusionUsefulnessOutcomes: input.contextInclusionUsefulnessOutcomes,
         sourceUsefulnessOutcomes: input.sourceUsefulnessOutcomes,
         knowledgeUsefulnessOutcomes: input.knowledgeUsefulnessOutcomes
       })
@@ -1693,8 +1703,29 @@ const admitUsefulnessOutcomes = async (
       readTargetStateSnapshot
     }))
   );
+  const contextInclusionUsefulnessOutcomes = await Promise.all(
+    (input.contextInclusionUsefulnessOutcomes ?? []).map((outcome) =>
+      admitApplicationBoundOutcome({
+        tx,
+        capture: input,
+        aggregate,
+        outcome,
+        subject: {
+          kind: "context_inclusion",
+          id: contextInclusionUsefulnessSubjectId(outcome.subjectType, outcome.subjectId)
+        },
+        strictProofEligible: proof.eligible,
+        requiredCommands: proof.requiredCommands,
+        readTargetStateSnapshot
+      })
+    )
+  );
 
-  return { sourceUsefulnessOutcomes, knowledgeUsefulnessOutcomes };
+  return {
+    sourceUsefulnessOutcomes,
+    knowledgeUsefulnessOutcomes,
+    contextInclusionUsefulnessOutcomes
+  };
 };
 
 const applicationBoundEvidenceFeedbackInput = (
@@ -1702,7 +1733,11 @@ const applicationBoundEvidenceFeedbackInput = (
   authorityIdentity: AdmittedDecisionPacketIdentity,
   admitted: Awaited<ReturnType<typeof admitUsefulnessOutcomes>>
 ): CreateEvidenceFeedbackOnceInput => {
-  const { sourceUsefulnessOutcomes, knowledgeUsefulnessOutcomes } = admitted;
+  const {
+    sourceUsefulnessOutcomes,
+    knowledgeUsefulnessOutcomes,
+    contextInclusionUsefulnessOutcomes
+  } = admitted;
   const keepMaintenance = sourceUsefulnessOutcomes.some((outcome, index) =>
     remainsMaintenanceEligible(input.sourceUsefulnessOutcomes?.[index], outcome)
   ) || knowledgeUsefulnessOutcomes.some((outcome, index) =>
@@ -1734,7 +1769,10 @@ const applicationBoundEvidenceFeedbackInput = (
           : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] }),
         ...(knowledgeUsefulnessOutcomes.length === 0
           ? {}
-          : { knowledgeUsefulnessOutcomes: [...knowledgeUsefulnessOutcomes] })
+          : { knowledgeUsefulnessOutcomes: [...knowledgeUsefulnessOutcomes] }),
+        ...(contextInclusionUsefulnessOutcomes.length === 0
+          ? {}
+          : { contextInclusionUsefulnessOutcomes: [...contextInclusionUsefulnessOutcomes] })
       }
     }
   };
