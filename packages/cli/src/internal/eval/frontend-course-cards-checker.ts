@@ -38,20 +38,40 @@ const cssRuleEntries = (css: string): readonly { readonly selector: string; read
   [...css.replace(/\/\*[\s\S]*?\*\//gu, "").matchAll(/([^{}]+)\{([^{}]*)\}/gu)]
     .map((match) => ({ selector: (match[1] ?? "").trim(), body: match[2] ?? "" }));
 
-const atRuleAffectsCourseSeam = (css: string, atRule: string): boolean => {
+const motionPreferenceMedia = /^@media\s*\(\s*prefers-reduced-motion\s*:\s*(?:reduce|no-preference)\s*\)\s*$/iu;
+const motionOnlyDeclaration = /^(?:animation|transition)(?:-[a-z-]+)?\s*:/iu;
+const changesOnlyMotion = (body: string): boolean => body
+  .split(";")
+  .map((declaration) => declaration.trim())
+  .filter((declaration) => declaration.length > 0)
+  .every((declaration) => motionOnlyDeclaration.test(declaration));
+
+const closingBraceOffset = (source: string, open: number): number => {
+  let depth = 1;
+  for (let cursor = open + 1; cursor < source.length; cursor += 1) {
+    if (source[cursor] === "{") depth += 1;
+    if (source[cursor] === "}") depth -= 1;
+    if (depth === 0) return cursor + 1;
+  }
+  return source.length;
+};
+
+const courseMediaCreatesLayoutFork = (css: string): boolean => {
   const source = css.replace(/\/\*[\s\S]*?\*\//gu, "");
+  const normalizedSource = source.toLowerCase();
   let cursor = 0;
-  while ((cursor = source.indexOf(atRule, cursor)) >= 0) {
-    const open = source.indexOf("{", cursor + atRule.length);
+  while ((cursor = normalizedSource.indexOf("@media", cursor)) >= 0) {
+    const open = normalizedSource.indexOf("{", cursor + "@media".length);
     if (open < 0) return false;
-    let depth = 1;
-    let close = open + 1;
-    while (close < source.length && depth > 0) {
-      if (source[close] === "{") depth += 1;
-      if (source[close] === "}") depth -= 1;
-      close += 1;
+    const close = closingBraceOffset(source, open);
+    const body = source.slice(open + 1, close - 1);
+    const courseRules = cssRuleEntries(body).filter((rule) => courseSeam.test(rule.selector));
+    if (courseRules.length > 0) {
+      const prelude = source.slice(cursor, open).trim();
+      const isMotionOnlyPreference = motionPreferenceMedia.test(prelude) &&
+        courseRules.every((rule) => changesOnlyMotion(rule.body));
+      if (!isMotionOnlyPreference) return true;
     }
-    if (courseSeam.test(source.slice(open + 1, close - 1))) return true;
     cursor = close;
   }
   return false;
@@ -127,7 +147,7 @@ export const evaluateFrontendCourseCardsSources = (input: {
     !builtCourseRules.some((rule) => /:nth-(?:child|of-type)\s*\(/u.test(rule.selector)),
     "The card implementation must not fork by item position."
   );
-  require(!atRuleAffectsCourseSeam(input.builtCss, "@media"), "The card implementation must remain intrinsically responsive.");
+  require(!courseMediaCreatesLayoutFork(input.builtCss), "The card implementation must remain intrinsically responsive.");
   require(
     !builtCourseRules.some((rule) => /\b(?:min-)?height\s*:/u.test(rule.body)),
     "The card implementation must not force uniform copy height."

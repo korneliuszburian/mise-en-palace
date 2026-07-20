@@ -61,4 +61,32 @@ describe("frontend course cards held-out source contract", () => {
       "The course-card block stylesheet must own a load-bearing base rule and consume its API."
     );
   });
+
+  it("allows motion preferences without admitting media-driven component layout", () => {
+    const reducedMotion = `${governedCss}\n@media (prefers-reduced-motion: reduce) { .course-card { transition-duration: 0s; animation: none; } }`;
+    expect(evaluateFrontendCourseCardsSources({
+      html: governedHtml,
+      cardCss: governedCss,
+      builtCss: reducedMotion
+    })).toEqual({ passed: true, failures: [] });
+
+    for (const forbiddenMedia of [
+      "@media (min-width: 40rem) { .course-card { padding: 2rem; } }",
+      "@MEDIA (MIN-WIDTH: 40rem) { .course-card { padding: 2rem; } }",
+      "@media (prefers-reduced-motion: reduce) and (min-width: 40rem) { .course-card { transition: none; } }",
+      "@media (prefers-reduced-motion: reduce) { .course-card { padding: 2rem; transition: none; } }"
+    ]) {
+      expect(evaluateFrontendCourseCardsSources({
+        html: governedHtml,
+        cardCss: governedCss,
+        builtCss: `${governedCss}\n${forbiddenMedia}`
+      }).failures).toContain("The card implementation must remain intrinsically responsive.");
+    }
+
+    expect(evaluateFrontendCourseCardsSources({
+      html: governedHtml,
+      cardCss: governedCss,
+      builtCss: `${governedCss}\n@MEDIA (PREFERS-REDUCED-MOTION: REDUCE) { .course-card { TRANSITION: none; } }`
+    }).passed).toBe(true);
+  });
 });
