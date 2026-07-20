@@ -1,3 +1,14 @@
+import { execFile } from "node:child_process";
+import {
+  mkdir,
+  mkdtemp,
+  symlink,
+  writeFile
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import type {
@@ -87,6 +98,7 @@ vi.mock("@krn/db/adapters", () => ({
 }));
 
 const now = "2026-06-29T12:00:00.000Z";
+const execFileAsync = promisify(execFile);
 
 const project = {
   id: "project-1",
@@ -97,6 +109,52 @@ const project = {
   createdAt: now,
   updatedAt: now
 } satisfies ProjectRecord;
+
+const projectKernel = {
+  id: "project-kernel-1",
+  projectId: project.id,
+  version: 1,
+  summary: "kernel",
+  activeContextRule: "project scoped",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now
+};
+
+const createLinkedGitWorktree = async (): Promise<{
+  readonly mainCheckout: string;
+  readonly linkedWorktree: string;
+}> => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "krn-runtime-worktree-"));
+  const realParent = path.join(directory, "real");
+  const aliasParent = path.join(directory, "alias");
+  await mkdir(realParent);
+  await symlink(realParent, aliasParent, process.platform === "win32" ? "junction" : "dir");
+
+  const mainCheckout = path.join(aliasParent, "main-checkout");
+  const linkedWorktree = path.join(aliasParent, "linked-worktree");
+
+  await execFileAsync("git", ["init", "--quiet", "--initial-branch=main", mainCheckout]);
+  await execFileAsync("git", ["config", "user.email", "krn-test@example.invalid"], {
+    cwd: mainCheckout
+  });
+  await execFileAsync("git", ["config", "user.name", "KRN Test"], {
+    cwd: mainCheckout
+  });
+  await writeFile(path.join(mainCheckout, "README.md"), "fixture\n");
+  await execFileAsync("git", ["add", "README.md"], { cwd: mainCheckout });
+  await execFileAsync("git", ["commit", "--quiet", "-m", "base"], {
+    cwd: mainCheckout
+  });
+  await execFileAsync("git", ["worktree", "add", "--quiet", linkedWorktree, "HEAD"], {
+    cwd: mainCheckout
+  });
+
+  return {
+    mainCheckout,
+    linkedWorktree
+  };
+};
 
 describe("createDatabaseRuntime", () => {
   beforeEach(() => {
@@ -157,18 +215,71 @@ describe("createDatabaseRuntime", () => {
     await runtime.close();
   });
 
-  it("fails closed instead of creating a slug fallback for an explicitly targeted repo", async () => {
+  it("resolves a linked git worktree to the registered main checkout project", async () => {
+    const { mainCheckout, linkedWorktree } = await createLinkedGitWorktree();
     const { createDatabaseRuntime } = await import("../database-runtime.js");
+    mocks.projectRepository.getProjectByRepoPath.mockImplementation(
+      async (repoPath: string) => repoPath === mainCheckout ? project : undefined
+    );
+    mocks.projectRepository.getLatestProjectKernel.mockResolvedValue(projectKernel);
+
+    const runtime = await createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      repoPathHint: linkedWorktree,
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    });
+
+    expect(runtime.projectId).toBe(project.id);
+    expect(runtime.projectKernel).toEqual(projectKernel);
+    expect(runtime.projectResolution).toMatchObject({
+      kind: "connected_repo_path",
+      repoPathHint: linkedWorktree
+    });
+    expect(mocks.projectRepository.getProjectByRepoPath).toHaveBeenCalledWith(linkedWorktree);
+    expect(mocks.projectRepository.getProjectByRepoPath).toHaveBeenCalledWith(mainCheckout);
+    expect(mocks.database.transaction).not.toHaveBeenCalled();
+    expect(mocks.projectRepository.findWorkspaceBySlug).not.toHaveBeenCalled();
+    await runtime.close();
+  });
+
+  it("fails closed instead of creating a slug fallback for an unrecognized same-name checkout", async () => {
+    const { createDatabaseRuntime } = await import("../database-runtime.js");
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-shadow-project-"));
+    const unrelatedCheckout = path.join(directory, "mise-en-palace");
+    await mkdir(unrelatedCheckout);
 
     await expect(createDatabaseRuntime({
       databaseUrl: "postgres://krn:krn@localhost:54329/krn",
       workspaceSlug: "workspace",
       projectSlug: "project",
-      repoPathHint: "/unconnected/repo",
-      requireConnectedRepoPath: true,
+      repoPathHint: unrelatedCheckout,
       now: () => now,
       createId: (prefix: string) => `${prefix}-1`
-    })).rejects.toThrow("No connected project found for repo path /unconnected/repo");
+    })).rejects.toThrow(`No connected project found for repo path ${unrelatedCheckout}`);
+
+    expect(mocks.database.transaction).not.toHaveBeenCalled();
+    expect(mocks.projectRepository.findWorkspaceBySlug).not.toHaveBeenCalled();
+    expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not let requireConnectedRepoPath false create a repo-bound slug fallback", async () => {
+    const { createDatabaseRuntime } = await import("../database-runtime.js");
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-shadow-project-"));
+    const unrelatedCheckout = path.join(directory, "mise-en-palace");
+    await mkdir(unrelatedCheckout);
+
+    await expect(createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      repoPathHint: unrelatedCheckout,
+      requireConnectedRepoPath: false,
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    })).rejects.toThrow(`No connected project found for repo path ${unrelatedCheckout}`);
 
     expect(mocks.database.transaction).not.toHaveBeenCalled();
     expect(mocks.projectRepository.findWorkspaceBySlug).not.toHaveBeenCalled();
