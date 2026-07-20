@@ -18,15 +18,9 @@ import {
   parseSourceConsensusTimelineReadback
 } from "@krn/core";
 import {
+  applyActivationFilters,
   applyContextROI,
-  applyMemoryReviewSignalFilter,
-  applySourceClaimAuthorityFilter,
-  applySourceClaimGraphConsensusFilter,
-  applySourceClaimReviewSignalFilter,
-  applyTemporalFilter,
-  applyTrustFilter,
   assembleContext,
-  detectConflicts,
   persistActivationTrace,
   retrieveActivationCandidates
 } from "../activation/index.js";
@@ -249,7 +243,7 @@ const maxContextInclusions = 6;
 const minimumSourceAuthority = "medium";
 
 type RetrievedActivationCandidates = Awaited<ReturnType<typeof retrieveActivationCandidates>>;
-type ConflictDetectionResult = ReturnType<typeof detectConflicts>;
+type ConflictDetectionResult = ReturnType<typeof applyActivationFilters>;
 type FilteredActivationCandidates = ReturnType<typeof applyContextROI>;
 
 const createCompiledOperatorIntent = (
@@ -346,22 +340,9 @@ const startCompilerRetrievalRun = (
 
 const filterActivationCandidates = (
   input: ResolvedHarnessCompileInput,
-  conflictResult: ConflictDetectionResult,
-  createdAt: string
+  candidates: ConflictDetectionResult["candidates"]
 ): FilteredActivationCandidates => applyContextROI(
-  applyTemporalFilter(
-    applyTrustFilter(
-      applySourceClaimGraphConsensusFilter(
-        applySourceClaimAuthorityFilter(
-          applySourceClaimReviewSignalFilter(
-            applyMemoryReviewSignalFilter(conflictResult.candidates)
-          )
-        )
-      ),
-      { minimumSourceAuthority }
-    ),
-    createdAt
-  ),
+  candidates,
   {
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     maxInclusions: maxContextInclusions,
@@ -473,8 +454,13 @@ export const compileHarnessPlan = async (
     targetOwnerFileRecall,
     dependencies
   );
-  const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);
-  const filteredCandidates = filterActivationCandidates(input, conflictResult, createdAt);
+  const conflictResult = applyActivationFilters({
+    candidates: retrieved.candidates,
+    antiMemoryRecords: retrieved.antiMemoryRecords,
+    minimumSourceAuthority,
+    now: createdAt
+  });
+  const filteredCandidates = filterActivationCandidates(input, conflictResult.candidates);
   const contextAssembly = await createPersistedContextAssembly(
     input,
     harnessPlan,
