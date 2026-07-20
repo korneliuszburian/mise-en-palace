@@ -944,7 +944,9 @@ export const runBrainLoopSmokeCheck = async (
       decisionPacketForCompiledPlan(nextCompile)
     );
     const nextRunCodexBriefRendered = nextRunCodexBrief.trim().length > 0;
-    const nextRunCodexBriefIncludesMemory = nextRunCodexBrief.includes(memoryRecord.id);
+    const nextRunCodexBriefIncludesMemory = nextRunMemoryInclusions.some((inclusion) =>
+      nextRunCodexBrief.includes(inclusion.expectedUse)
+    );
     const nextRunCodexBriefIncludesNonProofBoundary =
       nextRunCodexBrief.includes("Codex executed the work.") &&
       nextRunCodexBrief.includes("Memory was mutated.");
