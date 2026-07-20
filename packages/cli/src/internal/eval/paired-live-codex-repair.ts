@@ -15,7 +15,7 @@ import { captureHeldOutTargetState } from "./held-out-target-state.js";
 export type PairedRepairOutcome = "win" | "tie" | "loss" | "invalid";
 export type PairedRepairUsefulnessOutcome = "helped" | "neutral" | "hurt" | "unknown";
 /** Canonical held-out checker identity bound into every new tracked artifact. */
-export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v4" as const;
+export const pairedLiveCheckerRevision = "paired-live-codex-repair-checker.v5" as const;
 export type HeldOutObservation = {
   readonly threw: boolean;
   readonly accepted: boolean;
