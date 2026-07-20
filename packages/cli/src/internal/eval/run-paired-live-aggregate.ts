@@ -1,23 +1,21 @@
 import { stat } from "node:fs/promises";
 
 import {
-  aggregatePairedEvalMixedInputs
+  aggregatePairedEvalMixedInputs,
+  isPairedEvalEvidenceFamily,
+  type PairedEvalEvidenceFamily
 } from "./paired-live-aggregation.js";
-import {
-  pairedEvalFamilies,
-  type PairedEvalFamily
-} from "./paired-live-codex-repair.js";
 
 const usage = "Usage: run-paired-live-aggregate <family=artifact-directory> [...]";
 
-const parseInput = (value: string): { readonly family: PairedEvalFamily; readonly directory: string } => {
+const parseInput = (value: string): { readonly family: PairedEvalEvidenceFamily; readonly directory: string } => {
   const separator = value.indexOf("=");
   const family = separator < 0 ? undefined : value.slice(0, separator);
   const directory = separator < 0 ? "" : value.slice(separator + 1);
-  if (!pairedEvalFamilies.includes(family as PairedEvalFamily) || directory.length === 0) {
+  if (family === undefined || !isPairedEvalEvidenceFamily(family) || directory.length === 0) {
     throw new Error(`${usage}\nInvalid input: ${value}`);
   }
-  return { family: family as PairedEvalFamily, directory };
+  return { family, directory };
 };
 
 const main = async (): Promise<void> => {

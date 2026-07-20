@@ -1710,6 +1710,17 @@ describe("tracked paired live Codex repair", () => {
 
     expect(artifact.artifactHash).toMatch(/^[a-f0-9]{64}$/);
     expect(buildTrackedTrialArtifact({ ...base, runId: "other-run" })).not.toEqual(artifact);
+    const reordered = buildTrackedTrialArtifact({
+      proof: base.proof,
+      execution: base.execution,
+      packet: base.packet,
+      runId: base.runId,
+      sourceTreeHash: base.sourceTreeHash,
+      manifestHash: base.manifestHash,
+      status: base.status,
+      kind: base.kind
+    });
+    expect(reordered.artifactHash).toBe(artifact.artifactHash);
     expect(verifyTrackedTrialArtifact(malformedArtifact)).toBe(false);
     expect(verifyTrackedTrialArtifact(impossiblePassedArtifact)).toBe(false);
   });

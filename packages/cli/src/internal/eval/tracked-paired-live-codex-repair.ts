@@ -289,6 +289,19 @@ const sha256 = (value: string | Uint8Array): string =>
 
 const serializedJson = (value: unknown): string => JSON.stringify(value) ?? "null";
 
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+  if (isRecord(value)) {
+    const entries = Object.entries(value)
+      .filter(([, item]) => item !== undefined)
+      .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+  }
+  return serializedJson(value);
+};
+
 const readString = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 ? value : undefined;
 
@@ -1450,7 +1463,9 @@ const isTrackedTrialArtifactShape = (value: unknown): value is TrackedTrialArtif
     artifactStatusIsConsistent(value);
 };
 
-const artifactHash = (artifact: object): string => sha256(serializedJson(artifact));
+const artifactHash = (artifact: object): string => sha256(canonicalJson(artifact));
+
+const legacyArtifactHash = (artifact: object): string => sha256(serializedJson(artifact));
 
 export const buildTrackedTrialArtifact = (
   artifact: Omit<TrackedTrialArtifact, "artifactHash">
@@ -1459,7 +1474,8 @@ export const buildTrackedTrialArtifact = (
 export const verifyTrackedTrialArtifact = (value: unknown): value is TrackedTrialArtifact => {
   if (!isTrackedTrialArtifactShape(value)) return false;
   const { artifactHash: expectedArtifactHash, ...content } = value;
-  return artifactHash(content) === expectedArtifactHash;
+  return artifactHash(content) === expectedArtifactHash ||
+    legacyArtifactHash(content) === expectedArtifactHash;
 };
 
 

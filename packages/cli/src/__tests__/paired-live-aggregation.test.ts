@@ -7,7 +7,8 @@ import {
   aggregatePairedEvalArtifactDirectories,
   aggregatePairedEvalArtifacts,
   aggregatePairedEvalMixedInputs,
-  aggregatePairedEvalResultFiles
+  aggregatePairedEvalResultFiles,
+  pairedEvalEvidenceFamilies
 } from "../internal/eval/paired-live-aggregation.js";
 import type { TrackedTrialArtifact } from "../internal/eval/tracked-paired-live-codex-repair.js";
 
@@ -44,7 +45,10 @@ describe("paired live eval aggregation", () => {
       { family: "env-config", artifact: artifact("env-tie", "passed", "tie") },
       { family: "async-job", artifact: artifact("async-loss", "passed", "loss") },
       { family: "temporal-policy-drift", artifact: artifact("temporal-win", "passed", "win") },
-      { family: "temporal-policy-hidden-source", artifact: artifact("hidden-temporal-win", "passed", "win") }
+      { family: "temporal-policy-hidden-source", artifact: artifact("hidden-temporal-win", "passed", "win") },
+      { family: "independent-krn-search", artifact: artifact("search-tie", "passed", "tie", "independent-krn-search-final-url.v1") },
+      { family: "independent-llm-wiki-cli-input", artifact: artifact("wiki-win", "passed", "win", "independent-llm-wiki-invalid-approval.v1") },
+      { family: "independent-seo-performance-authority", artifact: artifact("seo-tie", "passed", "tie", "independent-seo-unmapped-ads.v1") }
     ]);
 
     expect(report.families.find((family) => family.family === "env-config")).toMatchObject({
@@ -72,12 +76,22 @@ describe("paired live eval aggregation", () => {
       winRateAmongQuality: 1
     });
     expect(report.overall).toMatchObject({
-      wins: 3,
-      ties: 1,
+      wins: 4,
+      ties: 3,
       losses: 1,
-      qualityTrials: 5,
+      qualityTrials: 8,
       invalidTrials: 0,
-      winRateAmongQuality: 0.6
+      winRateAmongQuality: 0.5
+    });
+    expect(report.families.find((family) => family.family === "independent-llm-wiki-cli-input"))
+      .toMatchObject({ wins: 1, qualityTrials: 1 });
+    expect(report.checkerBoundary).toMatchObject({
+      status: "mixed-revisions",
+      partitions: {
+        "independent-krn-search-final-url.v1": ["search-tie"],
+        "independent-llm-wiki-invalid-approval.v1": ["wiki-win"],
+        "independent-seo-unmapped-ads.v1": ["seo-tie"]
+      }
     });
   });
 
@@ -180,7 +194,7 @@ describe("paired live eval aggregation", () => {
       invalidTrials: 0,
       winRateAmongQuality: null
     });
-    expect(report.families).toHaveLength(6);
+    expect(report.families).toHaveLength(pairedEvalEvidenceFamilies.length);
     expect(report.comparison).toEqual({
       outcomeLevel: "cross-family",
       scoreLevel: "family-local-only",
@@ -322,5 +336,8 @@ describe("paired live eval aggregation", () => {
     expect(report.unreadableInputs).toHaveLength(1);
     expect(report.unreadableFiles).toHaveLength(2);
     expect(report.doesNotProve).toContain("causal KRN advantage or arbitrary-repository portability");
+    expect(report.doesNotProve).toContain(
+      "that excluded pre-persistence attempts are independently enumerable from valid artifact metadata"
+    );
   });
 });

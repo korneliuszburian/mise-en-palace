@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import type {
-  PairedEvalFamily,
   PairedRepairOutcome
 } from "./paired-live-codex-repair.js";
 import {
@@ -11,8 +10,20 @@ import {
   type TrackedTrialArtifact
 } from "./tracked-paired-live-codex-repair.js";
 
+export const pairedEvalEvidenceFamilies = [
+  ...pairedEvalFamilies,
+  "independent-krn-search",
+  "independent-llm-wiki-cli-input",
+  "independent-seo-performance-authority"
+] as const;
+
+export type PairedEvalEvidenceFamily = typeof pairedEvalEvidenceFamilies[number];
+
+export const isPairedEvalEvidenceFamily = (value: string): value is PairedEvalEvidenceFamily =>
+  pairedEvalEvidenceFamilies.some((family) => family === value);
+
 export type PairedEvalArtifactInput = {
-  readonly family: PairedEvalFamily;
+  readonly family: PairedEvalEvidenceFamily;
   readonly artifact: TrackedTrialArtifact;
 };
 
@@ -38,7 +49,7 @@ export type PairedEvalInvalidReason = {
 };
 
 export type PairedEvalFamilyAggregate = PairedEvalOutcomeCounts & {
-  readonly family: PairedEvalFamily;
+  readonly family: PairedEvalEvidenceFamily;
   readonly duplicateRunIds: readonly string[];
   readonly invalidReasons: readonly PairedEvalInvalidReason[];
 };
@@ -64,12 +75,12 @@ export type PairedEvalAggregate = {
 };
 
 export type PairedEvalArtifactDirectory = {
-  readonly family: PairedEvalFamily;
+  readonly family: PairedEvalEvidenceFamily;
   readonly directory: string;
 };
 
 export type PairedEvalResultFile = {
-  readonly family: PairedEvalFamily;
+  readonly family: PairedEvalEvidenceFamily;
   readonly file: string;
 };
 
@@ -219,7 +230,7 @@ const isQualityArtifact = (artifact: TrackedTrialArtifact): boolean =>
   qualityOutcomes.includes(artifact.score.outcome);
 
 const aggregateFamily = (
-  family: PairedEvalFamily,
+  family: PairedEvalEvidenceFamily,
   inputs: readonly { readonly input: PairedEvalArtifactInput; readonly index: number }[],
   duplicateIndices: ReadonlySet<number>
 ): PairedEvalFamilyAggregate => {
@@ -306,7 +317,7 @@ export const aggregatePairedEvalArtifacts = (
     else seenRunIds.add(input.artifact.runId);
   }
   const indexedInputs = inputs.map((input, index) => ({ input, index }));
-  const familyAggregates = pairedEvalFamilies.map((family) => aggregateFamily(
+  const familyAggregates = pairedEvalEvidenceFamilies.map((family) => aggregateFamily(
     family,
     indexedInputs.filter(({ input }) => input.family === family),
     duplicateIndices
@@ -332,7 +343,8 @@ export const aggregatePairedEvalArtifacts = (
       "causal KRN advantage or arbitrary-repository portability",
       "comparability of differently designed evaluation families",
       "Codex obedience outside the observed bounded trials",
-      "that observed capability use caused a win or that an observed application was useful"
+      "that observed capability use caused a win or that an observed application was useful",
+      "that excluded pre-persistence attempts are independently enumerable from valid artifact metadata"
     ],
     invalidReasons: reasonCounts(familyAggregates.flatMap((family) => expandReasonCounts(family.invalidReasons)))
   };
@@ -357,11 +369,11 @@ export const aggregatePairedEvalArtifactDirectories = async (
   }
 
   const aggregate = aggregatePairedEvalArtifacts(readable);
-  const unreadableByFamily = new Map<PairedEvalFamily, number>();
+  const unreadableByFamily = new Map<PairedEvalEvidenceFamily, number>();
   for (const input of unreadableInputs) {
     unreadableByFamily.set(input.family, (unreadableByFamily.get(input.family) ?? 0) + 1);
   }
-  const addUnreadable = (counts: PairedEvalOutcomeCounts, family: PairedEvalFamily) => ({
+  const addUnreadable = (counts: PairedEvalOutcomeCounts, family: PairedEvalEvidenceFamily) => ({
     ...counts,
     totalInputs: counts.totalInputs + (unreadableByFamily.get(family) ?? 0),
     invalidTrials: counts.invalidTrials + (unreadableByFamily.get(family) ?? 0)
@@ -413,7 +425,7 @@ const addUnreadableCounts = (
   unreadableInputs: readonly PairedEvalUnreadableInput[],
   unreadableFiles: readonly PairedEvalUnreadableFile[]
 ): PairedEvalAggregate => {
-  const counts = new Map<PairedEvalFamily, number>();
+  const counts = new Map<PairedEvalEvidenceFamily, number>();
   for (const input of [...unreadableInputs, ...unreadableFiles]) {
     counts.set(input.family, (counts.get(input.family) ?? 0) + 1);
   }
