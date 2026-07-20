@@ -332,6 +332,16 @@
       "archival": null
     },
     {
+      "path": "tests/fixtures/source-decision-import/minimal-reviewed-corpus.json",
+      "consumer": "public source decision import CLI test",
+      "provenance": "repository-owned production-contract fixture",
+      "capturedAt": "2026-07-20",
+      "checkerVersion": "fixture-ownership.v1",
+      "replayOwner": "@korneliuszburian",
+      "mode": "static_fixture",
+      "archival": null
+    },
+    {
       "path": "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json",
       "consumer": "source graph ranking eval",
       "provenance": "repository-owned test/eval fixture",
