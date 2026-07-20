@@ -4,6 +4,9 @@ import {
   decisionPacketContractReadbackSchema,
   parseDecisionPacketContractReadback as parseCoreDecisionPacketContractReadback
 } from "@krn/core";
+import type {
+  DecisionPacketContractReadback
+} from "@krn/core";
 import { z } from "zod";
 
 export type DecisionPacketJsonValue =
@@ -28,6 +31,10 @@ const commandReadbackSchema = decisionPacketContractReadbackSchema.extend({
   readModel: z.unknown().optional()
 });
 
+const identityOutputSchema = z.toJSONSchema(
+  decisionPacketContractReadbackSchema.shape.packetIdentity
+);
+
 const isJsonValue = (value: unknown): value is DecisionPacketJsonValue => {
   if (
     value === null ||
@@ -50,18 +57,16 @@ const isJsonValue = (value: unknown): value is DecisionPacketJsonValue => {
 const isJsonObject = (value: unknown): value is DecisionPacketJsonObject =>
   isJsonValue(value) && typeof value === "object" && value !== null && !Array.isArray(value);
 
-const outputSchema = z.toJSONSchema(decisionPacketContractReadbackSchema);
-
-if (!isJsonObject(outputSchema)) {
-  throw new Error("DecisionPacket output schema is not a JSON object");
+if (!isJsonObject(identityOutputSchema)) {
+  throw new Error("DecisionPacket identity output schema is not a JSON object");
 }
 
-export const decisionPacketContractOutputSchema = outputSchema;
+export const decisionPacketIdentityOutputSchema = identityOutputSchema;
 
 export const parseDecisionPacketContractReadback = (
   value: unknown,
   requestedRunId: string
-): DecisionPacketJsonObject | undefined => {
+): DecisionPacketContractReadback | undefined => {
   if (!isJsonObject(value)) {
     return undefined;
   }
@@ -89,5 +94,5 @@ export const parseDecisionPacketContractReadback = (
 
   return readback === undefined || readback.proof.proves.includes(transportProof)
     ? undefined
-    : value;
+    : readback;
 };

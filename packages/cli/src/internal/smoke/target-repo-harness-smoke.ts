@@ -720,18 +720,24 @@ const readMcpDecisionPacketProof = async (input: {
     throw new Error("Target repo harness smoke external MCP response missed structured DecisionPacket content");
   }
 
-  const packetIdentity = readRequiredRecord(
-    structuredContent,
-    "packetIdentity",
-    "Target repo harness smoke expected packetIdentity object in DecisionPacket MCP output"
+  const packetIdentity = structuredContent;
+  const metadata = readRequiredRecord(
+    callResult,
+    "_meta",
+    "Target repo harness smoke expected MCP metadata"
+  );
+  const decisionPacketReadback = readRequiredRecord(
+    metadata,
+    "decisionPacketReadback",
+    "Target repo harness smoke expected hidden DecisionPacket readback metadata"
   );
   const packet = readRequiredRecord(
-    structuredContent,
+    decisionPacketReadback,
     "packet",
     "Target repo harness smoke expected packet object in DecisionPacket MCP output"
   );
   const returnChannels = readRequiredRecord(
-    structuredContent,
+    decisionPacketReadback,
     "returnChannels",
     "Target repo harness smoke expected returnChannels object in DecisionPacket MCP output"
   );

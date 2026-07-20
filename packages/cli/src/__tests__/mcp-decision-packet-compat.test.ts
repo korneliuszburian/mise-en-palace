@@ -74,15 +74,15 @@ describe("DecisionPacket official MCP client compatibility", () => {
         },
         outputSchema: {
           required: [
-            "kind",
-            "access",
-            "mutation",
-            "surface",
-            "request",
-            "packetIdentity",
-            "packet",
-            "returnChannels",
-            "proof"
+            "packetId",
+            "checksumAlgorithm",
+            "checksum",
+            "evidenceRef",
+            "generatedAt",
+            "sourceRunStatus",
+            "sourceRunLifecycleRevision",
+            "sourceRunUpdatedAt",
+            "freshness"
           ]
         }
       });
@@ -97,15 +97,21 @@ describe("DecisionPacket official MCP client compatibility", () => {
 
       expect(parsedValid.isError).toBe(false);
       expect(parsedValid.structuredContent).toMatchObject({
-        kind: "krn.decisionPacketReadback.v1",
-        packetIdentity: {
-          checksum: decisionPacketMcpFixture.packetIdentity.checksum
-        }
+        checksum: decisionPacketMcpFixture.packetIdentity.checksum,
+        evidenceRef: decisionPacketMcpFixture.packetIdentity.evidenceRef,
+        generatedAt: decisionPacketMcpFixture.packetIdentity.generatedAt
       });
       expect(validText).toEqual({
         type: "text",
-        text:
-          `KRN DecisionPacket is available in structuredContent. Checksum: ${decisionPacketMcpFixture.packetIdentity.checksum}.`
+        text: expect.stringContaining(
+          `KRN DecisionPacket checksum: ${decisionPacketMcpFixture.packetIdentity.checksum}.`
+        )
+      });
+      expect(validText).toMatchObject({
+        text: expect.stringContaining("Objective: Use the governed frontend bootstrap standard.")
+      });
+      expect(validText).not.toMatchObject({
+        text: expect.stringContaining("source-decision-edge:frontend-project-standard-packet")
       });
 
       await expect(call("r".repeat(257))).rejects.toMatchObject({ code: -32602 });
@@ -133,12 +139,7 @@ describe("DecisionPacket official MCP client compatibility", () => {
       });
 
       await expect(call(decisionPacketMcpFixture.request.runId)).resolves.toMatchObject({
-        isError: false,
-        structuredContent: {
-          packetIdentity: {
-            checksum: decisionPacketMcpFixture.packetIdentity.checksum
-          }
-        }
+        isError: false
       });
     } finally {
       await client.close();

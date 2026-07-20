@@ -22,7 +22,7 @@ const fixtureForRun = (runId: string): unknown => {
       },
       packet: {
         ...decisionPacketMcpFixture.packet,
-        toolBoundaries: Array.from({ length: 65 }, (_, index) => `boundary-${index}`)
+        toolBoundaries: ["boundary-" + "x".repeat(40_000)]
       }
     });
   }
