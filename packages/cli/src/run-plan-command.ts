@@ -950,6 +950,10 @@ const latestContextOutcomesForTask = (
   const latestOutcomeBySubject = new Map<string, ContextInclusionUsefulnessOutcomeFeedback>();
 
   for (const feedbackDelta of feedbackDeltas) {
+    if (feedbackDelta.status !== "accepted" && feedbackDelta.status !== "applied") {
+      continue;
+    }
+
     const feedbackTaskObjective = feedbackDelta.metadata[feedbackTaskObjectiveMetadataKey];
 
     for (const outcome of contextInclusionUsefulnessOutcomesFromMetadata(feedbackDelta.metadata)) {
