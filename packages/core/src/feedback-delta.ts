@@ -63,6 +63,9 @@ export interface FeedbackDelta {
   updatedAt: IsoTimestamp;
 }
 
+export const feedbackTaskContractIdMetadataKey = "feedbackTaskContractId";
+export const feedbackTaskObjectiveMetadataKey = "feedbackTaskObjective";
+
 export type FeedbackCandidateProposalKind =
   | "memory_candidate"
   | "source_claim_candidate"

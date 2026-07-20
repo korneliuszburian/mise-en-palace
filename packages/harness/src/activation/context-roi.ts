@@ -13,8 +13,31 @@ export interface ContextRoiPolicy {
   tokenBudget?: number;
   maxInclusions?: number;
   minimumScore?: number;
+  minimumTaskRelevanceScore?: number;
+  minimumTaskRelevanceRatio?: number;
   minimumDiverseKinds?: readonly ActivationCandidateKind[];
 }
+
+const taskRelevanceScore = (candidate: RankedActivationCandidate): number =>
+  candidate.lexicalScore + candidate.vectorScore + candidate.contextRoiScore;
+
+const isGovernedKnowledgeCandidate = (candidate: RankedActivationCandidate): boolean =>
+  candidate.subjectType === "memory_record" || candidate.subjectType === "source_claim";
+
+const strongestTaskRelevanceBySubjectType = (
+  candidates: readonly RankedActivationCandidate[]
+): ReadonlyMap<RankedActivationCandidate["subjectType"], number> => {
+  const strongest = new Map<RankedActivationCandidate["subjectType"], number>();
+
+  for (const candidate of candidates.filter(isGovernedKnowledgeCandidate)) {
+    strongest.set(
+      candidate.subjectType,
+      Math.max(strongest.get(candidate.subjectType) ?? 0, taskRelevanceScore(candidate))
+    );
+  }
+
+  return strongest;
+};
 
 const canInclude = (
   candidate: RankedActivationCandidate,
@@ -56,6 +79,15 @@ export const applyContextROI = (
     return candidate;
   });
   const selectable = deduped.filter((candidate) => candidate.exclusion === undefined);
+  const strongestBySubjectType = strongestTaskRelevanceBySubjectType(selectable);
+  const minimumTaskRelevance = (candidate: RankedActivationCandidate): number => Math.max(
+    policy.minimumTaskRelevanceScore ?? 0,
+    (strongestBySubjectType.get(candidate.subjectType) ?? 0) *
+      (policy.minimumTaskRelevanceRatio ?? 0)
+  );
+  const isTaskRelevant = (candidate: RankedActivationCandidate): boolean =>
+    !isGovernedKnowledgeCandidate(candidate) ||
+    taskRelevanceScore(candidate) >= minimumTaskRelevance(candidate);
   const selectedIds = new Set<string>();
   let spentTokens = 0;
 
@@ -64,6 +96,7 @@ export const applyContextROI = (
       item.kind === kind &&
       !selectedIds.has(item.id) &&
       item.totalScore >= minimumScore &&
+      isTaskRelevant(item) &&
       canInclude(item, selectedIds.size, spentTokens, maxInclusions, policy.tokenBudget)
     );
 
@@ -80,6 +113,7 @@ export const applyContextROI = (
 
     if (
       candidate.totalScore >= minimumScore &&
+      isTaskRelevant(candidate) &&
       canInclude(candidate, selectedIds.size, spentTokens, maxInclusions, policy.tokenBudget)
     ) {
       selectedIds.add(candidate.id);
@@ -96,6 +130,14 @@ export const applyContextROI = (
       return markExcluded(candidate, {
         reason: "low_context_roi",
         explanation: `Candidate score ${candidate.totalScore} is below ${minimumScore}.`
+      });
+    }
+
+    if (!isTaskRelevant(candidate)) {
+      return markExcluded(candidate, {
+        reason: "low_context_roi",
+        explanation:
+          `Candidate task relevance ${taskRelevanceScore(candidate)} is below ${minimumTaskRelevance(candidate)}.`
       });
     }
 
