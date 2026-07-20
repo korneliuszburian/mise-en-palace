@@ -366,7 +366,8 @@ const filterActivationCandidates = (
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     maxInclusions: maxContextInclusions,
     minimumTaskRelevanceScore: 20,
-    minimumTaskRelevanceRatio: 0.6
+    minimumTaskRelevanceRatio: 0.6,
+    preserveApplicableTaskConcernCoverage: true
   }
 );
 

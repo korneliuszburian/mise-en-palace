@@ -19,6 +19,7 @@ export interface ReviewedSourceDecisionRow {
   readonly statement: string;
   readonly status: DecisionCorpusStatus;
   readonly taskScopes: readonly string[];
+  readonly taskConcerns?: readonly string[];
   readonly evidenceRef: string;
   readonly falsifier: string;
   readonly doesNotProve: string;
@@ -40,6 +41,9 @@ const parseDecision = (
   taskScopes: value["taskScopes"] === undefined
     ? []
     : stringArrayValue(value["taskScopes"], `decisions[${index}].taskScopes`),
+  taskConcerns: value["taskConcerns"] === undefined
+    ? []
+    : stringArrayValue(value["taskConcerns"], `decisions[${index}].taskConcerns`),
   noteText: stringValue(value["noteText"], `decisions[${index}].noteText`)
 });
 

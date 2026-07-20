@@ -3,7 +3,8 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import {
-  decisionPacketSupportingEvidenceMaxCharacters,
+  currentDecisionPacketSupportingEvidenceProjectionVersion,
+  projectDecisionPacketSupportingEvidence,
   type ProjectId,
   type SourceClaim,
   type SourceDecision
@@ -64,6 +65,7 @@ interface PreparedSourceDecisionImportRow {
     readonly sourceArtifactId: string;
     readonly sourceChunkId: string;
     readonly contentHash: string;
+    readonly projectionVersion: typeof currentDecisionPacketSupportingEvidenceProjectionVersion;
     readonly renderedContentHash: string;
     readonly sourceRange?: string;
     readonly truncated: boolean;
@@ -185,6 +187,9 @@ const canonicalSourceDecisionImportManifest = (
       statement: normalizeImportText(row.statement),
       status: row.status,
       taskScopes: canonicalImportTextList(row.taskScopes),
+      ...((row.taskConcerns?.length ?? 0) === 0
+        ? {}
+        : { taskConcerns: canonicalImportTextList(row.taskConcerns ?? []) }),
       evidenceRef: normalizeImportText(row.evidenceRef),
       falsifier: normalizeImportText(row.falsifier),
       doesNotProve: normalizeImportText(row.doesNotProve),
@@ -309,6 +314,10 @@ const metadataForRow = (
   importedAt: input.now,
   decisionCorpusImportId: row.id,
   decisionCorpusStatus: row.status,
+  taskScopes: canonicalImportTextList(row.taskScopes),
+  ...((row.taskConcerns?.length ?? 0) === 0
+    ? {}
+    : { taskConcerns: canonicalImportTextList(row.taskConcerns ?? []) }),
   evidenceRef: evidence.evidenceRef,
   ...sourceEvidenceFields(evidence)
 });
@@ -584,6 +593,13 @@ const authorityLifecycleStatusFor = (
     ? "stale"
     : row.status;
 
+const taskConcernMetadata = (
+  row: ReviewedSourceDecisionRow
+): { readonly taskConcerns?: readonly string[] } => {
+  const taskConcerns = canonicalImportTextList(row.taskConcerns ?? []);
+  return taskConcerns.length === 0 ? {} : { taskConcerns };
+};
+
 const prepareImportRow = async (
   input: PersistSourceDecisionImportInput,
   row: ReviewedSourceDecisionRow,
@@ -610,6 +626,7 @@ const prepareImportRow = async (
     status: row.status,
     statement: normalizeImportText(row.statement),
     taskScopes: canonicalImportTextList(row.taskScopes),
+    ...taskConcernMetadata(row),
     title: normalizeImportText(row.title)
   });
   const capturedContent = capturedContentForImport(input, evidence);
@@ -681,35 +698,62 @@ const retrievalEvidenceForImport = (
   const sourceChunkId = evidence.provenance?.sourceChunkId;
   const sourceRange = evidence.provenance?.sourceRange;
 
-  if (
-    input.requireCapturedProjectEvidence !== true ||
-    evidence.status !== "captured" ||
-    evidence.content === undefined ||
-    evidence.contentHash === undefined ||
-    sourceArtifactId === undefined ||
-    sourceChunkId === undefined
-  ) {
+  const isComplete = input.requireCapturedProjectEvidence === true &&
+    evidence.status === "captured" &&
+    evidence.content !== undefined &&
+    evidence.contentHash !== undefined &&
+    sourceArtifactId !== undefined &&
+    sourceChunkId !== undefined;
+  if (!isComplete) {
     return undefined;
   }
 
-  const truncated = evidence.content.length > decisionPacketSupportingEvidenceMaxCharacters;
-
-  const content = truncated
-    ? evidence.content.slice(0, decisionPacketSupportingEvidenceMaxCharacters)
-    : evidence.content;
+  const projection = projectDecisionPacketSupportingEvidence(evidence.content!);
 
   return {
-    content,
-    sourceArtifactId,
-    sourceChunkId,
-    contentHash: evidence.contentHash,
-    renderedContentHash: contentHash(content),
+    content: projection.content,
+    sourceArtifactId: sourceArtifactId!,
+    sourceChunkId: sourceChunkId!,
+    contentHash: evidence.contentHash!,
+    projectionVersion: currentDecisionPacketSupportingEvidenceProjectionVersion,
+    renderedContentHash: contentHash(projection.content),
     ...(sourceRange === undefined
       ? {}
       : { sourceRange }),
-    truncated
+    truncated: projection.truncated
   };
 };
+
+const retrievalEvidenceMetadata = (
+  evidence: PreparedSourceDecisionImportRow["retrievalEvidence"]
+): Record<string, unknown> => evidence === undefined
+  ? {}
+  : {
+      retrievalEvidence: {
+        sourceArtifactId: evidence.sourceArtifactId,
+        sourceChunkId: evidence.sourceChunkId,
+        contentHash: evidence.contentHash,
+        projectionVersion: evidence.projectionVersion,
+        renderedContentHash: evidence.renderedContentHash,
+        ...(evidence.sourceRange === undefined ? {} : { sourceRange: evidence.sourceRange }),
+        truncated: evidence.truncated
+      }
+    };
+
+const createCurrentDecisionEdge = async (
+  input: Parameters<typeof createDecisionSupport>[0]
+) => input.authorityLifecycleStatus === "current"
+  ? input.sourceRepository.createSourceDecisionEdge({
+      sourceClaimId: input.sourceClaimId,
+      sourceDecisionId: input.sourceDecisionId,
+      targetType: "architecture_decision",
+      targetId: `source-decision-import:${input.metadata["importId"]}:${input.row.id}`,
+      supportType: "implementation-boundary",
+      confidence: "high",
+      notes: input.row.noteText,
+      metadata: { ...input.metadata, sourceDecisionId: input.sourceDecisionId }
+    })
+  : undefined;
 
 const prepareImportRows = async (
   input: PersistSourceDecisionImportInput
@@ -800,37 +844,10 @@ const createDecisionSupport = async (
     metadata: {
       ...input.metadata,
       sourceDecisionId: input.sourceDecisionId,
-      ...(input.retrievalEvidence === undefined
-        ? {}
-        : {
-            retrievalEvidence: {
-              sourceArtifactId: input.retrievalEvidence.sourceArtifactId,
-              sourceChunkId: input.retrievalEvidence.sourceChunkId,
-              contentHash: input.retrievalEvidence.contentHash,
-              renderedContentHash: input.retrievalEvidence.renderedContentHash,
-              ...(input.retrievalEvidence.sourceRange === undefined
-                ? {}
-                : { sourceRange: input.retrievalEvidence.sourceRange }),
-              truncated: input.retrievalEvidence.truncated
-            }
-          })
+      ...retrievalEvidenceMetadata(input.retrievalEvidence)
     }
   });
-  const sourceDecisionEdge = input.authorityLifecycleStatus === "current"
-      ? await input.sourceRepository.createSourceDecisionEdge({
-          sourceClaimId: input.sourceClaimId,
-          sourceDecisionId: input.sourceDecisionId,
-          targetType: "architecture_decision",
-        targetId: `source-decision-import:${input.metadata["importId"]}:${input.row.id}`,
-        supportType: "implementation-boundary",
-        confidence: "high",
-        notes: input.row.noteText,
-        metadata: {
-          ...input.metadata,
-          sourceDecisionId: input.sourceDecisionId
-        }
-      })
-    : undefined;
+  const sourceDecisionEdge = await createCurrentDecisionEdge(input);
 
   return {
     ...(sourceDecisionEdge === undefined ? {} : { sourceDecisionEdgeId: sourceDecisionEdge.id }),

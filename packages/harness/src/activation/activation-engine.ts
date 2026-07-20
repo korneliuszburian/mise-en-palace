@@ -221,6 +221,13 @@ const metadataRecord = (value: unknown): Record<string, unknown> | undefined =>
     ? value as Record<string, unknown>
     : undefined;
 
+const metadataStringArray = (
+  metadata: Record<string, unknown>,
+  key: string
+): readonly string[] => Array.isArray(metadata[key])
+  ? (metadata[key] as unknown[]).flatMap((item) => typeof item === "string" ? [item] : [])
+  : [];
+
 type SupportingEvidenceResolution =
   | { readonly status: "absent" }
   | { readonly status: "invalid" }
@@ -294,6 +301,8 @@ const canonicalSearchProjection = (
   const supportingEvidence = supportingEvidenceResolution.status === "valid"
     ? supportingEvidenceResolution.evidence
     : undefined;
+  const taskScopes = metadataStringArray(resolution.document.metadata, "taskScopes");
+  const taskConcerns = metadataStringArray(resolution.document.metadata, "taskConcerns");
   const searchTokenEstimate = toSearchCandidate(resolution.document).tokenEstimate;
   const projected = {
     ...candidate,
@@ -308,6 +317,8 @@ const canonicalSearchProjection = (
     ...(supportingEvidence === undefined ? {} : { supportingEvidence }),
     metadata: {
       ...candidate.metadata,
+      ...(taskScopes.length === 0 ? {} : { taskScopes }),
+      ...(taskConcerns.length === 0 ? {} : { taskConcerns }),
       ...searchDocumentProvenance(resolution)
     }
   };

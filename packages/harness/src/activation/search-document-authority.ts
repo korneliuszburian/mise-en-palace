@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 
 import {
   assessTemporalWindow,
-  decisionPacketSupportingEvidenceMaxCharacters,
+  decisionPacketSupportingEvidenceProjectionVersions,
+  projectDecisionPacketSupportingEvidence,
   type MemoryRecord,
   type ProjectId,
   type SourceClaim
@@ -56,6 +57,51 @@ const metadataRecord = (value: unknown): Record<string, unknown> | undefined =>
 
 const normalizedContentHash = (value: string): string => value.replace(/^sha256:/u, "");
 
+const supportingEvidenceProjectionVersionFor = (
+  value: unknown
+): (typeof decisionPacketSupportingEvidenceProjectionVersions)[number] | undefined => {
+  if (value === undefined) {
+    return "raw-prefix-v1";
+  }
+
+  return decisionPacketSupportingEvidenceProjectionVersions.find((version) => version === value);
+};
+
+type RetrievalEvidence = {
+  sourceArtifactId: string;
+  sourceChunkId: string;
+  contentHash: string;
+  renderedContentHash: string;
+  truncated: boolean;
+  sourceRange?: unknown;
+  projectionVersion: (typeof decisionPacketSupportingEvidenceProjectionVersions)[number];
+};
+
+const retrievalEvidenceFor = (value: unknown): RetrievalEvidence | undefined => {
+  const evidence = metadataRecord(value);
+  const projectionVersion = supportingEvidenceProjectionVersionFor(evidence?.["projectionVersion"]);
+
+  if (evidence === undefined || projectionVersion === undefined) return undefined;
+  if (typeof evidence["sourceArtifactId"] !== "string") return undefined;
+  if (typeof evidence["sourceChunkId"] !== "string") return undefined;
+  if (typeof evidence["contentHash"] !== "string") return undefined;
+  if (typeof evidence["renderedContentHash"] !== "string") return undefined;
+  if (typeof evidence["truncated"] !== "boolean") return undefined;
+
+  return {
+    sourceArtifactId: evidence["sourceArtifactId"],
+    sourceChunkId: evidence["sourceChunkId"],
+    contentHash: evidence["contentHash"],
+    renderedContentHash: evidence["renderedContentHash"],
+    truncated: evidence["truncated"],
+    sourceRange: evidence["sourceRange"],
+    projectionVersion
+  };
+};
+
+const sourceRangeMatches = (expected: unknown, actual: unknown): boolean =>
+  expected === undefined ? actual === undefined : actual === expected;
+
 const retrievalEvidenceExclusion = async (input: {
   document: SearchDocumentSearchResult;
   projectId: ProjectId;
@@ -67,23 +113,17 @@ const retrievalEvidenceExclusion = async (input: {
     return undefined;
   }
 
-  const evidence = metadataRecord(rawEvidence);
-  if (
-    evidence === undefined ||
-    typeof evidence["sourceArtifactId"] !== "string" ||
-    typeof evidence["sourceChunkId"] !== "string" ||
-    typeof evidence["contentHash"] !== "string" ||
-    typeof evidence["renderedContentHash"] !== "string" ||
-    typeof evidence["truncated"] !== "boolean" ||
-    input.repositories.sourceRepository.getSourceChunkForProject === undefined
-  ) {
+  const evidence = retrievalEvidenceFor(rawEvidence);
+  const getSourceChunk = input.repositories.sourceRepository.getSourceChunkForProject;
+  if (evidence === undefined || getSourceChunk === undefined) {
     return {
       reason: "unsafe",
       explanation: "SearchDocument retrieval evidence lacks verifiable project-scoped provenance."
     };
   }
 
-  const chunk = await input.repositories.sourceRepository.getSourceChunkForProject(
+  const chunk = await getSourceChunk.call(
+    input.repositories.sourceRepository,
     input.projectId,
     evidence["sourceChunkId"]
   );
@@ -91,10 +131,9 @@ const retrievalEvidenceExclusion = async (input: {
   const capturedHash = chunk === undefined
     ? undefined
     : createHash("sha256").update(chunk.content).digest("hex");
-  const expectedBody = chunk?.content.slice(0, decisionPacketSupportingEvidenceMaxCharacters);
-  const expectedTruncated = chunk === undefined
+  const expectedProjection = chunk === undefined
     ? undefined
-    : chunk.content.length > decisionPacketSupportingEvidenceMaxCharacters;
+    : projectDecisionPacketSupportingEvidence(chunk.content, evidence.projectionVersion);
   const canonicalSourceRange = chunk?.metadata["sourceRange"];
 
   if (
@@ -103,11 +142,9 @@ const retrievalEvidenceExclusion = async (input: {
     capturedHash !== normalizedContentHash(chunk.contentHash) ||
     normalizedContentHash(chunk.contentHash) !== normalizedContentHash(evidence["contentHash"]) ||
     renderedHash !== normalizedContentHash(evidence["renderedContentHash"]) ||
-    input.document.body !== expectedBody ||
-    evidence["truncated"] !== expectedTruncated ||
-    (canonicalSourceRange === undefined
-      ? evidence["sourceRange"] !== undefined
-      : evidence["sourceRange"] !== canonicalSourceRange)
+    input.document.body !== expectedProjection?.content ||
+    evidence["truncated"] !== expectedProjection?.truncated ||
+    !sourceRangeMatches(canonicalSourceRange, evidence.sourceRange)
   ) {
     return {
       reason: "unsafe",
