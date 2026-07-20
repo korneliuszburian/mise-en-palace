@@ -212,16 +212,6 @@
       "archival": null
     },
     {
-      "path": "tests/fixtures/brain-ranking/brain-ranking-eval.json",
-      "consumer": "brain ranking eval",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
       "path": "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",
       "consumer": "recorded obedience eval",
       "provenance": "recorded replay fixture captured 2026-07-01",
@@ -256,16 +246,6 @@
       "consumer": "source decision import retry boundary test",
       "provenance": "repository-owned real-PostgreSQL retry falsifier",
       "capturedAt": "2026-07-12",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
-      "path": "tests/fixtures/memory-advantage/remembered-standard-memory-advantage.json",
-      "consumer": "memory advantage eval",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
       "checkerVersion": "fixture-ownership.v1",
       "replayOwner": "@korneliuszburian",
       "mode": "static_fixture",
@@ -336,16 +316,6 @@
       "consumer": "public source decision import CLI test",
       "provenance": "repository-owned production-contract fixture",
       "capturedAt": "2026-07-20",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
-      "path": "tests/fixtures/source-graph-ranking/source-graph-ranking-eval.json",
-      "consumer": "source graph ranking eval",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
       "checkerVersion": "fixture-ownership.v1",
       "replayOwner": "@korneliuszburian",
       "mode": "static_fixture",
