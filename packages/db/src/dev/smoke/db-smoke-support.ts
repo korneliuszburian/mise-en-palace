@@ -492,7 +492,7 @@ const compileSmokeHarnessPlan = async (
           smokeId: input.marker
         }
       },
-        taskContract: {
+      taskContract: {
           title: input.task,
           objective: input.task,
           constraints: [...(input.constraints ?? ["preserve strict TypeScript boundaries"])],
@@ -500,8 +500,9 @@ const compileSmokeHarnessPlan = async (
           acceptance: [input.acceptance],
           metadata: {
             smokeId: input.marker
-        }
+          }
       },
+      verificationCommands: ["pnpm typecheck", "pnpm test", "git diff --check"],
       tokenBudget: 1200,
       metadata: {
         command: input.command,

@@ -95,6 +95,7 @@ export interface PlanCommandRuntime extends BaseCommandRuntime {
   format?: "text" | "json";
   projectId?: string;
   repo?: string;
+  verificationCommands?: readonly string[];
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
@@ -853,6 +854,7 @@ const buildHarnessCompileInput = (
   task: string,
   runtime: PlanCommandRuntime
 ): HarnessCompileInput => {
+  const verificationCommands = runtime.verificationCommands ?? [];
   const operatorIntent = parseOperatorIntentInput({
     rawIntent: task,
     source: "cli",
@@ -863,26 +865,16 @@ const buildHarnessCompileInput = (
   const taskContract = parseTaskContractInput({
     title: task,
     objective: task,
-    constraints: [
-      "preserve strict TypeScript boundaries",
-      "do not write runtime markdown memory"
-    ],
-    nonGoals: [
-      "do not invoke Codex",
-      "do not spawn agents",
-      "do not create dashboard"
-    ],
-    acceptance: [
-      "pnpm typecheck passes",
-      "pnpm test passes",
-      "git diff --check passes"
-    ],
+    constraints: [],
+    nonGoals: [],
+    acceptance: [],
     metadata: {}
   });
 
   return parseHarnessCompileInput({
     operatorIntent,
     taskContract,
+    verificationCommands,
     tokenBudget: 1200,
     metadata: {
       command: commandLabelForRuntime(runtime)
@@ -908,6 +900,7 @@ const compilePlanForCommand = (
       ...(compileInput.taskContract === undefined
         ? {}
         : { taskContract: compileInput.taskContract }),
+      verificationCommands: compileInput.verificationCommands,
       ...(targetReadModel === undefined ? {} : { targetReadModel }),
       ...(compileInput.tokenBudget === undefined ? {} : { tokenBudget: compileInput.tokenBudget }),
       metadata: compileInput.metadata

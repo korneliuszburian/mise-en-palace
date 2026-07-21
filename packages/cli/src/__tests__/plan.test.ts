@@ -126,7 +126,12 @@ const renderedDecisionPacket = (stdout: string): string => {
 
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
-    const result = await runCli(["plan", "--task", "improve KRN doctor brain store readiness"], {
+    const result = await runCli([
+      "plan",
+      "--task", "improve KRN doctor brain store readiness",
+      "--verification", "npm run check",
+      "--verification", "npm run build"
+    ], {
       env: {},
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -145,7 +150,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "- counts: memory=0 sourceClaims=0 search=0 ownerFile=0 antiMemory=0 merged=0"
     );
-    expect(result.stdout).toContain("Evidence expected: pnpm typecheck, pnpm test, git diff --check");
+    expect(result.stdout).toContain("Evidence expected: npm run check, npm run build");
+    expect(result.stdout).not.toContain("preserve strict TypeScript boundaries");
+    expect(result.stdout).not.toContain("pnpm typecheck");
+    expect(result.stdout).not.toContain("pnpm test");
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).toContain("Packet Status: abstain");
     expect(result.stdout).toContain("Context activation abstained");

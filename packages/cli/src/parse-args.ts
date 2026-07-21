@@ -87,6 +87,7 @@ export type CliCommand =
       persist: boolean;
       projectId?: string;
       repo?: string;
+      verificationCommands: readonly string[];
       format: "text" | "json";
     }
   | {
@@ -630,7 +631,7 @@ export interface TargetOwnerFileInput {
 const usage = [
   "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
   "Usage: krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
-  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--persist]",
+  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--verification <command>]... [--persist]",
   "",
   "Public operator commands:",
   "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",

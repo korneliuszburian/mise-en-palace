@@ -64,6 +64,7 @@ export interface ResolvedHarnessCompileInput {
   projectId?: ProjectId;
   operatorIntent: HarnessCompileOperatorIntentInput;
   taskContract?: TaskContractDraft;
+  verificationCommands?: readonly string[];
   targetReadModel?: TargetActivationReadModel;
   tokenBudget?: number;
   metadata?: Record<string, unknown>;
@@ -437,7 +438,7 @@ export const compileHarnessPlan = async (
   const taskContract = await dependencies.harnessRunRepository.createTaskContract(
     createTaskContractInput(operatorIntent, input.taskContract)
   );
-  const evidenceContract = createEvidenceContract(taskContract);
+  const evidenceContract = createEvidenceContract(taskContract, input.verificationCommands ?? []);
   const harnessPlan = await createReadyHarnessPlan(
     taskContract,
     evidenceContract,

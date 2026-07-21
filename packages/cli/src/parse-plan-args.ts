@@ -3,7 +3,7 @@ import type {
 } from "./parse-args.js";
 
 const defaultPlanUsage =
-  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--persist] [--json]";
+  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--verification <command>]... [--persist] [--json]";
 
 export const formatPlanUsage = (): string => `${defaultPlanUsage}\n`;
 
@@ -22,10 +22,11 @@ interface PlanArgsState {
   persist: boolean;
   projectId?: string;
   repo?: string;
+  verificationCommands: string[];
   format: "text" | "json";
 }
 
-type PlanStringField = "projectId" | "repo" | "task";
+type PlanStringField = "projectId" | "repo" | "task" | "verificationCommand";
 
 type PlanParseStep =
   | {
@@ -57,6 +58,11 @@ const setPlanStringField = (
 
   if (field === "repo") {
     state.repo = value;
+    return;
+  }
+
+  if (field === "verificationCommand") {
+    state.verificationCommands.push(value);
     return;
   }
 
@@ -118,6 +124,19 @@ const parsePlanArgStep = (
     };
   }
 
+  const verificationStep = parseStringOptionStep(
+    rest,
+    index,
+    "--verification",
+    "verificationCommand",
+    state,
+    usage
+  );
+
+  if (verificationStep.kind !== "unmatched") {
+    return verificationStep;
+  }
+
   const projectStep = parseStringOptionStep(rest, index, "--project", "projectId", state, usage);
 
   if (projectStep.kind !== "unmatched") {
@@ -149,6 +168,7 @@ export const parsePlanArgs = (
 
   const state: PlanArgsState = {
     persist: false,
+    verificationCommands: [],
     format: "text"
   };
 
@@ -185,6 +205,7 @@ export const parsePlanArgs = (
       kind: "plan",
       task: state.task,
       persist: state.persist,
+      verificationCommands: state.verificationCommands,
       format: state.format,
       ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
       ...(state.repo === undefined ? {} : { repo: state.repo })
