@@ -278,7 +278,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     ? "abstain"
     : packet.abstentionScore.status;
   const promotedSourceClaimIds = new Set(packet.taskStandardDecisions.flatMap(
-    (standard) => standard.sourceClaimIds ?? []
+    (standard) => standard.memoryRecordId === undefined ? [] : standard.sourceClaimIds ?? []
   ));
   const includedContext = packet.contextInclusions
     .filter((inclusion) =>

@@ -385,6 +385,37 @@ describe("renderExecutionBrief", () => {
     )?.supportingEvidence).toBeDefined();
   });
 
+  it("retains an adopted source claim when it directly owns the task standard", () => {
+    const packet: DecisionPacket = {
+      ...packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Use the adopted source standard."
+      }),
+      taskStandardDecisions: [{
+        sourceDecisionId: "source-decision-1",
+        key: "source-decision:source-decision-1",
+        sourceClaimIds: ["claim-1"],
+        sourceRefs: ["claim-1", "source-decision-1", "source-edge-1"],
+        mechanism: "The adopted source decision directly owns project authority.",
+        krnImplication: "Render its selected source claim as the Codex directive.",
+        decision: "Use the adopted frontend standard.",
+        consumer: "Codex",
+        falsifier: "The selected source claim disappears from the model-facing brief.",
+        validFrom: createdAt,
+        doesNotProve: "Does not prove Codex obeyed the directive."
+      }]
+    };
+
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceClaimsSelected).toEqual(["claim-1"]);
+    expect(rendered).toContain("Ground implementation boundaries.");
+  });
+
   it("preserves canonical SourceDecision ids without substituting targets or stale ids", () => {
     const packet: DecisionPacket = {
       ...packetForBrief({
