@@ -421,6 +421,58 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain(`- ${directive} | authority=project-decision`);
   });
 
+  it("condenses historical supersession diagnostics without changing authority readback", () => {
+    const basePacket = packetForBrief({
+      taskContract,
+      contextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Use current authority and preserve actionable negative guidance."
+    });
+    const packet: DecisionPacket = {
+      ...basePacket,
+      contextExclusions: [
+        ...basePacket.contextExclusions,
+        {
+          subjectType: "source_claim",
+          subjectId: "claim-superseded-1",
+          reason: "superseded",
+          explanation: "Source claim one is superseded by current authority.",
+          sourceAuthority: "project-decision"
+        },
+        {
+          subjectType: "source_claim",
+          subjectId: "claim-superseded-2",
+          reason: "superseded",
+          explanation: "Source claim two is superseded by current authority.",
+          sourceAuthority: "project-decision"
+        },
+        {
+          subjectType: "source_claim",
+          subjectId: "claim-rejected",
+          reason: "unsafe",
+          explanation: "Do not use the rejected component-local layout shortcut.",
+          sourceAuthority: "project-decision"
+        }
+      ]
+    };
+
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+    const profile = describeExecutionBriefProfile(brief);
+
+    expect(brief.explicitExclusions).toHaveLength(5);
+    expect(rendered).toContain(
+      "2 historical source claims are superseded by selected current authority"
+    );
+    expect(rendered).not.toContain("Source claim one is superseded");
+    expect(rendered).not.toContain("Source claim two is superseded");
+    expect(rendered).toContain("Do not use the rejected component-local layout shortcut.");
+    expect(rendered).toContain("anti_memory_record:anti-1");
+    expect(rendered).toContain("Ground implementation boundaries.");
+    expect(profile.sections.find((section) => section.id === "explicit_exclusions")?.itemCount).toBe(4);
+  });
+
   it("preserves canonical SourceDecision ids without substituting targets or stale ids", () => {
     const packet: DecisionPacket = {
       ...packetForBrief({

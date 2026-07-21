@@ -54,16 +54,12 @@ const renderContextInclusions = (
   );
 };
 
-const renderContextExclusions = (
-  exclusions: readonly ExecutionBriefContextExclusion[]
-): string[] =>
-  exclusions.map((item) =>
-    [
-      `- ${item.explanation}`,
-      `reason=${item.reason}`,
-      `authority=${item.sourceAuthority}`
-    ].join(" | ")
-  );
+const renderContextExclusion = (item: ExecutionBriefContextExclusion): string =>
+  [
+    `- ${item.explanation}`,
+    `reason=${item.reason}`,
+    `authority=${item.sourceAuthority}`
+  ].join(" | ");
 
 const rankingDiagnosticExclusionReasons = new Set([
   "low_context_roi",
@@ -74,6 +70,49 @@ const directiveContextExclusions = (
   exclusions: readonly ExecutionBriefContextExclusion[]
 ): readonly ExecutionBriefContextExclusion[] =>
   exclusions.filter((exclusion) => !rankingDiagnosticExclusionReasons.has(exclusion.reason));
+
+const isHistoricalSupersessionDiagnostic = (
+  exclusion: ExecutionBriefContextExclusion
+): boolean => exclusion.subjectType === "source_claim" && exclusion.reason === "superseded";
+
+const historicalSupersessionKey = (
+  exclusion: ExecutionBriefContextExclusion
+): string => [exclusion.subjectType, exclusion.reason, exclusion.sourceAuthority].join(":");
+
+const renderDirectiveContextExclusions = (
+  exclusions: readonly ExecutionBriefContextExclusion[]
+): string[] => {
+  const directives = directiveContextExclusions(exclusions);
+  const supersessionCounts = new Map<string, number>();
+
+  for (const exclusion of directives) {
+    if (isHistoricalSupersessionDiagnostic(exclusion)) {
+      const key = historicalSupersessionKey(exclusion);
+      supersessionCounts.set(key, (supersessionCounts.get(key) ?? 0) + 1);
+    }
+  }
+
+  const renderedSupersessionKeys = new Set<string>();
+
+  return directives.flatMap((exclusion) => {
+    if (!isHistoricalSupersessionDiagnostic(exclusion)) {
+      return [renderContextExclusion(exclusion)];
+    }
+
+    const key = historicalSupersessionKey(exclusion);
+    if (renderedSupersessionKeys.has(key)) {
+      return [];
+    }
+
+    renderedSupersessionKeys.add(key);
+    const count = supersessionCounts.get(key) ?? 1;
+    return [[
+      `- ${count} historical source claims are superseded by selected current authority; use the current authority and do not recover predecessor versions.`,
+      `reason=${exclusion.reason}`,
+      `authority=${exclusion.sourceAuthority}`
+    ].join(" | ")];
+  });
+};
 
 const renderCurrentTaskContract = (brief: ExecutionBrief): string[] => {
   const lines = [
@@ -140,7 +179,7 @@ const executionBriefSectionCounters = {
   observation_prefix: (brief) =>
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
-  explicit_exclusions: (brief) => directiveContextExclusions(brief.explicitExclusions).length,
+  explicit_exclusions: (brief) => renderDirectiveContextExclusions(brief.explicitExclusions).length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -430,7 +469,7 @@ const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
     ...renderOptionalSection("Untrusted Context Warnings:", brief.untrustedContextWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection(
       "Explicit Exclusions:",
-      renderContextExclusions(directiveContextExclusions(brief.explicitExclusions))
+      renderDirectiveContextExclusions(brief.explicitExclusions)
     ),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
