@@ -385,6 +385,42 @@ describe("renderExecutionBrief", () => {
     )?.supportingEvidence).toBeDefined();
   });
 
+  it("renders the selected source claim directive when it directly owns the task standard", () => {
+    const directive = "Use the adopted frontend standard.";
+    const basePacket = packetForBrief({
+      taskContract,
+      contextAssembly,
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Use the adopted source standard."
+    });
+    const packet: DecisionPacket = {
+      ...basePacket,
+      contextInclusions: basePacket.contextInclusions.map((inclusion) =>
+        inclusion.subjectId === "claim-1" ? { ...inclusion, expectedUse: directive } : inclusion
+      ),
+      taskStandardDecisions: [{
+        sourceDecisionId: "source-decision-1",
+        key: "source-decision:source-decision-1",
+        sourceClaimIds: ["claim-1"],
+        sourceRefs: ["claim-1", "source-decision-1", "source-edge-1"],
+        mechanism: "The adopted source decision directly owns project authority.",
+        krnImplication: "Render its selected source claim as the Codex directive.",
+        decision: directive,
+        consumer: "Codex",
+        falsifier: "The selected source claim disappears from the model-facing brief.",
+        validFrom: createdAt,
+        doesNotProve: "Does not prove Codex obeyed the directive."
+      }]
+    };
+
+    const brief = createExecutionBrief({ packet });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(brief.sourceClaimsSelected).toEqual(["claim-1"]);
+    expect(rendered).toContain(`- ${directive} | authority=project-decision`);
+  });
+
   it("preserves canonical SourceDecision ids without substituting targets or stale ids", () => {
     const packet: DecisionPacket = {
       ...packetForBrief({
