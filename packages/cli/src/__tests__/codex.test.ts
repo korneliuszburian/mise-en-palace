@@ -111,12 +111,12 @@ describe("runCli", () => {
             kind: "krn.knowledge.selection.v1",
             status: "selected",
             query: "unknown-first boundary",
-            source: "knowledge_catalog",
-            selectedKnowledgeIds: ["ts-boundary-unknown-first-result-state"],
+            source: "memory_store",
+            selectedKnowledgeIds: ["memory-record-1"],
             selectedKnowledge: [
               {
-                id: "knowledge:ts-boundary-unknown-first-result-state",
-                knowledgeId: "ts-boundary-unknown-first-result-state",
+                id: "memory-record-1",
+                knowledgeId: "memory-record-1",
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
                 nextAction: "use",
@@ -289,9 +289,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Selected KRN Context:");
     expect(result.stdout).toContain("Selected KRN context: selected");
-    expect(result.stdout).toContain("Selected KRN context IDs: ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Selected KRN context IDs: memory-record-1");
     expect(result.stdout).toContain(
-      "- knowledge=ts-boundary-unknown-first-result-state | readModel=knowledge:ts-boundary-unknown-first-result-state"
+      "- knowledge=memory-record-1 | readModel=memory-record-1"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).not.toContain("Source Claims Selected:");
@@ -304,6 +304,67 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- pnpm typecheck (required)");
     expect(result.stdout).toContain("Diff risk: medium");
     expect(result.stdout).toContain("Review burden: Review the CLI output only.");
+
+    persistedAggregate = {
+      ...aggregate,
+      harnessPlan: {
+        ...aggregate.harnessPlan,
+        metadata: {
+          ...aggregate.harnessPlan.metadata,
+          knowledgeSelection: {
+            ...(aggregate.harnessPlan.metadata["knowledgeSelection"] as Record<string, unknown>),
+            selectedKnowledgeIds: ["unbound-memory"],
+            selectedKnowledge: [{
+              id: "unbound-memory",
+              knowledgeId: "unbound-memory",
+              title: "Unbound memory knowledge",
+              reviewability: "ready",
+              nextAction: "use",
+              doesNotProve: "Memory selection does not prove packet ownership."
+            }]
+          }
+        }
+      }
+    };
+    const unboundMemoryResult = await runCli(
+      ["codex", "brief", "--run-id", "execution-run-1"],
+      cliRuntime
+    );
+
+    expect(unboundMemoryResult.stdout).toContain("Selected KRN context: rejected_or_deferred");
+    expect(unboundMemoryResult.stdout).toContain("Selected KRN context IDs: none");
+    expect(unboundMemoryResult.stdout).not.toContain("title=Unbound memory knowledge");
+
+    persistedAggregate = {
+      ...aggregate,
+      harnessPlan: {
+        ...aggregate.harnessPlan,
+        metadata: {
+          ...aggregate.harnessPlan.metadata,
+          knowledgeSelection: {
+            ...(aggregate.harnessPlan.metadata["knowledgeSelection"] as Record<string, unknown>),
+            source: "knowledge_catalog",
+            selectedKnowledgeIds: ["catalog-only"],
+            selectedKnowledge: [{
+              id: "catalog-only",
+              knowledgeId: "catalog-only",
+              title: "Unbound catalog knowledge",
+              reviewability: "ready",
+              nextAction: "use",
+              doesNotProve: "Catalog presence does not prove packet ownership."
+            }]
+          }
+        }
+      }
+    };
+    const unboundResult = await runCli(
+      ["codex", "brief", "--run-id", "execution-run-1"],
+      cliRuntime
+    );
+
+    expect(unboundResult.stdout).toContain("Selected KRN context: rejected_or_deferred");
+    expect(unboundResult.stdout).toContain("Selected KRN context IDs: none");
+    expect(unboundResult.stdout).not.toContain("title=Unbound catalog knowledge");
 
     persistedAggregate = {
       ...aggregate,
