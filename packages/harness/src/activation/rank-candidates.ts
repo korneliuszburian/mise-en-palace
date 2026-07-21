@@ -566,7 +566,7 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
     sourceSupportRelation: taxonomy.supportRelation,
     sourceUse: taxonomy.sourceUse,
     reason: `Source claim: ${claim.claim}`,
-    expectedUse: claim.mechanism,
+    expectedUse: claim.krnImplication,
     tokenEstimate: estimateTokens([claim.claim, claim.mechanism, claim.krnImplication].join(" ")),
     hasMechanism: claim.mechanism.trim().length > 0,
     doesNotProve: claim.doesNotProve,
