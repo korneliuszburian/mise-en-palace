@@ -75,6 +75,12 @@ export interface TargetRepoHarnessSmokeInput {
   environmentFingerprintId?: string;
 }
 
+const targetRepoHarnessVerificationCommands = [
+  "pnpm typecheck",
+  "pnpm test",
+  "git diff --check"
+] as const;
+
 export interface TargetRepoHarnessSmokeReport {
   workspaceSlug: string;
   projectId: string;
@@ -1406,6 +1412,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
             phase: "baseline"
           }
         },
+        verificationCommands: targetRepoHarnessVerificationCommands,
         targetReadModel,
         tokenBudget: 420,
         metadata: {
@@ -1579,6 +1586,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
             smokeId: marker
           }
         },
+        verificationCommands: targetRepoHarnessVerificationCommands,
         targetReadModel,
         tokenBudget: 420,
         metadata: {
