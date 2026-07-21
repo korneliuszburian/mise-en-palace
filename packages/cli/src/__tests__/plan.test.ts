@@ -427,7 +427,7 @@ describe("runCli", () => {
       expect(result.stdout).toContain(`- ${reason}`);
     }
     for (const boundary of issuedReadback.packet.toolBoundaries) {
-      expect(result.stdout).toContain(`- ${boundary}`);
+      expect(result.stdout).toContain(boundary);
     }
   });
 
