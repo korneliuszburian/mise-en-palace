@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
+import type { DecisionPacket } from "@krn/core";
 
 import {
   formatKnowledgeSelectionLines,
   knowledgeSelectionFromReadbackJson,
   knowledgeSelectionFromMetadata,
-  unavailableKnowledgeSelection
+  packetBoundKnowledgeSelection,
+  type KnowledgePlanItem,
+  unavailableKnowledgeSelection,
+  type KnowledgePlanSelection
 } from "../knowledge-selection.js";
 
 const validKnowledgeReadModel = {
@@ -50,6 +54,20 @@ const validSelectionMetadata = {
   }
 };
 
+const knowledgePlanItem = (
+  overrides: Partial<KnowledgePlanItem> = {}
+): KnowledgePlanItem => ({
+  id: "knowledge:component-contract",
+  knowledgeId: "component-contract",
+  title: "Component contract",
+  reviewability: "ready",
+  nextAction: "use",
+  doesNotProve: "Selection does not prove correctness.",
+  targetFit: "target_specific",
+  targetFitReasons: ["matched component contract"],
+  ...overrides
+});
+
 describe("knowledgeSelection", () => {
   it("parses knowledge read models through finite reviewability and action fields", () => {
     const result = knowledgeSelectionFromReadbackJson(
@@ -91,6 +109,135 @@ describe("knowledgeSelection", () => {
     expect(result.status).toBe("selected");
     expect(result.source).toBe("memory_store");
     expect(result.proof.proves).toContain("memory store selected a knowledge read model");
+  });
+
+  it("uses packet-owned memory identity while retaining logical knowledge identity", () => {
+    const selection: KnowledgePlanSelection = {
+      kind: "krn.knowledge.selection.v1",
+      status: "selected",
+      query: "component contract",
+      source: "memory_store",
+      selectedKnowledgeIds: ["component-contract", "rejected-contract"],
+      selectedKnowledge: [{
+        id: "knowledge:component-contract",
+        memoryRecordId: "memory-123",
+        knowledgeId: "component-contract",
+        title: "Component contract",
+        reviewability: "ready",
+        nextAction: "use",
+        doesNotProve: "Selection does not prove correctness.",
+        targetFit: "target_specific",
+        targetFitReasons: ["matched component contract" ]
+      }, {
+        id: "knowledge:rejected-contract",
+        memoryRecordId: "memory-456",
+        knowledgeId: "rejected-contract",
+        title: "Rejected contract",
+        reviewability: "ready",
+        nextAction: "use",
+        doesNotProve: "Selection does not prove correctness.",
+        targetFit: "noise",
+        targetFitReasons: ["rejected path"]
+      }],
+      targetFitSummary: {
+        verdict: "target_specific_selected_knowledge",
+        targetSpecific: 1,
+        genericGuardrail: 0,
+        adjacentKnowledge: 0,
+        noise: 1,
+        unknown: 0,
+        recommendedUse: "Use target-specific selected knowledge.",
+        doesNotProve: "Selection does not prove correctness."
+      },
+      recommendedNextAction: "Use target-specific selected knowledge.",
+      reason: "Selected two read models.",
+      doesNotProve: "Selection does not prove correctness.",
+      proof: { proves: [], doesNotProve: [] }
+    };
+    const packet = {
+      memoryRefs: ["memory-123"],
+      taskStandardDecisions: [],
+      sourceClaimIds: [],
+      sourceDecisionIds: [],
+      staleDecisionIds: [],
+      contextInclusions: [],
+      brief: {
+        includedSourceClaimIds: [],
+        includedMemoryRecordIds: []
+      }
+    } as unknown as DecisionPacket;
+
+    const result = packetBoundKnowledgeSelection(selection, packet);
+
+    expect(result?.selectedKnowledgeIds).toEqual(["component-contract"]);
+    expect(result?.selectedKnowledge[0]).toMatchObject({
+      knowledgeId: "component-contract",
+      memoryRecordId: "memory-123"
+    });
+    expect(result?.targetFitSummary).toMatchObject({
+      targetSpecific: 1,
+      noise: 0
+    });
+    expect(result?.recommendedNextAction).toBe(result?.targetFitSummary.recommendedUse);
+  });
+
+  it("does not render feedback caveats for unbound knowledge", () => {
+    const selection: KnowledgePlanSelection = {
+      ...(validSelectionMetadata as unknown as KnowledgePlanSelection),
+      source: "memory_store",
+      selectedKnowledgeIds: ["component-contract", "unbound-contract"],
+      selectedKnowledge: [
+        {
+          ...knowledgePlanItem({ memoryRecordId: "memory-123" })
+        },
+        {
+          ...knowledgePlanItem({
+            id: "knowledge:unbound-contract",
+            knowledgeId: "unbound-contract",
+            memoryRecordId: "memory-456",
+            title: "Unbound contract"
+          })
+        }
+      ],
+      reviewOnlyUsefulnessCaveats: [
+        {
+          subjectType: "knowledge",
+          subjectId: "memory-123",
+          feedbackStatus: "candidate",
+          outcome: "stale",
+          reason: "Authorized caveat.",
+          doesNotProve: "Caveat does not prove source truth."
+        },
+        {
+          subjectType: "knowledge",
+          subjectId: "memory-456",
+          feedbackStatus: "candidate",
+          outcome: "hurt",
+          reason: "Dangling caveat.",
+          doesNotProve: "Caveat does not prove source truth."
+        }
+      ]
+    };
+    const packet = {
+      memoryRefs: ["memory-123"],
+      taskStandardDecisions: [],
+      sourceClaimIds: [],
+      sourceDecisionIds: [],
+      staleDecisionIds: [],
+      contextInclusions: [],
+      brief: { includedSourceClaimIds: [], includedMemoryRecordIds: [] }
+    } as unknown as DecisionPacket;
+
+    const result = packetBoundKnowledgeSelection(selection, packet);
+
+    expect(result?.selectedKnowledgeIds).toEqual(["component-contract"]);
+    expect(result?.reviewOnlyUsefulnessCaveats).toEqual([
+      expect.objectContaining({ subjectId: "memory-123", reason: "Authorized caveat." })
+    ]);
+    expect(formatKnowledgeSelectionLines(result)).toEqual(
+      expect.arrayContaining([expect.stringContaining("Authorized caveat.")])
+    );
+    expect(formatKnowledgeSelectionLines(result).join("\n")).not.toContain("Dangling caveat.");
   });
 
   it("renders review-only usefulness caveats as a bounded abstention", () => {

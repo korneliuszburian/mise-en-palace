@@ -70,7 +70,9 @@ const knowledgeFeedbackDelta = (
   evalCandidates: [],
   metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
-      knowledgeId,
+      knowledgeId: knowledgeId.startsWith("knowledge:")
+        ? `memory-${knowledgeId.slice("knowledge:".length)}`
+        : knowledgeId,
       outcome,
       reason: "The knowledge was selected for a previous plan and proved stale for this task class.",
       evidenceRefs: [
@@ -663,7 +665,7 @@ describe("runCli", () => {
         ],
         reviewOnlyUsefulnessCaveats: expect.arrayContaining([
           expect.objectContaining({
-            subjectId: "knowledge:backfill-20",
+            subjectId: "memory-backfill-20",
             outcome: "stale"
           })
         ])

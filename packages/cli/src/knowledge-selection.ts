@@ -33,6 +33,8 @@ export type KnowledgePlanSelectionSource =
 export interface KnowledgePlanItem {
   id: string;
   knowledgeId: string;
+  /** Logical knowledge ID remains display-facing; this is the packet-owned subject. */
+  memoryRecordId?: string;
   title: string;
   reviewability: KnowledgeReviewability;
   nextAction: KnowledgeNextAction;
@@ -70,7 +72,7 @@ type FieldParsers<T extends object> = {
 
 type KnowledgePlanItemFields = Omit<
   KnowledgePlanItem,
-  "knowledgeId" | "targetFit" | "targetFitReasons"
+  "knowledgeId" | "memoryRecordId" | "targetFit" | "targetFitReasons"
 >;
 
 type KnowledgePlanSelectionMetadataFields = Pick<
@@ -255,9 +257,12 @@ const planItemFromRecord = (
     return undefined;
   }
 
+  const memoryRecordId = parseNonEmptyString(record["memoryRecordId"]);
+
   return {
     ...requiredFields,
     knowledgeId: knowledgeId ?? knowledgeIdFromReadModelId(requiredFields.id),
+    ...(memoryRecordId === undefined ? {} : { memoryRecordId }),
     targetFit: isPlanItemTargetFit(record["targetFit"]) ? record["targetFit"] : "unknown",
     targetFitReasons: parseStringArray(record["targetFitReasons"]) ?? [
       "target-fit metadata was not present on this knowledge read model."
@@ -498,27 +503,43 @@ export const packetBoundKnowledgeSelection = (
 
   const selectedKnowledge = selection.source === "memory_store"
     ? selection.selectedKnowledge.filter((knowledge) =>
+        knowledge.memoryRecordId !== undefined &&
         isDecisionPacketUsefulnessSubjectSelected(packet, {
           kind: "knowledge",
-          id: knowledge.knowledgeId
+          id: knowledge.memoryRecordId
         })
       )
     : [];
+  const retainedKnowledgeSubjects = new Set(
+    selectedKnowledge.flatMap((knowledge) =>
+      knowledge.memoryRecordId === undefined ? [] : [knowledge.memoryRecordId]
+    )
+  );
+  const reviewOnlyUsefulnessCaveats = (selection.reviewOnlyUsefulnessCaveats ?? [])
+    .filter((caveat) => caveat.subjectType !== "knowledge"
+      || retainedKnowledgeSubjects.has(caveat.subjectId));
 
   if (selectedKnowledge.length === selection.selectedKnowledge.length) {
-    return selection;
+    if (reviewOnlyUsefulnessCaveats.length === (selection.reviewOnlyUsefulnessCaveats ?? []).length) {
+      return selection;
+    }
   }
+
+  const targetFitSummary = summarizeTargetFit(selectedKnowledge);
+  const recommendedNextAction = selectedKnowledge.length === 0
+    ? "Use the issued DecisionPacket only; review unbound knowledge in the operator readback."
+    : targetFitSummary.recommendedUse;
 
   return {
     ...selection,
     status: selectedKnowledge.length === 0 ? "rejected_or_deferred" : "selected",
     selectedKnowledge,
     selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
+    reviewOnlyUsefulnessCaveats,
+    targetFitSummary,
+    recommendedNextAction,
     reason: selectedKnowledge.length === 0
       ? "Selected knowledge is not owned by the issued DecisionPacket and was omitted from Codex transport."
       : "Only knowledge owned by the issued DecisionPacket is available to Codex.",
-    recommendedNextAction: selectedKnowledge.length === 0
-      ? "Use the issued DecisionPacket only; review unbound knowledge in the operator readback."
-      : selection.recommendedNextAction
   };
 };
