@@ -586,6 +586,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       ...fixture,
       decisions: fixture.decisions.map((row) => ({
         ...row,
+        statement: `${row.statement} Partial replay isolation: ${partialSmokeId}.`,
         noteText: `${row.noteText} partial-replay-falsifier`
       }))
     };
@@ -711,6 +712,7 @@ export const runDecisionCorpusImportDbSmokeCheck = async (
       ...fixture,
       decisions: fixture.decisions.map((row) => ({
         ...row,
+        statement: `${row.statement} Atomic failure isolation: ${failureImportId}.`,
         noteText: `${row.noteText} atomic-failure-falsifier`
       }))
     };

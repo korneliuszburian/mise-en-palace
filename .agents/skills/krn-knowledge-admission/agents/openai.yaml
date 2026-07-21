@@ -1,0 +1,6 @@
+interface:
+  display_name: "KRN Knowledge Admission"
+  short_description: "Admit reviewed specialist knowledge into KRN"
+  default_prompt: "Use $krn-knowledge-admission to carry reviewed specialist evidence into one governed DecisionPacket and record its first ordinary-use outcome."
+policy:
+  allow_implicit_invocation: true

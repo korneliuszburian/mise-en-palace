@@ -1153,6 +1153,34 @@ export class DrizzleSourceRepository implements SourceRepository {
     return rows.map(mapSourceClaim);
   }
 
+  async listActiveSourceClaimIdsByCanonicalClaim(
+    projectId: ProjectId,
+    canonicalClaim: string
+  ): Promise<SourceClaim["id"][]> {
+    const normalizedClaim = sql<string>`lower(regexp_replace(btrim(${sourceClaims.claim}), '[[:space:]]+', ' ', 'g'))`;
+    const rows = await this.db
+      .select({ id: sourceClaims.id })
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(and(
+        eq(sourceArtifacts.projectId, projectId),
+        eq(sourceClaims.status, "accepted"),
+        eq(normalizedClaim, canonicalClaim),
+        sql`not exists (
+          select 1
+          from source_claim_edges as supersession_edge
+          join source_claims as successor_claim
+            on successor_claim.id = supersession_edge.from_source_claim_id
+          where supersession_edge.to_source_claim_id = ${sourceClaims.id}
+            and supersession_edge.kind = 'supersedes'
+            and successor_claim.status = 'accepted'
+        )`
+      ))
+      .orderBy(asc(sourceClaims.id));
+
+    return rows.map((row) => row.id);
+  }
+
   async listHistoricalClaimWarningsForProject(
     projectId: ProjectId,
     limit: number,

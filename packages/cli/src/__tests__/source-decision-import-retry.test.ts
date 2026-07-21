@@ -989,17 +989,39 @@ describe("source decision import retry boundary", () => {
           `${JSON.stringify(corpus("reviewed-predecessor"), null, 2)}\n`,
           "utf8"
         );
-        await runSourceImportCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          filePath: predecessorPath,
-          persist: true,
-          repoPath: connectedRepo
-        });
+        await writeFile(
+          duplicatePath,
+          `${JSON.stringify(corpus("concurrent-duplicate"), null, 2)}\n`,
+          "utf8"
+        );
+        const concurrentImports = await Promise.allSettled([
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            filePath: predecessorPath,
+            persist: true,
+            repoPath: connectedRepo
+          }),
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            filePath: duplicatePath,
+            persist: true,
+            repoPath: connectedRepo
+          })
+        ]);
+        expect(concurrentImports.map((result) => result.status).sort()).toEqual([
+          "fulfilled",
+          "rejected"
+        ]);
+        expect(concurrentImports.find((result) => result.status === "rejected"))
+          .toMatchObject({ reason: expect.objectContaining({ stderr: expect.stringMatching(
+            /duplicates active SourceClaims without explicit supersession/u
+          ) }) });
         const [predecessor] = await client<{ id: string }[]>`
           select source_claims.id
           from source_claims
           join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
-          where source_artifacts.import_row_id = 'reviewed-predecessor'
+          where source_artifacts.project_id = ${projectId}
+            and source_claims.status = 'accepted'
         `;
 
         if (predecessor === undefined) {
@@ -1008,7 +1030,7 @@ describe("source decision import retry boundary", () => {
 
         await writeFile(
           replacementPath,
-          `${JSON.stringify(corpus("reviewed-replacement", predecessor.id), null, 2)}\n`,
+          `${JSON.stringify(corpus("reviewed-replacement", ` ${predecessor.id} `), null, 2)}\n`,
           "utf8"
         );
 
@@ -1040,6 +1062,26 @@ describe("source decision import retry boundary", () => {
             and kind = 'supersedes'
         `;
         expect(edgeCount?.count).toBe(1);
+        const activeRuntime = await createDatabaseRuntime({
+          databaseUrl: disposableDatabase.databaseUrl,
+          workspaceSlug: defaultWorkspaceSlug,
+          projectSlug: defaultProjectSlug,
+          now: () => "2026-07-20T00:00:00.000Z",
+          createId: (prefix) => `${prefix}-${crypto.randomUUID()}`
+        });
+        const listActiveClaims = activeRuntime.sourceRepository.listActiveSourceClaimIdsByCanonicalClaim;
+
+        if (listActiveClaims === undefined) {
+          throw new Error("active SourceClaim equivalence lookup is unavailable");
+        }
+        const activeClaimIds = await listActiveClaims.call(
+          activeRuntime.sourceRepository,
+          projectId,
+          baseDecision("canonical").statement.toLocaleLowerCase("en-US")
+        );
+        await activeRuntime.close();
+        expect(activeClaimIds).toHaveLength(1);
+        expect(activeClaimIds).not.toContain(predecessor.id);
         await client`
           update source_claim_edges
           set metadata = jsonb_set(metadata, '{consumer}', '"tampered"'::jsonb)
@@ -1070,11 +1112,9 @@ describe("source decision import retry boundary", () => {
           repoPath: connectedRepo
         })).rejects.toThrow(/duplicate supersedesSourceClaimIds/u);
 
-        await writeFile(
-          invalidPath,
-          `${JSON.stringify(corpus("missing-predecessor", crypto.randomUUID()), null, 2)}\n`,
-          "utf8"
-        );
+        const invalid = corpus("missing-predecessor", crypto.randomUUID());
+        invalid.decisions[0]!.statement = "A distinct reviewed replacement requires an existing predecessor.";
+        await writeFile(invalidPath, `${JSON.stringify(invalid, null, 2)}\n`, "utf8");
         await expect(runSourceImportCli({
           databaseUrl: disposableDatabase.databaseUrl,
           filePath: invalidPath,

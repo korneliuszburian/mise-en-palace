@@ -126,6 +126,12 @@ export interface SourceDecisionImportCounts {
   readonly rejectedDecisionCount: number;
 }
 
+const normalizeImportText = (value: string): string =>
+  value.replace(/\r\n?/gu, "\n").trim().replace(/[ \t]+/gu, " ");
+
+const canonicalAuthorityClaim = (value: string): string =>
+  value.trim().replace(/\s+/gu, " ").toLocaleLowerCase("en-US");
+
 export const sourceDecisionImportCounts = (
   fixture: ReviewedSourceDecisionCorpus
 ): SourceDecisionImportCounts => ({
@@ -138,6 +144,14 @@ export const sourceDecisionImportCounts = (
 export const validateSourceDecisionImportFixture = (
   fixture: ReviewedSourceDecisionCorpus
 ): void => {
+  const currentClaims = fixture.decisions
+    .filter((row) => row.status === "current")
+    .map((row) => canonicalAuthorityClaim(row.statement));
+
+  if (new Set(currentClaims).size !== currentClaims.length) {
+    throw new Error("source decision import has duplicate current statements");
+  }
+
   for (const row of fixture.decisions) {
     const supersedesSourceClaimIds = canonicalSourceClaimSupersessionIds(row);
 
@@ -161,9 +175,6 @@ export const validateSourceDecisionImportFixture = (
     );
   }
 };
-
-const normalizeImportText = (value: string): string =>
-  value.replace(/\r\n?/gu, "\n").trim().replace(/[ \t]+/gu, " ");
 
 const contentHash = (value: string): string =>
   createHash("sha256").update(value, "utf8").digest("hex");
@@ -1058,18 +1069,9 @@ const existingImportRows = async (
   });
 };
 
-const sourceDecisionImportManifestLockKey = (input: {
-  projectId: ProjectId;
-  preparedRows: readonly PreparedSourceDecisionImportRow[];
-}): string => `source-decision-import-manifest:${contentHash(JSON.stringify({
-  projectId: input.projectId,
-  rows: input.preparedRows
-    .map((prepared) => ({
-      decisionId: prepared.row.id,
-      contentHash: prepared.artifactContentHash
-    }))
-    .sort((left, right) => compareImportText(left.decisionId, right.decisionId))
-}))}`;
+const sourceDecisionImportProjectLockKey = (
+  projectId: ProjectId
+): string => `source-decision-import-project:${projectId}`;
 
 const deprecateImportedSourceClaimIfInactive = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
@@ -1370,12 +1372,9 @@ export const persistSourceDecisionImport = async (
 
   const repositories = assertImportRepositories(input.runtime);
 
-  const manifestLockKey = sourceDecisionImportManifestLockKey({
-    projectId: input.projectId,
-    preparedRows
-  });
+  const projectLockKey = sourceDecisionImportProjectLockKey(input.projectId);
 
-  return repositories.withTransaction(manifestLockKey, async (transactionRuntime) => {
+  return repositories.withTransaction(projectLockKey, async (transactionRuntime) => {
     if (transactionRuntime.sourceDecisionImportRepository === undefined) {
       throw new Error("Source decision import transaction readback is unavailable");
     }
@@ -1432,6 +1431,35 @@ export const persistSourceDecisionImport = async (
       throw new Error(
         `source decision import ${input.importId} exists but is absent from its semantic manifest lookup`
       );
+    }
+
+    const listActiveEquivalentClaims =
+      transactionRuntime.sourceRepository.listActiveSourceClaimIdsByCanonicalClaim;
+
+    if (listActiveEquivalentClaims === undefined) {
+      throw new Error("Active SourceClaim equivalence lookup is unavailable for source decision import");
+    }
+
+    for (const prepared of preparedRows) {
+      if (prepared.row.status !== "current") {
+        continue;
+      }
+
+      const equivalentClaimIds = await listActiveEquivalentClaims.call(
+        transactionRuntime.sourceRepository,
+        input.projectId,
+        canonicalAuthorityClaim(prepared.row.statement)
+      );
+      const supersededClaimIds = new Set(canonicalSourceClaimSupersessionIds(prepared.row));
+      const blockingClaimIds = equivalentClaimIds.filter((claimId) =>
+        !supersededClaimIds.has(claimId)
+      );
+
+      if (blockingClaimIds.length > 0) {
+        throw new Error(
+          `decision ${prepared.row.id} duplicates active SourceClaims without explicit supersession: ${blockingClaimIds.join(", ")}`
+        );
+      }
     }
 
     const rows = await persistSourceDecisionImportRows({

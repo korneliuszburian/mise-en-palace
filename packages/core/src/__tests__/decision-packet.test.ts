@@ -694,6 +694,59 @@ describe("DecisionPacket builder", () => {
     });
   });
 
+  it("projects an included source decision as a task standard without copied memory", () => {
+    const sourceDecision = {
+      kind: "krn.projectStandardDecision.v1" as const,
+      sourceDecisionId: "source-decision-current",
+      key: "source-decision:source-decision-current",
+      sourceClaimIds: ["claim-current"],
+      sourceRefs: [
+        "claim-current",
+        "source-decision-current",
+        "source-decision-edge-current"
+      ],
+      mechanism: "Reviewed source authority owns the engineering mechanism.",
+      krnImplication: "The selected source claim should direct Codex without a memory copy.",
+      decision: "Apply the adopted source-backed standard directly.",
+      consumer: "DecisionPacket",
+      falsifier: "The included adopted source decision is absent from task standards.",
+      validFrom: now,
+      doesNotProve: "This does not prove relevance outside the selected task."
+    };
+    const packet = buildDecisionPacketFromReadModel({
+      ...readModel,
+      context: {
+        ...readModel.context,
+        inclusions: 2,
+        inclusionDetails: readModel.context.inclusionDetails.filter((inclusion) =>
+          inclusion.subjectType !== "memory_record"
+        ),
+        activationTrace: {
+          ...readModel.context.activationTrace,
+          candidates: readModel.context.activationTrace.candidates.flatMap((candidate) =>
+            candidate.subjectType === "memory_record"
+              ? []
+              : [{
+                  ...candidate,
+                  ...(candidate.subjectId === "claim-current"
+                    ? { projectStandardDecision: sourceDecision }
+                    : {})
+                }]
+          )
+        }
+      }
+    });
+
+    expect(packet.memoryRefs).toEqual([]);
+    expect(packet.taskStandardDecisions).toEqual([expect.objectContaining({
+      sourceDecisionId: sourceDecision.sourceDecisionId,
+      key: sourceDecision.key,
+      sourceClaimIds: sourceDecision.sourceClaimIds,
+      decision: sourceDecision.decision
+    })]);
+    expect(packet.governingStatements).toContain(sourceDecision.decision);
+  });
+
   it("preserves bounded supporting evidence only on its selected context inclusion", () => {
     const supportingEvidence = {
       searchDocumentId: "search-course-slice-1",

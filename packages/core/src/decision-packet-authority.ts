@@ -413,6 +413,7 @@ export const projectStandardDecisionFromMetadata = (
 
   const kind = readMetadataString(value, "kind");
   const memoryRecordId = readMetadataString(value, "memoryRecordId");
+  const sourceDecisionId = readMetadataString(value, "sourceDecisionId");
   const key = readMetadataString(value, "key");
   const sourceClaimIds = readMetadataStringList(value, "sourceClaimIds");
   const sourceRefs = readMetadataStringList(value, "sourceRefs");
@@ -426,7 +427,7 @@ export const projectStandardDecisionFromMetadata = (
 
   if (
     kind !== "krn.projectStandardDecision.v1" ||
-    memoryRecordId === undefined ||
+    (memoryRecordId === undefined) === (sourceDecisionId === undefined) ||
     key === undefined ||
     sourceRefs.length === 0 ||
     mechanism === undefined ||
@@ -442,10 +443,8 @@ export const projectStandardDecisionFromMetadata = (
 
   const validUntil = readMetadataString(value, "validUntil");
   const rejectedPath = readMetadataString(value, "rejectedPath");
-
-  return {
-    kind,
-    memoryRecordId,
+  const fields = {
+    kind: "krn.projectStandardDecision.v1" as const,
     key,
     ...(sourceClaimIds.length === 0 ? {} : { sourceClaimIds }),
     sourceRefs,
@@ -459,6 +458,14 @@ export const projectStandardDecisionFromMetadata = (
     ...(rejectedPath === undefined ? {} : { rejectedPath }),
     doesNotProve
   };
+
+  if (memoryRecordId !== undefined) {
+    return { ...fields, memoryRecordId };
+  }
+
+  return sourceDecisionId === undefined
+    ? undefined
+    : { ...fields, sourceDecisionId };
 };
 
 export const projectDecisionPacketActivationCandidate = (
@@ -813,12 +820,16 @@ const selectedSubjectIds = (
     ))],
     ["knowledge", new Set([
       ...packet.memoryRefs,
-      ...packet.taskStandardDecisions.map((decision) => decision.memoryRecordId),
+      ...packet.taskStandardDecisions.flatMap((decision) =>
+        decision.memoryRecordId === undefined ? [] : [decision.memoryRecordId]
+      ),
       ...packet.brief.includedMemoryRecordIds
     ])],
     ["memory_record", new Set([
       ...packet.memoryRefs,
-      ...packet.taskStandardDecisions.map((decision) => decision.memoryRecordId),
+      ...packet.taskStandardDecisions.flatMap((decision) =>
+        decision.memoryRecordId === undefined ? [] : [decision.memoryRecordId]
+      ),
       ...packet.brief.includedMemoryRecordIds
     ])]
   ]);

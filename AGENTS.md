@@ -38,6 +38,8 @@ longer exists; do not let the gotcha file become an unbounded incident log.
   handoffs.
 - Use `$krn-memory-core` when `DecisionPacket`, source/memory authority,
   feedback, activation, or another Memory Core boundary changes.
+- Use `$krn-knowledge-admission` to carry reviewed external evidence through
+  capture, source authority, packet inspection, and packet-bound outcome.
 
 Reusable engineering workflows are discovered from the installed global
 catalog. Do not copy, rename, enumerate, or alias them in this repository. If a

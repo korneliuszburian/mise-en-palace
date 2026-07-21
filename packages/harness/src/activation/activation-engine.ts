@@ -6,6 +6,7 @@ import type {
   AntiMemoryRecord,
   ActivationAbstentionReason,
   ContextAssembly,
+  ProjectStandardDecisionReadback,
   SourceClaim,
   SourceClaimEdge,
   SourceAuthorityLabel,
@@ -21,7 +22,8 @@ import {
   assessSourceMetadataTemporalValidity,
   activationExclusionReasons,
   buildMemorySupersessionTimelineReadback,
-  buildSourceConsensusTimelineReadback
+  buildSourceConsensusTimelineReadback,
+  decisionGradeSourceSupportTypes
 } from "@krn/core";
 
 import type {
@@ -233,6 +235,40 @@ type SupportingEvidenceResolution =
   | { readonly status: "invalid" }
   | { readonly status: "valid"; readonly evidence: ContextSupportingEvidence };
 
+interface SupportingEvidenceMetadata {
+  readonly sourceArtifactId: string;
+  readonly sourceChunkId: string;
+  readonly contentHash: string;
+  readonly renderedContentHash: string;
+  readonly sourceRange?: string;
+  readonly truncated: boolean;
+}
+
+const supportingEvidenceMetadata = (
+  value: unknown
+): SupportingEvidenceMetadata | undefined => {
+  const metadata = metadataRecord(value);
+
+  if (!(metadata !== undefined &&
+    typeof metadata["sourceArtifactId"] === "string" &&
+    typeof metadata["sourceChunkId"] === "string" &&
+    typeof metadata["contentHash"] === "string" &&
+    typeof metadata["renderedContentHash"] === "string" &&
+    (metadata["sourceRange"] === undefined || typeof metadata["sourceRange"] === "string") &&
+    typeof metadata["truncated"] === "boolean")) {
+    return undefined;
+  }
+
+  return {
+    sourceArtifactId: metadata["sourceArtifactId"],
+    sourceChunkId: metadata["sourceChunkId"],
+    contentHash: metadata["contentHash"],
+    renderedContentHash: metadata["renderedContentHash"],
+    ...(metadata["sourceRange"] === undefined ? {} : { sourceRange: metadata["sourceRange"] }),
+    truncated: metadata["truncated"]
+  };
+};
+
 const supportingEvidenceFor = (
   resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" }>
 ): SupportingEvidenceResolution => {
@@ -242,17 +278,9 @@ const supportingEvidenceFor = (
     return { status: "absent" };
   }
 
-  const metadata = metadataRecord(rawMetadata);
+  const metadata = supportingEvidenceMetadata(rawMetadata);
 
-  if (
-    metadata === undefined ||
-    typeof metadata["sourceArtifactId"] !== "string" ||
-    typeof metadata["sourceChunkId"] !== "string" ||
-    typeof metadata["contentHash"] !== "string" ||
-    typeof metadata["renderedContentHash"] !== "string" ||
-    (metadata["sourceRange"] !== undefined && typeof metadata["sourceRange"] !== "string") ||
-    typeof metadata["truncated"] !== "boolean"
-  ) {
+  if (metadata === undefined) {
     return { status: "invalid" };
   }
 
@@ -831,15 +859,55 @@ const sourceRejectionsForClaims = async (
   return rejections.flat();
 };
 
+const projectStandardDecisionForSourceAuthority = (input: {
+  readonly claim: SourceClaim;
+  readonly sourceDecisionEdges: readonly SourceDecisionEdge[];
+  readonly sourceDecisions: readonly SourceDecision[];
+}): ProjectStandardDecisionReadback | undefined => {
+  const adopted = input.sourceDecisions.flatMap((decision) => {
+    const edge = input.sourceDecisionEdges.find((candidate) =>
+      candidate.sourceDecisionId === decision.id &&
+      decisionGradeSourceSupportTypes.includes(candidate.supportType)
+    );
+
+    return decision.status === "adopt" &&
+      decision.metadata["decisionCorpusStatus"] !== "stale" &&
+      edge !== undefined
+      ? [{ decision, edge }]
+      : [];
+  });
+
+  if (adopted.length !== 1 || adopted[0] === undefined) {
+    return undefined;
+  }
+
+  const { decision, edge } = adopted[0];
+
+  return {
+    kind: "krn.projectStandardDecision.v1",
+    sourceDecisionId: decision.id,
+    key: `source-decision:${decision.id}`,
+    sourceClaimIds: [input.claim.id],
+    sourceRefs: [input.claim.id, decision.id, edge.id],
+    mechanism: input.claim.mechanism,
+    krnImplication: input.claim.krnImplication,
+    decision: decision.decision,
+    consumer: decision.consumer,
+    falsifier: decision.falsifier,
+    validFrom: decision.createdAt,
+    doesNotProve: input.claim.doesNotProve
+  };
+};
+
 const sourceCandidateWithAuthority = (input: {
   readonly claim: SourceClaim;
   readonly now: string;
   readonly sourceDecisionEdges: readonly SourceDecisionEdge[];
-  readonly staleSourceDecisions: readonly SourceDecision[];
+  readonly sourceDecisions: readonly SourceDecision[];
   readonly sourceConsensusEntry: SourceConsensusTimelineEntry | undefined;
   readonly currentAuthoritySourceClaimIds: ReadonlySet<string>;
 }): ReturnType<typeof toSourceClaimCandidate> => {
-  const staleSourceDecisionIds = input.staleSourceDecisions
+  const staleSourceDecisionIds = input.sourceDecisions
     .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
     .map((decision) => decision.id);
   const decisionSupportEdgeIds = input.sourceConsensusEntry?.decisionSupportEdgeIds ??
@@ -862,6 +930,7 @@ const sourceCandidateWithAuthority = (input: {
         })
   });
   const candidate = toSourceClaimCandidate(input.claim);
+  const projectStandardDecision = projectStandardDecisionForSourceAuthority(input);
   return {
     ...candidate,
     sourceClaimAuthorityStatus: authorityAssessment.status,
@@ -873,6 +942,7 @@ const sourceCandidateWithAuthority = (input: {
     metadata: {
       ...candidate.metadata,
       ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
+      ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
       ...sourceDecisionSupportBoostMetadata(input.sourceDecisionEdges),
       sourceClaimAuthority: {
         status: authorityAssessment.status,
@@ -1064,7 +1134,7 @@ export const retrieveActivationCandidates = async (
           claim,
           now: activationNow,
           sourceDecisionEdges: sourceDecisionEdgesByClaimId.get(claim.id) ?? [],
-          staleSourceDecisions: staleSourceDecisionsByClaimId.get(claim.id) ?? [],
+          sourceDecisions: staleSourceDecisionsByClaimId.get(claim.id) ?? [],
           sourceConsensusEntry: sourceConsensusEntriesByClaimId.get(claim.id),
           currentAuthoritySourceClaimIds
         })
