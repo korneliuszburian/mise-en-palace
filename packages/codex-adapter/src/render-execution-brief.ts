@@ -54,16 +54,34 @@ const renderContextInclusions = (
   );
 };
 
+const exclusionDirective = (item: ExecutionBriefContextExclusion): string => {
+  const generatedAuthorityDiagnostic =
+    item.explanation.startsWith("Source claims require accepted authority state before activation;") ||
+    item.explanation.startsWith("Source graph consensus caveat supersedes via edge(s)");
+
+  if (!generatedAuthorityDiagnostic) {
+    return `${item.explanation} | reason=${item.reason}`;
+  }
+
+  switch (item.reason) {
+    case "unsafe":
+    case "rejected":
+      return "Rejected or unsupported context remains non-authoritative.";
+    case "superseded":
+      return "Superseded context remains historical and must not govern.";
+    case "stale":
+      return "Stale context requires current authority before use.";
+    case "conflicting":
+      return "Conflicting context requires resolution or explicit abstention.";
+    default:
+      return item.explanation;
+  }
+};
+
 const renderContextExclusions = (
   exclusions: readonly ExecutionBriefContextExclusion[]
-): string[] =>
-  exclusions.map((item) =>
-    [
-      `- ${item.explanation}`,
-      `reason=${item.reason}`,
-      `authority=${item.sourceAuthority}`
-    ].join(" | ")
-  );
+): string[] => [...new Set(exclusions.map(exclusionDirective))]
+  .map((directive) => `- ${directive}`);
 
 const rankingDiagnosticExclusionReasons = new Set([
   "low_context_roi",
@@ -119,7 +137,9 @@ const untrustedContextWarnings = (
 
 const renderToolBoundaries = (brief: ExecutionBrief): string[] => [
   "Tool Boundaries:",
-  ...renderList(brief.toolBoundaries)
+  brief.toolBoundaries.length === 0
+    ? "- none"
+    : `- ${brief.toolBoundaries.join("; ")}`
 ];
 
 type ExecutionBriefSectionCounter = (brief: ExecutionBrief) => number;
@@ -140,11 +160,12 @@ const executionBriefSectionCounters = {
   observation_prefix: (brief) =>
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
-  explicit_exclusions: (brief) => directiveContextExclusions(brief.explicitExclusions).length,
+  explicit_exclusions: (brief) =>
+    renderContextExclusions(directiveContextExclusions(brief.explicitExclusions)).length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
-  tool_boundaries: (brief) => brief.toolBoundaries.length,
-  evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
+  tool_boundaries: scalarSectionItemCount,
+  evidence_contract: () => 3,
   stop_condition: scalarSectionItemCount,
   rollback_expectation: scalarSectionItemCount,
   next_action: scalarSectionItemCount,
@@ -206,10 +227,11 @@ export const describeExecutionBriefProfile = (
 };
 
 const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
-  ...brief.evidenceContract.commands.map((command) => `- ${command}`),
-  `Diff risk: ${brief.evidenceContract.diffRisk}`,
+  brief.evidenceContract.commands.length === 0
+    ? "- no verification command supplied"
+    : `- Verify once: ${brief.evidenceContract.commands.join("; ")}`,
   `Review burden: ${brief.evidenceContract.reviewBurden}`,
-  `Rollback path: ${brief.evidenceContract.rollbackPath}`
+  `Rollback Expectation: ${brief.rollbackExpectation}`
 ];
 
 const renderObservationPrefix = (
@@ -441,7 +463,7 @@ const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
     ...renderEvidenceContract(brief),
     "",
     `Stop Condition: ${brief.stopCondition}`,
-    `Rollback Expectation: ${brief.rollbackExpectation}`,
+    "",
     `Next Action: ${brief.nextAction}`,
     "",
     "What This Does Not Prove:",
