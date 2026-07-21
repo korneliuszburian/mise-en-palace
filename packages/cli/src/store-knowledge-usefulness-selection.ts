@@ -75,11 +75,27 @@ export interface StoreKnowledgeUsefulnessSelection {
 const feedbackSubjectsForKnowledgeReadModels = (
   readModels: readonly KnowledgeReadModel[]
 ): FeedbackSubjectReference[] => [...new Map(
-  readModels.map((readModel) => [readModel.id, {
+  readModels.map((readModel) => [readModel.memoryRecordId ?? readModel.id, {
     kind: "knowledge" as const,
-    id: readModel.id
+    id: readModel.memoryRecordId ?? readModel.id
   }])
 ).values()];
+
+const feedbackForKnowledgeReadModels = (
+  readModels: readonly KnowledgeReadModel[],
+  feedback: readonly KnowledgeUsefulnessFeedback[]
+): KnowledgeUsefulnessFeedback[] => {
+  const displayIdByPacketSubject = new Map(
+    readModels.flatMap((readModel) => readModel.memoryRecordId === undefined
+      ? []
+      : [[readModel.memoryRecordId, readModel.id] as const])
+  );
+
+  return feedback.map((item) => ({
+    ...item,
+    knowledgeId: displayIdByPacketSubject.get(item.knowledgeId) ?? item.knowledgeId
+  }));
+};
 
 export const listStoreKnowledgeUsefulnessFeedback = async (input: {
   projectId: string;
@@ -114,11 +130,14 @@ export const applyStoreKnowledgeUsefulnessFeedback = (
     feedbackDeltas,
     (feedbackDelta) => feedbackDelta.status !== "rejected"
   );
+  const feedback = [...visibleFeedback.values()].map(({ feedback }) => feedback);
   const readModelsWithFeedback = knowledgeReadModelsWithUsefulnessFeedback(
     readModels,
-    [...visibleFeedback.values()].map(({ feedback }) => feedback)
+    feedbackForKnowledgeReadModels(readModels, feedback)
   );
-  const knownKnowledgeIds = new Set(readModels.map((readModel) => readModel.id));
+  const knownKnowledgeIds = new Set(readModels.map((readModel) =>
+    readModel.memoryRecordId ?? readModel.id
+  ));
   const reviewOnlyUsefulnessCaveats = [...visibleFeedback.values()]
     .flatMap(({ feedback, feedbackDelta }) => {
       const outcome = feedback;

@@ -85,7 +85,7 @@ const knowledgeFeedbackDelta = (
 });
 
 const createBrainRecallDatabaseRuntime = (
-  feedbackKnowledgeId = "knowledge:store-backed-usefulness",
+  feedbackKnowledgeId = "memory-record-1",
   feedbackDeltas?: readonly FeedbackDelta[]
 ) => async (_input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => ({
   workspaceId: "workspace-1",
@@ -417,14 +417,14 @@ describe("runCli", () => {
       },
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
-      createDatabaseRuntime: createBrainRecallDatabaseRuntime(knowledgeId, [
-        knowledgeFeedbackDelta(knowledgeId, {
+      createDatabaseRuntime: createBrainRecallDatabaseRuntime("memory-record-1", [
+        knowledgeFeedbackDelta("memory-record-1", {
           id: "feedback-rejected-newer",
           status: "rejected",
           outcome: "hurt",
           createdAt: "2026-06-21T12:02:00.000Z"
         }),
-        knowledgeFeedbackDelta(knowledgeId, {
+        knowledgeFeedbackDelta("memory-record-1", {
           id: "feedback-candidate-older",
           status: "candidate",
           outcome: "stale",

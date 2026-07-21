@@ -118,6 +118,8 @@ export type KnowledgeUsefulnessFeedback = {
 
 export type KnowledgeReadModel = {
   id: string;
+  /** Packet-owned MemoryRecord identity when this is a memory-store projection. */
+  memoryRecordId?: string;
   kind: KnowledgeKind;
   status: KnowledgeStatus;
   title: string;
@@ -171,7 +173,7 @@ export type KnowledgeDecision = {
 
 type KnowledgeReadModelRequiredFields = Omit<
   KnowledgeReadModel,
-  "usefulnessFeedback" | "mechanism" | "krnImplication"
+  "usefulnessFeedback" | "mechanism" | "krnImplication" | "memoryRecordId"
 >;
 
 type KnowledgeDecisionRequiredFields = Omit<
@@ -304,6 +306,7 @@ export function parseKnowledgeReadModel(value: unknown): KnowledgeReadModel | un
 
   return {
     ...requiredFields,
+    ...parseOptionalMemoryRecordId(value),
     ...usefulnessFeedback
   };
 }
@@ -468,6 +471,16 @@ function parseOptionalUsefulnessFeedback(
 
   return usefulnessFeedback === undefined ? undefined : { usefulnessFeedback };
 }
+
+const parseOptionalMemoryRecordId = (
+  record: Record<string, unknown>
+): Pick<KnowledgeReadModel, "memoryRecordId"> => {
+  const value = record["memoryRecordId"];
+
+  return typeof value === "string" && value.trim().length > 0
+    ? { memoryRecordId: value.trim() }
+    : {};
+};
 
 function searchRuntimeFilter(filter: KnowledgeSearchFilter): KnowledgeSearchRuntimeFilter {
   const text = filter.text?.trim().toLowerCase();

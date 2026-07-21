@@ -8,8 +8,12 @@ import {
   listStoreKnowledgeUsefulnessFeedback
 } from "../store-knowledge-usefulness-selection.js";
 
-const knowledge = (id = "knowledge:status-policy"): KnowledgeReadModel => ({
+const knowledge = (
+  id = "knowledge:status-policy",
+  memoryRecordId?: string
+): KnowledgeReadModel => ({
   id,
+  ...(memoryRecordId === undefined ? {} : { memoryRecordId }),
   kind: "procedure",
   status: "active",
   title: "Feedback status policy",
@@ -30,6 +34,7 @@ const feedback = (input: {
   id: string;
   status: FeedbackDelta["status"];
   outcome: "helped" | "stale";
+  knowledgeId?: string;
   createdAt?: string;
 }): FeedbackDelta => ({
   id: input.id,
@@ -40,7 +45,7 @@ const feedback = (input: {
   evalCandidates: [],
   metadata: stampCurrentDecisionPacketAuthorityMetadata({
     knowledgeUsefulnessOutcomes: [{
-      knowledgeId: "knowledge:status-policy",
+      knowledgeId: input.knowledgeId ?? "knowledge:status-policy",
       outcome: input.outcome,
       reason: `${input.status} ${input.outcome} feedback`,
       evidenceRefs: ["packet:status-policy", `feedback:${input.id}`],
@@ -154,6 +159,32 @@ describe("store knowledge usefulness lifecycle selection", () => {
       feedbackLifecycleStatus: "accepted"
     });
     expect(result.readModels[0]?.nextAction).toBe("review");
+  });
+
+  it("keeps logical knowledge identity separate from the packet-owned feedback subject", () => {
+    const result = applyStoreKnowledgeUsefulnessFeedback([
+      knowledge("knowledge:component-contract", "memory-123")
+    ], [feedback({
+      id: "feedback-memory-subject",
+      status: "candidate",
+      outcome: "stale",
+      knowledgeId: "memory-123"
+    })]);
+
+    expect(result.readModels[0]).toMatchObject({
+      id: "knowledge:component-contract",
+      memoryRecordId: "memory-123",
+      usefulnessFeedback: {
+        knowledgeId: "knowledge:component-contract",
+        outcome: "stale",
+        feedbackLifecycleStatus: "candidate"
+      },
+      nextAction: "review"
+    });
+    expect(result.reviewOnlyUsefulnessCaveats).toMatchObject([{
+      subjectId: "memory-123",
+      outcome: "stale"
+    }]);
   });
 
   it("requests only project-scoped feedback for the selected knowledge subjects", async () => {

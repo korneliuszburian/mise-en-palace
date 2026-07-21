@@ -112,11 +112,12 @@ describe("runCli", () => {
             status: "selected",
             query: "unknown-first boundary",
             source: "memory_store",
-            selectedKnowledgeIds: ["memory-record-1"],
+            selectedKnowledgeIds: ["component-contract"],
             selectedKnowledge: [
               {
-                id: "memory-record-1",
-                knowledgeId: "memory-record-1",
+                id: "knowledge:component-contract",
+                memoryRecordId: "memory-record-1",
+                knowledgeId: "component-contract",
                 title: "Unknown-first TypeScript result boundary",
                 reviewability: "ready",
                 nextAction: "use",
@@ -289,9 +290,9 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Selected KRN Context:");
     expect(result.stdout).toContain("Selected KRN context: selected");
-    expect(result.stdout).toContain("Selected KRN context IDs: memory-record-1");
+    expect(result.stdout).toContain("Selected KRN context IDs: component-contract");
     expect(result.stdout).toContain(
-      "- knowledge=memory-record-1 | readModel=memory-record-1"
+      "- knowledge=component-contract | readModel=knowledge:component-contract"
     );
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).not.toContain("Source Claims Selected:");
@@ -313,10 +314,11 @@ describe("runCli", () => {
           ...aggregate.harnessPlan.metadata,
           knowledgeSelection: {
             ...(aggregate.harnessPlan.metadata["knowledgeSelection"] as Record<string, unknown>),
-            selectedKnowledgeIds: ["unbound-memory"],
+            selectedKnowledgeIds: ["component-contract"],
             selectedKnowledge: [{
-              id: "unbound-memory",
-              knowledgeId: "unbound-memory",
+              id: "knowledge:component-contract",
+              memoryRecordId: "unbound-memory-record",
+              knowledgeId: "component-contract",
               title: "Unbound memory knowledge",
               reviewability: "ready",
               nextAction: "use",

@@ -18,9 +18,11 @@ import type { KnowledgeUsefulnessFeedback } from "./knowledge-read-model.js";
  *   stale    — once useful, superseded by a newer standard or changed context
  *   unknown  — outcome could not be determined
  *
- * knowledgeId is the knowledge read model id. observedAt is the feedback_delta
- * record timestamp when available, so knowledgeReadModelsWithUsefulnessFeedback
- * can keep the latest entry per read model.
+ * knowledgeId is the packet-owned subject id. The store adapter maps it back to
+ * a display read-model id when attaching feedback. observedAt is the
+ * feedback_delta record timestamp when available, so
+ * knowledgeReadModelsWithUsefulnessFeedback can keep the latest entry per
+ * read model.
  */
 export const knowledgeUsefulnessFromKnowledgeOutcome = (
   outcome: KnowledgeUsefulnessOutcomeFeedback,

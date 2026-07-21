@@ -88,6 +88,7 @@ export const memoryRecordToKnowledgeReadModel = (
 
   return {
     id: knowledgeId === undefined ? memory.id : `knowledge:${knowledgeId}`,
+    memoryRecordId: memory.id,
     kind: knowledgeId === undefined ? "memory" : "procedure",
     status: memoryStatus(memory.status),
     title: memory.summary,
