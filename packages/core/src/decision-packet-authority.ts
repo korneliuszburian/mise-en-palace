@@ -414,6 +414,7 @@ export const projectStandardDecisionFromMetadata = (
   const kind = readMetadataString(value, "kind");
   const memoryRecordId = readMetadataString(value, "memoryRecordId");
   const key = readMetadataString(value, "key");
+  const sourceClaimIds = readMetadataStringList(value, "sourceClaimIds");
   const sourceRefs = readMetadataStringList(value, "sourceRefs");
   const mechanism = readMetadataString(value, "mechanism");
   const krnImplication = readMetadataString(value, "krnImplication");
@@ -446,6 +447,7 @@ export const projectStandardDecisionFromMetadata = (
     kind,
     memoryRecordId,
     key,
+    ...(sourceClaimIds.length === 0 ? {} : { sourceClaimIds }),
     sourceRefs,
     mechanism,
     krnImplication,

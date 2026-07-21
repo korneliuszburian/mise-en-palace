@@ -84,6 +84,7 @@ const reviewOnlyUsefulnessCaveatSchema = z.strictObject({
 const taskStandardSchema = z.strictObject({
   memoryRecordId: z.string(),
   key: z.string(),
+  sourceClaimIds: stringArraySchema.optional(),
   sourceRefs: stringArraySchema,
   mechanism: z.string(),
   krnImplication: z.string(),
@@ -401,6 +402,7 @@ const normalizeTaskStandard = (
 ): DecisionPacketTaskStandard => ({
   memoryRecordId: standard.memoryRecordId,
   key: standard.key,
+  ...(standard.sourceClaimIds === undefined ? {} : { sourceClaimIds: standard.sourceClaimIds }),
   sourceRefs: standard.sourceRefs,
   mechanism: standard.mechanism,
   krnImplication: standard.krnImplication,

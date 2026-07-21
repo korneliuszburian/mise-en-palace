@@ -251,7 +251,14 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const abstentionStatus = packet.evidenceContract === undefined
     ? "abstain"
     : packet.abstentionScore.status;
-  const includedContext = packet.contextInclusions.map((inclusion) => ({ ...inclusion }));
+  const promotedSourceClaimIds = new Set(packet.taskStandardDecisions.flatMap(
+    (standard) => standard.sourceClaimIds ?? []
+  ));
+  const includedContext = packet.contextInclusions
+    .filter((inclusion) =>
+      inclusion.subjectType !== "source_claim" || !promotedSourceClaimIds.has(inclusion.subjectId)
+    )
+    .map((inclusion) => ({ ...inclusion }));
   const explicitExclusions = packet.contextExclusions.map((exclusion) => ({ ...exclusion }));
   const sourceClaimsSelected = includedContext
     .filter((inclusion) => inclusion.subjectType === "source_claim")

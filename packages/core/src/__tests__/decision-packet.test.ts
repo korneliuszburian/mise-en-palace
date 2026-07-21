@@ -133,10 +133,17 @@ const readModel = {
             targetId: "source-decision-current"
           }]
         },
+      }, {
+        subjectType: "source_claim",
+        subjectId: "claim-caveated"
+      }, {
+        subjectType: "memory_record",
+        subjectId: "memory-current",
         projectStandardDecision: {
           kind: "krn.projectStandardDecision.v1",
           memoryRecordId: "memory-current",
           key: "frontend-template",
+          sourceClaimIds: ["claim-current"],
           sourceRefs: ["claim-current"],
           mechanism: "Accepted project standard narrows new frontend setup choices.",
           krnImplication: "DecisionPacket should tell Codex which template to use.",
@@ -146,13 +153,7 @@ const readModel = {
           validFrom: "2026-07-01T00:00:00.000Z",
           rejectedPath: "Do not use the superseded template.",
           doesNotProve: "Does not prove the template fits every frontend task."
-        }
-      }, {
-        subjectType: "source_claim",
-        subjectId: "claim-caveated"
-      }, {
-        subjectType: "memory_record",
-        subjectId: "memory-current",
+        },
         pendingAntiMemoryReview: {
           antiMemoryCandidateIds: ["anti-memory-candidate-pending-feedback"],
           feedbackDeltaIds: ["feedback-delta-prior"],

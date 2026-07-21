@@ -352,6 +352,39 @@ describe("renderExecutionBrief", () => {
     });
   });
 
+  it("omits an owning source claim already represented by a promoted standard", () => {
+    const packet: DecisionPacket = {
+      ...packetForBrief({
+        taskContract,
+        contextAssembly,
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Use the reviewed standard."
+      }),
+      taskStandardDecisions: [{
+        memoryRecordId: "memory-1",
+        key: "frontend-standard",
+        sourceClaimIds: ["claim-1"],
+        sourceRefs: ["claim-1", "source-decision-1", "source-edge-1"],
+        mechanism: "Reviewed source authority was promoted through memory review.",
+        krnImplication: "Render one directive without duplicating its source inclusion.",
+        decision: "Use the reviewed frontend standard.",
+        consumer: "Codex",
+        falsifier: "The same rule is rendered as both source and memory context.",
+        validFrom: createdAt,
+        doesNotProve: "Does not prove broad prompt efficiency."
+      }]
+    };
+
+    const brief = createExecutionBrief({ packet });
+
+    expect(brief.includedContext.map((inclusion) => inclusion.subjectId)).toEqual(["memory-1"]);
+    expect(brief.sourceClaimsSelected).toEqual([]);
+    expect(packet.contextInclusions.find(
+      (inclusion) => inclusion.subjectId === "claim-1"
+    )?.supportingEvidence).toBeDefined();
+  });
+
   it("preserves canonical SourceDecision ids without substituting targets or stale ids", () => {
     const packet: DecisionPacket = {
       ...packetForBrief({
