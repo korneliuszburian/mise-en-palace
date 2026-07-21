@@ -86,7 +86,26 @@ export const sourceDecisionKnowledgeSourceToMemoryCandidateInput = (
     krnImplication: source.sourceClaim.krnImplication,
     consumer: source.sourceDecision.consumer,
     falsifier: source.sourceDecision.falsifier,
-    doesNotProve: source.sourceClaim.doesNotProve
+    doesNotProve: source.sourceClaim.doesNotProve,
+    reflectionCandidateEvidence: {
+      provenance: "source_claim",
+      evidenceRefs: [
+        source.sourceClaim.id,
+        source.sourceDecision.id,
+        source.sourceDecisionEdge.id
+      ],
+      doesNotProve: source.sourceClaim.doesNotProve
+    },
+    projectStandardDecision: {
+      kind: "krn.projectStandardDecision.v1",
+      sourceRefs: [source.sourceClaim.id],
+      mechanism: source.sourceClaim.mechanism,
+      krnImplication: source.sourceClaim.krnImplication,
+      decision: source.sourceDecision.decision,
+      consumer: source.sourceDecision.consumer,
+      falsifier: source.sourceDecision.falsifier,
+      doesNotProve: source.sourceClaim.doesNotProve
+    }
   }
 });
 
