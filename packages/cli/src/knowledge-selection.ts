@@ -510,9 +510,19 @@ export const packetBoundKnowledgeSelection = (
         })
       )
     : [];
+  const retainedKnowledgeSubjects = new Set(
+    selectedKnowledge.flatMap((knowledge) =>
+      knowledge.memoryRecordId === undefined ? [] : [knowledge.memoryRecordId]
+    )
+  );
+  const reviewOnlyUsefulnessCaveats = (selection.reviewOnlyUsefulnessCaveats ?? [])
+    .filter((caveat) => caveat.subjectType !== "knowledge"
+      || retainedKnowledgeSubjects.has(caveat.subjectId));
 
   if (selectedKnowledge.length === selection.selectedKnowledge.length) {
-    return selection;
+    if (reviewOnlyUsefulnessCaveats.length === (selection.reviewOnlyUsefulnessCaveats ?? []).length) {
+      return selection;
+    }
   }
 
   const targetFitSummary = summarizeTargetFit(selectedKnowledge);
@@ -525,6 +535,7 @@ export const packetBoundKnowledgeSelection = (
     status: selectedKnowledge.length === 0 ? "rejected_or_deferred" : "selected",
     selectedKnowledge,
     selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
+    reviewOnlyUsefulnessCaveats,
     targetFitSummary,
     recommendedNextAction,
     reason: selectedKnowledge.length === 0

@@ -166,6 +166,66 @@ describe("knowledgeSelection", () => {
     expect(result?.recommendedNextAction).toBe(result?.targetFitSummary.recommendedUse);
   });
 
+  it("does not render feedback caveats for unbound knowledge", () => {
+    const selection: KnowledgePlanSelection = {
+      ...validSelectionMetadata,
+      source: "memory_store",
+      selectedKnowledgeIds: ["component-contract", "unbound-contract"],
+      selectedKnowledge: [
+        {
+          ...validSelectionMetadata.selectedKnowledge[0],
+          knowledgeId: "component-contract",
+          memoryRecordId: "memory-123"
+        },
+        {
+          ...validSelectionMetadata.selectedKnowledge[0],
+          id: "knowledge:unbound-contract",
+          knowledgeId: "unbound-contract",
+          memoryRecordId: "memory-456",
+          title: "Unbound contract"
+        }
+      ],
+      reviewOnlyUsefulnessCaveats: [
+        {
+          subjectType: "knowledge",
+          subjectId: "memory-123",
+          feedbackStatus: "candidate",
+          outcome: "stale",
+          reason: "Authorized caveat.",
+          doesNotProve: "Caveat does not prove source truth."
+        },
+        {
+          subjectType: "knowledge",
+          subjectId: "memory-456",
+          feedbackStatus: "candidate",
+          outcome: "hurt",
+          reason: "Dangling caveat.",
+          doesNotProve: "Caveat does not prove source truth."
+        }
+      ]
+    };
+    const packet = {
+      memoryRefs: ["memory-123"],
+      taskStandardDecisions: [],
+      sourceClaimIds: [],
+      sourceDecisionIds: [],
+      staleDecisionIds: [],
+      contextInclusions: [],
+      brief: { includedSourceClaimIds: [], includedMemoryRecordIds: [] }
+    } as unknown as DecisionPacket;
+
+    const result = packetBoundKnowledgeSelection(selection, packet);
+
+    expect(result?.selectedKnowledgeIds).toEqual(["component-contract"]);
+    expect(result?.reviewOnlyUsefulnessCaveats).toEqual([
+      expect.objectContaining({ subjectId: "memory-123", reason: "Authorized caveat." })
+    ]);
+    expect(formatKnowledgeSelectionLines(result)).toEqual(
+      expect.arrayContaining([expect.stringContaining("Authorized caveat.")])
+    );
+    expect(formatKnowledgeSelectionLines(result).join("\n")).not.toContain("Dangling caveat.");
+  });
+
   it("renders review-only usefulness caveats as a bounded abstention", () => {
     const selection = knowledgeSelectionFromMetadata({
       knowledgeSelection: {
