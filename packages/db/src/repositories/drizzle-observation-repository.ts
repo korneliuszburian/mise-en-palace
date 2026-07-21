@@ -22,17 +22,11 @@ import type {
 
 import type { KrnDatabase } from "../database.js";
 import {
-  evidenceBundles,
   observationClaimEdges,
   observationEntityEdges,
-  observationFeedbackEvents,
   observationGroups,
   observationItems,
-  observationSourceRanges,
-  reviewAssessments,
-  feedbackDeltas,
-  runEvents,
-  sourceChunks
+  observationSourceRanges
 } from "../schema/index.js";
 import {
   fromIsoTimestamp,
@@ -41,28 +35,6 @@ import {
   requireReturnedRow,
   toIsoTimestamp
 } from "./repository-value-readers.js";
-
-export type ObservationFeedbackEventType =
-  | "used"
-  | "ignored"
-  | "helped"
-  | "hurt"
-  | "stale"
-  | "corrected";
-
-export type ObservationUsefulness = "positive" | "negative" | "neutral" | "unknown";
-
-export interface ObservationFeedbackEventRecord {
-  id: string;
-  observationItemId: ObservationItemId;
-  projectId?: ProjectId;
-  executionRunId?: ExecutionRunId;
-  eventType: ObservationFeedbackEventType;
-  usefulness: ObservationUsefulness;
-  note?: string;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-}
 
 export interface CreateObservationGroupInput {
   scope: ObservationScope;
@@ -113,35 +85,6 @@ export interface ObservationFindByScopeInput extends ObservationScope {
   limit?: number;
 }
 
-export interface RecordObservationFeedbackInput {
-  observationItemId: ObservationItemId;
-  projectId?: ProjectId;
-  executionRunId?: ExecutionRunId;
-  eventType: ObservationFeedbackEventType;
-  usefulness?: ObservationUsefulness;
-  note?: string;
-  metadata?: Record<string, unknown>;
-}
-
-export type ObservationRawEvidenceKind =
-  | "run_event"
-  | "source_chunk"
-  | "evidence_bundle"
-  | "review_assessment"
-  | "feedback_delta"
-  | "unavailable";
-
-export interface ObservationRawEvidenceRecord {
-  sourceRange: ObservationSourceRange;
-  kind: ObservationRawEvidenceKind;
-  sourceId: string;
-  locator: string;
-  excerpt?: string;
-  text?: string;
-  payload: Record<string, unknown>;
-  capturedAt: string;
-}
-
 interface ObservationEvidenceLinkageInput {
   kind: ObservationKind;
   provenanceKind: ObservationProvenanceKind;
@@ -153,16 +96,8 @@ type ObservationItemRow = typeof observationItems.$inferSelect;
 type ObservationSourceRangeRow = typeof observationSourceRanges.$inferSelect;
 type ObservationEntityEdgeRow = typeof observationEntityEdges.$inferSelect;
 type ObservationClaimEdgeRow = typeof observationClaimEdges.$inferSelect;
-type ObservationFeedbackEventRow = typeof observationFeedbackEvents.$inferSelect;
 type ObservationItemInsertRow = typeof observationItems.$inferInsert;
 type ObservationSourceRangeInsertRow = typeof observationSourceRanges.$inferInsert;
-type RawEvidenceResolver = () => Promise<ObservationRawEvidenceRecord | undefined>;
-
-const unknownListOrEmpty = (value: unknown): unknown[] => (
-  Array.isArray(value) ? value : []
-);
-
-const isDefined = <T>(value: T | undefined): value is T => value !== undefined;
 
 const truthBearingObservationKinds = new Set<ObservationKind>([
   "fact",
@@ -214,23 +149,6 @@ const assertObservationSourceRangeTypedLinkage = (
     throw new Error(`Observation source range ${input.sourceType} requires ${requiredKey}`);
   }
 };
-
-const sourceRangeRowToCreateInput = (
-  row: ObservationSourceRangeRow
-): CreateObservationSourceRangeInput => ({
-  sourceType: row.sourceType,
-  sourceId: row.sourceId,
-  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-  ...(row.runEventId === null ? {} : { runEventId: row.runEventId }),
-  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
-  ...(row.evidenceBundleId === null ? {} : { evidenceBundleId: row.evidenceBundleId }),
-  ...(row.reviewAssessmentId === null ? {} : { reviewAssessmentId: row.reviewAssessmentId }),
-  ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
-  locator: row.locator,
-  ...(row.excerpt === null ? {} : { excerpt: row.excerpt }),
-  capturedAt: toIsoTimestamp(row.capturedAt),
-  metadata: metadataOrEmpty(row.metadata)
-});
 
 export const isEvidenceLinkedObservationSourceRangeInput = (
   input: CreateObservationSourceRangeInput
@@ -387,20 +305,6 @@ const mapObservationItem = (
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
-const mapObservationFeedbackEvent = (
-  row: ObservationFeedbackEventRow
-): ObservationFeedbackEventRecord => ({
-  id: row.id,
-  observationItemId: row.observationItemId,
-  ...(row.projectId === null ? {} : { projectId: row.projectId }),
-  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-  eventType: row.eventType,
-  usefulness: row.usefulness,
-  ...(row.note === null ? {} : { note: row.note }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt)
-});
-
 const itemScope = (
   group: ObservationGroup,
   inputScope: ObservationScope | undefined
@@ -483,26 +387,6 @@ const sourceRangeInsertValues = (
   capturedAt: fromIsoTimestamp(input.capturedAt),
   metadata: input.metadata ?? {}
 });
-
-const baseRawEvidenceRecord = (
-  row: ObservationSourceRangeRow,
-  sourceRange: ObservationSourceRange
-): ObservationRawEvidenceRecord => ({
-  sourceRange,
-  kind: "unavailable",
-  sourceId: row.sourceId,
-  locator: row.locator,
-  ...(row.excerpt === null ? {} : { excerpt: row.excerpt }),
-  payload: metadataOrEmpty(row.metadata),
-  capturedAt: toIsoTimestamp(row.capturedAt)
-});
-
-const rawEvidenceResolver = (
-  id: string | null,
-  resolve: (id: string) => Promise<ObservationRawEvidenceRecord | undefined>
-): RawEvidenceResolver | undefined => (
-  id === null ? undefined : () => resolve(id)
-);
 
 export class DrizzleObservationRepository {
   constructor(private readonly db: KrnDatabase) {}
@@ -611,80 +495,6 @@ export class DrizzleObservationRepository {
     return this.hydrateItems(rows);
   }
 
-  async linkSourceRange(
-    observationItemId: ObservationItemId,
-    input: CreateObservationSourceRangeInput
-  ): Promise<ObservationSourceRange> {
-    const itemRow = await this.db.query.observationItems.findFirst({
-      where: eq(observationItems.id, observationItemId)
-    });
-
-    if (itemRow === undefined) {
-      throw new Error(`Observation item ${observationItemId} was not found`);
-    }
-
-    const existingSourceRangeRows = await this.db.query.observationSourceRanges.findMany({
-      where: eq(observationSourceRanges.observationItemId, observationItemId)
-    });
-
-    assertObservationItemEvidenceLinkage({
-      kind: itemRow.kind,
-      provenanceKind: itemRow.provenanceKind,
-      sourceRanges: [
-        ...existingSourceRangeRows.map(sourceRangeRowToCreateInput),
-        input
-      ]
-    });
-
-    const row = requireReturnedRow(
-      await this.db
-        .insert(observationSourceRanges)
-        .values(sourceRangeInsertValues(observationItemId, input))
-        .returning(),
-      "linkObservationSourceRange"
-    );
-
-    return mapObservationSourceRange(row);
-  }
-
-  async recallRawEvidence(
-    observationItemId: ObservationItemId
-  ): Promise<ObservationRawEvidenceRecord[]> {
-    const rows = await this.db.query.observationSourceRanges.findMany({
-      where: eq(observationSourceRanges.observationItemId, observationItemId)
-    });
-
-    const evidence: ObservationRawEvidenceRecord[] = [];
-
-    for (const row of rows) {
-      evidence.push(await this.recallRawEvidenceForRange(row));
-    }
-
-    return evidence;
-  }
-
-  async recordFeedback(
-    input: RecordObservationFeedbackInput
-  ): Promise<ObservationFeedbackEventRecord> {
-    const row = requireReturnedRow(
-      await this.db
-        .insert(observationFeedbackEvents)
-        .values({
-          observationItemId: input.observationItemId,
-          ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-          ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-          eventType: input.eventType,
-          usefulness: input.usefulness ?? "unknown",
-          ...(input.note === undefined ? {} : { note: input.note }),
-          metadata: input.metadata ?? {}
-        })
-        .returning(),
-      "recordObservationFeedback"
-    );
-
-    return mapObservationFeedbackEvent(row);
-  }
-
   private async addItemInTransaction(
     groupId: ObservationGroupId,
     group: ObservationGroup,
@@ -710,163 +520,6 @@ export class DrizzleObservationRepository {
     const claimLinks = await this.insertClaimLinks(itemRow.id, input.claimLinks ?? [], tx);
 
     return mapObservationItem(itemRow, sourceRanges, entityLinks, claimLinks);
-  }
-
-  private async recallRawEvidenceForRange(
-    row: ObservationSourceRangeRow
-  ): Promise<ObservationRawEvidenceRecord> {
-    const sourceRange = mapObservationSourceRange(row);
-    const base = baseRawEvidenceRecord(row, sourceRange);
-
-    for (const resolve of this.rawEvidenceResolvers(row, base)) {
-      const evidence = await resolve();
-
-      if (evidence !== undefined) {
-        return evidence;
-      }
-    }
-
-    return base;
-  }
-
-  private rawEvidenceResolvers(
-    row: ObservationSourceRangeRow,
-    base: ObservationRawEvidenceRecord
-  ): RawEvidenceResolver[] {
-    return [
-      rawEvidenceResolver(row.runEventId, (id) => this.recallRunEventEvidence(id, base)),
-      rawEvidenceResolver(row.sourceChunkId, (id) => this.recallSourceChunkEvidence(id, base)),
-      rawEvidenceResolver(row.evidenceBundleId, (id) => this.recallEvidenceBundleEvidence(id, base)),
-      rawEvidenceResolver(row.reviewAssessmentId, (id) => this.recallReviewAssessmentEvidence(id, base)),
-      rawEvidenceResolver(row.feedbackDeltaId, (id) => this.recallFeedbackDeltaEvidence(id, base))
-    ].filter(isDefined);
-  }
-
-  private async recallRunEventEvidence(
-    id: string,
-    base: ObservationRawEvidenceRecord
-  ): Promise<ObservationRawEvidenceRecord | undefined> {
-    const runEvent = await this.db.query.runEvents.findFirst({
-      where: eq(runEvents.id, id)
-    });
-
-    return runEvent === undefined ? undefined : {
-      ...base,
-      kind: "run_event",
-      sourceId: runEvent.id,
-      text: runEvent.message,
-      payload: {
-        executionRunId: runEvent.executionRunId,
-        sequence: runEvent.sequence,
-        type: runEvent.type,
-        severity: runEvent.severity,
-        payload: metadataOrEmpty(runEvent.payload),
-        occurredAt: toIsoTimestamp(runEvent.occurredAt)
-      }
-    };
-  }
-
-  private async recallSourceChunkEvidence(
-    id: string,
-    base: ObservationRawEvidenceRecord
-  ): Promise<ObservationRawEvidenceRecord | undefined> {
-    const sourceChunk = await this.db.query.sourceChunks.findFirst({
-      where: eq(sourceChunks.id, id)
-    });
-
-    return sourceChunk === undefined ? undefined : {
-      ...base,
-      kind: "source_chunk",
-      sourceId: sourceChunk.id,
-      text: sourceChunk.content,
-      payload: {
-        sourceArtifactId: sourceChunk.sourceArtifactId,
-        ordinal: sourceChunk.ordinal,
-        heading: sourceChunk.heading,
-        tokenCount: sourceChunk.tokenCount,
-        contentHash: sourceChunk.contentHash,
-        metadata: metadataOrEmpty(sourceChunk.metadata),
-        createdAt: toIsoTimestamp(sourceChunk.createdAt)
-      }
-    };
-  }
-
-  private async recallEvidenceBundleEvidence(
-    id: string,
-    base: ObservationRawEvidenceRecord
-  ): Promise<ObservationRawEvidenceRecord | undefined> {
-    const evidenceBundle = await this.db.query.evidenceBundles.findFirst({
-      where: eq(evidenceBundles.id, id)
-    });
-
-    return evidenceBundle === undefined ? undefined : {
-      ...base,
-      kind: "evidence_bundle",
-      sourceId: evidenceBundle.id,
-      text: evidenceBundle.rollbackPath,
-      payload: {
-        executionRunId: evidenceBundle.executionRunId,
-        status: evidenceBundle.status,
-        changedFiles: unknownListOrEmpty(evidenceBundle.changedFiles),
-        commands: unknownListOrEmpty(evidenceBundle.commands),
-        diffRisk: evidenceBundle.diffRisk,
-        reviewBurden: evidenceBundle.reviewBurden,
-        rollbackPath: evidenceBundle.rollbackPath,
-        metadata: metadataOrEmpty(evidenceBundle.metadata),
-        createdAt: toIsoTimestamp(evidenceBundle.createdAt),
-        updatedAt: toIsoTimestamp(evidenceBundle.updatedAt)
-      }
-    };
-  }
-
-  private async recallReviewAssessmentEvidence(
-    id: string,
-    base: ObservationRawEvidenceRecord
-  ): Promise<ObservationRawEvidenceRecord | undefined> {
-    const reviewAssessment = await this.db.query.reviewAssessments.findFirst({
-      where: eq(reviewAssessments.id, id)
-    });
-
-    return reviewAssessment === undefined ? undefined : {
-      ...base,
-      kind: "review_assessment",
-      sourceId: reviewAssessment.id,
-      text: reviewAssessment.summary,
-      payload: {
-        evidenceBundleId: reviewAssessment.evidenceBundleId,
-        status: reviewAssessment.status,
-        reviewer: reviewAssessment.reviewer,
-        findings: unknownListOrEmpty(reviewAssessment.findings),
-        metadata: metadataOrEmpty(reviewAssessment.metadata),
-        createdAt: toIsoTimestamp(reviewAssessment.createdAt),
-        updatedAt: toIsoTimestamp(reviewAssessment.updatedAt)
-      }
-    };
-  }
-
-  private async recallFeedbackDeltaEvidence(
-    id: string,
-    base: ObservationRawEvidenceRecord
-  ): Promise<ObservationRawEvidenceRecord | undefined> {
-    const feedbackDelta = await this.db.query.feedbackDeltas.findFirst({
-      where: eq(feedbackDeltas.id, id)
-    });
-
-    return feedbackDelta === undefined ? undefined : {
-      ...base,
-      kind: "feedback_delta",
-      sourceId: feedbackDelta.id,
-      payload: {
-        reviewAssessmentId: feedbackDelta.reviewAssessmentId,
-        status: feedbackDelta.status,
-        memoryCandidates: unknownListOrEmpty(feedbackDelta.memoryCandidates),
-        sourceDecisions: unknownListOrEmpty(feedbackDelta.sourceDecisions),
-        evalCandidates: unknownListOrEmpty(feedbackDelta.evalCandidates),
-        metadata: metadataOrEmpty(feedbackDelta.metadata),
-        createdAt: toIsoTimestamp(feedbackDelta.createdAt),
-        updatedAt: toIsoTimestamp(feedbackDelta.updatedAt)
-      }
-    };
   }
 
   private async hydrateItems(rows: ObservationItemRow[]): Promise<ObservationItem[]> {
