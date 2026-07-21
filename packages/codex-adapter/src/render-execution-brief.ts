@@ -165,7 +165,7 @@ const executionBriefSectionCounters = {
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: scalarSectionItemCount,
-  evidence_contract: () => 4,
+  evidence_contract: () => 3,
   stop_condition: scalarSectionItemCount,
   rollback_expectation: scalarSectionItemCount,
   next_action: scalarSectionItemCount,

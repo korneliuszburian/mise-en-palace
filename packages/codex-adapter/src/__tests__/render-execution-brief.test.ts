@@ -662,8 +662,11 @@ describe("renderExecutionBrief", () => {
       .toHaveLength(1);
     expect(rendered).not.toContain("edge-1");
     expect(brief.explicitExclusions).toHaveLength(7);
-    expect(describeExecutionBriefProfile(brief).sections)
-      .toContainEqual(expect.objectContaining({ id: "explicit_exclusions", itemCount: 4 }));
+    expect(describeExecutionBriefProfile(brief).sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "explicit_exclusions", itemCount: 4 }),
+      expect.objectContaining({ id: "evidence_contract", itemCount: 3 }),
+      expect.objectContaining({ id: "rollback_expectation", itemCount: 1 })
+    ]));
   });
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
