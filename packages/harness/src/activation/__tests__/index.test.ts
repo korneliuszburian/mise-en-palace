@@ -326,6 +326,23 @@ describe("activation engine", () => {
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
   });
 
+  it("projects source mechanisms as application guidance", () => {
+    const claim = sourceClaim({
+      claim: "A portable report keeps intrinsic styling independent of page position.",
+      mechanism: "Map layout ownership before coding, then delete position-specific repair rules.",
+      krnImplication: "Report components must remain portable."
+    });
+
+    const candidate = toSourceClaimCandidate(claim);
+
+    expect(candidate).toMatchObject({
+      reason: `Source claim: ${claim.claim}`,
+      expectedUse: claim.mechanism
+    });
+    expect(candidate.expectedUse).not.toBe(claim.claim);
+    expect(candidate.expectedUse).not.toBe(claim.krnImplication);
+  });
+
   it("keeps supporting evidence from the strongest retrieval result regardless of order", () => {
     const query = buildSourceQuery(task);
     const candidate = toSourceClaimCandidate(sourceClaim({ id: "claim-slice-choice" }));
