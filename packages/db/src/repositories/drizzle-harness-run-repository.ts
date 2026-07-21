@@ -1140,6 +1140,7 @@ const lockHarnessRunAuthority = async (
     | "createEvidenceFeedbackOnce"
     | "createEvalFeedbackDeltaOnce"
     | "recordUsefulnessApplicationOnce"
+    | "recordUsefulnessApplicationsOnce"
 ): Promise<LockedHarnessRunAuthority> => {
   const linkedRun = await tx
     .select({
@@ -1170,7 +1171,8 @@ const assertSourceRunLifecycleRevision = (
   operation:
     | "createEvidenceFeedbackOnce"
     | "createEvalFeedbackDeltaOnce"
-    | "recordUsefulnessApplicationOnce",
+    | "recordUsefulnessApplicationOnce"
+    | "recordUsefulnessApplicationsOnce",
   executionRunId: string,
   expectedLifecycleRevision: number,
   lockedRun: LockedHarnessRunAuthority
@@ -2011,6 +2013,69 @@ const requireCurrentApplicationTarget = async (
       "recordUsefulnessApplicationOnce rejected: target state does not match the current repository patch"
     );
   }
+};
+
+const normalizeUsefulnessApplicationIdentity = async (
+  input: UsefulnessApplicationEvidenceIdentity,
+  readTargetStateSnapshot: (targetRepo: string) => Promise<TargetStateSnapshot>
+): Promise<UsefulnessApplicationEvidenceIdentity> => {
+  const parsedInput = parseUsefulnessApplicationEvidenceIdentity(
+    snapshotRepositoryInput(input)
+  );
+  if (parsedInput === undefined) {
+    throw new Error("recordUsefulnessApplicationOnce requires valid application evidence");
+  }
+  const authorityInput = parsedInput.targetState === undefined
+    ? parsedInput
+    : {
+        ...parsedInput,
+        targetState: {
+          ...parsedInput.targetState,
+          targetRepo: await canonicalTargetRepoPath(parsedInput.targetState.targetRepo)
+        }
+      };
+  await requireCurrentApplicationTarget(authorityInput, readTargetStateSnapshot);
+  return authorityInput;
+};
+
+const insertUsefulnessApplicationOnce = async (
+  tx: KrnDatabaseTransaction,
+  input: UsefulnessApplicationEvidenceIdentity
+): Promise<RecordUsefulnessApplicationOnceResult> => {
+  const [inserted] = await tx
+    .insert(usefulnessApplications)
+    .values({
+      applicationId: input.applicationId,
+      subjectKind: input.subjectKind,
+      subjectId: input.subjectId,
+      projectId: input.projectId,
+      executionRunId: input.executionRunId,
+      taskContractId: input.taskContractId,
+      packetChecksum: input.packetChecksum,
+      packetGeneratedAt: fromIsoTimestamp(input.packetGeneratedAt),
+      sourceRunLifecycleRevision: input.sourceRunLifecycleRevision,
+      ...(input.targetState === undefined ? {} : { targetState: input.targetState })
+    })
+    .onConflictDoNothing()
+    .returning();
+  if (inserted !== undefined) {
+    return { application: mapUsefulnessApplication(inserted), created: true };
+  }
+
+  const existing = await tx.query.usefulnessApplications.findFirst({
+    where: eq(usefulnessApplications.applicationId, input.applicationId)
+  });
+  if (existing === undefined) {
+    throw new Error(
+      "recordUsefulnessApplicationOnce rejected: packet subject already has another application identity"
+    );
+  }
+  const application = mapUsefulnessApplication(existing);
+  if (!sameUsefulnessApplication(application, input)) {
+    throw new Error("recordUsefulnessApplicationOnce rejected: application identity collision");
+  }
+
+  return { application, created: false };
 };
 
 const existingReviewFeedbackOnceResult = async (
@@ -2932,23 +2997,8 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async recordUsefulnessApplicationOnce(
     input: UsefulnessApplicationEvidenceIdentity
   ): Promise<RecordUsefulnessApplicationOnceResult> {
-    const parsedInput = parseUsefulnessApplicationEvidenceIdentity(
-      snapshotRepositoryInput(input)
-    );
-    if (parsedInput === undefined) {
-      throw new Error("recordUsefulnessApplicationOnce requires valid application evidence");
-    }
-    const authorityInput = parsedInput.targetState === undefined
-      ? parsedInput
-      : {
-          ...parsedInput,
-          targetState: {
-            ...parsedInput.targetState,
-            targetRepo: await canonicalTargetRepoPath(parsedInput.targetState.targetRepo)
-          }
-        };
-    await requireCurrentApplicationTarget(
-      authorityInput,
+    const authorityInput = await normalizeUsefulnessApplicationIdentity(
+      input,
       this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
     );
 
@@ -2996,44 +3046,84 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
           "recordUsefulnessApplicationOnce rejected: packet lifecycle revision mismatch"
         );
       }
-      const [inserted] = await tx
-        .insert(usefulnessApplications)
-        .values({
-          applicationId: authorityInput.applicationId,
-          subjectKind: authorityInput.subjectKind,
-          subjectId: authorityInput.subjectId,
-          projectId: authorityInput.projectId,
-          executionRunId: authorityInput.executionRunId,
-          taskContractId: authorityInput.taskContractId,
-          packetChecksum: authorityInput.packetChecksum,
-          packetGeneratedAt: fromIsoTimestamp(authorityInput.packetGeneratedAt),
-          sourceRunLifecycleRevision: authorityInput.sourceRunLifecycleRevision,
-          ...(authorityInput.targetState === undefined
-            ? {}
-            : { targetState: authorityInput.targetState })
-        })
-        .onConflictDoNothing()
-        .returning();
-      if (inserted !== undefined) {
-        return { application: mapUsefulnessApplication(inserted), created: true };
+      return insertUsefulnessApplicationOnce(tx, authorityInput);
+    });
+  }
+
+  async recordUsefulnessApplicationsOnce(
+    input: readonly UsefulnessApplicationEvidenceIdentity[]
+  ): Promise<readonly RecordUsefulnessApplicationOnceResult[]> {
+    if (input.length === 0) {
+      return [];
+    }
+    const authorityInputs = await Promise.all(input.map((application) =>
+      normalizeUsefulnessApplicationIdentity(
+        application,
+        this.options.readTargetStateSnapshot ?? collectTargetStateSnapshot
+      )
+    ));
+    const first = authorityInputs[0]!;
+
+    return this.db.transaction(async (tx) => {
+      await lockHarnessRunAuthority(tx, first, "recordUsefulnessApplicationsOnce");
+      const aggregate = requireLinkedRow(
+        await this.findHarnessRunAggregate(tx, first.executionRunId, true),
+        "recordUsefulnessApplicationsOnce.harnessRunAggregate"
+      );
+      if (authorityInputs.some((application) =>
+        application.executionRunId !== first.executionRunId ||
+        application.projectId !== first.projectId ||
+        application.taskContractId !== aggregate.taskContract.id ||
+        application.packetChecksum !== first.packetChecksum ||
+        application.packetGeneratedAt !== first.packetGeneratedAt ||
+        application.sourceRunLifecycleRevision !== first.sourceRunLifecycleRevision
+      )) {
+        throw new Error(
+          "recordUsefulnessApplicationsOnce rejected: batch does not share one issued packet identity"
+        );
       }
 
-      const existing = await tx.query.usefulnessApplications.findFirst({
-        where: eq(usefulnessApplications.applicationId, authorityInput.applicationId)
+      const issuanceRow = requireLinkedRow(
+        await tx.query.decisionPacketIssuances.findFirst({
+          where: eq(decisionPacketIssuances.executionRunId, first.executionRunId)
+        }),
+        "recordUsefulnessApplicationsOnce.decisionPacketIssuance"
+      );
+      const authorization = authorizeIssuedDecisionPacketUsefulness({
+        aggregate,
+        issuance: mapDecisionPacketIssuance(issuanceRow),
+        runId: first.executionRunId,
+        runtimeProjectId: first.projectId,
+        callerPacketChecksum: first.packetChecksum,
+        callerPacketGeneratedAt: first.packetGeneratedAt,
+        callerSourceRunLifecycleRevision: first.sourceRunLifecycleRevision,
+        subjects: authorityInputs.map((application) => ({
+          kind: application.subjectKind,
+          id: application.subjectId,
+          evidenceRefs: [`packet:${application.packetChecksum}`]
+        }))
       });
-      if (existing === undefined) {
-        throw new Error(
-          "recordUsefulnessApplicationOnce rejected: packet subject already has another application identity"
+      if (!authorization.authorized) {
+        const rejectedIndex = authorityInputs.findIndex((application) =>
+          authorization.reason.includes(`${application.subjectKind}:${application.subjectId}`)
         );
-      }
-      const application = mapUsefulnessApplication(existing);
-      if (!sameUsefulnessApplication(application, authorityInput)) {
         throw new Error(
-          "recordUsefulnessApplicationOnce rejected: application identity collision"
+          `recordUsefulnessApplicationsOnce rejected item ${rejectedIndex}: ${authorization.reason}`
         );
       }
 
-      return { application, created: false };
+      const results: RecordUsefulnessApplicationOnceResult[] = [];
+      for (const [index, application] of authorityInputs.entries()) {
+        try {
+          results.push(await insertUsefulnessApplicationOnce(tx, application));
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          throw new Error(
+            `recordUsefulnessApplicationsOnce rejected item ${index} ${application.subjectKind}:${application.subjectId}: ${reason}`
+          );
+        }
+      }
+      return results;
     });
   }
 

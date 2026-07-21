@@ -1353,6 +1353,25 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
             changedFiles: [...applicationSnapshot.changedPaths]
           }
         };
+        const rejectedBatchApplicationId = `application:${marker}:rejected-batch-valid-subject`;
+        const invalidBatchSubjectId = crypto.randomUUID();
+        await expect(scaffold.harnessRunRepository.recordUsefulnessApplicationsOnce([{
+          ...applicationIdentity,
+          applicationId: rejectedBatchApplicationId
+        }, {
+          ...applicationIdentity,
+          applicationId: `application:${marker}:rejected-batch-invalid-subject`,
+          subjectKind: "source_claim",
+          subjectId: invalidBatchSubjectId
+        }])).rejects.toThrow(
+          `rejected item 1: usefulness write rejected: source_claim:${invalidBatchSubjectId} is not selected`
+        );
+        const rejectedBatchRows = await scaffold.client<{ applicationId: string }[]>`
+          select application_id as "applicationId"
+          from usefulness_applications
+          where application_id = ${rejectedBatchApplicationId}
+        `;
+        expect(rejectedBatchRows).toEqual([]);
         await expect(scaffold.harnessRunRepository.recordUsefulnessApplicationOnce({
           ...applicationIdentity,
           applicationId: `application:${marker}:forged-target`,
@@ -1366,10 +1385,20 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
           applicationId: `application:${marker}:caller-time`,
           packetGeneratedAt: "2099-01-01T00:00:00.000Z"
         })).rejects.toThrow("exact persisted packet identity is required");
-        const application = await scaffold.harnessRunRepository
-          .recordUsefulnessApplicationOnce(applicationIdentity);
-        const applicationRetry = await scaffold.harnessRunRepository
-          .recordUsefulnessApplicationOnce(applicationIdentity);
+        const sourceApplicationIdentity = {
+          ...applicationIdentity,
+          applicationId: `application:${marker}:source-claim`,
+          subjectKind: "source_claim" as const,
+          subjectId: selectedSourceClaim.id
+        };
+        const applicationBatch = await scaffold.harnessRunRepository
+          .recordUsefulnessApplicationsOnce([applicationIdentity, sourceApplicationIdentity]);
+        const application = applicationBatch[0]!;
+        const sourceApplication = applicationBatch[1]!;
+        const applicationRetryBatch = await scaffold.harnessRunRepository
+          .recordUsefulnessApplicationsOnce([sourceApplicationIdentity, applicationIdentity]);
+        const sourceApplicationRetry = applicationRetryBatch[0]!;
+        const applicationRetry = applicationRetryBatch[1]!;
         expect(application).toMatchObject({
           created: true,
           application: {
@@ -1379,6 +1408,13 @@ describe("DrizzleHarnessRunRepository DecisionPacket authority", () => {
               targetRepo: canonicalTargetRepo
             },
             appliedAt: expect.any(String)
+          }
+        });
+        expect(sourceApplicationRetry).toMatchObject({
+          created: false,
+          application: {
+            applicationId: sourceApplicationIdentity.applicationId,
+            appliedAt: sourceApplication.application.appliedAt
           }
         });
         expect(applicationRetry).toMatchObject({

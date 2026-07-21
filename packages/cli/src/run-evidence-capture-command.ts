@@ -1717,13 +1717,19 @@ const persistExplicitUsefulnessApplications = async (
   if (applications.length === 0) {
     return [];
   }
+  if (applications.length > 1) {
+    const recordBatchOnce = repository.recordUsefulnessApplicationsOnce;
+    if (recordBatchOnce === undefined) {
+      throw new Error("Atomic packet-bound usefulness application batch persistence is required");
+    }
+    return (await recordBatchOnce.call(repository, applications))
+      .map((result) => result.application);
+  }
   const recordOnce = repository.recordUsefulnessApplicationOnce;
   if (recordOnce === undefined) {
     throw new Error("Packet-bound usefulness application persistence is required");
   }
-  return Promise.all(applications.map(async (application) =>
-    (await recordOnce.call(repository, application)).application
-  ));
+  return [(await recordOnce.call(repository, applications[0]!)).application];
 };
 
 const admitEvidenceBackedUsefulness = (
