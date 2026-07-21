@@ -455,6 +455,7 @@ const compileInput = {
     acceptance: ["typecheck and tests pass"],
     metadata: {}
   },
+  verificationCommands: ["pnpm typecheck", "pnpm test", "git diff --check"],
   tokenBudget: 180,
   metadata: {}
 };

@@ -9,6 +9,7 @@ import {
 export const HarnessCompileInputSchema = z.object({
   operatorIntent: OperatorIntentInputSchema,
   taskContract: TaskContractInputSchema.optional(),
+  verificationCommands: z.array(z.string().trim().min(1)).default([]),
   tokenBudget: z.number().int().positive().optional(),
   metadata: MetadataSchema
 });

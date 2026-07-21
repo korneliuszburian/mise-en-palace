@@ -28,22 +28,12 @@ const riskFromTask = (taskContract: TaskContract): DiffRisk => {
   return "low";
 };
 
-export const createEvidenceContract = (taskContract: TaskContract): EvidenceContract => ({
+export const createEvidenceContract = (
+  taskContract: TaskContract,
+  verificationCommands: readonly string[]
+): EvidenceContract => ({
   taskContractId: taskContract.id,
-  commands: [
-    {
-      command: "pnpm typecheck",
-      required: true
-    },
-    {
-      command: "pnpm test",
-      required: true
-    },
-    {
-      command: "git diff --check",
-      required: true
-    }
-  ],
+  commands: verificationCommands.map((command) => ({ command, required: true })),
   diffRisk: riskFromTask(taskContract),
   reviewBurden: "Summarize changed files, boundary impact, test coverage, and residual risk.",
   rollbackPath: "Use a focused revert of the implementation commit if the slice regresses.",

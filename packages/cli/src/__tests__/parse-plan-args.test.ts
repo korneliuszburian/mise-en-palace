@@ -17,6 +17,7 @@ describe("parsePlanArgs", () => {
           task: "improve memory",
           projectId: "project-1",
           persist: true,
+          verificationCommands: [],
           format: "text"
         }
       });
@@ -25,6 +26,7 @@ describe("parsePlanArgs", () => {
         kind: "plan",
         task: "review source grounding",
         persist: false,
+        verificationCommands: [],
         format: "text"
       }
     });
@@ -37,6 +39,7 @@ describe("parsePlanArgs", () => {
           kind: "plan",
           task: "handoff to Codex",
           persist: true,
+          verificationCommands: [],
           format: "json"
         }
       });
@@ -50,12 +53,29 @@ describe("parsePlanArgs", () => {
           repo: "../krn-seo",
           task: "review target",
           persist: true,
+          verificationCommands: [],
           format: "text"
         }
       });
     expect(parsePlanArgs([
       "--repo", "../krn-seo", "--project", "project-1", "--task", "review target", "--persist"
     ]).error).toContain("Usage: krn plan");
+  });
+
+  it("preserves repeated explicit verification commands", () => {
+    expect(parsePlanArgs([
+      "--task", "style the page",
+      "--verification", "npm run check",
+      "--verification=npm run build"
+    ])).toEqual({
+      command: {
+        kind: "plan",
+        task: "style the page",
+        persist: false,
+        verificationCommands: ["npm run check", "npm run build"],
+        format: "text"
+      }
+    });
   });
   it("rejects plan commands without a task or with unsupported options", () => {
     expect(parsePlanArgs([]).error).toContain("Usage: krn plan");
