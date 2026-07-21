@@ -6,7 +6,8 @@ import {  renderCodexBriefFromAggregate,
 } from "./codex-brief-support.js";
 import {
   formatKnowledgeSelectionLines,
-  knowledgeSelectionFromMetadata
+  knowledgeSelectionFromMetadata,
+  packetBoundKnowledgeSelection
 } from "./knowledge-selection.js";
 import type {
   BaseCommandRuntime
@@ -100,8 +101,9 @@ export const runCodexBriefCommand = async (
       packet: issuance.packet,
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
-    const knowledgeSelection = knowledgeSelectionFromMetadata(
-      aggregate.harnessPlan.metadata
+    const knowledgeSelection = packetBoundKnowledgeSelection(
+      knowledgeSelectionFromMetadata(aggregate.harnessPlan.metadata),
+      issuance.packet
     );
 
     return {

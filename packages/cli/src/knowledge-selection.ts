@@ -8,12 +8,14 @@ import {
 } from "@krn/harness";
 import {
   classifyTargetFit,
+  isDecisionPacketUsefulnessSubjectSelected,
   isSourceUsefulnessOutcome,
   parseTargetFitSummary,
   summarizeTargetFit,
   targetFitValues
 } from "@krn/core";
 import type {
+  DecisionPacket,
   DecisionPacketReviewOnlyUsefulnessCaveat,
   TargetFit,
   TargetFitSummary
@@ -484,4 +486,39 @@ export const formatKnowledgeSelectionLines = (
     `Selected KRN context reason: ${selection.reason}`,
     `Selected KRN context does not prove: ${selection.doesNotProve}`
   ];
+};
+
+export const packetBoundKnowledgeSelection = (
+  selection: KnowledgePlanSelection | undefined,
+  packet: DecisionPacket
+): KnowledgePlanSelection | undefined => {
+  if (selection === undefined || selection.status !== "selected") {
+    return selection;
+  }
+
+  const selectedKnowledge = selection.source === "memory_store"
+    ? selection.selectedKnowledge.filter((knowledge) =>
+        isDecisionPacketUsefulnessSubjectSelected(packet, {
+          kind: "knowledge",
+          id: knowledge.knowledgeId
+        })
+      )
+    : [];
+
+  if (selectedKnowledge.length === selection.selectedKnowledge.length) {
+    return selection;
+  }
+
+  return {
+    ...selection,
+    status: selectedKnowledge.length === 0 ? "rejected_or_deferred" : "selected",
+    selectedKnowledge,
+    selectedKnowledgeIds: selectedKnowledge.map((knowledge) => knowledge.knowledgeId),
+    reason: selectedKnowledge.length === 0
+      ? "Selected knowledge is not owned by the issued DecisionPacket and was omitted from Codex transport."
+      : "Only knowledge owned by the issued DecisionPacket is available to Codex.",
+    recommendedNextAction: selectedKnowledge.length === 0
+      ? "Use the issued DecisionPacket only; review unbound knowledge in the operator readback."
+      : selection.recommendedNextAction
+  };
 };

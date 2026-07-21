@@ -835,6 +835,11 @@ const selectedSubjectIds = (
   ]);
 };
 
+export const isDecisionPacketUsefulnessSubjectSelected = (
+  packet: DecisionPacket,
+  subject: DecisionPacketUsefulnessSubject
+): boolean => selectedSubjectIds(packet).get(subject.kind)?.has(subject.id) ?? false;
+
 export const authorizeDecisionPacketUsefulness = (
   input: DecisionPacketUsefulnessAuthorizationInput
 ): DecisionPacketAuthorization => {
@@ -844,14 +849,14 @@ export const authorizeDecisionPacketUsefulness = (
     return authorization;
   }
 
-  const subjects = selectedSubjectIds(buildDecisionPacketIssuance({
+  const packet = buildDecisionPacketIssuance({
     aggregate: input.aggregate,
     packetGeneratedAt: authorization.packetGeneratedAt,
     sha256Hex: input.sha256Hex
-  }).packet);
+  }).packet;
 
   for (const subject of input.subjects) {
-    if (!subjects.get(subject.kind)?.has(subject.id)) {
+    if (!isDecisionPacketUsefulnessSubjectSelected(packet, subject)) {
       return rejectDecisionPacketAuthorization(
         input,
         `usefulness write rejected: ${subject.kind}:${subject.id} is not selected by the current packet`
@@ -908,10 +913,8 @@ export const authorizeIssuedDecisionPacketUsefulness = (
     return reject("DecisionPacket issuance rejected: exact persisted packet identity is required");
   }
 
-  const subjects = selectedSubjectIds(input.issuance.packet);
-
   for (const subject of input.subjects) {
-    if (!subjects.get(subject.kind)?.has(subject.id)) {
+    if (!isDecisionPacketUsefulnessSubjectSelected(input.issuance.packet, subject)) {
       return reject(
         `usefulness write rejected: ${subject.kind}:${subject.id} is not selected by the issued packet`
       );
