@@ -271,6 +271,7 @@ export interface ProjectStandardDecisionReadback {
   kind: "krn.projectStandardDecision.v1";
   memoryRecordId: MemoryRecordId;
   key: string;
+  sourceClaimIds?: string[];
   sourceRefs: string[];
   mechanism: string;
   krnImplication: string;
@@ -407,6 +408,7 @@ export const projectStandardDecisionFromMemoryRecord = (
     ...record.sourceLineage.map((source) => source.sourceId),
     ...readMetadataStringList(metadata, "sourceRefs")
   ].filter((sourceRef, index, refs) => refs.indexOf(sourceRef) === index);
+  const sourceClaimIds = metadataStringList(record.metadata, "sourceClaimIds");
 
   if (
     sourceRefs.length === 0 ||
@@ -426,6 +428,7 @@ export const projectStandardDecisionFromMemoryRecord = (
     kind: "krn.projectStandardDecision.v1",
     memoryRecordId: record.id,
     key: record.key,
+    ...(sourceClaimIds.length === 0 ? {} : { sourceClaimIds }),
     sourceRefs,
     mechanism,
     krnImplication,

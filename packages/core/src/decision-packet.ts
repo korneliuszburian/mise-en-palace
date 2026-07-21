@@ -63,6 +63,7 @@ export interface DecisionPacketEvidenceGap {
 export interface DecisionPacketTaskStandard {
   memoryRecordId: string;
   key: string;
+  sourceClaimIds?: readonly string[];
   sourceRefs: readonly string[];
   mechanism: string;
   krnImplication: string;
@@ -939,32 +940,45 @@ const governingGuidanceCandidatesFor = (input: {
     ? []
     : includedActivationCandidatesFor(input.readModel);
 
+const projectStandardDecisionForCandidate = (
+  candidate: DecisionPacketActivationCandidateInput
+): ProjectStandardDecisionReadback | undefined =>
+  candidate.subjectType === "memory_record" &&
+  candidate.projectStandardDecision?.memoryRecordId === candidate.subjectId
+    ? candidate.projectStandardDecision
+    : undefined;
+
 const taskStandardDecisionsFor = (input: {
   readonly readModel: DecisionPacketReadModelInput;
   readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
 }): DecisionPacketTaskStandard[] => {
-  const decisions = governingGuidanceCandidatesFor(input).flatMap((candidate) =>
-    candidate.projectStandardDecision === undefined
+  const decisions = governingGuidanceCandidatesFor(input).flatMap((candidate) => {
+    const decision = projectStandardDecisionForCandidate(candidate);
+
+    return decision === undefined
       ? []
       : [{
-          memoryRecordId: candidate.projectStandardDecision.memoryRecordId,
-          key: candidate.projectStandardDecision.key,
-          sourceRefs: candidate.projectStandardDecision.sourceRefs,
-          mechanism: candidate.projectStandardDecision.mechanism,
-          krnImplication: candidate.projectStandardDecision.krnImplication,
-          decision: candidate.projectStandardDecision.decision,
-          consumer: candidate.projectStandardDecision.consumer,
-          falsifier: candidate.projectStandardDecision.falsifier,
-          validFrom: candidate.projectStandardDecision.validFrom,
-          ...(candidate.projectStandardDecision.validUntil === undefined
+          memoryRecordId: decision.memoryRecordId,
+          key: decision.key,
+          ...(decision.sourceClaimIds === undefined
             ? {}
-            : { validUntil: candidate.projectStandardDecision.validUntil }),
-          ...(candidate.projectStandardDecision.rejectedPath === undefined
+            : { sourceClaimIds: decision.sourceClaimIds }),
+          sourceRefs: decision.sourceRefs,
+          mechanism: decision.mechanism,
+          krnImplication: decision.krnImplication,
+          decision: decision.decision,
+          consumer: decision.consumer,
+          falsifier: decision.falsifier,
+          validFrom: decision.validFrom,
+          ...(decision.validUntil === undefined
             ? {}
-            : { rejectedPath: candidate.projectStandardDecision.rejectedPath }),
-          doesNotProve: candidate.projectStandardDecision.doesNotProve
+            : { validUntil: decision.validUntil }),
+          ...(decision.rejectedPath === undefined
+            ? {}
+            : { rejectedPath: decision.rejectedPath }),
+          doesNotProve: decision.doesNotProve
         }]
-  );
+  });
   const byKey = new Map<string, DecisionPacketTaskStandard>();
 
   for (const decision of decisions) {
@@ -982,7 +996,7 @@ const governingStatementsFor = (input: {
   readonly readModel: DecisionPacketReadModelInput;
   readonly unresolvedAcceptedDissentSourceClaimIds: readonly string[];
 }): string[] => unique(governingGuidanceCandidatesFor(input).flatMap((candidate) =>
-  candidate.projectStandardDecision === undefined ? [] : [candidate.projectStandardDecision.decision]
+  projectStandardDecisionForCandidate(candidate)?.decision ?? []
 ));
 
 const antiMemoryBlockedPathIdsFor = (
