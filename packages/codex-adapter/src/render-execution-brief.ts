@@ -56,18 +56,41 @@ const renderContextInclusions = (
 
 const renderContextExclusions = (
   exclusions: readonly ExecutionBriefContextExclusion[]
-): string[] => {
-  if (exclusions.length === 0) {
-    return ["- none"];
-  }
-
-  return exclusions.map((item) =>
+): string[] =>
+  exclusions.map((item) =>
     [
       `- ${item.explanation}`,
       `reason=${item.reason}`,
       `authority=${item.sourceAuthority}`
     ].join(" | ")
   );
+
+const rankingDiagnosticExclusionReasons = new Set([
+  "low_context_roi",
+  "over_budget"
+]);
+
+const directiveContextExclusions = (
+  exclusions: readonly ExecutionBriefContextExclusion[]
+): readonly ExecutionBriefContextExclusion[] =>
+  exclusions.filter((exclusion) => !rankingDiagnosticExclusionReasons.has(exclusion.reason));
+
+const renderCurrentTaskContract = (brief: ExecutionBrief): string[] => {
+  const lines = [
+    ...(brief.currentTaskContract.title === brief.objective
+      ? []
+      : [`- ${brief.currentTaskContract.title}`]),
+    ...renderOptionalSection(
+      "Constraints:",
+      brief.currentTaskContract.constraints.map((item) => `- ${item}`)
+    ),
+    ...renderOptionalSection(
+      "Acceptance:",
+      brief.currentTaskContract.acceptance.map((item) => `- ${item}`)
+    )
+  ];
+
+  return lines.length === 0 ? [] : ["Current Task Contract:", ...lines];
 };
 
 const trustedContextTiers = new Set([
@@ -109,12 +132,15 @@ const executionBriefSectionCounters = {
   abstention_reasons: (brief) => brief.abstentionReasons.length,
   objective: scalarSectionItemCount,
   non_goals: (brief) => brief.nonGoals.length,
-  current_task_contract: scalarSectionItemCount,
+  current_task_contract: (brief) =>
+    Number(brief.currentTaskContract.title !== brief.objective) +
+    brief.currentTaskContract.constraints.length +
+    brief.currentTaskContract.acceptance.length,
   context_inclusions: (brief) => brief.includedContext.length,
   observation_prefix: (brief) =>
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
-  explicit_exclusions: (brief) => brief.explicitExclusions.length,
+  explicit_exclusions: (brief) => directiveContextExclusions(brief.explicitExclusions).length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
   tool_boundaries: (brief) => brief.toolBoundaries.length,
@@ -396,21 +422,16 @@ const renderExecutionBriefTextUnchecked = (brief: ExecutionBrief): string => {
     `Objective: ${brief.objective}`,
     "",
     ...renderOptionalSection("Non-goals:", brief.nonGoals.map((item) => `- ${item}`)),
-    "Current Task Contract:",
-    `- ${brief.currentTaskContract.title}`,
-    "Constraints:",
-    ...renderList(brief.currentTaskContract.constraints),
-    "Acceptance:",
-    ...renderList(brief.currentTaskContract.acceptance),
-    "",
+    ...renderCurrentTaskContract(brief),
     "Context Inclusions:",
     ...renderContextInclusions(brief.includedContext),
     "",
     ...renderOptionalSection("Observation Prefix:", observationPrefixLines),
     ...renderOptionalSection("Untrusted Context Warnings:", brief.untrustedContextWarnings.map((warning) => `- ${warning}`)),
-    "Explicit Exclusions:",
-    ...renderContextExclusions(brief.explicitExclusions),
-    "",
+    ...renderOptionalSection(
+      "Explicit Exclusions:",
+      renderContextExclusions(directiveContextExclusions(brief.explicitExclusions))
+    ),
     ...renderOptionalSection("Anti-memory Warnings:", brief.antiMemoryWarnings.map((warning) => `- ${warning}`)),
     ...renderOptionalSection("Evidence Gaps:", renderEvidenceGaps(brief.evidenceGaps)),
     ...renderToolBoundaries(brief),
