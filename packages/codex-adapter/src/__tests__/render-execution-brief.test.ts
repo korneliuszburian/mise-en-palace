@@ -559,6 +559,10 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Use when planning doctor persistence checks.");
     expect(rendered).toContain("Explicit Exclusions:");
     expect(rendered).toContain("Candidate source authority low is below medium.");
+    expect(brief.explicitExclusions).toContainEqual(expect.objectContaining({
+      subjectId: "claim-weak",
+      reason: "low_trust"
+    }));
     expect(rendered).not.toContain("Source Claims Selected:");
     expect(rendered).not.toContain("Memory Records Selected:");
     expect(rendered).toContain("Anti-memory Warnings:");
@@ -573,6 +577,79 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");
     expect(rendered).toContain("What This Does Not Prove:");
     expect(rendered).toContain("- Codex executed the work.");
+  });
+
+  it("keeps directive exclusions while omitting duplicate task and ranking diagnostics", () => {
+    const objective = "Finish the Field Notes CSS implementation.";
+    const brief = createExecutionBrief({
+      packet: packetForBrief({
+        taskContract: {
+          ...taskContract,
+          title: objective,
+          objective,
+          constraints: [],
+          acceptance: []
+        },
+        contextAssembly: {
+          ...minimalContextAssembly,
+          exclusions: [
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-low-roi",
+              reason: "low_context_roi",
+              explanation: "Candidate task relevance is below the packet threshold.",
+              score: 10,
+              sourceAuthority: "project-decision"
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-over-budget",
+              reason: "over_budget",
+              explanation: "Candidate exceeds the packet budget.",
+              score: 90,
+              sourceAuthority: "project-decision"
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-rejected",
+              reason: "unsafe",
+              explanation: "Rejected viewport-specific path must not govern.",
+              score: 100,
+              sourceAuthority: "project-decision"
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-stale",
+              reason: "stale",
+              explanation: "Superseded layout guidance is historical.",
+              score: 100,
+              sourceAuthority: "project-decision"
+            },
+            {
+              subjectType: "source_claim",
+              subjectId: "claim-rejected-decision",
+              reason: "rejected",
+              explanation: "A reviewed source decision rejected this implementation path.",
+              score: 100,
+              sourceAuthority: "project-decision"
+            }
+          ]
+        },
+        capabilityPlan,
+        evidenceContract,
+        nextAction: "Implement the smallest coherent layout."
+      })
+    });
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(rendered.match(new RegExp(objective, "g"))).toHaveLength(1);
+    expect(rendered).not.toContain("Current Task Contract:");
+    expect(rendered).not.toContain("Candidate task relevance");
+    expect(rendered).not.toContain("Candidate exceeds the packet budget");
+    expect(rendered).toContain("Rejected viewport-specific path must not govern.");
+    expect(rendered).toContain("Superseded layout guidance is historical.");
+    expect(rendered).toContain("A reviewed source decision rejected this implementation path.");
+    expect(brief.explicitExclusions).toHaveLength(5);
   });
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
@@ -593,7 +670,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
     expect(rendered).toContain("- none");
-    expect(rendered).toContain("Explicit Exclusions:");
+    expect(rendered).not.toContain("Explicit Exclusions:");
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
     expect(rendered).toContain(
@@ -648,8 +725,8 @@ describe("renderExecutionBrief", () => {
       exclusions: Array.from({ length: 81 }, (_, index) => ({
         subjectType: "source_claim",
         subjectId: `claim-noise-${index}`,
-        reason: "low_trust",
-        explanation: "Candidate source authority low is below medium.",
+        reason: "unsafe",
+        explanation: "Candidate conflicts with reviewed authority.",
         score: 10,
         sourceAuthority: "low"
       }))
