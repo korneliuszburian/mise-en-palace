@@ -124,7 +124,26 @@ describe("sourceDecisionKnowledgeSourceToMemoryCandidateInput", () => {
         mechanism: "The read model binds accepted SourceClaim and SourceDecisionEdge.",
         krnImplication: "KRN can propose MemoryCandidate rows without JSON catalog authority.",
         falsifier: "A source decision becomes MemoryRecord truth without review.",
-        doesNotProve: "This does not prove the proposed knowledge should be promoted."
+        doesNotProve: "This does not prove the proposed knowledge should be promoted.",
+        reflectionCandidateEvidence: {
+          provenance: "source_claim",
+          evidenceRefs: [
+            "source-claim-1",
+            "source-decision-1",
+            "source-decision-edge-1"
+          ],
+          doesNotProve: "This does not prove the proposed knowledge should be promoted."
+        },
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          sourceRefs: ["source-claim-1"],
+          mechanism: "The read model binds accepted SourceClaim and SourceDecisionEdge.",
+          krnImplication: "KRN can propose MemoryCandidate rows without JSON catalog authority.",
+          decision: "Use source decisions to propose reviewed knowledge.",
+          consumer: "memory knowledge proposal",
+          falsifier: "A source decision becomes MemoryRecord truth without review.",
+          doesNotProve: "This does not prove the proposed knowledge should be promoted."
+        }
       }
     });
   });
