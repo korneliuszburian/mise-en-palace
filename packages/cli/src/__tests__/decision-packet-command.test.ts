@@ -231,20 +231,6 @@ const aggregate: HarnessRunAggregate = {
       score: 101,
       reason: "Source claim was boosted by graph edge influence.",
       metadata: {
-        projectStandardDecision: {
-          kind: "krn.projectStandardDecision.v1",
-          memoryRecordId: "memory-agent-1",
-          key: "frontend-bootstrap-standard",
-          sourceRefs: ["claim-agent-1"],
-          mechanism: "Headless decision packet fixture carries the retained frontend standard as governed context.",
-          krnImplication: "DecisionPacket should expose the standard statement before coding.",
-          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
-          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
-          consumer: "krn decision packet",
-          falsifier: "DecisionPacket omits the governed standard statement.",
-          validFrom: "2026-06-01T00:00:00.000Z",
-          doesNotProve: "This fixture does not prove arbitrary frontend template quality."
-        },
         sourceClaimEdgeInfluence: {
           edgeIds: ["source-claim-edge-agent-1"],
           edgeKinds: ["narrows"],
@@ -265,6 +251,39 @@ const aggregate: HarnessRunAggregate = {
             "SourceDecisionEdge boost does not prove source truth or target correctness."
         },
         sourceRejectionIds: ["source-rejection-agent-1"]
+      },
+      createdAt: now
+    }, {
+      id: "retrieval-candidate-memory-agent-1",
+      retrievalRunId: "retrieval-agent-1",
+      kind: "memory",
+      status: "included",
+      subjectType: "memory_record",
+      subjectId: "memory-agent-1",
+      sourceAuthority: "medium",
+      lexicalScore: 12,
+      vectorScore: 0,
+      graphScore: 0,
+      temporalScore: 0,
+      contextRoiScore: 80,
+      totalScore: 92,
+      score: 92,
+      reason: "Reviewed memory carries the retained frontend standard.",
+      metadata: {
+        projectStandardDecision: {
+          kind: "krn.projectStandardDecision.v1",
+          memoryRecordId: "memory-agent-1",
+          key: "frontend-bootstrap-standard",
+          sourceRefs: ["claim-agent-1"],
+          mechanism: "Headless decision packet fixture carries the retained frontend standard as governed context.",
+          krnImplication: "DecisionPacket should expose the standard statement before coding.",
+          decision: "Use the refreshed frontend bootstrap standard for matching new frontend projects.",
+          rejectedPath: "Do not use the superseded old frontend bootstrap standard for new projects.",
+          consumer: "krn decision packet",
+          falsifier: "DecisionPacket omits the governed standard statement.",
+          validFrom: "2026-06-01T00:00:00.000Z",
+          doesNotProve: "This fixture does not prove arbitrary frontend template quality."
+        }
       },
       createdAt: now
     }],
@@ -1116,19 +1135,19 @@ describe("decision packet CLI", () => {
         },
         context: {
           activationTrace: {
-            candidates: [{
-              sourceClaimEdgeInfluence: {
+            candidates: expect.arrayContaining([expect.objectContaining({
+              sourceClaimEdgeInfluence: expect.objectContaining({
                 edgeIds: ["source-claim-edge-agent-1"]
-              },
-              sourceDecisionSupportBoost: {
+              }),
+              sourceDecisionSupportBoost: expect.objectContaining({
                 edges: [{
                   sourceDecisionEdgeId: "source-decision-edge-agent-1",
                   sourceDecisionId: "source-decision-canonical-agent-1",
                   targetType: "architecture_decision",
                   targetId: "frontend-bootstrap-standard"
                 }]
-              }
-            }]
+              })
+            })])
           }
         }
       },
