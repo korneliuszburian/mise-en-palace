@@ -98,13 +98,6 @@ const ownerFileRecallCatalog = [
     terms: ["evidence", "capture", "intended", "dirty", "command", "proof", "feedback", "review"]
   },
   {
-    id: "11111111-1111-4111-8111-111111111005",
-    path: "packages/harness/src/reflection/reflection-candidate-writer.ts",
-    title: "Reflection candidate writer owner",
-    summary: "Owns reflection candidate row writing, candidate-only gates, and reflection candidate reviewability metadata.",
-    terms: ["reflection", "candidate", "writer", "reviewability", "metadata", "memory", "eval", "policy"]
-  },
-  {
     id: "11111111-1111-4111-8111-111111111006",
     path: "packages/harness/src/activation/activation-engine.ts",
     title: "Activation retrieval and trace owner",
