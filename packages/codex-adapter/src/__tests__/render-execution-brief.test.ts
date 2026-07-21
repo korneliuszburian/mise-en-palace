@@ -662,6 +662,8 @@ describe("renderExecutionBrief", () => {
       .toHaveLength(1);
     expect(rendered).not.toContain("edge-1");
     expect(brief.explicitExclusions).toHaveLength(7);
+    expect(describeExecutionBriefProfile(brief).sections)
+      .toContainEqual(expect.objectContaining({ id: "explicit_exclusions", itemCount: 4 }));
   });
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
@@ -738,7 +740,7 @@ describe("renderExecutionBrief", () => {
         subjectType: "source_claim",
         subjectId: `claim-noise-${index}`,
         reason: "unsafe",
-        explanation: "Candidate conflicts with reviewed authority.",
+        explanation: `Candidate ${index} conflicts with reviewed authority.`,
         score: 10,
         sourceAuthority: "low"
       }))

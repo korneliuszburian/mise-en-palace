@@ -160,11 +160,12 @@ const executionBriefSectionCounters = {
   observation_prefix: (brief) =>
     brief.observationPrefix.length + brief.observationPrefixWarnings.length,
   untrusted_context_warnings: (brief) => brief.untrustedContextWarnings.length,
-  explicit_exclusions: (brief) => directiveContextExclusions(brief.explicitExclusions).length,
+  explicit_exclusions: (brief) =>
+    renderContextExclusions(directiveContextExclusions(brief.explicitExclusions)).length,
   anti_memory_warnings: (brief) => brief.antiMemoryWarnings.length,
   evidence_gaps: (brief) => brief.evidenceGaps.length,
-  tool_boundaries: (brief) => brief.toolBoundaries.length,
-  evidence_contract: (brief) => brief.evidenceContract.commands.length + 3,
+  tool_boundaries: scalarSectionItemCount,
+  evidence_contract: () => 4,
   stop_condition: scalarSectionItemCount,
   rollback_expectation: scalarSectionItemCount,
   next_action: scalarSectionItemCount,
