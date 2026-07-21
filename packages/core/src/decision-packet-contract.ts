@@ -82,7 +82,8 @@ const reviewOnlyUsefulnessCaveatSchema = z.strictObject({
 });
 
 const taskStandardSchema = z.strictObject({
-  memoryRecordId: z.string(),
+  memoryRecordId: z.string().optional(),
+  sourceDecisionId: z.string().optional(),
   key: z.string(),
   sourceClaimIds: stringArraySchema.optional(),
   sourceRefs: stringArraySchema,
@@ -95,7 +96,10 @@ const taskStandardSchema = z.strictObject({
   validUntil: isoTimestampSchema.optional(),
   rejectedPath: z.string().optional(),
   doesNotProve: z.string()
-});
+}).refine(
+  (standard) => (standard.memoryRecordId === undefined) !== (standard.sourceDecisionId === undefined),
+  { message: "task standard requires exactly one authority ID" }
+);
 
 const sourceDecisionTargetSchema = z.strictObject({
   targetType: SourceDecisionTargetTypeSchema,
@@ -399,21 +403,32 @@ type ParsedDecisionPacketContractReadback =
 
 const normalizeTaskStandard = (
   standard: ParsedDecisionPacketContractReadback["packet"]["taskStandardDecisions"][number]
-): DecisionPacketTaskStandard => ({
-  memoryRecordId: standard.memoryRecordId,
-  key: standard.key,
-  ...(standard.sourceClaimIds === undefined ? {} : { sourceClaimIds: standard.sourceClaimIds }),
-  sourceRefs: standard.sourceRefs,
-  mechanism: standard.mechanism,
-  krnImplication: standard.krnImplication,
-  decision: standard.decision,
-  consumer: standard.consumer,
-  falsifier: standard.falsifier,
-  validFrom: standard.validFrom,
-  ...(standard.validUntil === undefined ? {} : { validUntil: standard.validUntil }),
-  ...(standard.rejectedPath === undefined ? {} : { rejectedPath: standard.rejectedPath }),
-  doesNotProve: standard.doesNotProve
-});
+): DecisionPacketTaskStandard => {
+  const fields = {
+    key: standard.key,
+    ...(standard.sourceClaimIds === undefined ? {} : { sourceClaimIds: standard.sourceClaimIds }),
+    sourceRefs: standard.sourceRefs,
+    mechanism: standard.mechanism,
+    krnImplication: standard.krnImplication,
+    decision: standard.decision,
+    consumer: standard.consumer,
+    falsifier: standard.falsifier,
+    validFrom: standard.validFrom,
+    ...(standard.validUntil === undefined ? {} : { validUntil: standard.validUntil }),
+    ...(standard.rejectedPath === undefined ? {} : { rejectedPath: standard.rejectedPath }),
+    doesNotProve: standard.doesNotProve
+  };
+
+  if (standard.memoryRecordId !== undefined) {
+    return { ...fields, memoryRecordId: standard.memoryRecordId };
+  }
+
+  if (standard.sourceDecisionId === undefined) {
+    throw new Error("Parsed task standard lost its authority ID");
+  }
+
+  return { ...fields, sourceDecisionId: standard.sourceDecisionId };
+};
 
 const normalizeReviewOnlyUsefulnessCaveat = (
   caveat: NonNullable<ParsedDecisionPacketContractReadback["packet"]["reviewOnlyUsefulnessCaveats"]>[number]

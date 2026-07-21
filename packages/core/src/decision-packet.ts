@@ -60,8 +60,7 @@ export interface DecisionPacketEvidenceGap {
   verificationRequired: string;
 }
 
-export interface DecisionPacketTaskStandard {
-  memoryRecordId: string;
+interface DecisionPacketTaskStandardFields {
   key: string;
   sourceClaimIds?: readonly string[];
   sourceRefs: readonly string[];
@@ -75,6 +74,11 @@ export interface DecisionPacketTaskStandard {
   rejectedPath?: string;
   doesNotProve: string;
 }
+
+export type DecisionPacketTaskStandard = DecisionPacketTaskStandardFields & (
+  | { memoryRecordId: string; sourceDecisionId?: never }
+  | { sourceDecisionId: string; memoryRecordId?: never }
+);
 
 export interface DecisionPacketSourceConsensus {
   decisionLinkedSourceClaimIds: readonly string[];
@@ -942,11 +946,26 @@ const governingGuidanceCandidatesFor = (input: {
 
 const projectStandardDecisionForCandidate = (
   candidate: DecisionPacketActivationCandidateInput
-): ProjectStandardDecisionReadback | undefined =>
-  candidate.subjectType === "memory_record" &&
-  candidate.projectStandardDecision?.memoryRecordId === candidate.subjectId
-    ? candidate.projectStandardDecision
+): ProjectStandardDecisionReadback | undefined => {
+  const decision = candidate.projectStandardDecision;
+
+  if (decision === undefined) {
+    return undefined;
+  }
+
+  if (decision.memoryRecordId !== undefined) {
+    return candidate.subjectType === "memory_record" &&
+      decision.memoryRecordId === candidate.subjectId
+      ? decision
+      : undefined;
+  }
+
+  return candidate.subjectType === "source_claim" &&
+    decision.sourceDecisionId !== undefined &&
+    decision.sourceClaimIds?.includes(candidate.subjectId) === true
+    ? decision
     : undefined;
+};
 
 const taskStandardDecisionsFor = (input: {
   readonly readModel: DecisionPacketReadModelInput;
@@ -958,7 +977,9 @@ const taskStandardDecisionsFor = (input: {
     return decision === undefined
       ? []
       : [{
-          memoryRecordId: decision.memoryRecordId,
+          ...(decision.memoryRecordId === undefined
+            ? { sourceDecisionId: decision.sourceDecisionId }
+            : { memoryRecordId: decision.memoryRecordId }),
           key: decision.key,
           ...(decision.sourceClaimIds === undefined
             ? {}

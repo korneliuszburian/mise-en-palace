@@ -21,7 +21,8 @@ import {
   assessSourceMetadataTemporalValidity,
   activationExclusionReasons,
   buildMemorySupersessionTimelineReadback,
-  buildSourceConsensusTimelineReadback
+  buildSourceConsensusTimelineReadback,
+  decisionGradeSourceSupportTypes
 } from "@krn/core";
 
 import type {
@@ -835,13 +836,28 @@ const sourceCandidateWithAuthority = (input: {
   readonly claim: SourceClaim;
   readonly now: string;
   readonly sourceDecisionEdges: readonly SourceDecisionEdge[];
-  readonly staleSourceDecisions: readonly SourceDecision[];
+  readonly sourceDecisions: readonly SourceDecision[];
   readonly sourceConsensusEntry: SourceConsensusTimelineEntry | undefined;
   readonly currentAuthoritySourceClaimIds: ReadonlySet<string>;
 }): ReturnType<typeof toSourceClaimCandidate> => {
-  const staleSourceDecisionIds = input.staleSourceDecisions
+  const staleSourceDecisionIds = input.sourceDecisions
     .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
     .map((decision) => decision.id);
+  const adoptedDecisionEdges = input.sourceDecisionEdges.filter((edge) =>
+    edge.sourceDecisionId !== undefined &&
+    decisionGradeSourceSupportTypes.includes(edge.supportType)
+  );
+  const adoptedDecisions = input.sourceDecisions.flatMap((decision) => {
+    const edge = adoptedDecisionEdges.find((candidate) =>
+      candidate.sourceDecisionId === decision.id
+    );
+
+    return decision.status === "adopt" &&
+      decision.metadata["decisionCorpusStatus"] !== "stale" &&
+      edge !== undefined
+      ? [{ decision, edge }]
+      : [];
+  });
   const decisionSupportEdgeIds = input.sourceConsensusEntry?.decisionSupportEdgeIds ??
     input.sourceDecisionEdges.map((edge) => edge.id);
   const authorityAssessment = assessSourceClaimAuthority({
@@ -862,6 +878,23 @@ const sourceCandidateWithAuthority = (input: {
         })
   });
   const candidate = toSourceClaimCandidate(input.claim);
+  const adopted = adoptedDecisions.length === 1 ? adoptedDecisions[0] : undefined;
+  const projectStandardDecision = adopted === undefined
+    ? undefined
+    : {
+        kind: "krn.projectStandardDecision.v1" as const,
+        sourceDecisionId: adopted.decision.id,
+        key: `source-decision:${adopted.decision.id}`,
+        sourceClaimIds: [input.claim.id],
+        sourceRefs: [input.claim.id, adopted.decision.id, adopted.edge.id],
+        mechanism: input.claim.mechanism,
+        krnImplication: input.claim.krnImplication,
+        decision: adopted.decision.decision,
+        consumer: adopted.decision.consumer,
+        falsifier: adopted.decision.falsifier,
+        validFrom: adopted.decision.createdAt,
+        doesNotProve: input.claim.doesNotProve
+      };
   return {
     ...candidate,
     sourceClaimAuthorityStatus: authorityAssessment.status,
@@ -873,6 +906,7 @@ const sourceCandidateWithAuthority = (input: {
     metadata: {
       ...candidate.metadata,
       ...(staleSourceDecisionIds.length === 0 ? {} : { staleSourceDecisionIds }),
+      ...(projectStandardDecision === undefined ? {} : { projectStandardDecision }),
       ...sourceDecisionSupportBoostMetadata(input.sourceDecisionEdges),
       sourceClaimAuthority: {
         status: authorityAssessment.status,
@@ -1064,7 +1098,7 @@ export const retrieveActivationCandidates = async (
           claim,
           now: activationNow,
           sourceDecisionEdges: sourceDecisionEdgesByClaimId.get(claim.id) ?? [],
-          staleSourceDecisions: staleSourceDecisionsByClaimId.get(claim.id) ?? [],
+          sourceDecisions: staleSourceDecisionsByClaimId.get(claim.id) ?? [],
           sourceConsensusEntry: sourceConsensusEntriesByClaimId.get(claim.id),
           currentAuthoritySourceClaimIds
         })

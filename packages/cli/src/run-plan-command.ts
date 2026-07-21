@@ -1028,6 +1028,7 @@ const applyContextNoiseToCompilerDependencies = (
   const listClaimsForProject = sourceRepository.listClaimsForProject;
   const getSourceClaimForProject = sourceRepository.getSourceClaimForProject;
   const getSourceDecisionForProject = sourceRepository.getSourceDecisionForProject;
+  const listSourceDecisionsForClaim = sourceRepository.listSourceDecisionsForClaim;
   const listHistoricalClaimWarningsForProject =
     sourceRepository.listHistoricalClaimWarningsForProject;
   const listSourceRejectionsForClaim = sourceRepository.listSourceRejectionsForClaim;
@@ -1080,6 +1081,13 @@ const applyContextNoiseToCompilerDependencies = (
         : {
             getSourceDecisionForProject: (...args: Parameters<typeof getSourceDecisionForProject>) =>
               getSourceDecisionForProject.call(sourceRepository, ...args)
+          }),
+      ...(listSourceDecisionsForClaim === undefined
+        ? {}
+        : {
+            listSourceDecisionsForClaim: (
+              ...args: Parameters<typeof listSourceDecisionsForClaim>
+            ) => listSourceDecisionsForClaim.call(sourceRepository, ...args)
           }),
       ...(listSourceRejectionsForClaim === undefined
         ? {}

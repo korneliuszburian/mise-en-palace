@@ -112,6 +112,21 @@ const sourceDecisionEdge = (
   ...overrides
 });
 
+const sourceDecision = (overrides: Partial<SourceDecision>): SourceDecision => ({
+  id: "source-decision-1",
+  projectId: "project-1",
+  sourceClaimId: "claim-1",
+  status: "adopt",
+  decision: "Apply the reviewed source-backed standard.",
+  rationale: "The accepted claim and decision-grade edge support this task.",
+  falsifier: "The matching task cannot apply the standard.",
+  consumer: "activation-engine-test",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
 const retrieveDecisionLinkedSourceCandidates = async (
   claims: readonly SourceClaim[],
   edges: readonly SourceClaimEdge[] = [],
@@ -2187,6 +2202,87 @@ describe("activation engine", () => {
         explanation: expect.stringContaining("accepted_claim_without_decision")
       }
     });
+  });
+
+  it("attaches only one current adopted source decision as direct task authority", async () => {
+    const claims = [
+      sourceClaim({ id: "claim-adopted" }),
+      sourceClaim({ id: "claim-rejected" }),
+      sourceClaim({ id: "claim-stale-decision" })
+    ];
+    const decisions = new Map<string, SourceDecision>([
+      ["claim-adopted", sourceDecision({
+        id: "decision-adopted",
+        sourceClaimId: "claim-adopted"
+      })],
+      ["claim-rejected", sourceDecision({
+        id: "decision-rejected",
+        sourceClaimId: "claim-rejected",
+        status: "reject"
+      })],
+      ["claim-stale-decision", sourceDecision({
+        id: "decision-stale",
+        sourceClaimId: "claim-stale-decision",
+        metadata: { decisionCorpusStatus: "stale" }
+      })]
+    ]);
+    const retrieved = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: { memory: 0, source: 10, search: 0, antiMemory: 0 },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return claims;
+          },
+          async listSourceClaimEdgesForProject() {
+            return [];
+          },
+          async listSourceDecisionsForClaim(sourceClaimId) {
+            const decision = decisions.get(sourceClaimId);
+            return decision === undefined ? [] : [decision];
+          },
+          async listSourceDecisionEdgesForClaim(sourceClaimId) {
+            const decision = decisions.get(sourceClaimId);
+            return decision === undefined
+              ? []
+              : [sourceDecisionEdge({
+                  id: `edge-${sourceClaimId}`,
+                  sourceClaimId,
+                  sourceDecisionId: decision.id
+                })];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+    const bySubjectId = new Map(retrieved.candidates.map((candidate) => [
+      candidate.subjectId,
+      candidate
+    ]));
+
+    expect(bySubjectId.get("claim-adopted")?.metadata).toMatchObject({
+      projectStandardDecision: {
+        sourceDecisionId: "decision-adopted",
+        sourceClaimIds: ["claim-adopted"],
+        decision: "Apply the reviewed source-backed standard."
+      }
+    });
+    expect(bySubjectId.get("claim-rejected")?.metadata["projectStandardDecision"])
+      .toBeUndefined();
+    expect(bySubjectId.get("claim-stale-decision")?.metadata["projectStandardDecision"])
+      .toBeUndefined();
   });
 
   it("excludes stale accepted source claims even when decision-linked", async () => {

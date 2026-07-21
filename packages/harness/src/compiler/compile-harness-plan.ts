@@ -84,6 +84,7 @@ export interface HarnessCompilerRepositories {
     SourceRepository,
     | "getSourceClaimForProject"
     | "getSourceDecisionForProject"
+    | "listSourceDecisionsForClaim"
     | "listSourceRejectionsForClaim"
     | "listHistoricalClaimWarningsForProject"
   >>;

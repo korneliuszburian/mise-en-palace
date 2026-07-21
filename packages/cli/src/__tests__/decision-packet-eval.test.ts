@@ -518,7 +518,7 @@ describe("runDecisionPacketEval", () => {
         "Use store-backed MemoryRecord and SourceClaim evidence for runtime memory."
       ],
       taskStandardDecisions: [{
-        memoryRecordId: "memory:decision:store-backed-memory-no-markdown",
+        sourceDecisionId: "store-backed-memory-no-markdown",
         key: "decision-packet:store-backed-memory-no-markdown",
         sourceRefs: [
           "source-claim:store-backed-memory-no-markdown",

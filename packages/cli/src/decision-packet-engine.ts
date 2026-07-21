@@ -602,7 +602,7 @@ const taskStandardDecisionsFor = (
 ): readonly DecisionPacketTaskStandard[] => decisions
   .filter((decision) => decision.taskScopes.length > 0)
   .map((decision): DecisionPacketTaskStandard => ({
-    memoryRecordId: `memory:decision:${decision.id}`,
+    sourceDecisionId: decision.id,
     key: `decision-packet:${decision.id}`,
     sourceRefs: unique([decision.sourceClaimId, decision.evidenceRef]),
     mechanism:

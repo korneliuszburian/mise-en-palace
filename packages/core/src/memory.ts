@@ -267,9 +267,8 @@ export interface MemoryRecordReviewSignal {
   reason: string;
 }
 
-export interface ProjectStandardDecisionReadback {
+interface ProjectStandardDecisionFields {
   kind: "krn.projectStandardDecision.v1";
-  memoryRecordId: MemoryRecordId;
   key: string;
   sourceClaimIds?: string[];
   sourceRefs: string[];
@@ -283,6 +282,11 @@ export interface ProjectStandardDecisionReadback {
   rejectedPath?: string;
   doesNotProve: string;
 }
+
+export type ProjectStandardDecisionReadback = ProjectStandardDecisionFields & (
+  | { memoryRecordId: MemoryRecordId; sourceDecisionId?: never }
+  | { sourceDecisionId: string; memoryRecordId?: never }
+);
 
 const isMetadataRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
