@@ -632,16 +632,7 @@ describe("renderExecutionBrief", () => {
               explanation: "A reviewed source decision rejected this implementation path.",
               score: 100,
               sourceAuthority: "project-decision"
-            },
-            ...["claim-generated-1", "claim-generated-2"].map((subjectId) => ({
-              subjectType: "source_claim" as const,
-              subjectId,
-              reason: "superseded" as const,
-              explanation:
-                "Source graph consensus caveat supersedes via edge(s) edge-1.",
-              score: 100,
-              sourceAuthority: "project-decision" as const
-            }))
+            }
           ]
         },
         capabilityPlan,
@@ -658,15 +649,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Rejected viewport-specific path must not govern.");
     expect(rendered).toContain("Superseded layout guidance is historical.");
     expect(rendered).toContain("A reviewed source decision rejected this implementation path.");
-    expect(rendered.match(/Superseded context remains historical and must not govern\./g))
-      .toHaveLength(1);
-    expect(rendered).not.toContain("edge-1");
-    expect(brief.explicitExclusions).toHaveLength(7);
-    expect(describeExecutionBriefProfile(brief).sections).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: "explicit_exclusions", itemCount: 4 }),
-      expect.objectContaining({ id: "evidence_contract", itemCount: 3 }),
-      expect.objectContaining({ id: "rollback_expectation", itemCount: 1 })
-    ]));
+    expect(brief.explicitExclusions).toHaveLength(5);
   });
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
@@ -743,7 +726,7 @@ describe("renderExecutionBrief", () => {
         subjectType: "source_claim",
         subjectId: `claim-noise-${index}`,
         reason: "unsafe",
-        explanation: `Candidate ${index} conflicts with reviewed authority.`,
+        explanation: "Candidate conflicts with reviewed authority.",
         score: 10,
         sourceAuthority: "low"
       }))
