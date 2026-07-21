@@ -6,6 +6,7 @@ import {
   knowledgeSelectionFromReadbackJson,
   knowledgeSelectionFromMetadata,
   packetBoundKnowledgeSelection,
+  type KnowledgePlanItem,
   unavailableKnowledgeSelection,
   type KnowledgePlanSelection
 } from "../knowledge-selection.js";
@@ -52,6 +53,20 @@ const validSelectionMetadata = {
     doesNotProve: ["implementation correctness"]
   }
 };
+
+const knowledgePlanItem = (
+  overrides: Partial<KnowledgePlanItem> = {}
+): KnowledgePlanItem => ({
+  id: "knowledge:component-contract",
+  knowledgeId: "component-contract",
+  title: "Component contract",
+  reviewability: "ready",
+  nextAction: "use",
+  doesNotProve: "Selection does not prove correctness.",
+  targetFit: "target_specific",
+  targetFitReasons: ["matched component contract"],
+  ...overrides
+});
 
 describe("knowledgeSelection", () => {
   it("parses knowledge read models through finite reviewability and action fields", () => {
@@ -168,21 +183,20 @@ describe("knowledgeSelection", () => {
 
   it("does not render feedback caveats for unbound knowledge", () => {
     const selection: KnowledgePlanSelection = {
-      ...validSelectionMetadata,
+      ...(validSelectionMetadata as unknown as KnowledgePlanSelection),
       source: "memory_store",
       selectedKnowledgeIds: ["component-contract", "unbound-contract"],
       selectedKnowledge: [
         {
-          ...validSelectionMetadata.selectedKnowledge[0],
-          knowledgeId: "component-contract",
-          memoryRecordId: "memory-123"
+          ...knowledgePlanItem({ memoryRecordId: "memory-123" })
         },
         {
-          ...validSelectionMetadata.selectedKnowledge[0],
-          id: "knowledge:unbound-contract",
-          knowledgeId: "unbound-contract",
-          memoryRecordId: "memory-456",
-          title: "Unbound contract"
+          ...knowledgePlanItem({
+            id: "knowledge:unbound-contract",
+            knowledgeId: "unbound-contract",
+            memoryRecordId: "memory-456",
+            title: "Unbound contract"
+          })
         }
       ],
       reviewOnlyUsefulnessCaveats: [
