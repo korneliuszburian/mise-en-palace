@@ -129,6 +129,7 @@ export interface DatabaseRuntime {
     | "getIssuedDecisionPacketForExecutionRun"
     | "createEvidenceFeedbackOnce"
     | "recordUsefulnessApplicationOnce"
+    | "recordUsefulnessApplicationsOnce"
     | "updateExecutionRunStatus"
     | "listFeedbackDeltasForProject"
     | "listFeedbackDeltasForSubjects"
@@ -864,6 +865,13 @@ const createDatabaseRuntimeForClient = async (
           recordUsefulnessApplicationOnce: (...args: Parameters<
             NonNullable<HarnessRunRepository["recordUsefulnessApplicationOnce"]>
           >) => harnessRunRepository.recordUsefulnessApplicationOnce!(...args)
+        }),
+    ...(harnessRunRepository.recordUsefulnessApplicationsOnce === undefined
+      ? {}
+      : {
+          recordUsefulnessApplicationsOnce: (...args: Parameters<
+            NonNullable<HarnessRunRepository["recordUsefulnessApplicationsOnce"]>
+          >) => harnessRunRepository.recordUsefulnessApplicationsOnce!(...args)
         }),
     ...(harnessRunRepository.createEvalFeedbackDeltaOnce === undefined
       ? {}

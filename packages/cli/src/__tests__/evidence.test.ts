@@ -495,6 +495,15 @@ const createCapturingEvidenceHarnessRunRepository = (
 
     return { application, created: true };
   },
+  async recordUsefulnessApplicationsOnce(input: readonly UsefulnessApplicationEvidenceIdentity[]) {
+    const results = input.map((identity) => ({
+      application: { ...identity, appliedAt: "2026-06-21T12:00:30.000Z" },
+      created: true
+    }));
+    capture.usefulnessApplications = results.map((result) => result.application);
+    capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "application-batch"];
+    return results;
+  },
   async createEvidenceFeedbackOnce(input: CreateEvidenceFeedbackOnceInput) {
     capture.captureIdentity = input.captureIdentity;
     capture.persistenceOrder = [...(capture.persistenceOrder ?? []), "feedback"];
@@ -2685,7 +2694,7 @@ describe("runCli", () => {
     });
   });
 
-  it("persists packet-bound context inclusion usefulness without promoting source or memory", async () => {
+  it("persists a packet-bound context usefulness batch before one feedback delta", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -2704,7 +2713,9 @@ describe("runCli", () => {
       "--decision-packet-checksum", packetBinding.packetChecksum,
       "--decision-packet-generated-at", packetBinding.packetGeneratedAt,
       "--context-usefulness",
-      `search_document:target-seed-docs=noise|Broad docs seed caused irrelevant inspection|${packetBinding.packetEvidenceRef}|Does not reject the document as source truth`,
+      `search_document:target-seed-docs=noise|Broad docs seed caused irrelevant inspection|${packetBinding.packetEvidenceRef}|Does not reject the document as source truth|application:target-seed-docs`,
+      "--context-usefulness",
+      `memory_record:knowledge:frontend-template=neutral|Frontend template was applicable but not decisive|${packetBinding.packetEvidenceRef}|Does not prove retained knowledge improved the task|application:frontend-template`,
       "--persist"
     ], {
       env: { KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn" },
@@ -2731,18 +2742,34 @@ describe("runCli", () => {
       outcome: "noise",
       reason: "Broad docs seed caused irrelevant inspection",
       evidenceRefs: [packetBinding.packetEvidenceRef],
-      doesNotProve: "Does not reject the document as source truth"
+      doesNotProve: "Does not reject the document as source truth",
+      applicationId: "application:target-seed-docs"
+    }, {
+      subjectType: "memory_record",
+      subjectId: "knowledge:frontend-template",
+      outcome: "neutral",
+      reason: "Frontend template was applicable but not decisive",
+      evidenceRefs: [packetBinding.packetEvidenceRef],
+      doesNotProve: "Does not prove retained knowledge improved the task",
+      applicationId: "application:frontend-template"
     }]);
     expect(capture.feedbackDeltaMetadata).toMatchObject({
       contextInclusionUsefulnessOutcomes: [{
         subjectType: "search_document",
         subjectId: "target-seed-docs",
         outcome: "noise"
+      }, {
+        subjectType: "memory_record",
+        subjectId: "knowledge:frontend-template",
+        outcome: "neutral"
       }]
     });
     expect(capture.sourceUsefulnessOutcomes).toBeUndefined();
     expect(capture.knowledgeUsefulnessOutcomes).toBeUndefined();
+    expect(capture.usefulnessApplications).toHaveLength(2);
+    expect(capture.persistenceOrder).toEqual(["application-batch", "feedback"]);
     expect(result.stdout).toContain("context=search_document:target-seed-docs");
+    expect(result.stdout).toContain("context=memory_record:knowledge:frontend-template");
   });
 
   it("preserves packet checksum for evidence-only capture", async () => {

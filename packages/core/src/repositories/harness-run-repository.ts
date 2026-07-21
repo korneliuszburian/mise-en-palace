@@ -271,6 +271,9 @@ export interface HarnessRunRepository {
   recordUsefulnessApplicationOnce?(
     input: UsefulnessApplicationEvidenceIdentity
   ): Promise<RecordUsefulnessApplicationOnceResult>;
+  recordUsefulnessApplicationsOnce?(
+    input: readonly UsefulnessApplicationEvidenceIdentity[]
+  ): Promise<readonly RecordUsefulnessApplicationOnceResult[]>;
   createEvalFeedbackDeltaOnce?(
     input: CreateEvalFeedbackDeltaOnceInput
   ): Promise<CreateEvalFeedbackDeltaOnceResult>;
