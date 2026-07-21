@@ -212,26 +212,6 @@
       "archival": null
     },
     {
-      "path": "tests/fixtures/codex-decision-packet-obedience/recorded-obedience.json",
-      "consumer": "recorded obedience eval",
-      "provenance": "recorded replay fixture captured 2026-07-01",
-      "capturedAt": "2026-07-01",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "recorded_replay",
-      "archival": null
-    },
-    {
-      "path": "tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json",
-      "consumer": "recorded obedience eval",
-      "provenance": "recorded replay fixture captured 2026-07-06",
-      "capturedAt": "2026-07-06",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "recorded_replay",
-      "archival": null
-    },
-    {
       "path": "tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
       "consumer": "corpus import eval",
       "provenance": "repository-owned test/eval fixture",
@@ -262,26 +242,6 @@
       "archival": null
     },
     {
-      "path": "tests/fixtures/second-repo/async-job-decision-packet-vs-notes.json",
-      "consumer": "decision-packet/eval test",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
-      "path": "tests/fixtures/second-repo/env-config-decision-packet-vs-notes.json",
-      "consumer": "decision-packet/eval test",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
       "path": "tests/fixtures/second-repo/temporal-policy-current-authority.md",
       "consumer": "temporal policy drift eval",
       "provenance": "repository-owned test/eval fixture",
@@ -296,16 +256,6 @@
       "consumer": "temporal policy drift eval",
       "provenance": "repository-owned test/eval fixture",
       "capturedAt": "2026-07-19",
-      "checkerVersion": "fixture-ownership.v1",
-      "replayOwner": "@korneliuszburian",
-      "mode": "static_fixture",
-      "archival": null
-    },
-    {
-      "path": "tests/fixtures/second-repo/weak-json-decision-packet-vs-notes.json",
-      "consumer": "decision-packet/eval test",
-      "provenance": "repository-owned test/eval fixture",
-      "capturedAt": "2026-07-10",
       "checkerVersion": "fixture-ownership.v1",
       "replayOwner": "@korneliuszburian",
       "mode": "static_fixture",

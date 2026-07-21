@@ -932,8 +932,8 @@ remains below product proof:
 3. Task-standard activation has internal behavior coverage for frontend,
    backend, and package coding tasks with current standards, rejected paths, and
    verification commands.
-4. The second-repo fixture proof runs across three target-repo corpora without
-   KRN self-repo contamination.
+4. The independent matched harness runs baseline and KRN arms in isolated
+   target workspaces without importing product internals.
 5. Broader MCP/API/dashboard expansion is rejected for now; the only product
    transport is the read-only `krn_decision_packet` wrapper.
 

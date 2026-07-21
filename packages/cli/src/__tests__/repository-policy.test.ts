@@ -422,20 +422,7 @@ describe("repository policy boundaries", () => {
       cwd: repoRoot,
       encoding: "utf8"
     });
-    const manifest = JSON.parse(readRootFile("tests/fixtures/fixture-ownership.json")) as {
-      fixtures?: Array<Record<string, unknown>>;
-    };
-    const recorded = manifest.fixtures?.find((entry) => entry.path ===
-      "tests/fixtures/codex-decision-packet-obedience/recorded-replay-2026-07-06.json");
-
     expect(current).toContain("Fixture ownership check passed");
-    expect(recorded).toMatchObject({
-      provenance: expect.any(String),
-      capturedAt: "2026-07-06",
-      checkerVersion: expect.any(String),
-      replayOwner: expect.any(String),
-      mode: "recorded_replay"
-    });
 
     const fixtureRoot = mkdtempSync(join(tmpdir(), "krn-fixture-ownership-"));
     const fixtureDirectory = join(fixtureRoot, "tests/fixtures");
