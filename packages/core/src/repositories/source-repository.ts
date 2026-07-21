@@ -136,6 +136,10 @@ export interface SourceRepository {
     limit: number,
     options?: SourceClaimSelectionOptions
   ): Promise<SourceClaim[]>;
+  listActiveSourceClaimIdsByCanonicalClaim?(
+    projectId: ProjectId,
+    canonicalClaim: string
+  ): Promise<SourceClaim["id"][]>;
   listHistoricalClaimWarningsForProject(
     projectId: ProjectId,
     limit: number,

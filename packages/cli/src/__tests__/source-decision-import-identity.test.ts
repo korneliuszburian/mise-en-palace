@@ -6,7 +6,8 @@ import {
   loadDecisionCorpusImportFixture
 } from "../internal/eval/run-decision-corpus-import.js";
 import {
-  deriveSourceDecisionImportIdentity
+  deriveSourceDecisionImportIdentity,
+  validateSourceDecisionImportFixture
 } from "../source-decision-store-import.js";
 
 const fixturePath = fileURLToPath(
@@ -71,5 +72,12 @@ describe("source decision import identity", () => {
       projectIdentity: "project-source-import-identity-other-project",
       fixture: sourceFixture
     })).not.toBe(sourceIdentity);
+    expect(() => validateSourceDecisionImportFixture({
+      ...sourceFixture,
+      decisions: [
+        firstDecision,
+        { ...firstDecision, id: `${firstDecision.id}-duplicate` }
+      ]
+    })).toThrow(/duplicate current statements/u);
   });
 });
