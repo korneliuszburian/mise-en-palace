@@ -301,7 +301,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Anti-memory Warnings:");
     expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
     expect(result.stdout).toContain("Evidence Contract:");
-    expect(result.stdout).toContain("- Verify once: pnpm typecheck (required)");
+    expect(result.stdout).toContain("- pnpm typecheck (required)");
+    expect(result.stdout).toContain("Diff risk: medium");
     expect(result.stdout).toContain("Review burden: Review the CLI output only.");
 
     persistedAggregate = {
@@ -323,7 +324,7 @@ describe("runCli", () => {
     expect(terminalResult.stdout).toContain("Active: yes");
     expect(terminalResult.stdout).not.toContain("execution_run_terminal");
     expect(terminalResult.stdout).toContain("Stop Condition: Do not execute");
-    expect(terminalResult.stdout).toContain("- Verify once: pnpm typecheck (required)");
+    expect(terminalResult.stdout).toContain("- pnpm typecheck (required)");
   });
 
   it("requires database config for codex brief", async () => {

@@ -426,9 +426,9 @@ describe("runCli", () => {
     for (const reason of issuedReadback.packet.abstentionScore.reasons) {
       expect(result.stdout).toContain(`- ${reason}`);
     }
-    expect(result.stdout).toContain(
-      `- ${issuedReadback.packet.toolBoundaries.join("; ")}`
-    );
+    for (const boundary of issuedReadback.packet.toolBoundaries) {
+      expect(result.stdout).toContain(`- ${boundary}`);
+    }
   });
 
   it("persists selected knowledge IDs for plan --persist", async () => {

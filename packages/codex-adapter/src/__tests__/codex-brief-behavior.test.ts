@@ -118,6 +118,7 @@ const expectedRenderedBriefFragments = [
   "reason=low_trust",
   "- Promptfoo smoke is adapter evidence, not KRN behavior proof.",
   `Review burden: ${evidenceContract.reviewBurden}`,
+  `Rollback path: ${evidenceContract.rollbackPath}`,
   `Rollback Expectation: ${evidenceContract.rollbackPath}`,
   "Stop Condition: Proceed with Codex execution within the packet tool and evidence boundaries; stop before hidden state mutation.",
   "What This Does Not Prove:",
