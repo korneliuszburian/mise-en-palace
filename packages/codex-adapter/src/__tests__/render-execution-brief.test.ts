@@ -632,7 +632,16 @@ describe("renderExecutionBrief", () => {
               explanation: "A reviewed source decision rejected this implementation path.",
               score: 100,
               sourceAuthority: "project-decision"
-            }
+            },
+            ...["claim-generated-1", "claim-generated-2"].map((subjectId) => ({
+              subjectType: "source_claim" as const,
+              subjectId,
+              reason: "superseded" as const,
+              explanation:
+                "Source graph consensus caveat supersedes via edge(s) edge-1.",
+              score: 100,
+              sourceAuthority: "project-decision" as const
+            }))
           ]
         },
         capabilityPlan,
@@ -649,7 +658,10 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("Rejected viewport-specific path must not govern.");
     expect(rendered).toContain("Superseded layout guidance is historical.");
     expect(rendered).toContain("A reviewed source decision rejected this implementation path.");
-    expect(brief.explicitExclusions).toHaveLength(5);
+    expect(rendered.match(/Superseded context remains historical and must not govern\./g))
+      .toHaveLength(1);
+    expect(rendered).not.toContain("edge-1");
+    expect(brief.explicitExclusions).toHaveLength(7);
   });
 
   it("omits optional and unconsumed adapter surfaces from the minimal decision packet brief", () => {
