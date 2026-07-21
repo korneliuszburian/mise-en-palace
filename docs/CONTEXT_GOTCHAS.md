@@ -73,6 +73,30 @@ the fail-closed boundary, not memory usefulness.
 longer allow these prerequisite failures to be confused with quality outcomes,
 with focused tests proving the distinction.
 
+## Compact transport observability
+
+**Trigger:** A live-eval obedience envelope asks Codex to report packet fields
+that are available only in the operator readback, not in the current compact
+Codex-facing MCP payload.
+
+**Safe action:** Inspect the exact payload before freezing the preregistration.
+Bind obedience to the observed tool call and packet checksum, then require the
+model to name the concrete selected directive and rejected-path behavior it
+used. Do not require hidden source, decision, or audit IDs, and do not add them
+back to the transport merely to satisfy an evaluator. If the mismatch is found
+after execution, keep the trial invalid; never repair its envelope post hoc.
+
+**Evidence / non-proof:** In `course-cards-editorial-v2`, the compact payload
+contained six actionable directives but no selected decision IDs. Codex called
+the tool once and acted on layout ownership, yet returned an empty ID list, so
+the preregistered obedience gate correctly invalidated the comparison. This
+proves the envelope requested an unobservable field, not that Codex obeyed all
+directives or that either arm had higher quality.
+
+**Retirement:** Retire when one schema-owned obedience contract is derived from
+the current transport and a focused conformance signal rejects both missing
+observable evidence and requests for operator-only fields.
+
 ## First trial versus rerun
 
 **Trigger:** A previously attempted trial is debugged, repeated, or executed
