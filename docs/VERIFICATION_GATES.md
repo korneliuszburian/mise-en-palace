@@ -91,8 +91,6 @@ prove that the command or product behavior succeeded.
   `quality:fallow:ci` for the actual gate.
 - `rtk pnpm eval:lab` is exploratory and does not replace `eval:required` or
   `eval:db`.
-- `rtk pnpm eval:recorded-replay` is a dated recorded replay, not live Codex
-  evidence.
 
 If Postgres or Codex is unavailable, record the relevant result as blocked or
 unverified. A tolerated report exit is never a product or runtime proof.
