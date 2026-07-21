@@ -22,6 +22,8 @@ import {
 import {
   applyActivationFilters,
   assembleContext,
+  decisionPacketContextExclusions,
+  decisionPacketContextInclusions,
   retrieveActivationCandidates
 } from "@krn/harness";
 import type {
@@ -232,23 +234,8 @@ const packetForBriefInput = (input: {
     verificationRequired: string;
   }[];
 }): DecisionPacket => {
-  const contextInclusions = input.contextAssembly.inclusions.map((item) => ({
-    subjectType: item.subjectType,
-    subjectId: item.subjectId,
-    reason: item.reason,
-    expectedUse: item.expectedUse,
-    sourceAuthority: item.sourceAuthority,
-    ...(item.supportingEvidence === undefined
-      ? {}
-      : { supportingEvidence: item.supportingEvidence })
-  }));
-  const contextExclusions = input.contextAssembly.exclusions.map((item) => ({
-    subjectType: item.subjectType,
-    subjectId: item.subjectId,
-    reason: item.reason,
-    explanation: item.explanation,
-    sourceAuthority: item.sourceAuthority
-  }));
+  const contextInclusions = decisionPacketContextInclusions(input.contextAssembly);
+  const contextExclusions = decisionPacketContextExclusions(input.contextAssembly);
   const sourceClaimIds = contextInclusions
     .filter((item) => item.subjectType === "source_claim")
     .map((item) => item.subjectId);
@@ -756,16 +743,7 @@ export const buildDecisionPacketWithEngine = async (
       nonGoals: briefInput.taskContract.nonGoals,
       acceptance: briefInput.taskContract.acceptance
     },
-    contextInclusions: contextAssembly.inclusions.map((item) => ({
-      subjectType: item.subjectType,
-      subjectId: item.subjectId,
-      reason: item.reason,
-      expectedUse: item.expectedUse,
-      sourceAuthority: item.sourceAuthority,
-      ...(item.supportingEvidence === undefined
-        ? {}
-        : { supportingEvidence: item.supportingEvidence })
-    })),
+    contextInclusions: decisionPacketContextInclusions(contextAssembly),
     contextExclusions,
     toolBoundaries: briefInput.capabilityPlan.toolBoundaries,
     evidenceContract,

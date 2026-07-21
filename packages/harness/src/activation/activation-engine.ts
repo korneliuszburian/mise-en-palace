@@ -6,6 +6,7 @@ import type {
   AntiMemoryRecord,
   ActivationAbstentionReason,
   ContextAssembly,
+  ProjectStandardDecisionReadback,
   SourceClaim,
   SourceClaimEdge,
   SourceAuthorityLabel,
@@ -234,6 +235,40 @@ type SupportingEvidenceResolution =
   | { readonly status: "invalid" }
   | { readonly status: "valid"; readonly evidence: ContextSupportingEvidence };
 
+interface SupportingEvidenceMetadata {
+  readonly sourceArtifactId: string;
+  readonly sourceChunkId: string;
+  readonly contentHash: string;
+  readonly renderedContentHash: string;
+  readonly sourceRange?: string;
+  readonly truncated: boolean;
+}
+
+const supportingEvidenceMetadata = (
+  value: unknown
+): SupportingEvidenceMetadata | undefined => {
+  const metadata = metadataRecord(value);
+
+  if (!(metadata !== undefined &&
+    typeof metadata["sourceArtifactId"] === "string" &&
+    typeof metadata["sourceChunkId"] === "string" &&
+    typeof metadata["contentHash"] === "string" &&
+    typeof metadata["renderedContentHash"] === "string" &&
+    (metadata["sourceRange"] === undefined || typeof metadata["sourceRange"] === "string") &&
+    typeof metadata["truncated"] === "boolean")) {
+    return undefined;
+  }
+
+  return {
+    sourceArtifactId: metadata["sourceArtifactId"],
+    sourceChunkId: metadata["sourceChunkId"],
+    contentHash: metadata["contentHash"],
+    renderedContentHash: metadata["renderedContentHash"],
+    ...(metadata["sourceRange"] === undefined ? {} : { sourceRange: metadata["sourceRange"] }),
+    truncated: metadata["truncated"]
+  };
+};
+
 const supportingEvidenceFor = (
   resolution: Extract<SearchDocumentAuthorityResolution, { kind: "source" }>
 ): SupportingEvidenceResolution => {
@@ -243,17 +278,9 @@ const supportingEvidenceFor = (
     return { status: "absent" };
   }
 
-  const metadata = metadataRecord(rawMetadata);
+  const metadata = supportingEvidenceMetadata(rawMetadata);
 
-  if (
-    metadata === undefined ||
-    typeof metadata["sourceArtifactId"] !== "string" ||
-    typeof metadata["sourceChunkId"] !== "string" ||
-    typeof metadata["contentHash"] !== "string" ||
-    typeof metadata["renderedContentHash"] !== "string" ||
-    (metadata["sourceRange"] !== undefined && typeof metadata["sourceRange"] !== "string") ||
-    typeof metadata["truncated"] !== "boolean"
-  ) {
+  if (metadata === undefined) {
     return { status: "invalid" };
   }
 
@@ -832,6 +859,46 @@ const sourceRejectionsForClaims = async (
   return rejections.flat();
 };
 
+const projectStandardDecisionForSourceAuthority = (input: {
+  readonly claim: SourceClaim;
+  readonly sourceDecisionEdges: readonly SourceDecisionEdge[];
+  readonly sourceDecisions: readonly SourceDecision[];
+}): ProjectStandardDecisionReadback | undefined => {
+  const adopted = input.sourceDecisions.flatMap((decision) => {
+    const edge = input.sourceDecisionEdges.find((candidate) =>
+      candidate.sourceDecisionId === decision.id &&
+      decisionGradeSourceSupportTypes.includes(candidate.supportType)
+    );
+
+    return decision.status === "adopt" &&
+      decision.metadata["decisionCorpusStatus"] !== "stale" &&
+      edge !== undefined
+      ? [{ decision, edge }]
+      : [];
+  });
+
+  if (adopted.length !== 1 || adopted[0] === undefined) {
+    return undefined;
+  }
+
+  const { decision, edge } = adopted[0];
+
+  return {
+    kind: "krn.projectStandardDecision.v1",
+    sourceDecisionId: decision.id,
+    key: `source-decision:${decision.id}`,
+    sourceClaimIds: [input.claim.id],
+    sourceRefs: [input.claim.id, decision.id, edge.id],
+    mechanism: input.claim.mechanism,
+    krnImplication: input.claim.krnImplication,
+    decision: decision.decision,
+    consumer: decision.consumer,
+    falsifier: decision.falsifier,
+    validFrom: decision.createdAt,
+    doesNotProve: input.claim.doesNotProve
+  };
+};
+
 const sourceCandidateWithAuthority = (input: {
   readonly claim: SourceClaim;
   readonly now: string;
@@ -843,21 +910,6 @@ const sourceCandidateWithAuthority = (input: {
   const staleSourceDecisionIds = input.sourceDecisions
     .filter((decision) => decision.metadata["decisionCorpusStatus"] === "stale")
     .map((decision) => decision.id);
-  const adoptedDecisionEdges = input.sourceDecisionEdges.filter((edge) =>
-    edge.sourceDecisionId !== undefined &&
-    decisionGradeSourceSupportTypes.includes(edge.supportType)
-  );
-  const adoptedDecisions = input.sourceDecisions.flatMap((decision) => {
-    const edge = adoptedDecisionEdges.find((candidate) =>
-      candidate.sourceDecisionId === decision.id
-    );
-
-    return decision.status === "adopt" &&
-      decision.metadata["decisionCorpusStatus"] !== "stale" &&
-      edge !== undefined
-      ? [{ decision, edge }]
-      : [];
-  });
   const decisionSupportEdgeIds = input.sourceConsensusEntry?.decisionSupportEdgeIds ??
     input.sourceDecisionEdges.map((edge) => edge.id);
   const authorityAssessment = assessSourceClaimAuthority({
@@ -878,23 +930,7 @@ const sourceCandidateWithAuthority = (input: {
         })
   });
   const candidate = toSourceClaimCandidate(input.claim);
-  const adopted = adoptedDecisions.length === 1 ? adoptedDecisions[0] : undefined;
-  const projectStandardDecision = adopted === undefined
-    ? undefined
-    : {
-        kind: "krn.projectStandardDecision.v1" as const,
-        sourceDecisionId: adopted.decision.id,
-        key: `source-decision:${adopted.decision.id}`,
-        sourceClaimIds: [input.claim.id],
-        sourceRefs: [input.claim.id, adopted.decision.id, adopted.edge.id],
-        mechanism: input.claim.mechanism,
-        krnImplication: input.claim.krnImplication,
-        decision: adopted.decision.decision,
-        consumer: adopted.decision.consumer,
-        falsifier: adopted.decision.falsifier,
-        validFrom: adopted.decision.createdAt,
-        doesNotProve: input.claim.doesNotProve
-      };
+  const projectStandardDecision = projectStandardDecisionForSourceAuthority(input);
   return {
     ...candidate,
     sourceClaimAuthorityStatus: authorityAssessment.status,

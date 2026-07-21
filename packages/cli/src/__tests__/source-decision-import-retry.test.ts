@@ -989,17 +989,39 @@ describe("source decision import retry boundary", () => {
           `${JSON.stringify(corpus("reviewed-predecessor"), null, 2)}\n`,
           "utf8"
         );
-        await runSourceImportCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          filePath: predecessorPath,
-          persist: true,
-          repoPath: connectedRepo
-        });
+        await writeFile(
+          duplicatePath,
+          `${JSON.stringify(corpus("concurrent-duplicate"), null, 2)}\n`,
+          "utf8"
+        );
+        const concurrentImports = await Promise.allSettled([
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            filePath: predecessorPath,
+            persist: true,
+            repoPath: connectedRepo
+          }),
+          runSourceImportCli({
+            databaseUrl: disposableDatabase.databaseUrl,
+            filePath: duplicatePath,
+            persist: true,
+            repoPath: connectedRepo
+          })
+        ]);
+        expect(concurrentImports.map((result) => result.status).sort()).toEqual([
+          "fulfilled",
+          "rejected"
+        ]);
+        expect(concurrentImports.find((result) => result.status === "rejected"))
+          .toMatchObject({ reason: expect.objectContaining({ stderr: expect.stringMatching(
+            /duplicates active SourceClaims without explicit supersession/u
+          ) }) });
         const [predecessor] = await client<{ id: string }[]>`
           select source_claims.id
           from source_claims
           join source_artifacts on source_artifacts.id = source_claims.source_artifact_id
-          where source_artifacts.import_row_id = 'reviewed-predecessor'
+          where source_artifacts.project_id = ${projectId}
+            and source_claims.status = 'accepted'
         `;
 
         if (predecessor === undefined) {
@@ -1007,20 +1029,8 @@ describe("source decision import retry boundary", () => {
         }
 
         await writeFile(
-          duplicatePath,
-          `${JSON.stringify(corpus("unreviewed-duplicate"), null, 2)}\n`,
-          "utf8"
-        );
-        await expect(runSourceImportCli({
-          databaseUrl: disposableDatabase.databaseUrl,
-          filePath: duplicatePath,
-          persist: true,
-          repoPath: connectedRepo
-        })).rejects.toThrow(/duplicates active SourceClaims without explicit supersession/u);
-
-        await writeFile(
           replacementPath,
-          `${JSON.stringify(corpus("reviewed-replacement", predecessor.id), null, 2)}\n`,
+          `${JSON.stringify(corpus("reviewed-replacement", ` ${predecessor.id} `), null, 2)}\n`,
           "utf8"
         );
 

@@ -1069,18 +1069,9 @@ const existingImportRows = async (
   });
 };
 
-const sourceDecisionImportManifestLockKey = (input: {
-  projectId: ProjectId;
-  preparedRows: readonly PreparedSourceDecisionImportRow[];
-}): string => `source-decision-import-manifest:${contentHash(JSON.stringify({
-  projectId: input.projectId,
-  rows: input.preparedRows
-    .map((prepared) => ({
-      decisionId: prepared.row.id,
-      contentHash: prepared.artifactContentHash
-    }))
-    .sort((left, right) => compareImportText(left.decisionId, right.decisionId))
-}))}`;
+const sourceDecisionImportProjectLockKey = (
+  projectId: ProjectId
+): string => `source-decision-import-project:${projectId}`;
 
 const deprecateImportedSourceClaimIfInactive = async (input: {
   readonly sourceRepository: SourceDecisionImportSourceRepository;
@@ -1381,12 +1372,9 @@ export const persistSourceDecisionImport = async (
 
   const repositories = assertImportRepositories(input.runtime);
 
-  const manifestLockKey = sourceDecisionImportManifestLockKey({
-    projectId: input.projectId,
-    preparedRows
-  });
+  const projectLockKey = sourceDecisionImportProjectLockKey(input.projectId);
 
-  return repositories.withTransaction(manifestLockKey, async (transactionRuntime) => {
+  return repositories.withTransaction(projectLockKey, async (transactionRuntime) => {
     if (transactionRuntime.sourceDecisionImportRepository === undefined) {
       throw new Error("Source decision import transaction readback is unavailable");
     }
@@ -1462,7 +1450,7 @@ export const persistSourceDecisionImport = async (
         input.projectId,
         canonicalAuthorityClaim(prepared.row.statement)
       );
-      const supersededClaimIds = new Set(prepared.row.supersedesSourceClaimIds ?? []);
+      const supersededClaimIds = new Set(canonicalSourceClaimSupersessionIds(prepared.row));
       const blockingClaimIds = equivalentClaimIds.filter((claimId) =>
         !supersededClaimIds.has(claimId)
       );

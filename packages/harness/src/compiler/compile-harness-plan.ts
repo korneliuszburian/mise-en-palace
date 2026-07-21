@@ -119,36 +119,59 @@ export interface HarnessCompileResult {
   nextAction: string;
 }
 
+export const decisionPacketContextInclusions = (
+  contextAssembly: ContextAssembly
+): DecisionPacket["contextInclusions"] => contextAssembly.inclusions.map((item) => ({
+  subjectType: item.subjectType,
+  subjectId: item.subjectId,
+  reason: item.reason,
+  expectedUse: item.expectedUse,
+  sourceAuthority: item.sourceAuthority,
+  ...(item.supportingEvidence === undefined
+    ? {}
+    : { supportingEvidence: item.supportingEvidence })
+}));
+
+export const decisionPacketContextExclusions = (
+  contextAssembly: ContextAssembly
+): DecisionPacket["contextExclusions"] => contextAssembly.exclusions.map((item) => ({
+  subjectType: item.subjectType,
+  subjectId: item.subjectId,
+  reason: item.reason,
+  explanation: item.explanation,
+  sourceAuthority: item.sourceAuthority
+}));
+
+const decisionPacketContextProjection = (contextAssembly: ContextAssembly) => {
+  const contextInclusions = decisionPacketContextInclusions(contextAssembly);
+  const contextExclusions = decisionPacketContextExclusions(contextAssembly);
+
+  return {
+    contextInclusions,
+    contextExclusions,
+    sourceClaimIds: contextInclusions
+      .filter((item) => item.subjectType === "source_claim")
+      .map((item) => item.subjectId),
+    memoryRefs: contextInclusions
+      .filter((item) => item.subjectType === "memory_record")
+      .map((item) => item.subjectId),
+    negativePaths: decisionPacketNegativePathsForContext({
+      contextInclusions,
+      contextExclusions
+    })
+  };
+};
+
 export const decisionPacketForCompiledPlan = (
   result: HarnessCompileResult
 ): DecisionPacket => {
-  const contextInclusions = result.contextAssembly.inclusions.map((item) => ({
-    subjectType: item.subjectType,
-    subjectId: item.subjectId,
-    reason: item.reason,
-    expectedUse: item.expectedUse,
-    sourceAuthority: item.sourceAuthority,
-    ...(item.supportingEvidence === undefined
-      ? {}
-      : { supportingEvidence: item.supportingEvidence })
-  }));
-  const contextExclusions = result.contextAssembly.exclusions.map((item) => ({
-    subjectType: item.subjectType,
-    subjectId: item.subjectId,
-    reason: item.reason,
-    explanation: item.explanation,
-    sourceAuthority: item.sourceAuthority
-  }));
-  const sourceClaimIds = contextInclusions
-    .filter((item) => item.subjectType === "source_claim")
-    .map((item) => item.subjectId);
-  const memoryRefs = contextInclusions
-    .filter((item) => item.subjectType === "memory_record")
-    .map((item) => item.subjectId);
-  const negativePaths = decisionPacketNegativePathsForContext({
+  const {
     contextInclusions,
-    contextExclusions
-  });
+    contextExclusions,
+    sourceClaimIds,
+    memoryRefs,
+    negativePaths
+  } = decisionPacketContextProjection(result.contextAssembly);
   const memorySupersessionTimeline = parseMemorySupersessionTimelineReadback(
     result.contextAssembly.metadata["memorySupersessionTimeline"]
   );
