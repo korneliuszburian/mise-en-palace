@@ -60,6 +60,19 @@ export const parseBackendKind = (value: string | undefined): BackendKind | undef
 const sqlitePath = (candidate: string, targetWorkspace: string): string =>
   path.isAbsolute(candidate) ? path.normalize(candidate) : path.resolve(targetWorkspace, candidate);
 
+const assertGovernedKrnPath = (dbPath: string, targetWorkspace: string): void => {
+  const krnDirectory = path.join(targetWorkspace, ".krn");
+  const relative = path.relative(krnDirectory, dbPath);
+  const insideKrnDirectory = relative === "" ||
+    (!relative.startsWith(`..${path.sep}`) && relative !== "..");
+
+  if (insideKrnDirectory && relative !== "memory.db") {
+    throw new Error(
+      `SQLite paths under ${krnDirectory} must use the governed artifact ${path.join(krnDirectory, "memory.db")}`
+    );
+  }
+};
+
 const postgresStoreIdentity = (databaseUrl: string | undefined): string => {
   if (databaseUrl === undefined) {
     return "postgres:unconfigured";
@@ -99,6 +112,7 @@ export const resolveBackendConfig = (input: BackendConfigInput): BackendConfig =
     nonEmpty(input.env.KRN_DB_PATH) ??
     path.join(input.targetWorkspace, ".krn", "memory.db");
   const dbPath = sqlitePath(selectedPath, input.targetWorkspace);
+  assertGovernedKrnPath(dbPath, input.targetWorkspace);
 
   return {
     kind,

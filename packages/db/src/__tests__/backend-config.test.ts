@@ -30,6 +30,27 @@ describe("resolveBackendConfig", () => {
     });
   });
 
+  it("uses environment selection before the SQLite default", () => {
+    expect(resolveBackendConfig({
+      env: { KRN_DB_PATH: "state/environment.db" },
+      targetWorkspace
+    })).toMatchObject({
+      kind: "sqlite",
+      dbPath: path.join(targetWorkspace, "state", "environment.db")
+    });
+
+    expect(resolveBackendConfig({
+      env: {
+        KRN_DB_BACKEND: "postgres",
+        KRN_DATABASE_URL: "postgres://krn:secret@localhost/krn"
+      },
+      targetWorkspace
+    })).toMatchObject({
+      kind: "postgres",
+      databaseUrl: "postgres://krn:secret@localhost/krn"
+    });
+  });
+
   it("preserves KRN_DATABASE_URL for an explicitly selected Postgres backend", () => {
     expect(resolveBackendConfig({
       backend: "postgres",
@@ -63,5 +84,19 @@ describe("resolveBackendConfig", () => {
       env: { KRN_DB_BACKEND: "postgres" },
       targetWorkspace
     })).toThrow("--backend requires a non-empty value");
+  });
+
+  it("rejects non-governed SQLite artifacts under the target .krn directory", () => {
+    expect(() => resolveBackendConfig({
+      dbPath: ".krn/custom.db",
+      env: {},
+      targetWorkspace
+    })).toThrow("must use the governed artifact");
+
+    expect(() => resolveBackendConfig({
+      dbPath: ".krn/nested/memory.db",
+      env: {},
+      targetWorkspace
+    })).toThrow("must use the governed artifact");
   });
 });
