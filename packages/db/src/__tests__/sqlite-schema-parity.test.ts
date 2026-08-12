@@ -69,5 +69,9 @@ describe("SQLite schema parity", () => {
     expect(sqliteTables.reduce((count, table) => count + table.foreignKeys.length, 0)).toBe(115);
     expect(pgTables.reduce((count, table) => count + table.checks.length, 0)).toBe(69);
     expect(sqliteTables.reduce((count, table) => count + table.checks.length, 0)).toBe(133);
+    expect(sqliteTables.flatMap((table) => table.checks)
+      .filter((constraint) => constraint.name.endsWith("_enum_check"))).toHaveLength(63);
+    expect(sqliteTables.flatMap((table) => table.checks).map((constraint) => constraint.name))
+      .toContain("embeddings_embedding_dimensions");
   });
 });
