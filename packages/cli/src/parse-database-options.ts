@@ -95,6 +95,10 @@ export const parseDatabaseOptions = (
     positional.push(arg);
   }
 
+  if (backend === "postgres" && dbPath !== undefined) {
+    return { kind: "error" };
+  }
+
   return {
     kind: "parsed",
     options: {
