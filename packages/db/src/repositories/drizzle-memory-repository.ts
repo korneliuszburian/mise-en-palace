@@ -100,6 +100,22 @@ import {
 import {
   proposeReviewedHelpedMemoryCandidateOnce
 } from "./reviewed-helped-memory-candidate.js";
+import {
+  antiMemoryPromotionMetadata,
+  assertAntiMemoryCandidateInvariants,
+  assertMemoryCoreInvariants,
+  ensurePromotableMemoryCandidate,
+  memoryPromotionMetadata,
+  memorySelectionDate,
+  normalizedMemorySelectionTerms
+} from "./memory-repository-policy.js";
+
+export {
+  antiMemoryPromotionMetadata,
+  assertAntiMemoryCandidateInvariants,
+  assertMemoryCoreInvariants,
+  memoryPromotionMetadata
+} from "./memory-repository-policy.js";
 
 const sha256Hex = (value: string | Uint8Array): string =>
   createHash("sha256").update(value).digest("hex");
@@ -199,16 +215,6 @@ const sourceRunLifecycleRevisionFromMetadata = (
     : undefined;
 };
 
-export const memoryPromotionMetadata = (
-  candidate: MemoryCandidate,
-  input: { metadata?: Record<string, unknown> }
-): Record<string, unknown> => ({
-  ...candidate.metadata,
-  ...(input.metadata ?? {}),
-  createdFromCandidateId: candidate.id,
-  sourceClaimIds: candidate.sourceClaimIds
-});
-
 export const memoryAuthorityPredecessorFingerprint = (input: {
   candidate: MemoryCandidate;
   memoryRecord: MemoryRecord;
@@ -273,34 +279,11 @@ const reviewedMemoryRevisionMetadata = (
   };
 };
 
-export const antiMemoryPromotionMetadata = (
-  candidate: AntiMemoryCandidate,
-  input: PromoteAntiMemoryCandidateInput
-): Record<string, unknown> => ({
-  ...candidate.metadata,
-  ...(input.metadata ?? {}),
-  createdFromCandidateId: candidate.id,
-  invalidatedBySourceClaimIds: candidate.invalidatedBySourceClaimIds
-});
-
 export const activeMemorySelectionOrder = () => [
   asc(memoryRecords.negativeFeedbackCount),
   desc(memoryRecords.positiveFeedbackCount),
   desc(memoryRecords.updatedAt),
   asc(memoryRecords.id)
-];
-
-const selectionDate = (value: string | undefined): Date | undefined => {
-  const timestamp = value === undefined ? Date.now() : Date.parse(value);
-
-  return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
-};
-
-// fallow-ignore-next-line code-duplication -- memory and source repositories each own their bounded lexical query normalization
-const normalizedMemorySelectionTerms = (terms: readonly string[] | undefined): string[] => [
-  ...new Set((terms ?? [])
-    .map((term) => term.trim().toLowerCase())
-    .filter((term) => term.length > 0))
 ];
 
 const memorySearchableText = () => sql`lower(concat_ws(' ',
@@ -328,30 +311,6 @@ const memoryRelevanceScore = (
       terms.map((term) => sql`CASE WHEN strpos(${searchableText}, ${term}) > 0 THEN 1 ELSE 0 END`),
       sql` + `
     )})`;
-
-interface MemoryCoreInvariantInput {
-  summary: string;
-  body: string;
-  owner: string;
-  confidence: number;
-  applicationGuidance: string;
-  invalidationRule?: string;
-  sourceLineage: readonly { sourceId: string }[];
-  validFrom?: string;
-  validUntil?: string;
-}
-
-interface AntiMemoryCandidateInvariantInput {
-  key: string;
-  summary: string;
-  body: string;
-  owner: string;
-  confidence: number;
-  invalidatedBySourceClaimIds?: readonly string[];
-  sourceLineage: readonly { sourceId: string }[];
-  validFrom?: string;
-  validUntil?: string;
-}
 
 type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
 type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
@@ -410,150 +369,6 @@ type MemoryApplicationCounterState = {
     string,
     { positiveFeedbackCount: number; negativeFeedbackCount: number }
   >;
-};
-
-const hasText = (value: string | undefined): boolean =>
-  value !== undefined && value.trim().length > 0;
-
-const assertHasText = (
-  value: string | undefined,
-  message: string
-): void => {
-  if (!hasText(value)) {
-    throw new Error(message);
-  }
-};
-
-const assertConfidence = (
-  confidence: number,
-  subject: string
-): void => {
-  if (!Number.isInteger(confidence) || confidence < 0 || confidence > 100) {
-    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
-  }
-};
-
-const sourceLineageIsPresent = (
-  sourceLineage: readonly { sourceId: string }[]
-): boolean => (
-  sourceLineage.length > 0 &&
-  sourceLineage.every((lineage) => hasText(lineage.sourceId))
-);
-
-const assertSourceLineage = (
-  sourceLineage: readonly { sourceId: string }[],
-  subject: string
-): void => {
-  if (!sourceLineageIsPresent(sourceLineage)) {
-    throw new Error(`${subject} requires source lineage`);
-  }
-};
-
-const timestampValue = (value: string | undefined): number | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Date.parse(value);
-
-  return Number.isNaN(parsed) ? undefined : parsed;
-};
-
-const assertTemporalWindow = (
-  validFrom: string | undefined,
-  validUntil: string | undefined,
-  subject: string
-): void => {
-  if (validUntil === undefined) {
-    return;
-  }
-
-  if (!hasText(validFrom)) {
-    throw new Error(`${subject} with validUntil requires validFrom`);
-  }
-
-  const validFromTime = timestampValue(validFrom);
-  const validUntilTime = timestampValue(validUntil);
-
-  if (validFromTime !== undefined && validUntilTime !== undefined && validUntilTime <= validFromTime) {
-    throw new Error(`${subject} validUntil must be after validFrom`);
-  }
-};
-
-const assertMemoryTemporalStrategy = (
-  input: MemoryCoreInvariantInput,
-  subject: string
-): void => {
-  if (input.validUntil === undefined) {
-    return;
-  }
-
-  if (!hasText(input.validFrom)) {
-    throw new Error(`${subject} with validUntil requires validFrom`);
-  }
-
-  if (!hasText(input.invalidationRule)) {
-    throw new Error(`${subject} with validUntil requires invalidation rule`);
-  }
-
-  assertTemporalWindow(input.validFrom, input.validUntil, subject);
-};
-
-const invalidatingSourceClaimCount = (
-  input: AntiMemoryCandidateInvariantInput
-): number => input.invalidatedBySourceClaimIds?.filter(hasText).length ?? 0;
-
-const hasAntiMemoryInvalidationEvidence = (
-  input: AntiMemoryCandidateInvariantInput
-): boolean => (
-  invalidatingSourceClaimCount(input) > 0 ||
-  sourceLineageIsPresent(input.sourceLineage)
-);
-
-export const assertMemoryCoreInvariants = (
-  input: MemoryCoreInvariantInput,
-  subject: string
-): void => {
-  assertHasText(input.summary, `${subject} requires summary`);
-  assertHasText(input.body, `${subject} requires body`);
-  assertHasText(input.owner, `${subject} requires owner`);
-  assertConfidence(input.confidence, subject);
-  assertHasText(input.applicationGuidance, `${subject} requires application guidance`);
-  assertSourceLineage(input.sourceLineage, subject);
-  assertMemoryTemporalStrategy(input, subject);
-};
-
-export const assertAntiMemoryCandidateInvariants = (
-  input: AntiMemoryCandidateInvariantInput,
-  subject: string
-): void => {
-  assertHasText(input.key, `${subject} requires key`);
-  assertHasText(input.summary, `${subject} requires summary`);
-  assertHasText(input.body, `${subject} requires body`);
-  assertHasText(input.owner, `${subject} requires owner`);
-  assertConfidence(input.confidence, subject);
-
-  if (!hasAntiMemoryInvalidationEvidence(input)) {
-    throw new Error(`${subject} requires invalidating source claim or source lineage`);
-  }
-
-  assertTemporalWindow(input.validFrom, input.validUntil, subject);
-};
-
-const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
-  if (candidate.status !== "proposed" && candidate.status !== "candidate") {
-    throw new Error(
-      `Memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`
-    );
-  }
-
-  if (candidate.sourceClaimIds.length === 0) {
-    throw new Error(
-      `Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`
-    );
-  }
-
-  assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
 };
 
 const requireCandidateTransitionRow = <Row>(
@@ -872,7 +687,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     options?: ActiveMemorySelectionOptions
   ): Promise<MemoryRecord[]> {
     // fallow-ignore-next-line code-duplication -- active and historical reads intentionally share the same project/time/relevance query prelude
-    const now = selectionDate(options?.now);
+    const now = memorySelectionDate(options?.now);
     if (now === undefined) {
       return [];
     }
@@ -905,7 +720,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     limit: number,
     options?: HistoricalMemoryWarningSelectionOptions
   ): Promise<MemoryRecord[]> {
-    const now = selectionDate(options?.now);
+    const now = memorySelectionDate(options?.now);
     if (now === undefined) {
       return [];
     }
@@ -1029,7 +844,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       }
 
       const candidate = mapMemoryCandidate(candidateRow);
-      ensurePromotableCandidate(candidate);
+      ensurePromotableMemoryCandidate(candidate);
 
       const now = new Date();
       requireCandidateTransitionRow(
@@ -1179,7 +994,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
       if (appliedRetry !== undefined) return appliedRetry;
 
-      ensurePromotableCandidate(candidate);
+      ensurePromotableMemoryCandidate(candidate);
       const now = new Date();
       requireCandidateTransitionRow(
         await tx.update(memoryCandidates).set({
@@ -2592,7 +2407,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     limit: number,
     options?: AntiMemorySelectionOptions
   ): Promise<AntiMemoryRecord[]> {
-    const now = selectionDate(options?.now);
+    const now = memorySelectionDate(options?.now);
     if (now === undefined) {
       return [];
     }
@@ -2653,6 +2468,7 @@ type MemoryRecordVersionRow = typeof memoryRecordVersions.$inferSelect;
 const isJsonRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+// fallow-ignore-next-line code-duplication -- persisted supersession metadata and CLI maintenance readback validate string arrays at separate trust boundaries
 const nonEmptyStringList = (value: unknown): string[] => Array.isArray(value)
   ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
   : [];

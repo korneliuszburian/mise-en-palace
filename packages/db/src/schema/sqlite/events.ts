@@ -1,3 +1,4 @@
+// fallow-ignore-file code-duplication -- SQLite deliberately mirrors the governed PostgreSQL domain schema while retaining dialect-bound builders and types
 import { sql } from "drizzle-orm/sql";
 import {
   maintenanceQueueStatuses

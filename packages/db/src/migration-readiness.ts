@@ -215,6 +215,7 @@ export const compareMigrationIdentities = (
   };
 };
 
+// fallow-ignore-next-line complexity -- one PostgreSQL snapshot binds canonical assets, applied identity order, migration-table presence, and pgvector capability on the same client
 const inspectMigrationState = async (
   client: Sql,
   migrationsFolder: string

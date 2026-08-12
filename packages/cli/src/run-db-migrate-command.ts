@@ -3,8 +3,6 @@ import {
 } from "@krn/db/dev";
 import {
   migrateSqliteDatabase,
-  parseBackendKind,
-  resolveBackendConfig,
   sqliteStoreIsReady
 } from "@krn/db";
 import type {
@@ -13,7 +11,8 @@ import type {
 
 import {
   missingDbCommandOutput,
-  resolveDbCommandContext
+  resolvePostgresDbCommandContext,
+  resolveSelectedDbCommandBackend
 } from "./db-command-context.js";
 import {
   missingDbConfigRecovery,
@@ -26,9 +25,6 @@ import {
 import {
   redactedPostgresEndpoint
 } from "./run-db-readiness-command.js";
-import {
-  resolveTargetWorkspace
-} from "./target-workspace.js";
 
 export interface DbMigrateRuntime {
   env: Record<string, string | undefined>;
@@ -49,6 +45,7 @@ const migrationDoesNotProve =
   "applying migrations does not prove source authority integrity, data correctness, backups, or product readiness";
 const sqliteMigrationAssetLabel = "@krn/db/sqlite-migrations";
 
+// fallow-ignore-next-line complexity -- operator-facing SQLite migration output enumerates the complete post-migration health matrix in stable order
 const runSqliteDbMigrateCommand = async (
   targetWorkspace: string,
   dbPath: string
@@ -103,42 +100,17 @@ const runSqliteDbMigrateCommand = async (
   }
 };
 
-export const runDbMigrateCommand = async (
+// fallow-ignore-next-line complexity -- PostgreSQL compatibility keeps the established missing, unreachable, and migration-result output matrix explicit and ordered
+const runPostgresDbMigrateCommand = async (
   runtime: DbMigrateRuntime
 ): Promise<DbMigrateResult> => {
-  const selectedBackend = parseBackendKind(runtime.backend) ??
-    parseBackendKind(runtime.env.KRN_DB_BACKEND) ??
-    "sqlite";
-  if (selectedBackend === "sqlite") {
-    const targetWorkspace = await resolveTargetWorkspace(runtime);
-    const config = resolveBackendConfig({
-      backend: "sqlite",
-      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
-      env: runtime.env,
-      targetWorkspace
-    });
-    if (config.kind !== "sqlite") {
-      throw new Error("SQLite migration resolved a non-SQLite backend");
-    }
-    return runSqliteDbMigrateCommand(targetWorkspace, config.dbPath);
-  }
-
-  resolveBackendConfig({
-    backend: "postgres",
-    ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
-    env: runtime.env,
-    targetWorkspace: runtime.cwd
-  });
-
-  const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
-    await resolveDbCommandContext(runtime);
-  const environmentFingerprint = await collectEnvironmentFingerprint({
-    repoRoot,
+  const {
+    attachFingerprint,
     databaseUrl,
-    evaluatorVersion: "db-migrate.v1"
-  });
-  const attachFingerprint = (stdout: string): string =>
-    `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
+    migrationsFolder,
+    relativeMigrationsFolder,
+    repoRoot
+  } = await resolvePostgresDbCommandContext(runtime, "db-migrate.v1");
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
@@ -197,4 +169,14 @@ export const runDbMigrateCommand = async (
       ].join("\n") + "\n")
     };
   }
+};
+
+export const runDbMigrateCommand = async (
+  runtime: DbMigrateRuntime
+): Promise<DbMigrateResult> => {
+  const selected = await resolveSelectedDbCommandBackend(runtime);
+
+  return selected.kind === "sqlite"
+    ? runSqliteDbMigrateCommand(selected.targetWorkspace, selected.dbPath)
+    : runPostgresDbMigrateCommand(runtime);
 };

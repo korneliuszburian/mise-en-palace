@@ -1,4 +1,7 @@
 import path from "node:path";
+import {
+  secretFreePostgresStoreIdentity
+} from "./postgres-store-identity.js";
 
 export const backendKinds = ["sqlite", "postgres"] as const;
 
@@ -78,14 +81,7 @@ const postgresStoreIdentity = (databaseUrl: string | undefined): string => {
     return "postgres:unconfigured";
   }
 
-  try {
-    const parsed = new URL(databaseUrl);
-    const port = parsed.port.length > 0 ? parsed.port : "5432";
-    const database = parsed.pathname.replace(/^\//u, "") || "default";
-    return `${parsed.protocol}//${parsed.hostname}:${port}/${database}`;
-  } catch {
-    return "postgres:unparseable-url";
-  }
+  return secretFreePostgresStoreIdentity(databaseUrl, "postgres:unparseable-url");
 };
 
 export const resolveBackendConfig = (input: BackendConfigInput): BackendConfig => {

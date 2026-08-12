@@ -7,9 +7,7 @@ import {
 import {
   inspectSqliteMigrationReadiness,
   inspectTargetKrnArtifacts,
-  parseBackendKind,
   postgresMigrationsFolder,
-  resolveBackendConfig,
   sqliteStoreIsReady
 } from "@krn/db";
 import type {
@@ -49,8 +47,8 @@ import {
   environmentFingerprintLines
 } from "./environment-fingerprint.js";
 import {
-  resolveTargetWorkspace
-} from "./target-workspace.js";
+  resolveSelectedDbCommandBackend
+} from "./db-command-context.js";
 
 export interface DoctorRuntime {
   env: Record<string, string | undefined>;
@@ -346,17 +344,29 @@ const failedSqliteChecks = (message: string): DoctorCheck[] => [
   severity: "failure"
 }));
 
+const sqliteDoctorCheck = (
+  label: string,
+  passing: boolean,
+  passStatus: string,
+  failureStatus: string
+): DoctorCheck => ({
+  label,
+  status: passing ? passStatus : failureStatus,
+  severity: passing ? "pass" : "failure"
+});
+
 const reportSqliteChecks = (report: SqliteMigrationReadinessReport): DoctorCheck[] => {
   const healthy = sqliteStoreIsReady(report);
+  const foreignKeysHealthy = report.foreignKeysEnabled && report.foreignKeyViolations === 0;
   return [
-    { label: "SQLite connectivity", status: report.connectivityReady ? "reachable" : "failed", severity: report.connectivityReady ? "pass" : "failure" },
-    { label: "Migrations", status: report.migrationsVerified ? "applied" : `incomplete (${report.migrationIdentityStatus})`, severity: report.migrationsVerified ? "pass" : "failure" },
-    { label: "SQLite schema", status: report.schemaPresent ? "present" : "incomplete", severity: report.schemaPresent ? "pass" : "failure" },
-    { label: "Repository reachability", status: report.repositoryReachabilityReady ? "ready" : "blocked", severity: report.repositoryReachabilityReady ? "pass" : "failure" },
-    { label: "SQLite journal mode", status: report.journalMode, severity: report.journalMode === "wal" ? "pass" : "failure" },
-    { label: "SQLite foreign keys", status: report.foreignKeysEnabled && report.foreignKeyViolations === 0 ? "enabled" : `blocked (${report.foreignKeyViolations} violations)`, severity: report.foreignKeysEnabled && report.foreignKeyViolations === 0 ? "pass" : "failure" },
-    { label: "SQLite integrity", status: report.integrityReady ? "ok" : "failed", severity: report.integrityReady ? "pass" : "failure" },
-    { label: "Memory store readiness", status: healthy ? "ready" : "blocked (SQLite store checks must be ready)", severity: healthy ? "pass" : "failure" }
+    sqliteDoctorCheck("SQLite connectivity", report.connectivityReady, "reachable", "failed"),
+    sqliteDoctorCheck("Migrations", report.migrationsVerified, "applied", `incomplete (${report.migrationIdentityStatus})`),
+    sqliteDoctorCheck("SQLite schema", report.schemaPresent, "present", "incomplete"),
+    sqliteDoctorCheck("Repository reachability", report.repositoryReachabilityReady, "ready", "blocked"),
+    sqliteDoctorCheck("SQLite journal mode", report.journalMode === "wal", report.journalMode, report.journalMode),
+    sqliteDoctorCheck("SQLite foreign keys", foreignKeysHealthy, "enabled", `blocked (${report.foreignKeyViolations} violations)`),
+    sqliteDoctorCheck("SQLite integrity", report.integrityReady, "ok", "failed"),
+    sqliteDoctorCheck("Memory store readiness", healthy, "ready", "blocked (SQLite store checks must be ready)")
   ];
 };
 
@@ -412,29 +422,10 @@ const runSqliteDoctorCommand = async (
 };
 
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
-  const selectedBackend = parseBackendKind(runtime.backend) ??
-    parseBackendKind(runtime.env.KRN_DB_BACKEND) ??
-    "sqlite";
-  if (selectedBackend === "postgres") {
-    resolveBackendConfig({
-      backend: "postgres",
-      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
-      env: runtime.env,
-      targetWorkspace: runtime.cwd
-    });
+  const selected = await resolveSelectedDbCommandBackend(runtime);
+  if (selected.kind === "postgres") {
     return runPostgresDoctorCommand(runtime);
   }
 
-  const targetWorkspace = await resolveTargetWorkspace(runtime);
-  const config = resolveBackendConfig({
-    ...(runtime.backend === undefined ? {} : { backend: runtime.backend }),
-    ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
-    env: runtime.env,
-    targetWorkspace
-  });
-
-  if (config.kind !== "sqlite") {
-    throw new Error("SQLite doctor resolved a non-SQLite backend");
-  }
-  return runSqliteDoctorCommand(targetWorkspace, config.dbPath);
+  return runSqliteDoctorCommand(selected.targetWorkspace, selected.dbPath);
 };

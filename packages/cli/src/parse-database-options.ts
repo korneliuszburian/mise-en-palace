@@ -4,6 +4,9 @@ import {
 import type {
   BackendKind
 } from "@krn/db";
+import {
+  parsedOptionValue
+} from "./parse-cli-options.js";
 
 export interface ParsedDatabaseOptions {
   backend?: BackendKind;
@@ -20,29 +23,7 @@ export type ParseDatabaseOptionsResult =
       kind: "error";
     };
 
-const optionValue = (
-  args: readonly string[],
-  index: number,
-  option: "--backend" | "--db-path"
-): { value: string; nextIndex: number } | undefined => {
-  const arg = args[index];
-
-  if (arg === option) {
-    const value = args[index + 1]?.trim();
-    return value === undefined || value.length === 0
-      ? undefined
-      : { value, nextIndex: index + 1 };
-  }
-
-  const prefix = `${option}=`;
-  if (arg?.startsWith(prefix) !== true) {
-    return undefined;
-  }
-
-  const value = arg.slice(prefix.length).trim();
-  return value.length === 0 ? undefined : { value, nextIndex: index };
-};
-
+// fallow-ignore-next-line complexity -- the shared DB option boundary keeps duplicate, missing, invalid-backend, and cross-option rejection explicit
 export const parseDatabaseOptions = (
   args: readonly string[]
 ): ParseDatabaseOptionsResult => {
@@ -58,8 +39,8 @@ export const parseDatabaseOptions = (
         return { kind: "error" };
       }
 
-      const parsed = optionValue(args, index, "--backend");
-      if (parsed === undefined) {
+      const parsed = parsedOptionValue(args, index, "--backend", "--backend requires a value");
+      if (!parsed.ok || parsed.value.length === 0) {
         return { kind: "error" };
       }
 
@@ -78,8 +59,8 @@ export const parseDatabaseOptions = (
         return { kind: "error" };
       }
 
-      const parsed = optionValue(args, index, "--db-path");
-      if (parsed === undefined) {
+      const parsed = parsedOptionValue(args, index, "--db-path", "--db-path requires a value");
+      if (!parsed.ok || parsed.value.length === 0) {
         return { kind: "error" };
       }
 

@@ -29,14 +29,14 @@ import {
   workspaces
 } from "../schema/sqlite/harness.js";
 import {
-  metadataOrEmpty,
-  toIsoTimestamp
+  mapProject,
+  mapProjectKernel,
+  mapRepoInstallation,
+  mapWorkspace
+} from "./mappers.js";
+import {
+  metadataOrEmpty
 } from "./repository-value-readers.js";
-
-type WorkspaceRow = typeof workspaces.$inferSelect;
-type ProjectRow = typeof projects.$inferSelect;
-type RepoInstallationRow = typeof repoInstallations.$inferSelect;
-type ProjectKernelRow = typeof projectKernels.$inferSelect;
 
 const requireRow = <T>(rows: readonly T[], operation: string): T => {
   const row = rows[0];
@@ -45,50 +45,6 @@ const requireRow = <T>(rows: readonly T[], operation: string): T => {
   }
   return row;
 };
-
-const mapWorkspace = (row: WorkspaceRow): WorkspaceRecord => ({
-  id: row.id,
-  slug: row.slug,
-  displayName: row.displayName,
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
-});
-
-const mapProject = (row: ProjectRow): ProjectRecord => ({
-  id: row.id,
-  workspaceId: row.workspaceId,
-  slug: row.slug,
-  displayName: row.displayName,
-  ...(row.description === null ? {} : { description: row.description }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
-});
-
-const mapRepoInstallation = (row: RepoInstallationRow): RepoInstallationRecord => ({
-  id: row.id,
-  projectId: row.projectId,
-  provider: row.provider,
-  repoUrl: row.repoUrl,
-  defaultBranch: row.defaultBranch,
-  ...(row.repoFingerprint === null ? {} : { repoFingerprint: row.repoFingerprint }),
-  ...(row.localPathHint === null ? {} : { localPathHint: row.localPathHint }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
-});
-
-const mapProjectKernel = (row: ProjectKernelRow): ProjectKernelRecord => ({
-  id: row.id,
-  projectId: row.projectId,
-  version: row.version,
-  summary: row.summary,
-  activeContextRule: row.activeContextRule,
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
-});
 
 export class SqliteProjectRepository implements ProjectRepository {
   constructor(private readonly db: KrnSqliteDatabase) {}

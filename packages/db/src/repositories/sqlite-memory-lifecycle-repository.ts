@@ -36,8 +36,11 @@ import {
 } from "../schema/sqlite/memory.js";
 import {
   assertMemoryCoreInvariants,
+  ensurePromotableMemoryCandidate,
+  memorySelectionDate,
+  normalizedMemorySelectionTerms,
   memoryPromotionMetadata
-} from "./drizzle-memory-repository.js";
+} from "./memory-repository-policy.js";
 import {
   mapMemoryCandidate,
   mapMemoryRecord
@@ -58,11 +61,6 @@ const requireRow = <T>(rows: readonly T[], operation: string): T => {
 
 const smokePayload = (metadata: Record<string, unknown> | undefined): Record<string, string> =>
   typeof metadata?.smokeId === "string" ? { smokeId: metadata.smokeId } : {};
-
-const selectionDate = (value: string | undefined): Date | undefined => {
-  const timestamp = value === undefined ? Date.now() : Date.parse(value);
-  return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
-};
 
 export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRepositoryPort {
   constructor(
@@ -118,6 +116,7 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
   }
 
   async promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord> {
+    // fallow-ignore-next-line complexity -- one immediate transaction owns duplicate-feedback rejection, candidate transition, record/version creation, and outbox publication
     const task = this.connection?.client.transaction(() => {
       const candidateRow = this.db.query.memoryCandidates.findFirst({
         where: eq(memoryCandidates.id, input.candidateId)
@@ -155,13 +154,7 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
           );
         }
       }
-      if (candidate.status !== "proposed" && candidate.status !== "candidate") {
-        throw new Error(`Memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`);
-      }
-      if (candidate.sourceClaimIds.length === 0) {
-        throw new Error(`Memory candidate ${candidate.id} requires at least one reviewed SourceClaim before promotion`);
-      }
-      assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
+      ensurePromotableMemoryCandidate(candidate);
       const now = new Date();
       requireRow(this.db.update(memoryCandidates).set({
         status: input.decision,
@@ -233,13 +226,11 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
     limit: number,
     options?: ActiveMemorySelectionOptions
   ): Promise<MemoryRecord[]> {
-    const now = selectionDate(options?.now);
+    const now = memorySelectionDate(options?.now);
     if (now === undefined) {
       return [];
     }
-    const terms = [...new Set((options?.terms ?? [])
-      .map((term) => term.trim().toLowerCase())
-      .filter((term) => term.length > 0))];
+    const terms = normalizedMemorySelectionTerms(options?.terms);
     const searchableText = sql`lower(
       coalesce(${memoryRecords.key}, '') || ' ' ||
       coalesce(${memoryRecords.summary}, '') || ' ' ||

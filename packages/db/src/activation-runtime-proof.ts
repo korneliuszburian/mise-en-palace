@@ -1,5 +1,8 @@
 import type postgres from "postgres";
 import { activationRuntimeProofStatuses } from "@krn/core";
+import {
+  secretFreePostgresStoreIdentity
+} from "./postgres-store-identity.js";
 
 const freshnessWindowMs = 15 * 60 * 1000;
 type ActivationRuntimeProofStatus = (typeof activationRuntimeProofStatuses)[number];
@@ -38,15 +41,7 @@ interface CurrentRuntimeProofInput {
 }
 
 export const postgresStoreIdentity = (databaseUrl: string): string => {
-  try {
-    const parsed = new URL(databaseUrl);
-    const port = parsed.port.length > 0 ? parsed.port : "5432";
-    const database = parsed.pathname.replace(/^\//u, "") || "default";
-
-    return `${parsed.protocol}//${parsed.hostname}:${port}/${database}`;
-  } catch {
-    return "postgres-store:unparseable-url";
-  }
+  return secretFreePostgresStoreIdentity(databaseUrl, "postgres-store:unparseable-url");
 };
 
 export const persistActivationRuntimeProof = async (

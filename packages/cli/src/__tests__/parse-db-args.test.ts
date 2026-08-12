@@ -111,6 +111,9 @@ describe("parseDbArgs", () => {
     expect(parseDbArgs(["migrate", "--backend="])).toEqual({
       error: formatDbUsage()
     });
+    expect(parseDbArgs(["migrate", "--db-path", "--backend=sqlite"])).toEqual({
+      error: formatDbUsage()
+    });
     expect(parseDbArgs(["smoke", "--backend", "sqlite"])).toEqual({
       error: formatDbUsage()
     });
