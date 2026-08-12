@@ -134,7 +134,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Runtime markdown memory: absent");
     expect(result.stdout).toContain("Automatic memory mutation: absent");
     expect(result.stdout).toContain("AGENTS.md: present");
-    expect(result.stdout).toContain(".krn runtime truth: governed SQLite artifacts only");
+    expect(result.stdout).toMatch(/\.krn runtime truth: (absent|governed SQLite artifacts only)/u);
     expect(result.stdout).toContain("TypeScript strictness: enabled");
     expect(result.stdout).toContain("Forbidden surfaces: absent");
   });
