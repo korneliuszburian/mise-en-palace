@@ -79,21 +79,27 @@ const runSelectedDbCommand = async (
   if (command.kind === "doctor") {
     return runDoctorCommand({
       env: context.env,
-      cwd: context.cwd
+      cwd: context.cwd,
+      ...(command.backend === undefined ? {} : { backend: command.backend }),
+      ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath })
     });
   }
 
   if (command.kind === "dbReadiness") {
     return runDbReadinessCommand({
       env: context.env,
-      cwd: context.cwd
+      cwd: context.cwd,
+      ...(command.backend === undefined ? {} : { backend: command.backend }),
+      ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath })
     });
   }
 
   if (command.kind === "dbMigrate") {
     return runDbMigrateCommand({
       env: context.env,
-      cwd: context.cwd
+      cwd: context.cwd,
+      ...(command.backend === undefined ? {} : { backend: command.backend }),
+      ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath })
     });
   }
 

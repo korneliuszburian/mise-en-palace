@@ -82,7 +82,7 @@ describe("DB readiness command", () => {
 
   it("requires explicit database configuration before migration", async () => {
     const result = await runDbMigrateCommand({
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       cwd: process.cwd()
     });
 
@@ -113,7 +113,7 @@ describe("DB readiness command", () => {
       expect(await transactionReadOnly(readOnlyUrl)).toBe("on");
 
       const result = await runDbReadinessCommand({
-        env: { KRN_DATABASE_URL: readOnlyUrl },
+        env: { KRN_DB_BACKEND: "postgres", KRN_DATABASE_URL: readOnlyUrl },
         cwd: process.cwd()
       });
       const after = await migrationSnapshot(readOnlyUrl);

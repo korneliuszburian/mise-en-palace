@@ -31,7 +31,7 @@ const currentProjectProof = {
 describe("runCli", () => {
   it("prints a read-only doctor report", async () => {
     const result = await runCli(["doctor"], {
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });

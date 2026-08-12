@@ -114,7 +114,7 @@ describe("runCli init", () => {
     const result = await runCli(
       ["init", "--dry-run", "--repo", "tests/fixtures/target-repos/typescript-basic"],
       {
-        env: {},
+        env: { INIT_CWD: repoRoot },
         cwd: path.join(repoRoot, "packages", "cli"),
         now: () => now,
         createId: (prefix) => `${prefix}-1`
@@ -227,7 +227,7 @@ describe("runCli init", () => {
         "--persist"
       ],
       {
-        env: {},
+        env: { KRN_DB_BACKEND: "postgres" },
         cwd: repoRoot,
         now: () => now,
         createId: (prefix) => `${prefix}-1`
@@ -270,6 +270,7 @@ describe("runCli init", () => {
       ],
       {
         env: {
+          KRN_DB_BACKEND: "postgres",
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
         },
         cwd: repoRoot,

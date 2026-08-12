@@ -2,9 +2,15 @@ import type {
   ParseArgsResult,
   TargetOwnerFileInput
 } from "./parse-args.js";
+import type {
+  ParsedDatabaseOptions
+} from "./parse-database-options.js";
+import {
+  parseDatabaseOptions
+} from "./parse-database-options.js";
 
 const initUsage =
-  "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]";
+  "Usage: krn init --dry-run --repo <path> [--backend sqlite|postgres] [--db-path <path>] [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--backend sqlite|postgres] [--db-path <path>] [--owner-file \"path|root|kind|reason\"]";
 
 const isOwnerFileParts = (
   parts: readonly string[]
@@ -172,7 +178,10 @@ const parseInitToken = (
   };
 };
 
-const formatInitResult = (state: InitParseState): ParseArgsResult => {
+const formatInitResult = (
+  state: InitParseState,
+  databaseOptions: ParsedDatabaseOptions
+): ParseArgsResult => {
   if (state.repo === undefined || state.repo.trim().length === 0 || state.dryRun === state.connect) {
     return {
       error: initUsage
@@ -194,6 +203,7 @@ const formatInitResult = (state: InitParseState): ParseArgsResult => {
         mode: "connect",
         repo: state.repo.trim(),
         persist: state.persist,
+        ...databaseOptions,
         ...ownerFiles
       }
     };
@@ -204,12 +214,19 @@ const formatInitResult = (state: InitParseState): ParseArgsResult => {
       kind: "init",
       mode: "dryRun",
       repo: state.repo.trim(),
+      ...databaseOptions,
       ...ownerFiles
     }
   };
 };
 
 export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
+  const databaseOptions = parseDatabaseOptions(rest);
+
+  if (databaseOptions.kind === "error") {
+    return { error: initUsage };
+  }
+
   const state: InitParseState = {
     dryRun: false,
     connect: false,
@@ -217,8 +234,8 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
     ownerFiles: []
   };
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const parsed = parseInitToken(rest, index, state);
+  for (let index = 0; index < databaseOptions.positional.length; index += 1) {
+    const parsed = parseInitToken(databaseOptions.positional, index, state);
 
     if (parsed.kind === "error") {
       return {
@@ -229,5 +246,5 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
     index = parsed.nextIndex;
   }
 
-  return formatInitResult(state);
+  return formatInitResult(state, databaseOptions.options);
 };

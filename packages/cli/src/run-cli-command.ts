@@ -116,6 +116,7 @@ const runSourceAdapter: CliCommandAdapter = (command, context) =>
 
 const runMemoryAdapter: CliCommandAdapter = (command, context) =>
   runMemoryCliCommand(command, {
+    cwd: context.cwd,
     env: context.env,
     now: context.now,
     createId: context.createId,

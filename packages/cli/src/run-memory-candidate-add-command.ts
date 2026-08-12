@@ -6,21 +6,20 @@ import type {
   ReflectionCandidateEvidence
 } from "@krn/core";
 import {
-  assertSourceClaimExists,
   buildReflectionCandidateEvidence,
-  createMemoryCommandDatabaseRuntime,
+  createMemoryLifecycleCommandRuntime,
   toSourceLineageRefs
 } from "./memory-command-support.js";
 import {
   noStorePreviewLabel,
-  persistenceLine,
-  postgresPersistedLabel
+  persistenceLine
 } from "./command-runtime-support.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
 import type {
-  CreateMemoryCommandDatabaseRuntime
+  CreateMemoryCommandDatabaseRuntime,
+  MemoryLifecycleCommandRuntime
 } from "./memory-command-support.js";
 import type {
   CliCommand
@@ -32,6 +31,7 @@ import {
 type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
 
 export interface MemoryCandidateAddCommandRuntime extends BaseCommandRuntime {
+  cwd?: string;
   command: MemoryCandidateAddCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
@@ -95,11 +95,12 @@ const formatPreview = (
 const formatPersisted = (
   memoryCandidateId: string,
   candidate: ReturnType<typeof parseMemoryCandidateInput>,
-  evidence: ReflectionCandidateEvidence | undefined
+  evidence: ReflectionCandidateEvidence | undefined,
+  persistenceLabel: string
 ): string =>
   [
     "KRN Memory Candidate Add",
-    persistenceLine(postgresPersistedLabel),
+    persistenceLine(`enabled (${persistenceLabel}, explicit --persist)`),
     "",
     "Persisted IDs:",
     `memoryCandidate: ${memoryCandidateId}`,
@@ -120,18 +121,30 @@ const formatPersisted = (
   ].join("\n");
 
 const projectIdForMemoryCandidate = async (
-  databaseRuntime: Awaited<ReturnType<CreateMemoryCommandDatabaseRuntime>>,
+  databaseRuntime: MemoryLifecycleCommandRuntime,
   executionRunId: string | undefined
 ): Promise<string> => {
-  if (executionRunId === undefined) {
-    return databaseRuntime.projectId;
+  const connectedProjectId = databaseRuntime.projectId;
+
+  if (connectedProjectId === undefined) {
+    throw new Error("Connected target project is required for memory candidate creation");
   }
 
-  const run = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
-    executionRunId
-  );
+  if (executionRunId === undefined) {
+    return connectedProjectId;
+  }
 
-  return run?.taskContract.projectId ?? run?.operatorIntent.projectId ?? databaseRuntime.projectId;
+  const runProjectId = await databaseRuntime.resolveExecutionRunProjectId(executionRunId);
+  if (runProjectId === undefined) {
+    return connectedProjectId;
+  }
+  if (databaseRuntime.backend === "sqlite" && runProjectId !== connectedProjectId) {
+    throw new Error(
+      `ExecutionRun ${executionRunId} belongs to project ${runProjectId}, not connected target project ${connectedProjectId}`
+    );
+  }
+
+  return runProjectId;
 };
 
 export const runMemoryCandidateAddCommand = async (
@@ -176,12 +189,18 @@ export const runMemoryCandidateAddCommand = async (
     };
   }
 
-  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+  const databaseRuntime = await createMemoryLifecycleCommandRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory candidate add --persist"
+    "KRN_DATABASE_URL is required for krn memory candidate add --persist",
+    { requireConnectedProject: true }
   );
 
   try {
+    const projectId = await projectIdForMemoryCandidate(
+      databaseRuntime,
+      candidateInput.executionRunId
+    );
+
     if (candidateInput.sourceClaimIds.length > 0) {
       const sourceClaimId = candidateInput.sourceClaimIds[0];
 
@@ -189,13 +208,15 @@ export const runMemoryCandidateAddCommand = async (
         throw new Error("sourceClaimId is required");
       }
 
-      await assertSourceClaimExists(databaseRuntime, sourceClaimId);
+      const sourceClaim = databaseRuntime.backend === "sqlite" &&
+        databaseRuntime.sourceRepository.getSourceClaimForProject !== undefined
+        ? await databaseRuntime.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId)
+        : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
+      if (sourceClaim === undefined) {
+        throw new Error(`SourceClaim not found: ${sourceClaimId}`);
+      }
     }
 
-    const projectId = await projectIdForMemoryCandidate(
-      databaseRuntime,
-      candidateInput.executionRunId
-    );
     const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
       projectId,
       ...(candidateInput.executionRunId === undefined
@@ -222,7 +243,12 @@ export const runMemoryCandidateAddCommand = async (
     });
 
     return {
-      stdout: formatPersisted(memoryCandidate.id, candidateInput, evidence)
+      stdout: formatPersisted(
+        memoryCandidate.id,
+        candidateInput,
+        evidence,
+        databaseRuntime.persistenceLabel
+      )
     };
   } finally {
     await databaseRuntime.close();

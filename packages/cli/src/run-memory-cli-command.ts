@@ -52,6 +52,7 @@ type MemoryCliCommand = Extract<
 >;
 
 interface MemoryCliCommandContext {
+  cwd: string;
   env: CliRuntime["env"];
   now: () => string;
   createId: (prefix: string) => string;
@@ -106,6 +107,7 @@ const databaseRuntimeOption = (
 );
 
 const standardMemoryInput = (context: MemoryCliCommandContext) => ({
+  cwd: context.cwd,
   env: context.env,
   now: context.now,
   createId: context.createId,

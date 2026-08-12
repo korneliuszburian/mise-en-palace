@@ -1,6 +1,11 @@
 import type {
   KnowledgeReadModel
 } from "@krn/harness";
+import {
+  openMemoryLifecycleStore,
+  parseBackendKind,
+  resolveBackendConfig
+} from "@krn/db";
 import type {
   CliCommand
 } from "./parse-args.js";
@@ -23,9 +28,6 @@ import type {
   DatabaseRuntime
 } from "./database-runtime.js";
 import {
-  findRepoRoot
-} from "./cli-file-boundary.js";
-import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
@@ -38,6 +40,12 @@ import {
 import type {
   BrainRecallCommandRuntime
 } from "./run-brain-recall-command.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
+import {
+  findRepoRoot
+} from "./cli-file-boundary.js";
 
 type ProjectCliCommand = Extract<
   CliCommand,
@@ -94,6 +102,70 @@ const createKnowledgeStoreProviders = async (
   command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
 ): Promise<Pick<BrainRecallCommandRuntime, "readModelProvider" | "usefulnessProvider">> => {
+  const selectedBackend = parseBackendKind(context.env.KRN_DB_BACKEND) ?? "sqlite";
+  const hasExplicitSource = command.readModelFiles.length > 0 ||
+    command.decisionFiles.length > 0 ||
+    command.catalogFiles.length > 0;
+  if (
+    context.createDatabaseRuntime === undefined &&
+    selectedBackend === "sqlite"
+  ) {
+    if (hasExplicitSource && !command.storeOnly) {
+      return {};
+    }
+    const targetWorkspace = await resolveTargetWorkspace({
+      cwd: context.cwd,
+      env: context.env
+    });
+    const config = resolveBackendConfig({
+      backend: "sqlite",
+      env: context.env,
+      targetWorkspace
+    });
+
+    if (config.kind === "sqlite") {
+      let store;
+      try {
+        store = await openMemoryLifecycleStore(config, { readonly: true });
+      } catch (error) {
+        if (!command.storeOnly) {
+          return {};
+        }
+        const detail = error instanceof Error ? error.message : "unknown SQLite open error";
+        throw new Error(
+          `SQLite memory store is unavailable at ${config.dbPath}: ${detail}. ` +
+          "No fixture source defaults to the store path; run persisted init first or pass an explicit fixture source."
+        );
+      }
+
+      const connectedProject = await store.projectRepository.getProjectByRepoPath(targetWorkspace);
+      const projectId = command.projectId ?? connectedProject?.id;
+      if (projectId === undefined) {
+        await store.close();
+        throw new Error(`No SQLite project is connected for target workspace ${targetWorkspace}`);
+      }
+
+      if (!command.storeOnly) {
+        await store.close();
+        return {};
+      }
+
+      return {
+        readModelProvider: async () => {
+          try {
+            const records = await store.memoryRepository.listActiveMemory(
+              projectId,
+              command.limit ?? 100
+            );
+            return records.map(memoryRecordToKnowledgeReadModel);
+          } finally {
+            await store.close();
+          }
+        }
+      };
+    }
+  }
+
   const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
 
   if (databaseUrl === undefined) {
@@ -192,6 +264,8 @@ const runSelectedProjectCommand = async (
       env: context.env,
       mode: command.mode,
       repo: command.repo,
+      ...(command.backend === undefined ? {} : { backend: command.backend }),
+      ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath }),
       ...(command.ownerFiles === undefined ? {} : { ownerFiles: command.ownerFiles }),
       ...(command.mode === "connect" ? { persist: command.persist } : {}),
       ...(context.createInitConnectRuntime === undefined
