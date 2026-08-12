@@ -1,3 +1,4 @@
+// fallow-ignore-file code-duplication -- SQLite deliberately mirrors the governed PostgreSQL domain schema while retaining dialect-bound builders and types
 import { uuid } from "./dialect.js";
 
 import {

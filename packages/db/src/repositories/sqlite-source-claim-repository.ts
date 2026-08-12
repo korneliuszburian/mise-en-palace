@@ -6,6 +6,9 @@ import type {
   ProjectId,
   SourceClaim
 } from "@krn/core";
+import type {
+  SourceRepository
+} from "@krn/core/repositories/internal";
 
 import type {
   KrnSqliteDatabase
@@ -15,31 +18,15 @@ import {
   sourceClaims
 } from "../schema/sqlite/sources.js";
 import {
-  metadataOrEmpty,
-  toIsoTimestamp
-} from "./repository-value-readers.js";
+  mapSourceClaim
+} from "./mappers.js";
 
-const mapSourceClaim = (row: typeof sourceClaims.$inferSelect): SourceClaim => ({
-  id: row.id,
-  sourceArtifactId: row.sourceArtifactId,
-  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
-  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-  claim: row.claim,
-  mechanism: row.mechanism,
-  krnImplication: row.krnImplication,
-  doesNotProve: row.doesNotProve,
-  sourceAuthority: row.sourceAuthority,
-  supportType: row.supportType,
-  consumer: row.consumer,
-  ...(row.falsifier === null ? {} : { falsifier: row.falsifier }),
-  ...(row.revisitWhen === null ? {} : { revisitWhen: row.revisitWhen }),
-  status: row.status,
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
-});
+export type SqliteSourceClaimRepositoryPort = Pick<
+  SourceRepository,
+  "getSourceClaimById" | "getSourceClaimForProject"
+>;
 
-export class SqliteSourceClaimRepository {
+export class SqliteSourceClaimRepository implements SqliteSourceClaimRepositoryPort {
   constructor(private readonly db: KrnSqliteDatabase) {}
 
   async getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined> {

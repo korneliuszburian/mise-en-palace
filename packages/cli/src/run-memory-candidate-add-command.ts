@@ -29,6 +29,7 @@ import {
 } from "./parse-memory-confidence.js";
 
 type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
+type ParsedMemoryCandidate = ReturnType<typeof parseMemoryCandidateInput>;
 
 export interface MemoryCandidateAddCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
@@ -147,6 +148,79 @@ const projectIdForMemoryCandidate = async (
   return runProjectId;
 };
 
+const buildMemoryCandidateInput = (
+  command: MemoryCandidateAddCommand,
+  canonicalMemoryKind: string | undefined,
+  evidence: ReflectionCandidateEvidence | undefined
+): ParsedMemoryCandidate => parseMemoryCandidateInput({
+  executionRunId: command.runId,
+  feedbackDeltaId: command.feedbackDeltaId,
+  proposedBy: command.proposedBy ?? "cli",
+  kind: canonicalMemoryKind,
+  summary: command.content,
+  body: command.content,
+  owner: command.owner ?? "operator",
+  confidence: parseMemoryConfidence(command.confidence),
+  applicationGuidance: command.applicationGuidance,
+  invalidationRule: command.invalidationRule,
+  sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],
+  sourceLineage: sourceLineage(command),
+  isUserPreference: false,
+  metadata: {
+    ...command.metadata,
+    ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
+    ...(command.memoryKind === canonicalMemoryKind ? {} : { inputKind: command.memoryKind })
+  }
+});
+
+const assertCandidateSourceClaim = async (
+  databaseRuntime: MemoryLifecycleCommandRuntime,
+  projectId: string,
+  sourceClaimIds: readonly string[]
+): Promise<void> => {
+  const sourceClaimId = sourceClaimIds[0];
+  if (sourceClaimId === undefined) {
+    return;
+  }
+
+  const sourceClaim = databaseRuntime.backend === "sqlite" &&
+    databaseRuntime.sourceRepository.getSourceClaimForProject !== undefined
+    ? await databaseRuntime.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId)
+    : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
+  if (sourceClaim === undefined) {
+    throw new Error(`SourceClaim not found: ${sourceClaimId}`);
+  }
+};
+
+const persistMemoryCandidate = async (
+  databaseRuntime: MemoryLifecycleCommandRuntime,
+  projectId: string,
+  candidateInput: ParsedMemoryCandidate
+) => databaseRuntime.memoryRepository.createMemoryCandidate({
+  projectId,
+  ...(candidateInput.executionRunId === undefined
+    ? {}
+    : { executionRunId: candidateInput.executionRunId }),
+  ...(candidateInput.feedbackDeltaId === undefined
+    ? {}
+    : { feedbackDeltaId: candidateInput.feedbackDeltaId }),
+  proposedBy: candidateInput.proposedBy,
+  kind: candidateInput.kind,
+  status: candidateInput.status,
+  summary: candidateInput.summary,
+  body: candidateInput.body,
+  owner: candidateInput.owner,
+  confidence: candidateInput.confidence,
+  applicationGuidance: candidateInput.applicationGuidance,
+  ...(candidateInput.invalidationRule === undefined
+    ? {}
+    : { invalidationRule: candidateInput.invalidationRule }),
+  sourceClaimIds: candidateInput.sourceClaimIds,
+  sourceLineage: toSourceLineageRefs(candidateInput.sourceLineage),
+  isUserPreference: candidateInput.isUserPreference,
+  metadata: candidateInput.metadata
+});
+
 export const runMemoryCandidateAddCommand = async (
   runtime: MemoryCandidateAddCommandRuntime
 ): Promise<MemoryCandidateAddCommandResult> => {
@@ -162,26 +236,7 @@ export const runMemoryCandidateAddCommand = async (
     evidenceRefs: command.candidateEvidenceRefs,
     doesNotProve: command.candidateEvidenceDoesNotProve
   });
-  const candidateInput = parseMemoryCandidateInput({
-    executionRunId: command.runId,
-    feedbackDeltaId: command.feedbackDeltaId,
-    proposedBy: command.proposedBy ?? "cli",
-    kind: canonicalMemoryKind,
-    summary: command.content,
-    body: command.content,
-    owner: command.owner ?? "operator",
-    confidence: parseMemoryConfidence(command.confidence),
-    applicationGuidance: command.applicationGuidance,
-    invalidationRule: command.invalidationRule,
-    sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],
-    sourceLineage: sourceLineage(command),
-    isUserPreference: false,
-    metadata: {
-      ...command.metadata,
-      ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
-      ...(command.memoryKind === canonicalMemoryKind ? {} : { inputKind: command.memoryKind })
-    }
-  });
+  const candidateInput = buildMemoryCandidateInput(command, canonicalMemoryKind, evidence);
 
   if (!command.persist) {
     return {
@@ -201,46 +256,8 @@ export const runMemoryCandidateAddCommand = async (
       candidateInput.executionRunId
     );
 
-    if (candidateInput.sourceClaimIds.length > 0) {
-      const sourceClaimId = candidateInput.sourceClaimIds[0];
-
-      if (sourceClaimId === undefined) {
-        throw new Error("sourceClaimId is required");
-      }
-
-      const sourceClaim = databaseRuntime.backend === "sqlite" &&
-        databaseRuntime.sourceRepository.getSourceClaimForProject !== undefined
-        ? await databaseRuntime.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId)
-        : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
-      if (sourceClaim === undefined) {
-        throw new Error(`SourceClaim not found: ${sourceClaimId}`);
-      }
-    }
-
-    const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
-      projectId,
-      ...(candidateInput.executionRunId === undefined
-        ? {}
-        : { executionRunId: candidateInput.executionRunId }),
-      ...(candidateInput.feedbackDeltaId === undefined
-        ? {}
-        : { feedbackDeltaId: candidateInput.feedbackDeltaId }),
-      proposedBy: candidateInput.proposedBy,
-      kind: candidateInput.kind,
-      status: candidateInput.status,
-      summary: candidateInput.summary,
-      body: candidateInput.body,
-      owner: candidateInput.owner,
-      confidence: candidateInput.confidence,
-      applicationGuidance: candidateInput.applicationGuidance,
-      ...(candidateInput.invalidationRule === undefined
-        ? {}
-        : { invalidationRule: candidateInput.invalidationRule }),
-      sourceClaimIds: candidateInput.sourceClaimIds,
-      sourceLineage: toSourceLineageRefs(candidateInput.sourceLineage),
-      isUserPreference: candidateInput.isUserPreference,
-      metadata: candidateInput.metadata
-    });
+    await assertCandidateSourceClaim(databaseRuntime, projectId, candidateInput.sourceClaimIds);
+    const memoryCandidate = await persistMemoryCandidate(databaseRuntime, projectId, candidateInput);
 
     return {
       stdout: formatPersisted(

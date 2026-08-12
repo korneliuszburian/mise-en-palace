@@ -44,6 +44,7 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["decision-packet-return-loop", "decisionPacketReturnLoop"]
 ]);
 
+// fallow-ignore-next-line complexity -- the argv boundary exhaustively preserves help, migrate/readiness options, option-free smoke shapes, and typed smoke targets
 export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h")) {
     return {

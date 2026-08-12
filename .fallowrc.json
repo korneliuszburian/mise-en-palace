@@ -47,6 +47,31 @@
       ]
     },
     {
+      "implements": "SqliteMemoryLifecycleRepositoryPort",
+      "members": [
+        "createMemoryCandidate",
+        "getMemoryCandidateById",
+        "promoteReviewedMemoryCandidate",
+        "listActiveMemory"
+      ]
+    },
+    {
+      "implements": "ProjectRepository",
+      "members": [
+        "getProjectByRepoFingerprint",
+        "createRepoInstallation",
+        "createProjectKernel",
+        "cleanupFixtureProjectRecords"
+      ]
+    },
+    {
+      "implements": "SqliteSourceClaimRepositoryPort",
+      "members": [
+        "getSourceClaimById",
+        "getSourceClaimForProject"
+      ]
+    },
+    {
       "implements": "OutboxRepository",
       "members": [
         "enqueue",

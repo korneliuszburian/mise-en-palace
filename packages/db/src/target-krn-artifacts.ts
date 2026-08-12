@@ -37,6 +37,7 @@ const sameIdentity = (
 const errorReason = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown filesystem error";
 
+// fallow-ignore-next-line complexity -- the fail-closed TOCTOU guard keeps lstat/open/fstat/lstat type, link-count, and inode checks in one auditable proof
 const inspectArtifact = async (
   krnPath: string,
   name: GovernedKrnArtifactName
@@ -102,6 +103,7 @@ const inspectArtifact = async (
   }
 };
 
+// fallow-ignore-next-line complexity -- the exact allowlist keeps directory identity, sidecar dependency, artifact identity, and post-scan stability in one fail-closed inspection
 export const inspectTargetKrnArtifacts = async (
   targetWorkspace: string
 ): Promise<TargetKrnArtifactsResult> => {
