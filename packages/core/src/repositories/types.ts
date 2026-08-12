@@ -8,7 +8,6 @@ import type {
   RepoInstallationId,
   SourceArtifactId,
   SourceChunkId,
-  SourceArtifactKind,
   SourceAuthorityLabel,
   TaskContractId,
   WorkspaceId
@@ -131,7 +130,7 @@ export interface SourceArtifactRecord {
   projectId?: ProjectId;
   importId?: string;
   importRowId?: string;
-  kind: SourceArtifactKind;
+  kind: "doc" | "file" | "url" | "paper" | "run" | "operator_input" | "external_doc";
   sourceAuthority: SourceAuthorityLabel;
   uri: string;
   title: string;

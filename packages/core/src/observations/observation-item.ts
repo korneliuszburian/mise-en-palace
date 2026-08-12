@@ -36,8 +36,6 @@ export const observationClaimRelations = [
   "supersedes"
 ] as const;
 
-export type ObservationClaimRelation = (typeof observationClaimRelations)[number];
-
 export interface ObservationEntityLink {
   entityKind: ObservationEntityKind;
   entityId: string;
@@ -46,7 +44,7 @@ export interface ObservationEntityLink {
 
 export interface ObservationClaimLink {
   sourceClaimId: SourceClaimId;
-  relation: ObservationClaimRelation;
+  relation: "supports" | "contradicts" | "qualifies" | "supersedes";
 }
 
 export interface ObservationItem {

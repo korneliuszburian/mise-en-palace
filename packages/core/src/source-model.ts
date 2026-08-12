@@ -19,8 +19,6 @@ export const sourceArtifactKinds = [
   "external_doc"
 ] as const;
 
-export type SourceArtifactKind = (typeof sourceArtifactKinds)[number];
-
 // Canonical authority taxonomy. The label is the persisted/input value; rank
 // and kind are projections used by activation, override policy, and readbacks.
 const sourceAuthorityByLabel = {
