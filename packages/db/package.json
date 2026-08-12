@@ -24,17 +24,21 @@
   "scripts": {
     "prepublishOnly": "node ../../scripts/check-release-boundary.mjs",
     "db:check": "drizzle-kit check --config drizzle.config.ts",
+    "db:check:sqlite": "drizzle-kit check --config drizzle.sqlite.config.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:generate:sqlite": "drizzle-kit generate --config drizzle.sqlite.config.ts",
     "test": "vitest run --no-file-parallelism",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@krn/core": "workspace:*",
+    "better-sqlite3": "13.0.3",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@krn/harness": "workspace:*",
+    "@types/better-sqlite3": "9.6.0",
     "@types/node": "22.20.1",
     "drizzle-kit": "^0.31.10",
     "vitest": "^4.1.9"
