@@ -102,5 +102,16 @@ describe("parseInitArgs", () => {
     expect(parseInitArgs(["--dry-run", "--repo", "repo-root", "--backend", "mysql"])).toEqual({
       error: initUsage
     });
+    expect(parseInitArgs([
+      "--dry-run",
+      "--repo",
+      "repo-root",
+      "--backend",
+      "postgres",
+      "--db-path",
+      "memory.db"
+    ])).toEqual({
+      error: initUsage
+    });
   });
 });

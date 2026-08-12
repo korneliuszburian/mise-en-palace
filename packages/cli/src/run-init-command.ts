@@ -575,22 +575,22 @@ export const runInitCommand = async (
   runtime: InitCommandRuntime
 ): Promise<InitCommandResult> => {
   const detection = await detectTargetRepo(runtime, runtime.ownerFiles ?? []);
+  const config = resolveBackendConfig({
+    ...(runtime.backend === undefined ? {} : { backend: runtime.backend }),
+    ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+    env: runtime.env,
+    targetWorkspace: detection.repoPath
+  });
 
   if (runtime.mode === "connect") {
     if (runtime.persist !== true) {
       throw new Error("krn init --connect requires --persist");
     }
 
-    if (detection.forbiddenSurfaces.length > 0) {
-      throw new Error(`Target repo contains forbidden surfaces: ${detection.forbiddenSurfaces.join(", ")}`);
+    if (detection.forbiddenSurfaces.includes(".krn")) {
+      throw new Error("Target repo contains forbidden surfaces: .krn");
     }
 
-    const config = resolveBackendConfig({
-      ...(runtime.backend === undefined ? {} : { backend: runtime.backend }),
-      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
-      env: runtime.env,
-      targetWorkspace: detection.repoPath
-    });
     const createRuntime = runtime.createInitConnectRuntime ?? createConfiguredInitConnectRuntime;
     const initRuntime = await createRuntime({ config });
 
