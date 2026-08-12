@@ -80,6 +80,7 @@ const openSqliteMemoryLifecycleStore = async (
     throw error;
   }
   const projectRepository = new SqliteProjectRepository(connection.db);
+  let readOnlyTail = Promise.resolve();
   return {
     backend: "sqlite",
     persistenceLabel: "SQLite",
@@ -99,15 +100,28 @@ const openSqliteMemoryLifecycleStore = async (
       return row?.taskProjectId ?? row?.intentProjectId ?? undefined;
     },
     async withReadOnly<T>(operation: () => Promise<T>): Promise<T> {
-      const prior = Number(connection.client.pragma("query_only", { simple: true }));
-      if (prior !== 0 && prior !== 1) {
-        throw new Error(`SQLite query_only returned an invalid value: ${String(prior)}`);
-      }
-      connection.client.pragma("query_only = ON");
+      const predecessor = readOnlyTail;
+      let release!: () => void;
+      readOnlyTail = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await predecessor;
+      let prior: number | undefined;
       try {
+        prior = Number(connection.client.pragma("query_only", { simple: true }));
+        if (prior !== 0 && prior !== 1) {
+          throw new Error(`SQLite query_only returned an invalid value: ${String(prior)}`);
+        }
+        connection.client.pragma("query_only = ON");
         return await operation();
       } finally {
-        connection.client.pragma(`query_only = ${prior === 1 ? "ON" : "OFF"}`);
+        try {
+          if (prior !== undefined) {
+            connection.client.pragma(`query_only = ${prior === 1 ? "ON" : "OFF"}`);
+          }
+        } finally {
+          release();
+        }
       }
     },
     async close(): Promise<void> {

@@ -266,10 +266,24 @@ const renderBriefText = (sections: Record<string, BriefItem[]>, omitted: string[
 
 const emptyBrief = (tokenBudget: number, reason: string): Record<string, unknown> => {
   const sections = ["constraints", "facts", "preferences"].map((name) => ({ name, items: [] }));
+  const text = "KRN Memory Brief\nConstraints:\nFacts:\nPreferences:";
+  const estimatedTokens = Math.ceil(text.length / 4);
+  if (estimatedTokens > tokenBudget) {
+    return result(
+      {
+        kind: "krn.memory.brief.error.v1",
+        error: "budget_too_small_for_required_marker",
+        tokenBudget,
+        requiredTokens: estimatedTokens
+      },
+      "budget_too_small_for_required_marker",
+      true
+    );
+  }
   const payload = {
     kind: "krn.memory.brief.v1", access: "read_only", mutation: "none", status: "empty",
-    emptyReason: reason, tokenBudget, estimatedTokens: 4, truncated: false,
-    sections, omittedRecordIds: [], text: "KRN Memory Brief\nConstraints:\nFacts:\nPreferences:"
+    emptyReason: reason, tokenBudget, estimatedTokens, truncated: false,
+    sections, omittedRecordIds: [], text
   };
   return result(payload, payload.text);
 };
