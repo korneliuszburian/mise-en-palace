@@ -130,6 +130,7 @@ const result = (structuredContent: unknown, text: string, isError = false): Reco
   isError
 });
 
+// fallow-ignore-next-line complexity -- remember ingress exhaustively validates fields, backend capability, project-scoped claims, and atomic candidate authority metadata
 export const runRememberTool = async (
   runtime: MemoryLifecycleToolRuntime,
   context: MemoryLifecycleContext,
@@ -273,6 +274,7 @@ const emptyBrief = (tokenBudget: number, reason: string): Record<string, unknown
   return result(payload, payload.text);
 };
 
+// fallow-ignore-next-line complexity -- brief keeps the fixed section, omission-marker, and hard-budget selection matrix auditable in one renderer
 export const runBriefTool = async (
   runtime: MemoryLifecycleToolRuntime,
   context: MemoryLifecycleContext,
