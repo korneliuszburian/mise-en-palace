@@ -9,7 +9,8 @@ import {
   inspectTargetKrnArtifacts,
   parseBackendKind,
   postgresMigrationsFolder,
-  resolveBackendConfig
+  resolveBackendConfig,
+  sqliteStoreIsReady
 } from "@krn/db";
 import type {
   BackendKind,
@@ -314,11 +315,6 @@ const runPostgresDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorR
   };
 };
 
-const sqliteHealthy = (report: SqliteMigrationReadinessReport): boolean =>
-  report.connectivityReady && report.migrationsVerified && report.schemaPresent &&
-  report.repositoryReachabilityReady && report.journalMode === "wal" &&
-  report.foreignKeysEnabled && report.foreignKeyViolations === 0 && report.integrityReady;
-
 const sqliteRuntimeWarnings = (): DoctorCheck[] => [
   "Harness persistence readiness",
   "Source graph readiness",
@@ -351,7 +347,7 @@ const failedSqliteChecks = (message: string): DoctorCheck[] => [
 }));
 
 const reportSqliteChecks = (report: SqliteMigrationReadinessReport): DoctorCheck[] => {
-  const healthy = sqliteHealthy(report);
+  const healthy = sqliteStoreIsReady(report);
   return [
     { label: "SQLite connectivity", status: report.connectivityReady ? "reachable" : "failed", severity: report.connectivityReady ? "pass" : "failure" },
     { label: "Migrations", status: report.migrationsVerified ? "applied" : `incomplete (${report.migrationIdentityStatus})`, severity: report.migrationsVerified ? "pass" : "failure" },
