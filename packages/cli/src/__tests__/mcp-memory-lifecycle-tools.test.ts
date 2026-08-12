@@ -165,10 +165,10 @@ describe("MCP memory lifecycle tools", () => {
   });
 
   it.each([
-    ["foreign", undefined],
-    ["rejected", sourceClaim("claim-rejected", "rejected")],
-    ["unknown", undefined]
-  ] as const)("rejects %s SourceClaim evidence without inserting a candidate", async (label, lookupResult) => {
+    ["foreign", sourceClaim("claim-foreign", "accepted"), undefined],
+    ["rejected", sourceClaim("claim-rejected", "rejected"), sourceClaim("claim-rejected", "rejected")],
+    ["unknown", undefined, undefined]
+  ] as const)("rejects %s SourceClaim evidence without inserting a candidate", async (label, directClaim, scopedClaim) => {
     const claimId = label === "rejected" ? "claim-rejected" : `claim-${label}`;
     const createMemoryCandidate = vi.fn(async (input: CreateMemoryCandidateInput) => ({
       ...input, id: "should-not-exist", status: "proposed"
@@ -177,8 +177,8 @@ describe("MCP memory lifecycle tools", () => {
       backend: "sqlite",
       projectRepository: { getProjectByRepoPath: async () => project },
       sourceRepository: {
-        getSourceClaimById: async () => lookupResult,
-        getSourceClaimForProject: async (_projectId: string, id: string) => id === claimId ? lookupResult : undefined
+        getSourceClaimById: async () => directClaim,
+        getSourceClaimForProject: async (_projectId: string, id: string) => id === claimId ? scopedClaim : undefined
       },
       memoryRepository: {
         createMemoryCandidate,
