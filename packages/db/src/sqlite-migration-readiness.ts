@@ -97,6 +97,43 @@ export interface SqliteMigrationReadinessReport {
   readonly schemaPresent: boolean;
 }
 
+export const sqliteStoreIsReady = (
+  report: SqliteMigrationReadinessReport
+): boolean =>
+  report.connectivityReady &&
+  report.migrationsVerified &&
+  report.schemaPresent &&
+  report.repositoryReachabilityReady &&
+  report.journalMode === "wal" &&
+  report.foreignKeysEnabled &&
+  report.foreignKeyViolations === 0 &&
+  report.integrityReady;
+
+export const assertSqliteStoreReady = (
+  report: SqliteMigrationReadinessReport
+): void => {
+  if (sqliteStoreIsReady(report)) {
+    return;
+  }
+
+  const failures = [
+    ...(report.connectivityReady ? [] : ["connectivity failed"]),
+    ...(report.migrationsVerified
+      ? []
+      : [`migration identity ${report.migrationIdentityStatus}`]),
+    ...(report.schemaPresent ? [] : ["schema drift detected"]),
+    ...(report.repositoryReachabilityReady ? [] : ["repository reachability failed"]),
+    ...(report.journalMode === "wal" ? [] : [`journal mode is ${report.journalMode}`]),
+    ...(report.foreignKeysEnabled ? [] : ["foreign keys are disabled"]),
+    ...(report.foreignKeyViolations === 0
+      ? []
+      : [`${report.foreignKeyViolations} foreign key violations`]),
+    ...(report.integrityReady ? [] : ["integrity check failed"])
+  ];
+
+  throw new Error(`SQLite store is not ready: ${failures.join("; ")}`);
+};
+
 const expectedMigrations = () => readMigrationFiles({
   migrationsFolder: sqliteMigrationsFolder
 }).map((migration) => ({

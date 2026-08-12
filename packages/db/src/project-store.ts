@@ -26,6 +26,10 @@ import {
 import {
   openKrnSqliteDatabase
 } from "./sqlite-database.js";
+import {
+  assertSqliteStoreReady,
+  inspectOpenSqliteStore
+} from "./sqlite-migration-readiness.js";
 
 export interface ProjectStore {
   readonly backend: BackendConfig["kind"];
@@ -68,6 +72,7 @@ const openSqliteProjectStore = async (
 
   try {
     migrateSqlite(connection.db, { migrationsFolder: sqliteMigrationsFolder });
+    assertSqliteStoreReady(await inspectOpenSqliteStore(connection));
   } catch (error) {
     connection.close();
     throw error;
