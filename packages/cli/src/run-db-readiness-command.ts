@@ -4,11 +4,11 @@ import {
 import {
   inspectSqliteMigrationReadiness,
   parseBackendKind,
-  resolveBackendConfig
+  resolveBackendConfig,
+  sqliteStoreIsReady
 } from "@krn/db";
 import type {
-  BackendKind,
-  SqliteMigrationReadinessReport
+  BackendKind
 } from "@krn/db";
 import {
   missingDbCommandOutput,
@@ -57,11 +57,6 @@ export const redactedPostgresEndpoint = (databaseUrl: string): string => {
   }
 };
 
-const sqliteReady = (report: SqliteMigrationReadinessReport): boolean =>
-  report.connectivityReady && report.migrationsVerified && report.schemaPresent &&
-  report.repositoryReachabilityReady && report.journalMode === "wal" &&
-  report.foreignKeysEnabled && report.foreignKeyViolations === 0 && report.integrityReady;
-
 const runSqliteDbReadinessCommand = async (
   targetWorkspace: string,
   dbPath: string
@@ -75,7 +70,7 @@ const runSqliteDbReadinessCommand = async (
 
   try {
     const report = await inspectSqliteMigrationReadiness(dbPath);
-    const ready = sqliteReady(report);
+    const ready = sqliteStoreIsReady(report);
     return {
       exitCode: ready ? 0 : 1,
       stdout: attachFingerprint([

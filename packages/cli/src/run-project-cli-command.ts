@@ -98,6 +98,14 @@ const trimmedEnvValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
+const storeRecallRepositoryLimit = (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>
+): number => Object.keys(command.filter).length === 0
+  ? command.limit ?? 100
+  // Read-model filters include projected metadata and usefulness that the
+  // repository contract cannot express. Apply the user limit only after that projection.
+  : 2_147_483_647;
+
 const createKnowledgeStoreProviders = async (
   command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
@@ -155,7 +163,7 @@ const createKnowledgeStoreProviders = async (
           try {
             const records = await store.memoryRepository.listActiveMemory(
               projectId,
-              command.limit ?? 100
+              storeRecallRepositoryLimit(command)
             );
             return records.map(memoryRecordToKnowledgeReadModel);
           } finally {
@@ -222,7 +230,7 @@ const createKnowledgeStoreProviders = async (
       withRuntime(async (runtime) => {
         const records = await runtime.memoryRepository.listActiveMemory?.(
           runtime.projectId,
-          command.limit ?? 100
+          storeRecallRepositoryLimit(command)
         );
 
         return (records ?? []).map(memoryRecordToKnowledgeReadModel);

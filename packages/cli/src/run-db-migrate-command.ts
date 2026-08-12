@@ -4,11 +4,11 @@ import {
 import {
   migrateSqliteDatabase,
   parseBackendKind,
-  resolveBackendConfig
+  resolveBackendConfig,
+  sqliteStoreIsReady
 } from "@krn/db";
 import type {
-  BackendKind,
-  SqliteMigrationReadinessReport
+  BackendKind
 } from "@krn/db";
 
 import {
@@ -49,16 +49,6 @@ const migrationDoesNotProve =
   "applying migrations does not prove source authority integrity, data correctness, backups, or product readiness";
 const sqliteMigrationAssetLabel = "@krn/db/sqlite-migrations";
 
-const sqliteReady = (report: SqliteMigrationReadinessReport): boolean =>
-  report.connectivityReady &&
-  report.migrationsVerified &&
-  report.schemaPresent &&
-  report.repositoryReachabilityReady &&
-  report.journalMode === "wal" &&
-  report.foreignKeysEnabled &&
-  report.foreignKeyViolations === 0 &&
-  report.integrityReady;
-
 const runSqliteDbMigrateCommand = async (
   targetWorkspace: string,
   dbPath: string
@@ -72,7 +62,7 @@ const runSqliteDbMigrateCommand = async (
 
   try {
     const report = await migrateSqliteDatabase(dbPath);
-    const ready = sqliteReady(report);
+    const ready = sqliteStoreIsReady(report);
     return {
       exitCode: ready ? 0 : 1,
       stdout: attachFingerprint([

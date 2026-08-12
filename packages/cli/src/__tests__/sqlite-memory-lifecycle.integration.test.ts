@@ -17,6 +17,7 @@ import {
 } from "vitest";
 
 import {
+  migrateSqliteDatabase,
   openKrnSqliteDatabase
 } from "@krn/db";
 import {
@@ -49,6 +50,52 @@ const persistedId = (stdout: string, label: string): string => {
 };
 
 describe("SQLite persisted memory lifecycle", () => {
+  it("refuses registration writes when the SQLite migration ledger is tampered", async () => {
+    const targetWorkspace = await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-drifted-init-"));
+    fixtures.push(targetWorkspace);
+    await writeFile(
+      path.join(targetWorkspace, "package.json"),
+      JSON.stringify({ name: "sqlite-drifted-init-target" }),
+      "utf8"
+    );
+    const dbPath = path.join(targetWorkspace, ".krn", "memory.db");
+    await migrateSqliteDatabase(dbPath);
+    const tampered = await openKrnSqliteDatabase(dbPath);
+    try {
+      tampered.client.prepare(
+        "update __drizzle_migrations set hash = ? where created_at = (select min(created_at) from __drizzle_migrations)"
+      ).run("tampered-before-init");
+      expect((tampered.client.prepare(
+        "select count(*) as count from workspaces"
+      ).get() as { count: number }).count).toBe(0);
+    } finally {
+      tampered.close();
+    }
+
+    const init = await runCli([
+      "init",
+      "--connect",
+      "--repo",
+      targetWorkspace,
+      "--persist",
+      "--backend",
+      "sqlite"
+    ], testRuntime(targetWorkspace));
+
+    expect(init.exitCode).toBe(1);
+    expect(init.stdout).toBe("");
+    expect(init.stderr).toContain("SQLite store is not ready: migration identity mismatched");
+
+    const inspected = await openKrnSqliteDatabase(dbPath);
+    try {
+      expect((inspected.client.prepare(
+        "select count(*) as count from workspaces"
+      ).get() as { count: number }).count).toBe(0);
+    } finally {
+      inspected.close();
+    }
+  });
+
   it("migrates in init, creates and promotes a candidate, then recalls it without Postgres", async () => {
     const targetWorkspace = await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-lifecycle-"));
     fixtures.push(targetWorkspace);
