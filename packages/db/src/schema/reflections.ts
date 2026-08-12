@@ -5,6 +5,7 @@ import {
   text,
   uuid
 } from "drizzle-orm/pg-core";
+import { reflectionStatuses } from "@krn/core";
 
 import {
   createdAtColumn,
@@ -18,12 +19,7 @@ import {
   taskContractIdColumn
 } from "./reference-columns.js";
 
-export const reflectionStatus = pgEnum("reflection_status", [
-  "candidate",
-  "reviewed",
-  "rejected",
-  "superseded"
-]);
+export const reflectionStatus = pgEnum("reflection_status", reflectionStatuses);
 
 export const reflectionRecords = pgTable(
   "reflection_records",

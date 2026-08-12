@@ -29,7 +29,14 @@ import {
   requiresObservationSourceRange
 } from "../observations/index.js";
 
-export type ReflectionStatus = "candidate" | "reviewed" | "rejected" | "superseded";
+export const reflectionStatuses = [
+  "candidate",
+  "reviewed",
+  "rejected",
+  "superseded"
+] as const;
+
+export type ReflectionStatus = (typeof reflectionStatuses)[number];
 export type ReflectionFindingKind =
   | "candidate_signal"
   | "contradiction"

@@ -8,15 +8,18 @@ import type {
 } from "../ids.js";
 import type { IsoTimestamp } from "../time.js";
 
-export type ObservationSourceRangeType =
-  | "run_event"
-  | "source_chunk"
-  | "tool_trace"
-  | "diff"
-  | "evidence_bundle"
-  | "review_assessment"
-  | "feedback_delta"
-  | "operator_input";
+export const observationSourceRangeTypes = [
+  "run_event",
+  "source_chunk",
+  "tool_trace",
+  "diff",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "operator_input"
+] as const;
+
+export type ObservationSourceRangeType = (typeof observationSourceRangeTypes)[number];
 
 export interface ObservationSourceRange {
   id: ObservationSourceRangeId;

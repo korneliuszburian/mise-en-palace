@@ -80,3 +80,7 @@ export type {
   SourceChunkRecord,
   WorkspaceRecord
 } from "./types.js";
+export {
+  outboxEventStatuses,
+  runEventSeverities
+} from "./types.js";

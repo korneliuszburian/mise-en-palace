@@ -9,6 +9,18 @@ import type {
 } from "./ids.js";
 import type { IsoTimestamp } from "./time.js";
 
+export const sourceArtifactKinds = [
+  "doc",
+  "file",
+  "url",
+  "paper",
+  "run",
+  "operator_input",
+  "external_doc"
+] as const;
+
+export type SourceArtifactKind = (typeof sourceArtifactKinds)[number];
+
 // Canonical authority taxonomy. The label is the persisted/input value; rank
 // and kind are projections used by activation, override policy, and readbacks.
 const sourceAuthorityByLabel = {
