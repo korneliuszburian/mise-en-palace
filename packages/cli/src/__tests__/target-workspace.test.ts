@@ -1,7 +1,8 @@
 import {
   mkdtemp,
   mkdir,
-  realpath
+  realpath,
+  symlink
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -38,6 +39,24 @@ describe("resolveTargetWorkspace", () => {
       cwd: process.cwd(),
       env: { INIT_CWD: nested }
     })).resolves.toBe(await realpath(nested));
+  });
+
+  it("canonicalizes symlinked explicit repo and INIT_CWD workspace locators", async () => {
+    const fixture = await mkdtemp(path.join(os.tmpdir(), "krn-target-workspace-"));
+    const target = path.join(fixture, "target");
+    const alias = path.join(fixture, "target-alias");
+    await mkdir(target);
+    await symlink(target, alias, "dir");
+
+    await expect(resolveTargetWorkspace({
+      cwd: process.cwd(),
+      env: { INIT_CWD: fixture },
+      repo: "target-alias"
+    })).resolves.toBe(await realpath(target));
+    await expect(resolveTargetWorkspace({
+      cwd: process.cwd(),
+      env: { INIT_CWD: alias }
+    })).resolves.toBe(await realpath(target));
   });
 
   it("does not substitute the KRN checkout for an unmarked INIT_CWD target", async () => {

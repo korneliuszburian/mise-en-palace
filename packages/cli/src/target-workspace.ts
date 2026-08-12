@@ -1,6 +1,6 @@
 import {
-  lstat,
-  realpath
+  realpath,
+  stat
 } from "node:fs/promises";
 import path from "node:path";
 
@@ -12,19 +12,27 @@ export interface TargetWorkspaceInput {
 
 const isDirectory = async (candidate: string): Promise<boolean> => {
   try {
-    const info = await lstat(candidate);
-    return info.isDirectory() && !info.isSymbolicLink();
+    const canonical = await realpath(candidate);
+    const info = await stat(canonical);
+    return info.isDirectory();
   } catch {
     return false;
   }
 };
 
 const canonicalDirectory = async (candidate: string): Promise<string> => {
-  if (!(await isDirectory(candidate))) {
+  let canonical: string;
+  try {
+    canonical = await realpath(candidate);
+  } catch {
     throw new Error(`Target workspace is not a directory: ${candidate}`);
   }
 
-  return realpath(candidate);
+  if (!(await isDirectory(canonical))) {
+    throw new Error(`Target workspace is not a directory: ${candidate}`);
+  }
+
+  return canonical;
 };
 
 const resolveCallerDirectory = async (
