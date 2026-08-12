@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   decisionGradeSourceSupportTypes,
+  sourceArtifactKinds,
   sourceAuthorityLabels,
   sourceClaimCreateStatuses,
   sourceClaimStatuses,
@@ -14,15 +15,7 @@ import {
   RequiredTextSchema
 } from "./schema-primitives.js";
 
-export const SourceArtifactKindSchema = z.enum([
-  "doc",
-  "file",
-  "url",
-  "paper",
-  "run",
-  "operator_input",
-  "external_doc"
-]);
+export const SourceArtifactKindSchema = z.enum(sourceArtifactKinds);
 
 export const SourceAuthorityLabelSchema = z.enum(sourceAuthorityLabels);
 

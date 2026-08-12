@@ -9,7 +9,7 @@ import {
 } from "../parse-init-args.js";
 
 const initUsage =
-  "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]";
+  "Usage: krn init --dry-run --repo <path> [--backend sqlite|postgres] [--db-path <path>] [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--backend sqlite|postgres] [--db-path <path>] [--owner-file \"path|root|kind|reason\"]";
 
 describe("parseInitArgs", () => {
   it("parses dry-run init with repo path", () => {
@@ -54,6 +54,29 @@ describe("parseInitArgs", () => {
     });
   });
 
+  it("passes validated database options through without adding a new init shape", () => {
+    expect(parseInitArgs([
+      "--connect",
+      "--repo",
+      "repo-root",
+      "--persist",
+      "--backend=sqlite",
+      "--db-path",
+      ".state/memory.db"
+    ])).toEqual({
+      command: {
+        kind: "init",
+        mode: "connect",
+        repo: "repo-root",
+        persist: true,
+        backend: "sqlite",
+        dbPath: ".state/memory.db"
+      }
+    });
+
+    expect(parseInitArgs(["--backend", "sqlite"])).toEqual({ error: initUsage });
+  });
+
   it("rejects unsupported init command shapes", () => {
     expect(parseInitArgs(["--dry-run", "--connect", "--repo", "repo-root"])).toEqual({
       error: initUsage
@@ -71,6 +94,23 @@ describe("parseInitArgs", () => {
       error: initUsage
     });
     expect(parseInitArgs(["--dry-run", "--repo", "repo-root", "--owner-file", "src/index.ts|src||reason"])).toEqual({
+      error: initUsage
+    });
+    expect(parseInitArgs(["--dry-run", "--repo", "repo-root", "--backend="])).toEqual({
+      error: initUsage
+    });
+    expect(parseInitArgs(["--dry-run", "--repo", "repo-root", "--backend", "mysql"])).toEqual({
+      error: initUsage
+    });
+    expect(parseInitArgs([
+      "--dry-run",
+      "--repo",
+      "repo-root",
+      "--backend",
+      "postgres",
+      "--db-path",
+      "memory.db"
+    ])).toEqual({
       error: initUsage
     });
   });

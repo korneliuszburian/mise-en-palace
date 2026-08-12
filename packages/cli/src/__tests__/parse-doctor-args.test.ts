@@ -17,9 +17,22 @@ describe("parseDoctorArgs", () => {
     });
   });
 
+  it("parses database backend options", () => {
+    expect(parseDoctorArgs(["--backend", "sqlite", "--db-path=.krn/memory.db"])).toEqual({
+      command: {
+        kind: "doctor",
+        backend: "sqlite",
+        dbPath: ".krn/memory.db"
+      }
+    });
+  });
+
   it("rejects doctor arguments", () => {
     expect(parseDoctorArgs(["--json"])).toEqual({
-      error: "Usage: krn doctor"
+      error: "Usage: krn doctor [--backend sqlite|postgres] [--db-path <path>]"
+    });
+    expect(parseDoctorArgs(["--backend="])).toEqual({
+      error: "Usage: krn doctor [--backend sqlite|postgres] [--db-path <path>]"
     });
   });
 });

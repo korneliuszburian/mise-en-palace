@@ -1,7 +1,19 @@
-import path from "node:path";
 import {
   findRepoRoot
 } from "./cli-file-boundary.js";
+import {
+  fileURLToPath
+} from "node:url";
+import {
+  inspectSqliteMigrationReadiness,
+  inspectTargetKrnArtifacts,
+  postgresMigrationsFolder,
+  sqliteStoreIsReady
+} from "@krn/db";
+import type {
+  BackendKind,
+  SqliteMigrationReadinessReport
+} from "@krn/db";
 import {
   checkActivation,
   checkCodexAdapterRuntimeProof,
@@ -34,10 +46,15 @@ import {
   collectEnvironmentFingerprint,
   environmentFingerprintLines
 } from "./environment-fingerprint.js";
+import {
+  resolveSelectedDbCommandBackend
+} from "./db-command-context.js";
 
 export interface DoctorRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
+  backend?: BackendKind;
+  dbPath?: string;
 }
 
 export interface DoctorResult {
@@ -165,7 +182,7 @@ export const hasDoctorFailure = (checks: readonly DoctorCheck[]): boolean =>
     (check.severity === undefined && isDoctorCheckFailure(check))
   );
 
-export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
+const runPostgresDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
   const environmentFingerprint = await collectEnvironmentFingerprint({
     repoRoot,
@@ -192,7 +209,7 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     databaseUrl: runtime.env.KRN_DATABASE_URL,
     evaluatorVersion: "db-smoke:codexAdapter"
   });
-  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
+  const migrationsFolder = postgresMigrationsFolder;
   const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
   const harnessPersistenceChecks = await checkHarnessPersistence(
     repoRoot,
@@ -294,4 +311,121 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     exitCode: failed ? 1 : 0,
     stdout: `${stdout}\n`
   };
+};
+
+const sqliteRuntimeWarnings = (): DoctorCheck[] => [
+  "Harness persistence readiness",
+  "Source graph readiness",
+  "Memory governance readiness",
+  "Retrieval substrate readiness",
+  "Activation readiness",
+  "Codex adapter readiness",
+  "Maintenance queue readiness",
+  "Target repo readiness"
+].map((label) => ({
+  label,
+  status: "runtime_unverified (run the matching persisted smoke proof)",
+  outcome: "runtime_unverified",
+  severity: "warning"
+}));
+
+const failedSqliteChecks = (message: string): DoctorCheck[] => [
+  "SQLite connectivity",
+  "Migrations",
+  "SQLite schema",
+  "Repository reachability",
+  "SQLite journal mode",
+  "SQLite foreign keys",
+  "SQLite integrity",
+  "Memory store readiness"
+].map((label) => ({
+  label,
+  status: label === "SQLite connectivity" ? `failed (${message})` : "blocked",
+  severity: "failure"
+}));
+
+const sqliteDoctorCheck = (
+  label: string,
+  passing: boolean,
+  passStatus: string,
+  failureStatus: string
+): DoctorCheck => ({
+  label,
+  status: passing ? passStatus : failureStatus,
+  severity: passing ? "pass" : "failure"
+});
+
+const reportSqliteChecks = (report: SqliteMigrationReadinessReport): DoctorCheck[] => {
+  const healthy = sqliteStoreIsReady(report);
+  const foreignKeysHealthy = report.foreignKeysEnabled && report.foreignKeyViolations === 0;
+  return [
+    sqliteDoctorCheck("SQLite connectivity", report.connectivityReady, "reachable", "failed"),
+    sqliteDoctorCheck("Migrations", report.migrationsVerified, "applied", `incomplete (${report.migrationIdentityStatus})`),
+    sqliteDoctorCheck("SQLite schema", report.schemaPresent, "present", "incomplete"),
+    sqliteDoctorCheck("Repository reachability", report.repositoryReachabilityReady, "ready", "blocked"),
+    sqliteDoctorCheck("SQLite journal mode", report.journalMode === "wal", report.journalMode, report.journalMode),
+    sqliteDoctorCheck("SQLite foreign keys", foreignKeysHealthy, "enabled", `blocked (${report.foreignKeyViolations} violations)`),
+    sqliteDoctorCheck("SQLite integrity", report.integrityReady, "ok", "failed"),
+    sqliteDoctorCheck("Memory store readiness", healthy, "ready", "blocked (SQLite store checks must be ready)")
+  ];
+};
+
+const runSqliteDoctorCommand = async (
+  targetWorkspace: string,
+  dbPath: string
+): Promise<DoctorResult> => {
+  const packageRepoRoot = await findRepoRoot(fileURLToPath(new URL(".", import.meta.url)));
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot: packageRepoRoot,
+    evaluatorVersion: "doctor.v1"
+  });
+  let storeChecks: DoctorCheck[];
+
+  const governedArtifacts = await inspectTargetKrnArtifacts(targetWorkspace);
+  if (
+    governedArtifacts.status === "forbidden" ||
+    governedArtifacts.status === "unverifiable"
+  ) {
+    const entry = "entry" in governedArtifacts && governedArtifacts.entry !== undefined
+      ? ` (${governedArtifacts.entry})`
+      : "";
+    storeChecks = failedSqliteChecks(
+      `forbidden .krn artifact: ${governedArtifacts.reason}${entry}`
+    );
+  } else {
+    try {
+      storeChecks = reportSqliteChecks(await inspectSqliteMigrationReadiness(dbPath));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown SQLite readiness error";
+      storeChecks = failedSqliteChecks(message);
+    }
+  }
+
+  const checks: DoctorCheck[] = [
+    { label: "SQLite mode", status: "selected", severity: "pass" },
+    { label: "SQLite config", status: dbPath, severity: "pass" },
+    ...storeChecks,
+    ...sqliteRuntimeWarnings(),
+    ...(await checkRepoFiles(packageRepoRoot, targetWorkspace))
+  ];
+  const stdout = [
+    "KRN Doctor",
+    `Repo root: ${targetWorkspace}`,
+    ...environmentFingerprintLines(environmentFingerprint),
+    ...checks.map((check) => `${check.label}: ${check.status}`)
+  ].join("\n");
+
+  return {
+    exitCode: hasDoctorFailure(checks) ? 1 : 0,
+    stdout: `${stdout}\n`
+  };
+};
+
+export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
+  const selected = await resolveSelectedDbCommandBackend(runtime);
+  if (selected.kind === "postgres") {
+    return runPostgresDoctorCommand(runtime);
+  }
+
+  return runSqliteDoctorCommand(selected.targetWorkspace, selected.dbPath);
 };

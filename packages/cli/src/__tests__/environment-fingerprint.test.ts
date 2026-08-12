@@ -100,11 +100,11 @@ describe("environment fingerprint", () => {
 
   it("attaches fingerprints to doctor, DB, and eval outputs", async () => {
     const doctor = await runCli(["doctor"], {
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       cwd: process.cwd()
     });
     const dbReadiness = await runCli(["db", "readiness"], {
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       cwd: process.cwd()
     });
 

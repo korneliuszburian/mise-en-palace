@@ -32,6 +32,13 @@ describe("parseDbArgs", () => {
         kind: "dbMigrate"
       }
     });
+    expect(parseDbArgs(["migrate", "--backend", "sqlite", "--db-path=state.db"])).toEqual({
+      command: {
+        kind: "dbMigrate",
+        backend: "sqlite",
+        dbPath: "state.db"
+      }
+    });
   });
 
   it("parses default and named db smoke targets", () => {
@@ -99,6 +106,15 @@ describe("parseDbArgs", () => {
 
   it("rejects unsupported db command shapes", () => {
     expect(parseDbArgs(["smoke", "unknown"])).toEqual({
+      error: formatDbUsage()
+    });
+    expect(parseDbArgs(["migrate", "--backend="])).toEqual({
+      error: formatDbUsage()
+    });
+    expect(parseDbArgs(["migrate", "--db-path", "--backend=sqlite"])).toEqual({
+      error: formatDbUsage()
+    });
+    expect(parseDbArgs(["smoke", "--backend", "sqlite"])).toEqual({
       error: formatDbUsage()
     });
   });

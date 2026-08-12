@@ -38,6 +38,18 @@ type DbCommandOutput = {
   stdout: string;
 };
 
+type ConfiguredDbCliCommand = Exclude<DbCliCommand, { kind: "dbSmoke" }>;
+
+const configuredDbRuntime = (
+  command: ConfiguredDbCliCommand,
+  context: DbCliCommandContext
+) => ({
+  env: context.env,
+  cwd: context.cwd,
+  ...(command.backend === undefined ? {} : { backend: command.backend }),
+  ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath })
+});
+
 const dbCommandResult = (result: DbCommandOutput): CliResult => ({
   exitCode: result.exitCode,
   stdout: result.stdout,
@@ -77,24 +89,15 @@ const runSelectedDbCommand = async (
   context: DbCliCommandContext
 ): Promise<DbCommandOutput> => {
   if (command.kind === "doctor") {
-    return runDoctorCommand({
-      env: context.env,
-      cwd: context.cwd
-    });
+    return runDoctorCommand(configuredDbRuntime(command, context));
   }
 
   if (command.kind === "dbReadiness") {
-    return runDbReadinessCommand({
-      env: context.env,
-      cwd: context.cwd
-    });
+    return runDbReadinessCommand(configuredDbRuntime(command, context));
   }
 
   if (command.kind === "dbMigrate") {
-    return runDbMigrateCommand({
-      env: context.env,
-      cwd: context.cwd
-    });
+    return runDbMigrateCommand(configuredDbRuntime(command, context));
   }
 
   return runDbSmokeCommand({

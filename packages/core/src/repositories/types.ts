@@ -79,7 +79,9 @@ export interface ProjectKernelRecord {
   updatedAt: IsoTimestamp;
 }
 
-export type RunEventSeverity = "debug" | "info" | "warning" | "error";
+export const runEventSeverities = ["debug", "info", "warning", "error"] as const;
+
+export type RunEventSeverity = (typeof runEventSeverities)[number];
 
 export interface RunEventRecord {
   id: string;
@@ -99,12 +101,15 @@ export interface OrdinaryRunEventInput {
   payload?: Record<string, unknown>;
 }
 
-export type OutboxEventStatus =
-  | "pending"
-  | "processing"
-  | "completed"
-  | "failed"
-  | "dead_letter";
+export const outboxEventStatuses = [
+  "pending",
+  "processing",
+  "completed",
+  "failed",
+  "dead_letter"
+] as const;
+
+export type OutboxEventStatus = (typeof outboxEventStatuses)[number];
 
 export interface OutboxEventRecord {
   id: string;

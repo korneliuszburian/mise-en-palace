@@ -1,6 +1,11 @@
 import type {
   KnowledgeReadModel
 } from "@krn/harness";
+import {
+  openMemoryLifecycleStore,
+  parseBackendKind,
+  resolveBackendConfig
+} from "@krn/db";
 import type {
   CliCommand
 } from "./parse-args.js";
@@ -23,9 +28,6 @@ import type {
   DatabaseRuntime
 } from "./database-runtime.js";
 import {
-  findRepoRoot
-} from "./cli-file-boundary.js";
-import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
 import {
@@ -38,6 +40,12 @@ import {
 import type {
   BrainRecallCommandRuntime
 } from "./run-brain-recall-command.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
+import {
+  findRepoRoot
+} from "./cli-file-boundary.js";
 
 type ProjectCliCommand = Extract<
   CliCommand,
@@ -90,10 +98,91 @@ const trimmedEnvValue = (value: string | undefined): string | undefined => {
   return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
-const createKnowledgeStoreProviders = async (
+const storeRecallRepositoryLimit = (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>
+): number => Object.keys(command.filter).length === 0
+  ? command.limit ?? 100
+  // Read-model filters include projected metadata and usefulness that the
+  // repository contract cannot express. Apply the user limit only after that projection.
+  : 2_147_483_647;
+
+type KnowledgeStoreProviders = Pick<
+  BrainRecallCommandRuntime,
+  "readModelProvider" | "usefulnessProvider"
+>;
+
+const hasExplicitRecallSource = (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>
+): boolean => command.readModelFiles.length > 0 ||
+  command.decisionFiles.length > 0 ||
+  command.catalogFiles.length > 0;
+
+const readSqliteStoreModels = async (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
+  context: ProjectCliCommandContext,
+  targetWorkspace: string
+): Promise<KnowledgeReadModel[]> => {
+  const config = resolveBackendConfig({
+    backend: "sqlite",
+    env: context.env,
+    targetWorkspace
+  });
+  if (config.kind !== "sqlite") {
+    throw new Error("SQLite recall resolved a non-SQLite backend");
+  }
+
+  let store;
+  try {
+    store = await openMemoryLifecycleStore(config, { readonly: true });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown SQLite open error";
+    throw new Error(
+      `SQLite memory store is unavailable at ${config.dbPath}: ${detail}. ` +
+      "No fixture source defaults to the store path; run persisted init first or pass an explicit fixture source."
+    );
+  }
+
+  try {
+    const connectedProject = await store.projectRepository.getProjectByRepoPath(targetWorkspace);
+    const projectId = command.projectId ?? connectedProject?.id;
+    if (projectId === undefined) {
+      throw new Error(`No SQLite project is connected for target workspace ${targetWorkspace}`);
+    }
+
+    const records = await store.memoryRepository.listActiveMemory(
+      projectId,
+      storeRecallRepositoryLimit(command)
+    );
+    return records.map(memoryRecordToKnowledgeReadModel);
+  } finally {
+    await store.close();
+  }
+};
+
+const createSqliteKnowledgeStoreProviders = async (
   command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
   context: ProjectCliCommandContext
-): Promise<Pick<BrainRecallCommandRuntime, "readModelProvider" | "usefulnessProvider">> => {
+): Promise<KnowledgeStoreProviders> => {
+  if (hasExplicitRecallSource(command) && !command.storeOnly) {
+    return {};
+  }
+  if (!command.storeOnly) {
+    return {};
+  }
+  const targetWorkspace = await resolveTargetWorkspace({
+    cwd: context.cwd,
+    env: context.env
+  });
+
+  return {
+    readModelProvider: () => readSqliteStoreModels(command, context, targetWorkspace)
+  };
+};
+
+const createPostgresKnowledgeStoreProviders = async (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
+  context: ProjectCliCommandContext
+): Promise<KnowledgeStoreProviders> => {
   const databaseUrl = trimmedEnvValue(context.env.KRN_DATABASE_URL);
 
   if (databaseUrl === undefined) {
@@ -150,13 +239,26 @@ const createKnowledgeStoreProviders = async (
       withRuntime(async (runtime) => {
         const records = await runtime.memoryRepository.listActiveMemory?.(
           runtime.projectId,
-          command.limit ?? 100
+          storeRecallRepositoryLimit(command)
         );
 
         return (records ?? []).map(memoryRecordToKnowledgeReadModel);
       }),
     usefulnessProvider
   };
+};
+
+const createKnowledgeStoreProviders = async (
+  command: Extract<ProjectCliCommand, { kind: "brainRecall" }>,
+  context: ProjectCliCommandContext
+): Promise<KnowledgeStoreProviders> => {
+  const selectedBackend = parseBackendKind(context.env.KRN_DB_BACKEND) ?? "sqlite";
+  const useNativeSqliteStore = context.createDatabaseRuntime === undefined &&
+    selectedBackend === "sqlite";
+
+  return useNativeSqliteStore
+    ? createSqliteKnowledgeStoreProviders(command, context)
+    : createPostgresKnowledgeStoreProviders(command, context);
 };
 
 const projectFallbackMessages = {
@@ -192,6 +294,8 @@ const runSelectedProjectCommand = async (
       env: context.env,
       mode: command.mode,
       repo: command.repo,
+      ...(command.backend === undefined ? {} : { backend: command.backend }),
+      ...(command.dbPath === undefined ? {} : { dbPath: command.dbPath }),
       ...(command.ownerFiles === undefined ? {} : { ownerFiles: command.ownerFiles }),
       ...(command.mode === "connect" ? { persist: command.persist } : {}),
       ...(context.createInitConnectRuntime === undefined

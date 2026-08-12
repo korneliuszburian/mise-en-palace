@@ -15,16 +15,26 @@ import type { ObservationScope } from "./observation-scope.js";
 import type { ObservationSourceRange } from "./observation-source-range.js";
 import type { ObservationTemporalScope } from "./observation-temporal-scope.js";
 
-export type ObservationEntityKind =
-  | "workspace"
-  | "project"
-  | "repo"
-  | "file"
-  | "package"
-  | "source"
-  | "memory"
-  | "policy"
-  | "eval";
+export const observationEntityKinds = [
+  "workspace",
+  "project",
+  "repo",
+  "file",
+  "package",
+  "source",
+  "memory",
+  "policy",
+  "eval"
+] as const;
+
+export type ObservationEntityKind = (typeof observationEntityKinds)[number];
+
+export const observationClaimRelations = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "supersedes"
+] as const;
 
 export interface ObservationEntityLink {
   entityKind: ObservationEntityKind;

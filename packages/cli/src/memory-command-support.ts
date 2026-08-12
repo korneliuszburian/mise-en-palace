@@ -6,6 +6,17 @@ import type {
 import {
   parseMemoryPromotionInput
 } from "@krn/core";
+import {
+  openMemoryLifecycleStore,
+  parseBackendKind,
+  resolveBackendConfig
+} from "@krn/db";
+import type {
+  MemoryLifecycleStore
+} from "@krn/db";
+import type {
+  MemoryRepository
+} from "@krn/core/repositories/internal";
 
 import {
   defaultWorkspaceSlug,
@@ -19,13 +30,34 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
 
 export type CreateMemoryCommandDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
 export interface MemoryCommandDatabaseRuntimeInput extends BaseCommandRuntime {
+  cwd?: string;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
+}
+
+export interface MemoryLifecycleCommandRuntime {
+  readonly backend: "sqlite" | "postgres";
+  readonly persistenceLabel: string;
+  readonly projectId?: string;
+  readonly memoryRepository: Pick<MemoryRepository,
+    "createMemoryCandidate" | "getMemoryCandidateById" | "promoteReviewedMemoryCandidate"
+  > & Partial<Pick<
+    MemoryRepository,
+    "applyReviewedMemoryRevision"
+  >>;
+  readonly sourceRepository: Pick<MemoryLifecycleStore["sourceRepository"], "getSourceClaimById"> & {
+    getSourceClaimForProject?: MemoryLifecycleStore["sourceRepository"]["getSourceClaimForProject"];
+  };
+  resolveExecutionRunProjectId(executionRunId: string): Promise<string | undefined>;
+  close(): Promise<void>;
 }
 
 interface CandidateEvidenceInput {
@@ -173,6 +205,87 @@ export const createMemoryCommandDatabaseRuntime = async (
     now: runtime.now,
     createId: runtime.createId
   });
+};
+
+const legacyMemoryLifecycleRuntime = async (
+  runtime: MemoryCommandDatabaseRuntimeInput,
+  missingDatabaseUrlMessage: string
+): Promise<MemoryLifecycleCommandRuntime> => {
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    missingDatabaseUrlMessage
+  );
+  const sourceRepository = databaseRuntime.sourceRepository;
+  const scopedReader = sourceRepository.getSourceClaimForProject;
+
+  return {
+    backend: "postgres",
+    persistenceLabel: "Postgres",
+    projectId: databaseRuntime.projectId,
+    memoryRepository: databaseRuntime.memoryRepository,
+    sourceRepository: {
+      getSourceClaimById: sourceRepository.getSourceClaimById.bind(sourceRepository),
+      ...(scopedReader === undefined
+        ? {}
+        : { getSourceClaimForProject: scopedReader.bind(sourceRepository) })
+    },
+    async resolveExecutionRunProjectId(executionRunId: string): Promise<string | undefined> {
+      const run = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
+        executionRunId
+      );
+      return run?.taskContract.projectId ?? run?.operatorIntent.projectId ?? databaseRuntime.projectId;
+    },
+    close: databaseRuntime.close
+  };
+};
+
+export const createMemoryLifecycleCommandRuntime = async (
+  runtime: MemoryCommandDatabaseRuntimeInput,
+  missingDatabaseUrlMessage: string,
+  options: { readonly requireConnectedProject?: boolean } = {}
+): Promise<MemoryLifecycleCommandRuntime> => {
+  // Runtime injection is the established PostgreSQL test seam and remains behavior-compatible.
+  if (runtime.createDatabaseRuntime !== undefined) {
+    return legacyMemoryLifecycleRuntime(runtime, missingDatabaseUrlMessage);
+  }
+
+  const selectedBackend = parseBackendKind(runtime.env.KRN_DB_BACKEND) ?? "sqlite";
+  if (selectedBackend === "postgres") {
+    return legacyMemoryLifecycleRuntime(runtime, missingDatabaseUrlMessage);
+  }
+
+  const targetWorkspace = await resolveTargetWorkspace({
+    cwd: runtime.cwd ?? process.cwd(),
+    env: runtime.env
+  });
+  const config = resolveBackendConfig({
+    backend: "sqlite",
+    env: runtime.env,
+    targetWorkspace
+  });
+  if (config.kind !== "sqlite") {
+    throw new Error("SQLite memory command resolved a non-SQLite backend");
+  }
+
+  const store = await openMemoryLifecycleStore(config);
+  const project = await store.projectRepository.getProjectByRepoPath(targetWorkspace);
+
+  if (options.requireConnectedProject === true && project === undefined) {
+    await store.close();
+    throw new Error(
+      `No SQLite project is connected for target workspace ${targetWorkspace}; run krn init --connect --repo ${targetWorkspace} --persist first`
+    );
+  }
+
+  return {
+    backend: store.backend,
+    persistenceLabel: store.persistenceLabel,
+    ...(project === undefined ? {} : { projectId: project.id }),
+    memoryRepository: store.memoryRepository,
+    sourceRepository: store.sourceRepository,
+    resolveExecutionRunProjectId: store.resolveExecutionRunProjectId,
+    close: store.close
+  };
 };
 
 export const assertSourceClaimExists = async (

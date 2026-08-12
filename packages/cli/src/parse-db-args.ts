@@ -2,14 +2,17 @@ import type {
   CliCommand,
   ParseArgsResult
 } from "./parse-args.js";
+import {
+  parseDatabaseOptions
+} from "./parse-database-options.js";
 
 const dbUsage = [
   "Usage: krn db migrate|readiness|smoke",
   "[harness-plan|harness-evidence|source-graph|memory-governance|eval-feedback-persistence|retrieval-substrate|activation|memory-loop|memory-search|run-show|maintenance-boundary|codex-adapter|maintenance-queue|init-connect|target-repo-harness|decision-corpus-import|real-recall-advantage|decision-packet-return-loop]",
   "",
   "Internal/dev commands:",
-  "krn db migrate",
-  "krn db readiness",
+  "krn db migrate [--backend sqlite|postgres] [--db-path <path>]",
+  "krn db readiness [--backend sqlite|postgres] [--db-path <path>]",
   "krn db smoke [target]",
   "",
   "Boundary: DB readiness and smoke commands prove local runtime plumbing only.",
@@ -41,6 +44,7 @@ const dbSmokeTargets = new Map<string, DbSmokeTarget>([
   ["decision-packet-return-loop", "decisionPacketReturnLoop"]
 ]);
 
+// fallow-ignore-next-line complexity -- the argv boundary exhaustively preserves help, migrate/readiness options, option-free smoke shapes, and typed smoke targets
 export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 1 && (rest[0] === "--help" || rest[0] === "-h")) {
     return {
@@ -50,23 +54,32 @@ export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  if (rest.length === 1 && rest[0] === "readiness") {
+  const parsed = parseDatabaseOptions(rest);
+  if (parsed.kind === "error") {
+    return { error: formatDbUsage() };
+  }
+  const positional = parsed.positional;
+  const hasDatabaseOptions = parsed.options.backend !== undefined || parsed.options.dbPath !== undefined;
+
+  if (positional.length === 1 && positional[0] === "readiness") {
     return {
       command: {
-        kind: "dbReadiness"
+        kind: "dbReadiness",
+        ...parsed.options
       }
     };
   }
 
-  if (rest.length === 1 && rest[0] === "migrate") {
+  if (positional.length === 1 && positional[0] === "migrate") {
     return {
       command: {
-        kind: "dbMigrate"
+        kind: "dbMigrate",
+        ...parsed.options
       }
     };
   }
 
-  if (rest.length === 1 && rest[0] === "smoke") {
+  if (positional.length === 1 && positional[0] === "smoke" && !hasDatabaseOptions) {
     return {
       command: {
         kind: "dbSmoke",
@@ -75,8 +88,8 @@ export const parseDbArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  if (rest.length === 2 && rest[0] === "smoke") {
-    const requestedTarget = rest[1];
+  if (positional.length === 2 && positional[0] === "smoke" && !hasDatabaseOptions) {
+    const requestedTarget = positional[1];
     const target = requestedTarget === undefined
       ? undefined
       : dbSmokeTargets.get(requestedTarget);

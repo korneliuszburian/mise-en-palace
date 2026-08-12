@@ -6,21 +6,20 @@ import type {
   ReflectionCandidateEvidence
 } from "@krn/core";
 import {
-  assertSourceClaimExists,
   buildReflectionCandidateEvidence,
-  createMemoryCommandDatabaseRuntime,
+  createMemoryLifecycleCommandRuntime,
   toSourceLineageRefs
 } from "./memory-command-support.js";
 import {
   noStorePreviewLabel,
-  persistenceLine,
-  postgresPersistedLabel
+  persistenceLine
 } from "./command-runtime-support.js";
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
 import type {
-  CreateMemoryCommandDatabaseRuntime
+  CreateMemoryCommandDatabaseRuntime,
+  MemoryLifecycleCommandRuntime
 } from "./memory-command-support.js";
 import type {
   CliCommand
@@ -30,8 +29,10 @@ import {
 } from "./parse-memory-confidence.js";
 
 type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
+type ParsedMemoryCandidate = ReturnType<typeof parseMemoryCandidateInput>;
 
 export interface MemoryCandidateAddCommandRuntime extends BaseCommandRuntime {
+  cwd?: string;
   command: MemoryCandidateAddCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
@@ -95,11 +96,12 @@ const formatPreview = (
 const formatPersisted = (
   memoryCandidateId: string,
   candidate: ReturnType<typeof parseMemoryCandidateInput>,
-  evidence: ReflectionCandidateEvidence | undefined
+  evidence: ReflectionCandidateEvidence | undefined,
+  persistenceLabel: string
 ): string =>
   [
     "KRN Memory Candidate Add",
-    persistenceLine(postgresPersistedLabel),
+    persistenceLine(`enabled (${persistenceLabel}, explicit --persist)`),
     "",
     "Persisted IDs:",
     `memoryCandidate: ${memoryCandidateId}`,
@@ -120,19 +122,104 @@ const formatPersisted = (
   ].join("\n");
 
 const projectIdForMemoryCandidate = async (
-  databaseRuntime: Awaited<ReturnType<CreateMemoryCommandDatabaseRuntime>>,
+  databaseRuntime: MemoryLifecycleCommandRuntime,
   executionRunId: string | undefined
 ): Promise<string> => {
-  if (executionRunId === undefined) {
-    return databaseRuntime.projectId;
+  const connectedProjectId = databaseRuntime.projectId;
+
+  if (connectedProjectId === undefined) {
+    throw new Error("Connected target project is required for memory candidate creation");
   }
 
-  const run = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(
-    executionRunId
-  );
+  if (executionRunId === undefined) {
+    return connectedProjectId;
+  }
 
-  return run?.taskContract.projectId ?? run?.operatorIntent.projectId ?? databaseRuntime.projectId;
+  const runProjectId = await databaseRuntime.resolveExecutionRunProjectId(executionRunId);
+  if (runProjectId === undefined) {
+    return connectedProjectId;
+  }
+  if (databaseRuntime.backend === "sqlite" && runProjectId !== connectedProjectId) {
+    throw new Error(
+      `ExecutionRun ${executionRunId} belongs to project ${runProjectId}, not connected target project ${connectedProjectId}`
+    );
+  }
+
+  return runProjectId;
 };
+
+const buildMemoryCandidateInput = (
+  command: MemoryCandidateAddCommand,
+  canonicalMemoryKind: string | undefined,
+  evidence: ReflectionCandidateEvidence | undefined
+): ParsedMemoryCandidate => parseMemoryCandidateInput({
+  executionRunId: command.runId,
+  feedbackDeltaId: command.feedbackDeltaId,
+  proposedBy: command.proposedBy ?? "cli",
+  kind: canonicalMemoryKind,
+  summary: command.content,
+  body: command.content,
+  owner: command.owner ?? "operator",
+  confidence: parseMemoryConfidence(command.confidence),
+  applicationGuidance: command.applicationGuidance,
+  invalidationRule: command.invalidationRule,
+  sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],
+  sourceLineage: sourceLineage(command),
+  isUserPreference: false,
+  metadata: {
+    ...command.metadata,
+    ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
+    ...(command.memoryKind === canonicalMemoryKind ? {} : { inputKind: command.memoryKind })
+  }
+});
+
+const assertCandidateSourceClaim = async (
+  databaseRuntime: MemoryLifecycleCommandRuntime,
+  projectId: string,
+  sourceClaimIds: readonly string[]
+): Promise<void> => {
+  const sourceClaimId = sourceClaimIds[0];
+  if (sourceClaimId === undefined) {
+    return;
+  }
+
+  const sourceClaim = databaseRuntime.backend === "sqlite" &&
+    databaseRuntime.sourceRepository.getSourceClaimForProject !== undefined
+    ? await databaseRuntime.sourceRepository.getSourceClaimForProject(projectId, sourceClaimId)
+    : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
+  if (sourceClaim === undefined) {
+    throw new Error(`SourceClaim not found: ${sourceClaimId}`);
+  }
+};
+
+const persistMemoryCandidate = async (
+  databaseRuntime: MemoryLifecycleCommandRuntime,
+  projectId: string,
+  candidateInput: ParsedMemoryCandidate
+) => databaseRuntime.memoryRepository.createMemoryCandidate({
+  projectId,
+  ...(candidateInput.executionRunId === undefined
+    ? {}
+    : { executionRunId: candidateInput.executionRunId }),
+  ...(candidateInput.feedbackDeltaId === undefined
+    ? {}
+    : { feedbackDeltaId: candidateInput.feedbackDeltaId }),
+  proposedBy: candidateInput.proposedBy,
+  kind: candidateInput.kind,
+  status: candidateInput.status,
+  summary: candidateInput.summary,
+  body: candidateInput.body,
+  owner: candidateInput.owner,
+  confidence: candidateInput.confidence,
+  applicationGuidance: candidateInput.applicationGuidance,
+  ...(candidateInput.invalidationRule === undefined
+    ? {}
+    : { invalidationRule: candidateInput.invalidationRule }),
+  sourceClaimIds: candidateInput.sourceClaimIds,
+  sourceLineage: toSourceLineageRefs(candidateInput.sourceLineage),
+  isUserPreference: candidateInput.isUserPreference,
+  metadata: candidateInput.metadata
+});
 
 export const runMemoryCandidateAddCommand = async (
   runtime: MemoryCandidateAddCommandRuntime
@@ -149,26 +236,7 @@ export const runMemoryCandidateAddCommand = async (
     evidenceRefs: command.candidateEvidenceRefs,
     doesNotProve: command.candidateEvidenceDoesNotProve
   });
-  const candidateInput = parseMemoryCandidateInput({
-    executionRunId: command.runId,
-    feedbackDeltaId: command.feedbackDeltaId,
-    proposedBy: command.proposedBy ?? "cli",
-    kind: canonicalMemoryKind,
-    summary: command.content,
-    body: command.content,
-    owner: command.owner ?? "operator",
-    confidence: parseMemoryConfidence(command.confidence),
-    applicationGuidance: command.applicationGuidance,
-    invalidationRule: command.invalidationRule,
-    sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],
-    sourceLineage: sourceLineage(command),
-    isUserPreference: false,
-    metadata: {
-      ...command.metadata,
-      ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
-      ...(command.memoryKind === canonicalMemoryKind ? {} : { inputKind: command.memoryKind })
-    }
-  });
+  const candidateInput = buildMemoryCandidateInput(command, canonicalMemoryKind, evidence);
 
   if (!command.persist) {
     return {
@@ -176,53 +244,28 @@ export const runMemoryCandidateAddCommand = async (
     };
   }
 
-  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+  const databaseRuntime = await createMemoryLifecycleCommandRuntime(
     runtime,
-    "KRN_DATABASE_URL is required for krn memory candidate add --persist"
+    "KRN_DATABASE_URL is required for krn memory candidate add --persist",
+    { requireConnectedProject: true }
   );
 
   try {
-    if (candidateInput.sourceClaimIds.length > 0) {
-      const sourceClaimId = candidateInput.sourceClaimIds[0];
-
-      if (sourceClaimId === undefined) {
-        throw new Error("sourceClaimId is required");
-      }
-
-      await assertSourceClaimExists(databaseRuntime, sourceClaimId);
-    }
-
     const projectId = await projectIdForMemoryCandidate(
       databaseRuntime,
       candidateInput.executionRunId
     );
-    const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
-      projectId,
-      ...(candidateInput.executionRunId === undefined
-        ? {}
-        : { executionRunId: candidateInput.executionRunId }),
-      ...(candidateInput.feedbackDeltaId === undefined
-        ? {}
-        : { feedbackDeltaId: candidateInput.feedbackDeltaId }),
-      proposedBy: candidateInput.proposedBy,
-      kind: candidateInput.kind,
-      status: candidateInput.status,
-      summary: candidateInput.summary,
-      body: candidateInput.body,
-      owner: candidateInput.owner,
-      confidence: candidateInput.confidence,
-      applicationGuidance: candidateInput.applicationGuidance,
-      ...(candidateInput.invalidationRule === undefined
-        ? {}
-        : { invalidationRule: candidateInput.invalidationRule }),
-      sourceClaimIds: candidateInput.sourceClaimIds,
-      sourceLineage: toSourceLineageRefs(candidateInput.sourceLineage),
-      isUserPreference: candidateInput.isUserPreference,
-      metadata: candidateInput.metadata
-    });
+
+    await assertCandidateSourceClaim(databaseRuntime, projectId, candidateInput.sourceClaimIds);
+    const memoryCandidate = await persistMemoryCandidate(databaseRuntime, projectId, candidateInput);
 
     return {
-      stdout: formatPersisted(memoryCandidate.id, candidateInput, evidence)
+      stdout: formatPersisted(
+        memoryCandidate.id,
+        candidateInput,
+        evidence,
+        databaseRuntime.persistenceLabel
+      )
     };
   } finally {
     await databaseRuntime.close();

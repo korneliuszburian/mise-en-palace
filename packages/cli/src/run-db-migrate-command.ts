@@ -1,10 +1,18 @@
 import {
   migrateDatabase
 } from "@krn/db/dev";
+import {
+  migrateSqliteDatabase,
+  sqliteStoreIsReady
+} from "@krn/db";
+import type {
+  BackendKind
+} from "@krn/db";
 
 import {
   missingDbCommandOutput,
-  resolveDbCommandContext
+  resolvePostgresDbCommandContext,
+  resolveSelectedDbCommandBackend
 } from "./db-command-context.js";
 import {
   missingDbConfigRecovery,
@@ -21,6 +29,8 @@ import {
 export interface DbMigrateRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
+  backend?: BackendKind;
+  dbPath?: string;
 }
 
 export interface DbMigrateResult {
@@ -33,19 +43,74 @@ const errorMessage = (error: unknown): string =>
 
 const migrationDoesNotProve =
   "applying migrations does not prove source authority integrity, data correctness, backups, or product readiness";
+const sqliteMigrationAssetLabel = "@krn/db/sqlite-migrations";
 
-export const runDbMigrateCommand = async (
-  runtime: DbMigrateRuntime
+// fallow-ignore-next-line complexity -- operator-facing SQLite migration output enumerates the complete post-migration health matrix in stable order
+const runSqliteDbMigrateCommand = async (
+  targetWorkspace: string,
+  dbPath: string
 ): Promise<DbMigrateResult> => {
-  const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
-    await resolveDbCommandContext(runtime);
   const environmentFingerprint = await collectEnvironmentFingerprint({
-    repoRoot,
-    databaseUrl,
+    repoRoot: targetWorkspace,
     evaluatorVersion: "db-migrate.v1"
   });
   const attachFingerprint = (stdout: string): string =>
     `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
+
+  try {
+    const report = await migrateSqliteDatabase(dbPath);
+    const ready = sqliteStoreIsReady(report);
+    return {
+      exitCode: ready ? 0 : 1,
+      stdout: attachFingerprint([
+        "KRN DB Migrate",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        `DB mode: ${ready ? "migrations applied" : "connected but migration incomplete"}`,
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        "SQLite: reachable",
+        `Migrations expected: ${report.expectedMigrationCount}`,
+        `Migrations applied: ${report.appliedMigrationCount}`,
+        `Migrations identity: ${report.migrationIdentityStatus}`,
+        ...report.migrationIdentityDetails.map((detail) => `Migration detail: ${detail}`),
+        `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
+        `SQLite schema: ${report.schemaPresent ? "present" : "incomplete"}`,
+        `Repository reachability: ${report.repositoryReachabilityReady ? "ready" : "blocked"}`,
+        `SQLite journal mode: ${report.journalMode}`,
+        `SQLite foreign keys: ${report.foreignKeysEnabled && report.foreignKeyViolations === 0 ? "enabled" : "blocked"}`,
+        `SQLite integrity: ${report.integrityReady ? "ok" : "failed"}`,
+        `Does not prove: ${migrationDoesNotProve}`
+      ].join("\n") + "\n")
+    };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: attachFingerprint([
+        "KRN DB Migrate",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        "DB mode: configured but migration failed",
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        `SQLite/migrate: failed (${errorMessage(error)})`,
+        `Does not prove: ${migrationDoesNotProve}`
+      ].join("\n") + "\n")
+    };
+  }
+};
+
+// fallow-ignore-next-line complexity -- PostgreSQL compatibility keeps the established missing, unreachable, and migration-result output matrix explicit and ordered
+const runPostgresDbMigrateCommand = async (
+  runtime: DbMigrateRuntime
+): Promise<DbMigrateResult> => {
+  const {
+    attachFingerprint,
+    databaseUrl,
+    migrationsFolder,
+    relativeMigrationsFolder,
+    repoRoot
+  } = await resolvePostgresDbCommandContext(runtime, "db-migrate.v1");
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
@@ -104,4 +169,14 @@ export const runDbMigrateCommand = async (
       ].join("\n") + "\n")
     };
   }
+};
+
+export const runDbMigrateCommand = async (
+  runtime: DbMigrateRuntime
+): Promise<DbMigrateResult> => {
+  const selected = await resolveSelectedDbCommandBackend(runtime);
+
+  return selected.kind === "sqlite"
+    ? runSqliteDbMigrateCommand(selected.targetWorkspace, selected.dbPath)
+    : runPostgresDbMigrateCommand(runtime);
 };

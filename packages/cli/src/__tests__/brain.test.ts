@@ -224,7 +224,7 @@ describe("runCli", () => {
       "--text",
       "unknown-first"
     ], {
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
@@ -356,6 +356,56 @@ describe("runCli", () => {
       }
     });
     expect(resource.proof.proves).toContain("usefulness feedback was read from store-backed feedback_delta records");
+  });
+
+  it("applies recall filters before the requested result limit", async () => {
+    const unrelated: MemoryRecord = {
+      ...storeKnowledgeMemory(),
+      id: "memory-record-unrelated" as MemoryRecord["id"],
+      key: "unrelated",
+      summary: "Higher-ranked unrelated memory",
+      body: "This row does not contain the requested search term.",
+      metadata: { knowledgeId: "unrelated" }
+    };
+    const matching: MemoryRecord = {
+      ...storeKnowledgeMemory(),
+      id: "memory-record-matching" as MemoryRecord["id"],
+      key: "matching",
+      summary: "Needle memory",
+      body: "This lower-ranked row contains the needle.",
+      metadata: { knowledgeId: "matching" }
+    };
+    const createRuntime = async (input: DatabaseRuntimeInput): Promise<DatabaseRuntime> => {
+      const runtime = await createBrainRecallDatabaseRuntime()(input);
+      runtime.memoryRepository.listActiveMemory = async (_projectId, limit) =>
+        [unrelated, matching].slice(0, limit);
+      runtime.harnessRunRepository.listFeedbackDeltasForSubjects = async () => [];
+      return runtime;
+    };
+    const result = await runCli([
+      "memory",
+      "recall",
+      "--text",
+      "needle",
+      "--limit",
+      "1",
+      "--json"
+    ], {
+      cwd: path.resolve(process.cwd(), "../.."),
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: createRuntime
+    });
+    const resource = JSON.parse(result.stdout) as {
+      readModels: Array<{ id: string }>;
+    };
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(resource.readModels.map((readModel) => readModel.id)).toEqual(["knowledge:matching"]);
   });
 
   it("merges store-backed usefulness into explicit seed readModels by knowledge id", async () => {

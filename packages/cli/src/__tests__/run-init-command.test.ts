@@ -1,3 +1,9 @@
+import {
+  mkdir,
+  mkdtemp,
+  rm
+} from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 import {
@@ -114,7 +120,7 @@ describe("runCli init", () => {
     const result = await runCli(
       ["init", "--dry-run", "--repo", "tests/fixtures/target-repos/typescript-basic"],
       {
-        env: {},
+        env: { INIT_CWD: repoRoot },
         cwd: path.join(repoRoot, "packages", "cli"),
         now: () => now,
         createId: (prefix) => `${prefix}-1`
@@ -227,7 +233,7 @@ describe("runCli init", () => {
         "--persist"
       ],
       {
-        env: {},
+        env: { KRN_DB_BACKEND: "postgres" },
         cwd: repoRoot,
         now: () => now,
         createId: (prefix) => `${prefix}-1`
@@ -245,6 +251,30 @@ describe("runCli init", () => {
     expect(result.stderr).toContain(
       "Does not prove: setting KRN_DATABASE_URL does not prove the requested persisted command is valid, commands executed, or Memory Core mutated"
     );
+  });
+
+  it("rejects a SQLite path when dry-run selects Postgres from the environment", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const result = await runCli(
+      [
+        "init",
+        "--dry-run",
+        "--repo",
+        "tests/fixtures/target-repos/typescript-basic",
+        "--db-path",
+        "memory.db"
+      ],
+      {
+        env: { KRN_DB_BACKEND: "postgres" },
+        cwd: repoRoot,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--db-path is only valid with the sqlite backend");
   });
 
   it("connects a target repo to the memory store with persisted IDs", async () => {
@@ -270,6 +300,7 @@ describe("runCli init", () => {
       ],
       {
         env: {
+          KRN_DB_BACKEND: "postgres",
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
         },
         cwd: repoRoot,
@@ -382,5 +413,85 @@ describe("runCli init", () => {
     expect(result.stdout).toContain(
       "Next command: krn plan --project project-target-1 --task \"improve test script readiness\" --persist"
     );
+  });
+
+  it("keeps legacy target surfaces informational for persisted Postgres init", async () => {
+    const targetRepo = await mkdtemp(path.join(os.tmpdir(), "krn-init-postgres-surfaces-"));
+    await mkdir(path.join(targetRepo, "apps"));
+    let connected = false;
+
+    try {
+      const result = await runCli(
+        [
+          "init",
+          "--connect",
+          "--repo",
+          targetRepo,
+          "--persist",
+          "--backend",
+          "postgres"
+        ],
+        {
+          env: {
+            KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+          },
+          cwd: targetRepo,
+          now: () => now,
+          createId: (prefix) => `${prefix}-1`,
+          createInitConnectRuntime: async () => ({
+            persistenceLabel: "Postgres",
+            async connectTargetRepo(input) {
+              connected = true;
+              return {
+                project: {
+                  id: "project-surface-1",
+                  workspaceId: "workspace-1",
+                  slug: "surface-target",
+                  displayName: "surface-target",
+                  metadata: {},
+                  createdAt: now,
+                  updatedAt: now
+                },
+                projectCreated: true,
+                repoInstallation: {
+                  id: "repo-installation-surface-1",
+                  projectId: "project-surface-1",
+                  provider: "local",
+                  repoUrl: `file://${targetRepo}`,
+                  defaultBranch: "main",
+                  repoFingerprint: input.repoFingerprint,
+                  localPathHint: targetRepo,
+                  metadata: {},
+                  createdAt: now,
+                  updatedAt: now
+                },
+                repoInstallationCreated: true,
+                projectKernel: {
+                  id: "project-kernel-surface-1",
+                  projectId: "project-surface-1",
+                  version: 1,
+                  summary: "kernel",
+                  activeContextRule: "project scoped",
+                  metadata: {},
+                  createdAt: now,
+                  updatedAt: now
+                },
+                projectKernelCreated: true
+              };
+            },
+            async close() {
+              return undefined;
+            }
+          })
+        }
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(connected).toBe(true);
+      expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    } finally {
+      await rm(targetRepo, { recursive: true, force: true });
+    }
   });
 });

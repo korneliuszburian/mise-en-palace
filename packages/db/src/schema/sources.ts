@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  sourceArtifactKinds,
   sourceAuthorityLabels,
   sourceClaimEdgeKinds,
   sourceClaimStatuses,
@@ -34,15 +35,7 @@ import {
   nullableProjectIdColumn
 } from "./reference-columns.js";
 
-export const sourceArtifactKind = pgEnum("source_artifact_kind", [
-  "doc",
-  "file",
-  "url",
-  "paper",
-  "run",
-  "operator_input",
-  "external_doc"
-]);
+export const sourceArtifactKind = pgEnum("source_artifact_kind", sourceArtifactKinds);
 
 export const sourceAuthorityLabel = pgEnum("source_trust_tier", sourceAuthorityLabels);
 
