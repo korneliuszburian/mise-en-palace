@@ -3,6 +3,7 @@ import {
 } from "node:crypto";
 import {
   mkdtemp,
+  realpath,
   rm,
   writeFile
 } from "node:fs/promises";
@@ -51,7 +52,9 @@ const persistedId = (stdout: string, label: string): string => {
 
 describe("SQLite persisted memory lifecycle", () => {
   it("refuses registration writes when the SQLite migration ledger is tampered", async () => {
-    const targetWorkspace = await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-drifted-init-"));
+    const targetWorkspace = await realpath(
+      await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-drifted-init-"))
+    );
     fixtures.push(targetWorkspace);
     await writeFile(
       path.join(targetWorkspace, "package.json"),
@@ -97,7 +100,9 @@ describe("SQLite persisted memory lifecycle", () => {
   });
 
   it("migrates in init, creates and promotes a candidate, then recalls it without Postgres", async () => {
-    const targetWorkspace = await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-lifecycle-"));
+    const targetWorkspace = await realpath(
+      await mkdtemp(path.join(os.tmpdir(), "krn-sqlite-lifecycle-"))
+    );
     fixtures.push(targetWorkspace);
     await writeFile(
       path.join(targetWorkspace, "package.json"),
