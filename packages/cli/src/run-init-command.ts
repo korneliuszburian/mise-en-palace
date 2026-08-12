@@ -1,27 +1,29 @@
 import {
   createHash
 } from "node:crypto";
-import {
-  stat
-} from "node:fs/promises";
 import path from "node:path";
-import postgres from "postgres";
 import {
-  createKrnDatabase
+  inspectTargetKrnArtifacts,
+  openProjectStore,
+  resolveBackendConfig,
+  targetKrnArtifactsAreForbidden
 } from "@krn/db";
-import {
-  DrizzleProjectRepository
-} from "@krn/db/adapters";
+import type {
+  BackendConfig,
+  ProjectStore
+} from "@krn/db";
 import type {
   ProjectKernelRecord,
   ProjectRecord,
   RepoInstallationRecord
 } from "@krn/core/repositories";
 import {
-  findRepoRoot as findWorkspaceRoot,
   pathExists,
   readJsonObject
 } from "./cli-file-boundary.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
 
 export interface InitCommandRuntime {
   cwd: string;
@@ -30,6 +32,8 @@ export interface InitCommandRuntime {
   repo: string;
   ownerFiles?: readonly TargetOwnerFileProposal[];
   persist?: boolean;
+  backend?: "sqlite" | "postgres";
+  dbPath?: string;
   createInitConnectRuntime?: CreateInitConnectRuntime;
 }
 
@@ -81,7 +85,7 @@ export interface TargetOwnerFileProposal {
 }
 
 export interface InitConnectRuntimeInput {
-  databaseUrl: string;
+  config: BackendConfig;
 }
 
 export interface ConnectTargetRepoInput {
@@ -106,6 +110,7 @@ export interface ConnectTargetRepoResult {
 }
 
 export interface InitConnectRuntime {
+  readonly persistenceLabel?: string;
   connectTargetRepo(input: ConnectTargetRepoInput): Promise<ConnectTargetRepoResult>;
   close(): Promise<void>;
 }
@@ -113,31 +118,6 @@ export interface InitConnectRuntime {
 export type CreateInitConnectRuntime = (
   input: InitConnectRuntimeInput
 ) => Promise<InitConnectRuntime>;
-
-const pathIsDirectory = async (targetPath: string): Promise<boolean> => {
-  try {
-    return (await stat(targetPath)).isDirectory();
-  } catch {
-    return false;
-  }
-};
-
-const resolveInitCallerCwd = async (
-  runtime: Pick<InitCommandRuntime, "cwd" | "env">
-): Promise<string> => {
-  const initCwd = runtime.env.INIT_CWD?.trim();
-
-  if (
-    initCwd === undefined ||
-    initCwd.length === 0 ||
-    !path.isAbsolute(initCwd) ||
-    !(await pathIsDirectory(initCwd))
-  ) {
-    return runtime.cwd;
-  }
-
-  return initCwd;
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -210,7 +190,6 @@ const detectTypeScript = async (
 
 const forbiddenSurfacePaths = [
   "apps",
-  ".krn",
   "packages/api",
   "packages/dashboard",
   "packages/mcp-server",
@@ -221,14 +200,20 @@ const forbiddenSurfacePaths = [
 ] as const;
 
 const detectForbiddenSurfaces = async (repoPath: string): Promise<string[]> => {
-  const existing = await Promise.all(
+  const [existing, krnArtifacts] = await Promise.all([
+    Promise.all(
     forbiddenSurfacePaths.map(async (surface) => ({
       surface,
       present: await pathExists(path.join(repoPath, surface))
     }))
-  );
+    ),
+    inspectTargetKrnArtifacts(repoPath)
+  ]);
 
-  return existing.filter((item) => item.present).map((item) => item.surface);
+  return [
+    ...existing.filter((item) => item.present).map((item) => item.surface),
+    ...(targetKrnArtifactsAreForbidden(krnArtifacts) ? [".krn"] : [])
+  ];
 };
 
 const sourceSeedCandidates = [
@@ -334,28 +319,11 @@ const normalizeSlugPart = (value: string): string => {
   return slugPart.length === 0 ? "target-repo" : slugPart;
 };
 
-const resolveRepoPath = async (cwd: string, repo: string): Promise<string> => {
-  const cwdRelativePath = path.resolve(cwd, repo);
-
-  if (path.isAbsolute(repo) || (await pathExists(cwdRelativePath))) {
-    return cwdRelativePath;
-  }
-
-  const workspaceRoot = await findWorkspaceRoot(cwd);
-
-  return path.resolve(workspaceRoot, repo);
-};
-
 const detectTargetRepo = async (
-  cwd: string,
-  repo: string,
+  runtime: Pick<InitCommandRuntime, "cwd" | "env" | "repo">,
   ownerFiles: readonly TargetOwnerFileProposal[]
 ): Promise<TargetRepoDetection> => {
-  const repoPath = await resolveRepoPath(cwd, repo);
-
-  if (!(await pathExists(repoPath))) {
-    throw new Error(`Target repo does not exist: ${repoPath}`);
-  }
+  const repoPath = await resolveTargetWorkspace(runtime);
 
   const packageJson = await readJsonObject(path.join(repoPath, "package.json"));
   const packageNameValue = packageName(packageJson);
@@ -420,7 +388,17 @@ const ownerFileCliArgs = (ownerFiles: readonly TargetOwnerFileProposal[]): strin
     )
     .join("");
 
-const renderDryRun = (detection: TargetRepoDetection): string =>
+const databaseCliArgs = (
+  runtime: Pick<InitCommandRuntime, "backend" | "dbPath">
+): string => [
+  ...(runtime.backend === undefined ? [] : [` --backend ${runtime.backend}`]),
+  ...(runtime.dbPath === undefined ? [] : [` --db-path ${JSON.stringify(runtime.dbPath)}`])
+].join("");
+
+const renderDryRun = (
+  detection: TargetRepoDetection,
+  runtime: Pick<InitCommandRuntime, "backend" | "dbPath">
+): string =>
   [
     "KRN Init Dry Run",
     `Repo path: ${detection.repoPath}`,
@@ -445,7 +423,7 @@ const renderDryRun = (detection: TargetRepoDetection): string =>
     "- AGENTS.md: propose thin KRN target repo instructions",
     "- .codex: no runtime overlay write proposed in dry-run",
     "No files written",
-    `Next command: krn init --connect --repo ${detection.repoPath}${ownerFileCliArgs(detection.ownerFiles)} --persist`
+    `Next command: krn init --connect --repo ${detection.repoPath}${databaseCliArgs(runtime)}${ownerFileCliArgs(detection.ownerFiles)} --persist`
   ].join("\n") + "\n";
 
 const createdLabel = (created: boolean): string => (created ? "created" : "reused");
@@ -467,13 +445,14 @@ const metadataMatches = (
 
 const renderConnect = (
   detection: TargetRepoDetection,
-  result: ConnectTargetRepoResult
+  result: ConnectTargetRepoResult,
+  persistenceLabel: string
 ): string =>
   [
     "KRN Init Connect",
     `Repo path: ${detection.repoPath}`,
     `Repo fingerprint: ${detection.repoFingerprint}`,
-    "Persistence: enabled (Postgres, explicit --persist)",
+    `Persistence: enabled (${persistenceLabel}, explicit --persist)`,
     `Project ID: ${result.project.id} (${createdLabel(result.projectCreated)})`,
     `Repo installation ID: ${result.repoInstallation.id} (${createdLabel(result.repoInstallationCreated)})`,
     `ProjectKernel ID: ${result.projectKernel.id} (${createdLabel(result.projectKernelCreated)})`,
@@ -488,103 +467,106 @@ const renderConnect = (
     `Next command: krn plan --project ${result.project.id} --task "improve test script readiness" --persist`
   ].join("\n") + "\n";
 
-const createPostgresInitConnectRuntime = async (
-  input: InitConnectRuntimeInput
-): Promise<InitConnectRuntime> => {
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
-  const projectRepository = new DrizzleProjectRepository(db);
+const connectTargetRepo = async (
+  projectRepository: ProjectStore["projectRepository"],
+  repoInput: ConnectTargetRepoInput
+): Promise<ConnectTargetRepoResult> => {
+  const workspaceSlug = "local";
+  const existingWorkspace = await projectRepository.findWorkspaceBySlug(workspaceSlug);
+  const workspace =
+    existingWorkspace ??
+    (await projectRepository.createWorkspace({
+      slug: workspaceSlug,
+      displayName: workspaceSlug,
+      metadata: {
+        createdBy: "krn init --connect"
+      }
+    }));
+  const existingProject =
+    (await projectRepository.getProjectByRepoFingerprint(repoInput.repoFingerprint)) ??
+    (await projectRepository.getProjectByRepoPath(repoInput.repoPath));
+  const projectSlug = normalizeSlugPart(
+    `${repoInput.packageName}-${repoInput.repoFingerprint.slice(-8)}`
+  );
+  const project =
+    existingProject ??
+    (await projectRepository.createProject({
+      workspaceId: workspace.id,
+      slug: projectSlug,
+      displayName: repoInput.packageName,
+      description: "Target repo connected by krn init.",
+      metadata: {
+        createdBy: "krn init --connect",
+        repoFingerprint: repoInput.repoFingerprint,
+        repoPath: repoInput.repoPath,
+        packageManager: repoInput.packageManager,
+        typescriptPresent: repoInput.typescriptPresent,
+        scripts: repoInput.scripts,
+        sourceSeeds: repoInput.sourceSeeds,
+        ownerFiles: repoInput.ownerFiles
+      }
+    }));
+  const installations = await projectRepository.listRepoInstallationsForProject(project.id);
+  const existingInstallation = installations.find(
+    (installation) =>
+      installation.repoFingerprint === repoInput.repoFingerprint ||
+      installation.localPathHint === repoInput.repoPath ||
+      installation.repoUrl === repoInput.repoUrl
+  );
+  const repoInstallation =
+    existingInstallation ??
+    (await projectRepository.createRepoInstallation({
+      projectId: project.id,
+      provider: "local",
+      repoUrl: repoInput.repoUrl,
+      defaultBranch: "main",
+      repoFingerprint: repoInput.repoFingerprint,
+      localPathHint: repoInput.repoPath,
+      metadata: {
+        createdBy: "krn init --connect",
+        packageManager: repoInput.packageManager,
+        typescriptPresent: repoInput.typescriptPresent,
+        scripts: repoInput.scripts,
+        sourceSeeds: repoInput.sourceSeeds,
+        ownerFiles: repoInput.ownerFiles
+      }
+    }));
+  const existingKernel = await projectRepository.getLatestProjectKernel(project.id);
+  const nextKernelMetadata = targetProjectMetadata(repoInput);
+  const projectKernel =
+    existingKernel !== undefined && metadataMatches(existingKernel.metadata, nextKernelMetadata)
+      ? existingKernel
+      : await projectRepository.createProjectKernel({
+          projectId: project.id,
+          version: existingKernel === undefined ? 1 : existingKernel.version + 1,
+          summary: `${repoInput.packageName} target repo connected for KRN harness planning`,
+          activeContextRule:
+            "select project-scoped source, memory, retrieval, and anti-memory only",
+          metadata: nextKernelMetadata
+        });
 
   return {
-    async connectTargetRepo(repoInput: ConnectTargetRepoInput): Promise<ConnectTargetRepoResult> {
-      const workspaceSlug = "local";
-      const existingWorkspace = await projectRepository.findWorkspaceBySlug(workspaceSlug);
-      const workspace =
-        existingWorkspace ??
-        (await projectRepository.createWorkspace({
-          slug: workspaceSlug,
-          displayName: workspaceSlug,
-          metadata: {
-            createdBy: "krn init --connect"
-          }
-        }));
-      const existingProject =
-        (await projectRepository.getProjectByRepoFingerprint(repoInput.repoFingerprint)) ??
-        (await projectRepository.getProjectByRepoPath(repoInput.repoPath));
-      const projectSlug = normalizeSlugPart(
-        `${repoInput.packageName}-${repoInput.repoFingerprint.slice(-8)}`
-      );
-      const project =
-        existingProject ??
-        (await projectRepository.createProject({
-          workspaceId: workspace.id,
-          slug: projectSlug,
-          displayName: repoInput.packageName,
-          description: "Target repo connected by krn init.",
-          metadata: {
-            createdBy: "krn init --connect",
-            repoFingerprint: repoInput.repoFingerprint,
-            repoPath: repoInput.repoPath,
-            packageManager: repoInput.packageManager,
-            typescriptPresent: repoInput.typescriptPresent,
-            scripts: repoInput.scripts,
-            sourceSeeds: repoInput.sourceSeeds,
-            ownerFiles: repoInput.ownerFiles
-          }
-        }));
-      const installations = await projectRepository.listRepoInstallationsForProject(project.id);
-      const existingInstallation = installations.find(
-        (installation) =>
-          installation.repoFingerprint === repoInput.repoFingerprint ||
-          installation.localPathHint === repoInput.repoPath ||
-          installation.repoUrl === repoInput.repoUrl
-      );
-      const repoInstallation =
-        existingInstallation ??
-        (await projectRepository.createRepoInstallation({
-          projectId: project.id,
-          provider: "local",
-          repoUrl: repoInput.repoUrl,
-          defaultBranch: "main",
-          repoFingerprint: repoInput.repoFingerprint,
-          localPathHint: repoInput.repoPath,
-          metadata: {
-            createdBy: "krn init --connect",
-            packageManager: repoInput.packageManager,
-            typescriptPresent: repoInput.typescriptPresent,
-            scripts: repoInput.scripts,
-            sourceSeeds: repoInput.sourceSeeds,
-            ownerFiles: repoInput.ownerFiles
-          }
-        }));
-      const existingKernel = await projectRepository.getLatestProjectKernel(project.id);
-      const nextKernelMetadata = targetProjectMetadata(repoInput);
-      const projectKernel =
-        existingKernel !== undefined && metadataMatches(existingKernel.metadata, nextKernelMetadata)
-          ? existingKernel
-          : await projectRepository.createProjectKernel({
-              projectId: project.id,
-              version: existingKernel === undefined ? 1 : existingKernel.version + 1,
-              summary: `${repoInput.packageName} target repo connected for KRN harness planning`,
-              activeContextRule:
-                "select project-scoped source, memory, retrieval, and anti-memory only",
-              metadata: nextKernelMetadata
-            });
+    project,
+    projectCreated: existingProject === undefined,
+    repoInstallation,
+    repoInstallationCreated: existingInstallation === undefined,
+    projectKernel,
+    projectKernelCreated: projectKernel.id !== existingKernel?.id
+  };
+};
 
-      return {
-        project,
-        projectCreated: existingProject === undefined,
-        repoInstallation,
-        repoInstallationCreated: existingInstallation === undefined,
-        projectKernel,
-        projectKernelCreated: projectKernel.id !== existingKernel?.id
-      };
+const createConfiguredInitConnectRuntime = async (
+  input: InitConnectRuntimeInput
+): Promise<InitConnectRuntime> => {
+  const store = await openProjectStore(input.config);
+
+  return {
+    persistenceLabel: store.persistenceLabel,
+    async connectTargetRepo(repoInput: ConnectTargetRepoInput): Promise<ConnectTargetRepoResult> {
+      return connectTargetRepo(store.projectRepository, repoInput);
     },
     async close(): Promise<void> {
-      await client.end();
+      await store.close();
     }
   };
 };
@@ -592,22 +574,25 @@ const createPostgresInitConnectRuntime = async (
 export const runInitCommand = async (
   runtime: InitCommandRuntime
 ): Promise<InitCommandResult> => {
-  const callerCwd = await resolveInitCallerCwd(runtime);
-  const detection = await detectTargetRepo(callerCwd, runtime.repo, runtime.ownerFiles ?? []);
+  const detection = await detectTargetRepo(runtime, runtime.ownerFiles ?? []);
 
   if (runtime.mode === "connect") {
     if (runtime.persist !== true) {
       throw new Error("krn init --connect requires --persist");
     }
 
-    const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-
-    if (databaseUrl === undefined || databaseUrl.length === 0) {
-      throw new Error("KRN_DATABASE_URL is required for krn init --connect --persist");
+    if (detection.forbiddenSurfaces.length > 0) {
+      throw new Error(`Target repo contains forbidden surfaces: ${detection.forbiddenSurfaces.join(", ")}`);
     }
 
-    const createRuntime = runtime.createInitConnectRuntime ?? createPostgresInitConnectRuntime;
-    const initRuntime = await createRuntime({ databaseUrl });
+    const config = resolveBackendConfig({
+      ...(runtime.backend === undefined ? {} : { backend: runtime.backend }),
+      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+      env: runtime.env,
+      targetWorkspace: detection.repoPath
+    });
+    const createRuntime = runtime.createInitConnectRuntime ?? createConfiguredInitConnectRuntime;
+    const initRuntime = await createRuntime({ config });
 
     try {
       const result = await initRuntime.connectTargetRepo({
@@ -623,7 +608,11 @@ export const runInitCommand = async (
       });
 
       return {
-        stdout: renderConnect(detection, result)
+        stdout: renderConnect(
+          detection,
+          result,
+          initRuntime.persistenceLabel ?? (config.kind === "postgres" ? "Postgres" : "SQLite")
+        )
       };
     } finally {
       await initRuntime.close();
@@ -631,6 +620,6 @@ export const runInitCommand = async (
   }
 
   return {
-    stdout: renderDryRun(detection)
+    stdout: renderDryRun(detection, runtime)
   };
 };

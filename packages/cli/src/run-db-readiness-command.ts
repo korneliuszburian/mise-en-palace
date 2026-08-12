@@ -2,6 +2,15 @@ import {
   inspectMigrationReadiness
 } from "@krn/db/dev";
 import {
+  inspectSqliteMigrationReadiness,
+  parseBackendKind,
+  resolveBackendConfig
+} from "@krn/db";
+import type {
+  BackendKind,
+  SqliteMigrationReadinessReport
+} from "@krn/db";
+import {
   missingDbCommandOutput,
   resolveDbCommandContext
 } from "./db-command-context.js";
@@ -15,10 +24,15 @@ import {
   collectEnvironmentFingerprint,
   environmentFingerprintLines
 } from "./environment-fingerprint.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
 
 export interface DbReadinessRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
+  backend?: BackendKind;
+  dbPath?: string;
 }
 
 export interface DbReadinessResult {
@@ -28,6 +42,7 @@ export interface DbReadinessResult {
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown DB readiness error";
+const sqliteMigrationAssetLabel = "@krn/db/sqlite-migrations";
 
 export const redactedPostgresEndpoint = (databaseUrl: string): string => {
   try {
@@ -42,9 +57,93 @@ export const redactedPostgresEndpoint = (databaseUrl: string): string => {
   }
 };
 
+const sqliteReady = (report: SqliteMigrationReadinessReport): boolean =>
+  report.connectivityReady && report.migrationsVerified && report.schemaPresent &&
+  report.repositoryReachabilityReady && report.journalMode === "wal" &&
+  report.foreignKeysEnabled && report.foreignKeyViolations === 0 && report.integrityReady;
+
+const runSqliteDbReadinessCommand = async (
+  targetWorkspace: string,
+  dbPath: string
+): Promise<DbReadinessResult> => {
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot: targetWorkspace,
+    evaluatorVersion: "db-readiness.v1"
+  });
+  const attachFingerprint = (stdout: string): string =>
+    `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
+
+  try {
+    const report = await inspectSqliteMigrationReadiness(dbPath);
+    const ready = sqliteReady(report);
+    return {
+      exitCode: ready ? 0 : 1,
+      stdout: attachFingerprint([
+        "KRN DB Readiness",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        `DB mode: ${ready ? "ready" : "connected but not ready"}`,
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        "SQLite: reachable",
+        `Migrations expected: ${report.expectedMigrationCount}`,
+        `Migrations applied: ${report.appliedMigrationCount}`,
+        `Migrations identity: ${report.migrationIdentityStatus}`,
+        ...report.migrationIdentityDetails.map((detail) => `Migration detail: ${detail}`),
+        `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
+        `SQLite schema: ${report.schemaPresent ? "present" : "incomplete"}`,
+        `Repository reachability: ${report.repositoryReachabilityReady ? "ready" : "blocked"}`,
+        `SQLite journal mode: ${report.journalMode}`,
+        `SQLite foreign keys: ${report.foreignKeysEnabled && report.foreignKeyViolations === 0 ? "enabled" : "blocked"}`,
+        `SQLite integrity: ${report.integrityReady ? "ok" : "failed"}`,
+        `Memory store readiness: ${ready ? "ready" : "blocked (SQLite store checks must be ready)"}`
+      ].join("\n") + "\n")
+    };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: attachFingerprint([
+        "KRN DB Readiness",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        "DB mode: configured but unreachable",
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        `SQLite/migrations: failed (${errorMessage(error)})`,
+        `Does not prove: ${dbBootstrapDoesNotProve}`,
+        "Memory store readiness: blocked (migration readiness failed)"
+      ].join("\n") + "\n")
+    };
+  }
+};
+
 export const runDbReadinessCommand = async (
   runtime: DbReadinessRuntime
 ): Promise<DbReadinessResult> => {
+  const selectedBackend = parseBackendKind(runtime.backend) ??
+    parseBackendKind(runtime.env.KRN_DB_BACKEND) ??
+    "sqlite";
+  if (selectedBackend === "sqlite") {
+    const targetWorkspace = await resolveTargetWorkspace(runtime);
+    const config = resolveBackendConfig({
+      backend: "sqlite",
+      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+      env: runtime.env,
+      targetWorkspace
+    });
+    if (config.kind !== "sqlite") {
+      throw new Error("SQLite readiness resolved a non-SQLite backend");
+    }
+    return runSqliteDbReadinessCommand(targetWorkspace, config.dbPath);
+  }
+
+  resolveBackendConfig({
+    backend: "postgres",
+    ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+    env: runtime.env,
+    targetWorkspace: runtime.cwd
+  });
+
   const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
     await resolveDbCommandContext(runtime);
   const environmentFingerprint = await collectEnvironmentFingerprint({

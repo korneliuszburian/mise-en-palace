@@ -9,6 +9,9 @@ import type {
   EvidenceCommandCaptureInput
 } from "./evidence-command-artifacts.js";
 import type {
+  BackendKind
+} from "@krn/db";
+import type {
   KnowledgeSearchFilter
 } from "@krn/harness";
 import {
@@ -72,6 +75,8 @@ export type CliCommand =
       kind: "init";
       mode: "dryRun";
       repo: string;
+      backend?: BackendKind;
+      dbPath?: string;
       ownerFiles?: readonly TargetOwnerFileInput[];
     }
   | {
@@ -79,6 +84,8 @@ export type CliCommand =
       mode: "connect";
       repo: string;
       persist: boolean;
+      backend?: BackendKind;
+      dbPath?: string;
       ownerFiles?: readonly TargetOwnerFileInput[];
     }
   | {
@@ -95,15 +102,21 @@ export type CliCommand =
     }
   | {
       kind: "doctor";
+      backend?: BackendKind;
+      dbPath?: string;
     }
   | {
       kind: "dbHelp";
     }
   | {
       kind: "dbReadiness";
+      backend?: BackendKind;
+      dbPath?: string;
     }
   | {
       kind: "dbMigrate";
+      backend?: BackendKind;
+      dbPath?: string;
     }
   | {
       kind: "dbSmoke";

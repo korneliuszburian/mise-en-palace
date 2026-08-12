@@ -1,6 +1,15 @@
 import {
   migrateDatabase
 } from "@krn/db/dev";
+import {
+  migrateSqliteDatabase,
+  parseBackendKind,
+  resolveBackendConfig
+} from "@krn/db";
+import type {
+  BackendKind,
+  SqliteMigrationReadinessReport
+} from "@krn/db";
 
 import {
   missingDbCommandOutput,
@@ -17,10 +26,15 @@ import {
 import {
   redactedPostgresEndpoint
 } from "./run-db-readiness-command.js";
+import {
+  resolveTargetWorkspace
+} from "./target-workspace.js";
 
 export interface DbMigrateRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
+  backend?: BackendKind;
+  dbPath?: string;
 }
 
 export interface DbMigrateResult {
@@ -33,10 +47,99 @@ const errorMessage = (error: unknown): string =>
 
 const migrationDoesNotProve =
   "applying migrations does not prove source authority integrity, data correctness, backups, or product readiness";
+const sqliteMigrationAssetLabel = "@krn/db/sqlite-migrations";
+
+const sqliteReady = (report: SqliteMigrationReadinessReport): boolean =>
+  report.connectivityReady &&
+  report.migrationsVerified &&
+  report.schemaPresent &&
+  report.repositoryReachabilityReady &&
+  report.journalMode === "wal" &&
+  report.foreignKeysEnabled &&
+  report.foreignKeyViolations === 0 &&
+  report.integrityReady;
+
+const runSqliteDbMigrateCommand = async (
+  targetWorkspace: string,
+  dbPath: string
+): Promise<DbMigrateResult> => {
+  const environmentFingerprint = await collectEnvironmentFingerprint({
+    repoRoot: targetWorkspace,
+    evaluatorVersion: "db-migrate.v1"
+  });
+  const attachFingerprint = (stdout: string): string =>
+    `${stdout}${environmentFingerprintLines(environmentFingerprint).join("\n")}\n`;
+
+  try {
+    const report = await migrateSqliteDatabase(dbPath);
+    const ready = sqliteReady(report);
+    return {
+      exitCode: ready ? 0 : 1,
+      stdout: attachFingerprint([
+        "KRN DB Migrate",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        `DB mode: ${ready ? "migrations applied" : "connected but migration incomplete"}`,
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        "SQLite: reachable",
+        `Migrations expected: ${report.expectedMigrationCount}`,
+        `Migrations applied: ${report.appliedMigrationCount}`,
+        `Migrations identity: ${report.migrationIdentityStatus}`,
+        ...report.migrationIdentityDetails.map((detail) => `Migration detail: ${detail}`),
+        `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
+        `SQLite schema: ${report.schemaPresent ? "present" : "incomplete"}`,
+        `Repository reachability: ${report.repositoryReachabilityReady ? "ready" : "blocked"}`,
+        `SQLite journal mode: ${report.journalMode}`,
+        `SQLite foreign keys: ${report.foreignKeysEnabled && report.foreignKeyViolations === 0 ? "enabled" : "blocked"}`,
+        `SQLite integrity: ${report.integrityReady ? "ok" : "failed"}`,
+        `Does not prove: ${migrationDoesNotProve}`
+      ].join("\n") + "\n")
+    };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: attachFingerprint([
+        "KRN DB Migrate",
+        `Repo root: ${targetWorkspace}`,
+        `Migrations folder: ${sqliteMigrationAssetLabel}`,
+        "DB mode: configured but migration failed",
+        "SQLite config: configured",
+        `SQLite path: ${dbPath}`,
+        `SQLite/migrate: failed (${errorMessage(error)})`,
+        `Does not prove: ${migrationDoesNotProve}`
+      ].join("\n") + "\n")
+    };
+  }
+};
 
 export const runDbMigrateCommand = async (
   runtime: DbMigrateRuntime
 ): Promise<DbMigrateResult> => {
+  const selectedBackend = parseBackendKind(runtime.backend) ??
+    parseBackendKind(runtime.env.KRN_DB_BACKEND) ??
+    "sqlite";
+  if (selectedBackend === "sqlite") {
+    const targetWorkspace = await resolveTargetWorkspace(runtime);
+    const config = resolveBackendConfig({
+      backend: "sqlite",
+      ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+      env: runtime.env,
+      targetWorkspace
+    });
+    if (config.kind !== "sqlite") {
+      throw new Error("SQLite migration resolved a non-SQLite backend");
+    }
+    return runSqliteDbMigrateCommand(targetWorkspace, config.dbPath);
+  }
+
+  resolveBackendConfig({
+    backend: "postgres",
+    ...(runtime.dbPath === undefined ? {} : { dbPath: runtime.dbPath }),
+    env: runtime.env,
+    targetWorkspace: runtime.cwd
+  });
+
   const { databaseUrl, migrationsFolder, relativeMigrationsFolder, repoRoot } =
     await resolveDbCommandContext(runtime);
   const environmentFingerprint = await collectEnvironmentFingerprint({

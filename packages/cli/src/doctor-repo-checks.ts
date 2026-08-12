@@ -10,8 +10,15 @@ import {
   pathExists,
   readJsonObject
 } from "./cli-file-boundary.js";
+import {
+  inspectTargetKrnArtifacts,
+  targetKrnArtifactsAreForbidden
+} from "@krn/db";
 
-export const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
+export const checkRepoFiles = async (
+  repoRoot: string,
+  targetWorkspace: string = repoRoot
+): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
   const agentsText = agentsPresent ? await readFile(agentsPath, "utf8") : "";
@@ -26,7 +33,8 @@ export const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> =
   const strictEnabled = compilerOptions.strict === true;
   const exactOptionalEnabled = compilerOptions.exactOptionalPropertyTypes === true;
   const noUncheckedIndexedAccess = compilerOptions.noUncheckedIndexedAccess === true;
-  const krnRuntimeTruthExists = await pathExists(path.join(repoRoot, ".krn"));
+  const krnArtifacts = await inspectTargetKrnArtifacts(targetWorkspace);
+  const krnRuntimeTruthForbidden = targetKrnArtifactsAreForbidden(krnArtifacts);
   const workspaceExists = await pathExists(path.join(repoRoot, "pnpm-workspace.yaml"));
   const packagesExists = await pathExists(path.join(repoRoot, "packages"));
   const skillsExists = await pathExists(path.join(repoRoot, ".agents", "skills"));
@@ -35,7 +43,7 @@ export const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> =
     await pathExists(path.join(repoRoot, "apps")),
     await pathExists(path.join(repoRoot, "packages", "dashboard")),
     await pathExists(path.join(repoRoot, "packages", "api")),
-    krnRuntimeTruthExists
+    krnRuntimeTruthForbidden
   ];
   const forbiddenAbsent = forbiddenSurfaces.every((exists) => !exists);
 
@@ -46,7 +54,11 @@ export const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> =
     },
     {
       label: ".krn runtime truth",
-      status: krnRuntimeTruthExists ? "present" : "absent"
+      status: krnRuntimeTruthForbidden
+        ? "present"
+        : krnArtifacts.status === "allowed" && krnArtifacts.artifacts.length > 0
+          ? "governed SQLite artifacts only"
+          : "absent"
     },
     {
       label: "TypeScript strictness",

@@ -78,7 +78,7 @@ jobs:
       - name: CLI tests
         run: pnpm --filter @krn/cli exec vitest run --no-file-parallelism
       - name: KRN doctor
-        run: pnpm krn doctor
+        run: pnpm krn db migrate --backend sqlite --db-path .local-lab/sqlite/ci-memory.db && pnpm krn doctor --backend sqlite --db-path .local-lab/sqlite/ci-memory.db
       - name: Fallow changed-files quality gate
         run: pnpm quality:fallow:ci
       - name: Required evals
@@ -108,6 +108,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
+      KRN_DB_BACKEND: postgres
       KRN_DATABASE_URL: postgres://krn:krn@localhost:54329/krn
     steps:
       - name: Checkout
@@ -143,6 +144,7 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 45
     env:
+      KRN_DB_BACKEND: postgres
       KRN_DATABASE_URL: postgres://krn:krn@localhost:5432/krn
       KRN_COMMIT_EVENT: ${{ github.event_name }}
       KRN_COMMIT_BEFORE: ${{ github.event.before }}

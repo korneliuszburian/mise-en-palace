@@ -8,6 +8,7 @@ import {
 import {
   buildRejectedMemoryPromotionInput,
   createMemoryCommandDatabaseRuntime,
+  createMemoryLifecycleCommandRuntime,
   requireMemoryReviewRejectionReason,
   toReviewedSourceClaimIds
 } from "./memory-command-support.js";
@@ -34,6 +35,7 @@ type MemoryCandidateReviewCommand =
   | MemoryCandidateRejectCommand;
 
 export interface MemoryCandidateReviewCommandRuntime extends BaseCommandRuntime {
+  cwd?: string;
   command: MemoryCandidateReviewCommand;
   createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
@@ -128,10 +130,11 @@ const formatPromoted = (input: {
   untrustedSourceReviewRef: string | undefined;
   sourceClaimIds: string[];
   supersededMemoryRecordId?: string;
+  persistenceLabel: string;
 }): string =>
   [
     "KRN Memory Candidate Promote",
-    "Persistence: enabled (Postgres, explicit --persist)",
+    `Persistence: enabled (${input.persistenceLabel}, explicit --persist)`,
     "Review gate: passed",
     "",
     "Persisted IDs:",
@@ -227,7 +230,7 @@ const runPromote = async (
     );
   }
 
-  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+  const databaseRuntime = await createMemoryLifecycleCommandRuntime(
     runtime,
     "KRN_DATABASE_URL is required for krn memory candidate promote --persist"
   );
@@ -296,6 +299,7 @@ const runPromote = async (
         evidenceReviewedRef,
         untrustedSourceReviewRef,
         sourceClaimIds: toReviewedSourceClaimIds(result.reviewedSourceClaims),
+        persistenceLabel: databaseRuntime.persistenceLabel,
         ...(!("supersededMemoryRecord" in result)
           ? {}
           : { supersededMemoryRecordId: result.supersededMemoryRecord.id })

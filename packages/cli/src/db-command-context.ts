@@ -1,4 +1,6 @@
-import path from "node:path";
+import {
+  postgresMigrationsFolder
+} from "@krn/db";
 
 import {
   findRepoRoot
@@ -18,12 +20,12 @@ export const resolveDbCommandContext = async (
   readonly repoRoot: string;
 }> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
-  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
+  const migrationsFolder = postgresMigrationsFolder;
 
   return {
     repoRoot,
     migrationsFolder,
-    relativeMigrationsFolder: path.relative(repoRoot, migrationsFolder),
+    relativeMigrationsFolder: "packages/db/src/migrations",
     databaseUrl: runtime.env.KRN_DATABASE_URL?.trim()
   };
 };

@@ -197,7 +197,7 @@ describe("runCli", () => {
 
   it("reports DB readiness missing configuration", async () => {
     const result = await runCli(["db", "readiness"], {
-      env: {},
+      env: { KRN_DB_BACKEND: "postgres" },
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
