@@ -710,6 +710,13 @@ export const serveDecisionPacketMcpStdio = async (
   runtime: DecisionPacketMcpRuntime = defaultRuntime()
 ): Promise<void> => {
   const serverRuntime: DecisionPacketMcpRuntime = runtime;
+  const shutdown = (): void => {
+    void closeMemoryLifecycleFor(serverRuntime).catch(() => {
+      process.exitCode = 1;
+    });
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
   let lineChunks: Buffer[] = [];
   let lineUtf8Bytes = 0;
   let discardingOversizeLine = false;
@@ -809,6 +816,8 @@ export const serveDecisionPacketMcpStdio = async (
       }
     }
   } finally {
+    process.removeListener("SIGINT", shutdown);
+    process.removeListener("SIGTERM", shutdown);
     await closeMemoryLifecycleFor(serverRuntime);
   }
 };
