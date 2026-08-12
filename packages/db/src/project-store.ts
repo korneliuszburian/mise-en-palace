@@ -45,10 +45,15 @@ const openPostgresProjectStore = async (
     throw new Error("KRN_DATABASE_URL is required for krn init --connect --persist");
   }
 
-  await migrateDatabase({
+  const migrationReport = await migrateDatabase({
     databaseUrl: config.databaseUrl,
     migrationsFolder: postgresMigrationsFolder
   });
+  if (!migrationReport.migrationsVerified) {
+    throw new Error(
+      `Postgres store is not ready: migration identity ${migrationReport.migrationIdentityStatus}`
+    );
+  }
 
   const client = postgres(config.databaseUrl, {
     max: 1,
