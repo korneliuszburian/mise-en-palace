@@ -32,13 +32,7 @@ import {
   decisionPacketTransportBudget,
   measureDecisionPacketTransport
 } from "./decision-packet-transport-measurement.js";
-import {
-  createMemoryLifecycleContext,
-  runBriefTool,
-  runRecallTool,
-  runRememberTool,
-  type MemoryLifecycleContext
-} from "./memory-lifecycle-tools.js";
+import type { MemoryLifecycleContext } from "./memory-lifecycle-tools.js";
 
 type JsonRpcId = string | number;
 
@@ -94,6 +88,35 @@ export interface DecisionPacketMcpRuntime {
   ) => Promise<DecisionPacketCommandResult>;
   readonly memoryLifecycle?: MemoryLifecycleContext;
 }
+
+const memoryLifecycleContexts = new WeakMap<object, Promise<MemoryLifecycleContext>>();
+
+const memoryLifecycleFor = async (
+  runtime: DecisionPacketMcpRuntime
+): Promise<MemoryLifecycleContext> => {
+  if (runtime.memoryLifecycle !== undefined) return runtime.memoryLifecycle;
+  const key = runtime as object;
+  let context = memoryLifecycleContexts.get(key);
+  if (context === undefined) {
+    context = import("./memory-lifecycle-tools.js").then(({ createMemoryLifecycleContext }) =>
+      createMemoryLifecycleContext({
+        env: runtime.env,
+        cwd: process.cwd(),
+        now: runtime.now,
+        createId: runtime.createId
+      })
+    );
+    memoryLifecycleContexts.set(key, context);
+  }
+  return context;
+};
+
+const closeMemoryLifecycleFor = async (runtime: DecisionPacketMcpRuntime): Promise<void> => {
+  if (runtime.memoryLifecycle !== undefined) return;
+  const context = memoryLifecycleContexts.get(runtime as object);
+  if (context !== undefined) await (await context).close();
+  memoryLifecycleContexts.delete(runtime as object);
+};
 
 export interface DecisionPacketMcpSession {
   phase: "new" | "initialize_responded" | "ready";
@@ -468,22 +491,14 @@ const runToolCall = async (
     if (args !== undefined && !isRecord(args)) {
       return { kind: "protocol_error", error: { code: -32602, message: `${toolName} arguments must be an object` } };
     }
-    const memoryContext = runtime.memoryLifecycle ?? createMemoryLifecycleContext({
-      env: runtime.env,
-      cwd: process.cwd(),
-      now: runtime.now,
-      createId: runtime.createId
-    });
-    try {
-      const toolResult = toolName === "remember"
-        ? await runRememberTool(runtime, memoryContext, args ?? {})
-        : toolName === "recall"
-          ? await runRecallTool(runtime, memoryContext, args ?? {})
-          : await runBriefTool(runtime, memoryContext, args ?? {});
-      return { kind: "result", result: toolResult as ToolCallResult };
-    } finally {
-      if (runtime.memoryLifecycle === undefined) await memoryContext.close();
-    }
+    const memoryContext = await memoryLifecycleFor(runtime);
+    const tools = await import("./memory-lifecycle-tools.js");
+    const toolResult = toolName === "remember"
+      ? await tools.runRememberTool(runtime, memoryContext, args ?? {})
+      : toolName === "recall"
+        ? await tools.runRecallTool(runtime, memoryContext, args ?? {})
+        : await tools.runBriefTool(runtime, memoryContext, args ?? {});
+    return { kind: "result", result: toolResult as ToolCallResult };
   }
 
   if (
@@ -694,15 +709,7 @@ export const serveDecisionPacketMcpStdio = async (
   output: WritableOutput,
   runtime: DecisionPacketMcpRuntime = defaultRuntime()
 ): Promise<void> => {
-  const lifecycle = runtime.memoryLifecycle ?? createMemoryLifecycleContext({
-    env: runtime.env,
-    cwd: process.cwd(),
-    now: runtime.now,
-    createId: runtime.createId
-  });
-  const serverRuntime: DecisionPacketMcpRuntime = runtime.memoryLifecycle === undefined
-    ? { ...runtime, memoryLifecycle: lifecycle }
-    : runtime;
+  const serverRuntime: DecisionPacketMcpRuntime = runtime;
   let lineChunks: Buffer[] = [];
   let lineUtf8Bytes = 0;
   let discardingOversizeLine = false;
@@ -802,7 +809,7 @@ export const serveDecisionPacketMcpStdio = async (
       }
     }
   } finally {
-    if (runtime.memoryLifecycle === undefined) await lifecycle.close();
+    await closeMemoryLifecycleFor(serverRuntime);
   }
 };
 
