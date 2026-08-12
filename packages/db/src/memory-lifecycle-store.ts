@@ -38,6 +38,10 @@ import {
   openKrnSqliteDatabase
 } from "./sqlite-database.js";
 import {
+  assertSqliteStoreReady,
+  inspectOpenSqliteStore
+} from "./sqlite-migration-readiness.js";
+import {
   openPostgresRuntime
 } from "./postgres-memory-store.js";
 
@@ -64,13 +68,14 @@ const openSqliteMemoryLifecycleStore = async (
   const connection = await openKrnSqliteDatabase(config.dbPath, readonly
     ? { readonly: true, fileMustExist: true }
     : { createParent: true });
-  if (!readonly) {
-    try {
+  try {
+    if (!readonly) {
       migrateSqlite(connection.db, { migrationsFolder: sqliteMigrationsFolder });
-    } catch (error) {
-      connection.close();
-      throw error;
     }
+    assertSqliteStoreReady(await inspectOpenSqliteStore(connection));
+  } catch (error) {
+    connection.close();
+    throw error;
   }
   const projectRepository = new SqliteProjectRepository(connection.db);
   return {

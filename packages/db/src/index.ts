@@ -11,8 +11,10 @@ export {
   sqliteMigrationsFolder
 } from "./migration-assets.js";
 export {
+  assertSqliteStoreReady,
   inspectSqliteMigrationReadiness,
-  migrateSqliteDatabase
+  migrateSqliteDatabase,
+  sqliteStoreIsReady
 } from "./sqlite-migration-readiness.js";
 export {
   openKrnSqliteDatabase
