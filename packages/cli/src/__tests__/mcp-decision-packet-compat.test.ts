@@ -61,7 +61,10 @@ describe("DecisionPacket official MCP client compatibility", () => {
       );
 
       const listed = await client.listTools(undefined, { timeout: requestTimeoutMs });
-      expect(listed.tools).toHaveLength(1);
+      expect(listed.tools).toHaveLength(4);
+      expect(listed.tools.map((tool) => tool.name)).toEqual([
+        "krn_decision_packet", "remember", "recall", "brief"
+      ]);
       expect(listed.tools[0]).toMatchObject({
         name: "krn_decision_packet",
         annotations: {

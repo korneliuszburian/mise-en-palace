@@ -57,6 +57,8 @@ export interface MemoryLifecycleStore {
     getSourceClaimForProject: NonNullable<SourceRepository["getSourceClaimForProject"]>;
   };
   resolveExecutionRunProjectId(executionRunId: string): Promise<string | undefined>;
+  /** Run repository reads under a connection-local write guard. */
+  withReadOnly<T>(operation: () => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -96,6 +98,18 @@ const openSqliteMemoryLifecycleStore = async (
         .get();
       return row?.taskProjectId ?? row?.intentProjectId ?? undefined;
     },
+    async withReadOnly<T>(operation: () => Promise<T>): Promise<T> {
+      const prior = Number(connection.client.pragma("query_only", { simple: true }));
+      if (prior !== 0 && prior !== 1) {
+        throw new Error(`SQLite query_only returned an invalid value: ${String(prior)}`);
+      }
+      connection.client.pragma("query_only = ON");
+      try {
+        return await operation();
+      } finally {
+        connection.client.pragma(`query_only = ${prior === 1 ? "ON" : "OFF"}`);
+      }
+    },
     async close(): Promise<void> {
       connection.close();
     }
@@ -127,6 +141,9 @@ const openPostgresMemoryLifecycleStore = async (
     async resolveExecutionRunProjectId(executionRunId: string): Promise<string | undefined> {
       const run = await runtime.harnessRunRepository.getHarnessRunByExecutionRunId(executionRunId);
       return run?.taskContract.projectId ?? run?.operatorIntent.projectId;
+    },
+    async withReadOnly<T>(operation: () => Promise<T>): Promise<T> {
+      return operation();
     },
     close: runtime.close
   };

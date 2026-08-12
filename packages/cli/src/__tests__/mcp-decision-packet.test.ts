@@ -407,7 +407,7 @@ describe("DecisionPacket MCP wrapper", () => {
         ...(params === undefined ? {} : { params })
       }, runtime())).resolves.toMatchObject({
         id: "initial-tools-list",
-        result: { tools: [{ name: "krn_decision_packet" }] }
+        result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }] }
       });
     }
 
@@ -458,7 +458,7 @@ describe("DecisionPacket MCP wrapper", () => {
       id: "after-init",
       method: "tools/list"
     }, sessionRuntime)).resolves.toMatchObject({
-      result: { tools: [{ name: "krn_decision_packet" }] }
+      result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }] }
     });
   });
 
@@ -514,7 +514,10 @@ describe("DecisionPacket MCP wrapper", () => {
               readOnlyHint: true,
               destructiveHint: false
             }
-          }
+          },
+          { name: "remember" },
+          { name: "recall" },
+          { name: "brief" }
         ]
       }
     });
@@ -1295,9 +1298,7 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(output).toHaveLength(2);
     expect(messages[0]).toMatchObject({
       result: {
-        tools: [{
-          name: "krn_decision_packet"
-        }]
+        tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }]
       }
     });
     expect(JSON.stringify(toolCall)).toContain(
