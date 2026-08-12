@@ -1,5 +1,8 @@
 # MCP remains a bounded read-only protocol boundary
 
+> **Status: Superseded by ADR 0007.** The transport discipline remains
+> authoritative; the single-tool/read-only product boundary does not.
+
 ## Decision
 
 KRN exposes one read-only DecisionPacket tool over the pinned MCP protocol

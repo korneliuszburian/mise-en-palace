@@ -13,7 +13,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   inspectSqliteMigrationReadiness,
   migrateSqliteDatabase,
-  openKrnSqliteDatabase
+  openKrnSqliteDatabase,
+  openMemoryLifecycleStore
 } from "../index.js";
 
 const openedPaths: string[] = [];
@@ -156,6 +157,38 @@ describe("SQLite migration assets", () => {
         .toThrow();
     } finally {
       connection.close();
+    }
+  });
+
+  it("serializes concurrent lifecycle read-only scopes on one SQLite store", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "krn-sqlite-read-only-queue-"));
+    const dbPath = path.join(directory, ".krn", "memory.db");
+    const store = await openMemoryLifecycleStore({
+      kind: "sqlite",
+      dbPath,
+      storeIdentity: `sqlite:${dbPath}`
+    });
+    const events: string[] = [];
+    try {
+      const first = store.withReadOnly(async () => {
+        events.push("first:start");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        events.push("first:end");
+      });
+      const second = store.withReadOnly(async () => {
+        events.push("second:start");
+        events.push("second:end");
+      });
+
+      await Promise.all([first, second]);
+      expect(events).toEqual([
+        "first:start",
+        "first:end",
+        "second:start",
+        "second:end"
+      ]);
+    } finally {
+      await store.close();
     }
   });
 });
