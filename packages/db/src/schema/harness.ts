@@ -16,6 +16,7 @@ import {
 import { sql } from "drizzle-orm/sql";
 
 import {
+  activationRuntimeProofStatuses,
   contextAssemblyStatuses,
   evidenceBundleStatuses,
   executionRunStatuses,
@@ -51,7 +52,7 @@ export const evidenceBundleStatus = pgEnum("evidence_bundle_status", evidenceBun
 
 export const activationRuntimeProofStatus = pgEnum(
   "activation_runtime_proof_status",
-  ["passed", "failed"] as const
+  activationRuntimeProofStatuses
 );
 
 export const reviewAssessmentStatus = pgEnum("review_assessment_status", reviewAssessmentStatuses);

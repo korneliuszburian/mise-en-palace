@@ -1,5 +1,12 @@
 import { sql } from "drizzle-orm/sql";
 import {
+  maintenanceQueueStatuses
+} from "@krn/core";
+import {
+  outboxEventStatuses,
+  runEventSeverities
+} from "@krn/core/repositories";
+import {
   check,
   index,
   integer,
@@ -27,28 +34,14 @@ const lockedAtColumn = () => timestamp("locked_at", { withTimezone: true });
 const lockedByColumn = () => text("locked_by");
 const lastErrorColumn = () => text("last_error");
 
-export const runEventSeverity = pgEnum("run_event_severity", [
-  "debug",
-  "info",
-  "warning",
-  "error"
-]);
+export const runEventSeverity = pgEnum("run_event_severity", runEventSeverities);
 
-export const outboxEventStatus = pgEnum("outbox_event_status", [
-  "pending",
-  "processing",
-  "completed",
-  "failed",
-  "dead_letter"
-]);
+export const outboxEventStatus = pgEnum("outbox_event_status", outboxEventStatuses);
 
-export const maintenanceQueueStatus = pgEnum("maintenance_queue_status", [
-  "queued",
-  "running",
-  "succeeded",
-  "skipped",
-  "dead_letter"
-]);
+export const maintenanceQueueStatus = pgEnum(
+  "maintenance_queue_status",
+  maintenanceQueueStatuses
+);
 
 export const runEvents = pgTable(
   "run_events",

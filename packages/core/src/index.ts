@@ -1,5 +1,6 @@
 export * from "./capability-plan.js";
 export * from "./activation.js";
+export * from "./activation-runtime-proof.js";
 export * from "./candidate-reviewability.js";
 export * from "./codex-adapter-plan-ref.js";
 export * from "./command-output-artifact.js";

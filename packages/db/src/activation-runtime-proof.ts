@@ -1,6 +1,8 @@
 import type postgres from "postgres";
+import { activationRuntimeProofStatuses } from "@krn/core";
 
 const freshnessWindowMs = 15 * 60 * 1000;
+type ActivationRuntimeProofStatus = (typeof activationRuntimeProofStatuses)[number];
 
 export interface ActivationRuntimeProofInput {
   proofKind?: "activation" | "target_repo_harness" | "init_connect" | "codex_adapter";
@@ -8,7 +10,7 @@ export interface ActivationRuntimeProofInput {
   projectId?: string;
   environmentFingerprintId: string;
   storeIdentity: string;
-  status: "passed" | "failed";
+  status: ActivationRuntimeProofStatus;
   capturedAt: Date;
   cleanupRemainingMarkerCount: number;
   report: unknown;
@@ -21,7 +23,7 @@ export interface ActivationRuntimeProofReadback {
   projectId: string | null;
   environmentFingerprintId: string;
   storeIdentity: string;
-  status: "passed" | "failed";
+  status: ActivationRuntimeProofStatus;
   capturedAt: string;
   cleanupRemainingMarkerCount: number;
   report: Record<string, unknown>;

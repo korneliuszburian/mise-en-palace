@@ -8,6 +8,19 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  observationClaimRelations,
+  observationConfidences,
+  observationEntityKinds,
+  observationFeedbackEventTypes,
+  observationKinds,
+  observationPriorities,
+  observationProvenanceKinds,
+  observationSourceRangeTypes,
+  observationStatuses,
+  observationUsefulnessValues
+} from "@krn/core";
+
+import {
   createdAtColumn,
   jsonObjectColumn,
   metadataColumn,
@@ -30,100 +43,46 @@ import {
   sourceClaims
 } from "./sources.js";
 
-export const observationKind = pgEnum("observation_kind", [
-  "fact",
-  "decision",
-  "correction",
-  "risk",
-  "procedure",
-  "conflict",
-  "slang",
-  "gap",
-  "preference",
-  "operator_note"
-]);
+export const observationKind = pgEnum("observation_kind", observationKinds);
 
-export const observationPriority = pgEnum("observation_priority", [
-  "low",
-  "medium",
-  "high",
-  "critical"
-]);
+export const observationPriority = pgEnum("observation_priority", observationPriorities);
 
-export const observationConfidence = pgEnum("observation_confidence", [
-  "low",
-  "medium",
-  "high"
-]);
+export const observationConfidence = pgEnum(
+  "observation_confidence",
+  observationConfidences
+);
 
-export const observationStatus = pgEnum("observation_status", [
-  "observed",
-  "candidate",
-  "accepted",
-  "contested",
-  "deprecated",
-  "invalidated",
-  "superseded"
-]);
+export const observationStatus = pgEnum("observation_status", observationStatuses);
 
-export const observationProvenanceKind = pgEnum("observation_provenance_kind", [
-  "run_event",
-  "source_chunk",
-  "tool_trace",
-  "diff",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "user_correction",
-  "user_preference",
-  "local_operator_note"
-]);
+export const observationProvenanceKind = pgEnum(
+  "observation_provenance_kind",
+  observationProvenanceKinds
+);
 
-export const observationSourceRangeType = pgEnum("observation_source_range_type", [
-  "run_event",
-  "source_chunk",
-  "tool_trace",
-  "diff",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "operator_input"
-]);
+export const observationSourceRangeType = pgEnum(
+  "observation_source_range_type",
+  observationSourceRangeTypes
+);
 
-export const observationEntityKind = pgEnum("observation_entity_kind", [
-  "workspace",
-  "project",
-  "repo",
-  "file",
-  "package",
-  "source",
-  "memory",
-  "policy",
-  "eval"
-]);
+export const observationEntityKind = pgEnum(
+  "observation_entity_kind",
+  observationEntityKinds
+);
 
-export const observationClaimRelation = pgEnum("observation_claim_relation", [
-  "supports",
-  "contradicts",
-  "qualifies",
-  "supersedes"
-]);
+export const observationClaimRelation = pgEnum(
+  "observation_claim_relation",
+  observationClaimRelations
+);
 
-export const observationFeedbackEventType = pgEnum("observation_feedback_event_type", [
-  "used",
-  "ignored",
-  "helped",
-  "hurt",
-  "stale",
-  "corrected"
-]);
+export const observationFeedbackEventType = pgEnum(
+  "observation_feedback_event_type",
+  observationFeedbackEventTypes
+);
 
-export const observationUsefulness = pgEnum("observation_usefulness", [
-  "positive",
-  "negative",
-  "neutral",
-  "unknown"
-]);
+export const observationUsefulness = pgEnum(
+  "observation_usefulness",
+  observationUsefulnessValues
+);
 
 const observationScopeColumns = () => ({
   workspaceId: workspaceIdColumn(),
