@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MemoryRecord, Project } from "@krn/core";
+import type {
+  MemoryCandidate,
+  MemoryRecord
+} from "@krn/core";
+import type {
+  CreateMemoryCandidateInput,
+  ProjectRecord
+} from "@krn/core/repositories/internal";
 import type { MemoryLifecycleStore } from "@krn/db";
 import {
   runBriefTool,
@@ -9,7 +16,15 @@ import {
   type MemoryLifecycleToolRuntime
 } from "../internal/mcp/memory-lifecycle-tools.js";
 
-const project = { id: "project-1", localPathHint: "/tmp/target" } as Project;
+const project: ProjectRecord = {
+  id: "project-1",
+  workspaceId: "workspace-1",
+  slug: "project-1",
+  displayName: "Project 1",
+  metadata: {},
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z"
+};
 const record = (kind: MemoryRecord["kind"], id: string): MemoryRecord => ({
   id,
   projectId: project.id,
@@ -21,7 +36,6 @@ const record = (kind: MemoryRecord["kind"], id: string): MemoryRecord => ({
   owner: "operator",
   confidence: 90,
   applicationGuidance: `use ${kind}`,
-  sourceClaimIds: [],
   sourceLineage: [{ sourceId: `source-${id}` }],
   isUserPreference: kind === "preference",
   validFrom: "2026-01-01T00:00:00.000Z",
@@ -47,8 +61,15 @@ const context = (store: Partial<MemoryLifecycleStore>): MemoryLifecycleContext =
 
 describe("MCP memory lifecycle tools", () => {
   it("rejects missing remember content before acquiring the store", async () => {
-    const getStore = vi.fn();
-    const output = await runRememberTool(runtime(), context({ getStore }), {
+    const getStore = vi.fn(async () => {
+      throw new Error("store should not be acquired");
+    });
+    const lifecycle: MemoryLifecycleContext = {
+      serverInstanceId: "server-1",
+      getStore,
+      close: async () => undefined
+    };
+    const output = await runRememberTool(runtime(), lifecycle, {
       kind: "fact", owner: "operator", confidence: 80
     });
     expect(output.isError).toBe(true);
@@ -56,14 +77,22 @@ describe("MCP memory lifecycle tools", () => {
   });
 
   it("creates a SQLite proposal with stable MCP lineage and default guidance", async () => {
-    const createMemoryCandidate = vi.fn(async (input: Record<string, unknown>) => ({
-      ...(input as object), id: "candidate-1", status: "proposed"
-    })) as MemoryLifecycleStore["memoryRepository"]["createMemoryCandidate"];
+    const createMemoryCandidate = vi.fn(async (input: CreateMemoryCandidateInput) => ({
+      ...input, id: "candidate-1", status: "proposed"
+    } as unknown as MemoryCandidate));
     const output = await runRememberTool(runtime(), context({
       backend: "sqlite",
       projectRepository: { getProjectByRepoPath: async () => project },
-      sourceRepository: { getSourceClaimForProject: async () => undefined },
-      memoryRepository: { createMemoryCandidate }
+      sourceRepository: {
+        getSourceClaimById: async () => undefined,
+        getSourceClaimForProject: async () => undefined
+      },
+      memoryRepository: {
+        createMemoryCandidate,
+        getMemoryCandidateById: async () => undefined,
+        promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
+        listActiveMemory: async () => []
+      }
     }), { content: "keep this", kind: "fact", owner: "operator", confidence: 90 });
     expect(output.isError).toBe(false);
     expect(createMemoryCandidate).toHaveBeenCalledWith(expect.objectContaining({
