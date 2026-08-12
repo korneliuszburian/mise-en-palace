@@ -70,12 +70,15 @@ describe("resolveTargetWorkspace", () => {
 
   it("fails instead of resolving a missing relative repo against the KRN checkout", async () => {
     const fixture = await mkdtemp(path.join(os.tmpdir(), "krn-target-workspace-"));
+    const canonicalFixture = await realpath(fixture);
 
     await expect(resolveTargetWorkspace({
       cwd: process.cwd(),
       env: { INIT_CWD: fixture },
       repo: "missing-target"
-    })).rejects.toThrow(`Target workspace is not a directory: ${path.join(fixture, "missing-target")}`);
+    })).rejects.toThrow(
+      `Target workspace is not a directory: ${path.join(canonicalFixture, "missing-target")}`
+    );
   });
 
   it("fails closed instead of treating the KRN process cwd as the target", async () => {
