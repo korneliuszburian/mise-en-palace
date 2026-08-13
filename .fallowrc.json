@@ -70,7 +70,8 @@
       "implements": "SqliteSourceClaimRepositoryPort",
       "members": [
         "getSourceClaimById",
-        "getSourceClaimForProject"
+        "getSourceClaimForProject",
+        "listClaimsForProject"
       ]
     },
     {

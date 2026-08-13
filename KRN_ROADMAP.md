@@ -895,6 +895,12 @@ execute a fixture command, and return evidence/review/feedback through explicit
 channels with packet checksum binding. This proves the minimal consumer loop; it
 does not prove broad MCP product readiness.
 
+SQLite dogfooding path: `krn plan --backend sqlite --persist` now persists the
+operator intent, task contract, harness plan, context assembly, execution run,
+and issued DecisionPacket in the governed `.krn/memory.db` artifact. Its returned
+`runId` and packet checksum can feed the SQLite-only `remember`/review/`feedback`
+loop without a PostgreSQL service.
+
 MCP product boundary decision (superseded by ADR 0007):
 
 - Product tool name: `krn_decision_packet`.
