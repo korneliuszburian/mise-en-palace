@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -13,7 +13,8 @@ import { runCli } from "../run-cli.js";
 describe("SQLite persisted plan", () => {
   it("persists the harness spine and returns a run identity without Postgres", async () => {
     const target = await mkdtemp(path.join(os.tmpdir(), "krn-plan-sqlite-"));
-    const config = resolveBackendConfig({ backend: "sqlite", env: {}, targetWorkspace: target });
+    const canonicalTarget = await realpath(target);
+    const config = resolveBackendConfig({ backend: "sqlite", env: {}, targetWorkspace: canonicalTarget });
     if (config.kind !== "sqlite") throw new Error("expected sqlite config");
     await migrateSqliteDatabase(config.dbPath);
     const setup = await openKrnSqliteDatabase(config.dbPath, { fileMustExist: true });
@@ -28,9 +29,9 @@ describe("SQLite persisted plan", () => {
       await repository.createRepoInstallation({
         projectId: project.id,
         provider: "local",
-        repoUrl: target,
+        repoUrl: canonicalTarget,
         defaultBranch: "main",
-        localPathHint: target
+        localPathHint: canonicalTarget
       });
     } finally {
       setup.close();
@@ -38,8 +39,8 @@ describe("SQLite persisted plan", () => {
 
     try {
       const result = await runCli(["plan", "--task", "persist the SQLite dogfood loop", "--persist", "--backend", "sqlite", "--json"], {
-        cwd: target,
-        env: { INIT_CWD: target },
+        cwd: canonicalTarget,
+        env: { INIT_CWD: canonicalTarget },
         now: () => "2026-08-13T12:00:00.000Z",
         createId: (prefix) => `${prefix}-${Math.random().toString(16).slice(2)}`
       });
