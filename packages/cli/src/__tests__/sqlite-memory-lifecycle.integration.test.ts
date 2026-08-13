@@ -271,6 +271,7 @@ describe("SQLite persisted memory lifecycle", () => {
 
     const feedbackConnection = await openKrnSqliteDatabase(dbPath);
     const feedbackRecordId = randomUUID();
+    const unselectedRecordId = randomUUID();
     const packet = structuredClone(decisionPacketMcpFixture);
     const runTask = feedbackConnection.client.prepare(`
       select task_contracts.id as taskId
@@ -304,6 +305,20 @@ describe("SQLite persisted memory lifecycle", () => {
         feedbackRecordId,
         packet.request.projectId,
         JSON.stringify([{ sourceId: "source-feedback-fixture" }]),
+        Date.parse(fixedNow)
+      );
+      feedbackConnection.client.prepare(`
+        insert into memory_records
+          (id, project_id, key, kind, status, summary, body, owner, confidence,
+           application_guidance, source_lineage, is_user_preference, valid_from,
+           positive_feedback_count, negative_feedback_count, metadata)
+        values (?, ?, 'unselected-feedback-fixture', 'fact', 'active', 'Unselected fixture',
+          'Unselected fixture body', 'integration-test', 90, 'Do not use the unselected fixture',
+          ?, 0, ?, 0, 0, '{}')
+      `).run(
+        unselectedRecordId,
+        packet.request.projectId,
+        JSON.stringify([{ sourceId: "source-unselected-feedback-fixture" }]),
         Date.parse(fixedNow)
       );
       feedbackConnection.client.prepare(`
@@ -373,6 +388,12 @@ describe("SQLite persisted memory lifecycle", () => {
         runId,
         packetChecksum: boundPacket.packetIdentity.checksum
       })).rejects.toThrow(/record/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: unselectedRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/select/i);
     } finally {
       await feedbackStore.close();
     }

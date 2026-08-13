@@ -2252,6 +2252,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   async rebuildMemoryApplicationCounters(): Promise<RebuildMemoryApplicationCountersResult> {
     return this.db.transaction(async (tx) => {
       await tx.execute(sql`lock table "memory_applications" in share mode`);
+      await tx.execute(sql`lock table "memory_feedback_events" in share mode`);
       const { applicationRows, canonicalApplications } = await this.classifyMemoryApplications(tx);
       const counterState = this.memoryApplicationCounterState(canonicalApplications);
       const packetFeedbackRows = await tx.select({

@@ -187,6 +187,14 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
       if (readback.packet.task.id !== run.taskId || readback.request.taskId !== run.taskId) {
         throw new Error("DecisionPacket task identity does not match the execution run");
       }
+      if (
+        issuance.packetGeneratedAt.getTime() !== Date.parse(readback.packetIdentity.generatedAt) ||
+        issuance.sourceRunLifecycleRevision !== readback.packetIdentity.sourceRunLifecycleRevision ||
+        readback.request.projectId !== run.projectId ||
+        readback.packet.task.projectId !== run.projectId
+      ) {
+        throw new Error("DecisionPacket issuance identity does not match the execution run");
+      }
       if (!isDecisionPacketUsefulnessSubjectSelected(readback.packet, {
         kind: "memory_record",
         id: input.memoryRecordId

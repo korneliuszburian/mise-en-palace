@@ -1296,18 +1296,18 @@ describe("DecisionPacket MCP wrapper", () => {
     const messages = output.map((line) => JSON.parse(line) as unknown);
     const toolCall = messages[1];
 
-      expect(output).toHaveLength(2);
-      expect(messages[0]).toMatchObject({
-        result: {
-          tools: [
-            { name: "krn_decision_packet" },
-            { name: "remember" },
-            { name: "recall" },
-            { name: "brief" },
-            { name: "feedback" }
-          ]
-        }
-      });
+    expect(output).toHaveLength(2);
+    expect(messages[0]).toMatchObject({
+      result: {
+        tools: [
+          { name: "krn_decision_packet" },
+          { name: "remember" },
+          { name: "recall" },
+          { name: "brief" },
+          { name: "feedback" }
+        ]
+      }
+    });
     expect(JSON.stringify(toolCall)).toContain(
       `KRN DecisionPacket checksum: ${packetJson.packetIdentity.checksum}.`
     );
