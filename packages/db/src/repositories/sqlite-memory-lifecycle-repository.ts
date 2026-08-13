@@ -176,8 +176,13 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
         .where(eq(decisionPacketIssuances.executionRunId, input.runId)).get();
       if (issuance === undefined) throw new Error("Issued DecisionPacket is required");
       if (issuance.packetChecksum !== input.packetChecksum) throw new Error("DecisionPacket checksum mismatch");
+      let parsedReadback: unknown = issuance.readback;
+      if (typeof issuance.readback === "string") {
+        const parsedJson: unknown = JSON.parse(issuance.readback);
+        parsedReadback = parsedJson;
+      }
       const readback = parseDecisionPacketContractReadback({
-        value: typeof issuance.readback === "string" ? JSON.parse(issuance.readback) : issuance.readback,
+        value: parsedReadback,
         expectedRunId: input.runId,
         sha256Hex: packetSha256Hex
       });
