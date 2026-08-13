@@ -2255,6 +2255,10 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       await tx.execute(sql`lock table "memory_feedback_events" in share mode`);
       const { applicationRows, canonicalApplications } = await this.classifyMemoryApplications(tx);
       const counterState = this.memoryApplicationCounterState(canonicalApplications);
+      // Packet-bound feedback is a separate event stream: this method never creates
+      // memory_applications, so merging these rows is additive rather than a replay
+      // of an application outcome. The idempotency key makes each feedback event
+      // contribute at most once.
       const packetFeedbackRows = await tx.select({
         memoryRecordId: memoryFeedbackEvents.memoryRecordId,
         outcome: memoryFeedbackEvents.outcome

@@ -89,6 +89,20 @@ describe("DecisionPacket official MCP client compatibility", () => {
           ]
         }
       });
+      expect(listed.tools[4]).toMatchObject({
+        name: "feedback",
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true
+        },
+        inputSchema: {
+          required: ["memoryRecordId", "outcome", "runId", "packetChecksum"],
+          additionalProperties: false
+        },
+        outputSchema: {
+          required: ["kind", "feedbackEventId", "idempotentReplay"]
+        }
+      });
 
       const call = (runId: string) => client.callTool({
         name: "krn_decision_packet",
