@@ -43,7 +43,7 @@ describe("SQLite persisted plan", () => {
         now: () => "2026-08-13T12:00:00.000Z",
         createId: (prefix) => `${prefix}-${Math.random().toString(16).slice(2)}`
       });
-      expect(result.exitCode).toBe(0);
+      expect(result.exitCode, result.stderr || result.stdout).toBe(0);
       const output = JSON.parse(result.stdout) as {
         handoff: { kind: string; identity: { executionRunId: string }; packetIdentity: { checksum: string } };
       };
