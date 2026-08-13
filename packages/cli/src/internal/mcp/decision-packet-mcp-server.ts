@@ -377,6 +377,22 @@ const memoryToolDefinitions = (): readonly JsonValue[] => [
     },
     outputSchema: { type: "object", properties: { kind: { const: "krn.memory.brief.v1" } }, required: ["kind"] },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  },
+  {
+    name: "feedback", title: "KRN Memory Feedback", description: "Record packet-bound usefulness feedback for an active memory record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        memoryRecordId: { type: "string" },
+        outcome: { type: "string", enum: ["helped", "hurt", "stale"] },
+        runId: { type: "string" },
+        packetChecksum: { type: "string" },
+        note: { type: "string" }
+      },
+      required: ["memoryRecordId", "outcome", "runId", "packetChecksum"],
+      additionalProperties: false
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   }
 ];
 
@@ -403,7 +419,7 @@ const initializeResult = (
       version: serverVersion
     },
     instructions:
-      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Use recall and brief for governed reads; remember proposes SQLite candidates only. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Exact issuance identity remains structured; detailed operator readback stays on the CLI surface."
+      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Use recall and brief for governed reads; remember proposes SQLite candidates only; feedback records packet-bound SQLite usefulness outcomes. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback without verified packet binding. Exact issuance identity remains structured; detailed operator readback stays on the CLI surface."
   };
 };
 
@@ -475,7 +491,7 @@ const runToolCall = async (
   }
 
   const toolName = params["name"];
-  if (toolName !== decisionPacketToolName && toolName !== "remember" && toolName !== "recall" && toolName !== "brief") {
+  if (toolName !== decisionPacketToolName && toolName !== "remember" && toolName !== "recall" && toolName !== "brief" && toolName !== "feedback") {
     return {
       kind: "protocol_error",
       error: {
@@ -487,7 +503,7 @@ const runToolCall = async (
 
   const args = params["arguments"];
 
-  if (toolName === "remember" || toolName === "recall" || toolName === "brief") {
+  if (toolName === "remember" || toolName === "recall" || toolName === "brief" || toolName === "feedback") {
     if (args !== undefined && !isRecord(args)) {
       return { kind: "protocol_error", error: { code: -32602, message: `${toolName} arguments must be an object` } };
     }
@@ -497,7 +513,9 @@ const runToolCall = async (
       ? await tools.runRememberTool(runtime, memoryContext, args ?? {})
       : toolName === "recall"
         ? await tools.runRecallTool(runtime, memoryContext, args ?? {})
-        : await tools.runBriefTool(runtime, memoryContext, args ?? {});
+        : toolName === "brief"
+          ? await tools.runBriefTool(runtime, memoryContext, args ?? {})
+          : await tools.runFeedbackTool(runtime, memoryContext, args ?? {});
     return { kind: "result", result: toolResult as ToolCallResult };
   }
 

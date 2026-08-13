@@ -51,7 +51,11 @@ export interface MemoryLifecycleStore {
   readonly projectRepository: Pick<ProjectRepository, "getProjectByRepoPath">;
   readonly memoryRepository: SqliteMemoryLifecycleRepositoryPort | Pick<
     MemoryRepository,
-    "createMemoryCandidate" | "getMemoryCandidateById" | "promoteReviewedMemoryCandidate" | "listActiveMemory"
+    | "createMemoryCandidate"
+    | "getMemoryCandidateById"
+    | "promoteReviewedMemoryCandidate"
+    | "listActiveMemory"
+    | "recordMemoryFeedbackWithPacketBinding"
   >;
   readonly sourceRepository: Pick<SourceRepository, "getSourceClaimById"> & {
     getSourceClaimForProject: NonNullable<SourceRepository["getSourceClaimForProject"]>;

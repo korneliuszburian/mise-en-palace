@@ -29,6 +29,7 @@ import {
   authorizeIssuedDecisionPacketUsefulness,
   decideEvidenceContractActivation,
   evidenceBundleProvesHelped,
+  isDecisionPacketUsefulnessSubjectSelected,
   parseEvidenceContract
 } from "@krn/core";
 import { MemoryApplicationIdentityConflictError } from "@krn/core/repositories/internal";
@@ -53,6 +54,8 @@ import type {
   RecordMemoryApplicationOnceInput,
   RecordMemoryApplicationWithEffectsOnceInput,
   RecordMemoryApplicationWithEffectsOnceResult,
+  RecordMemoryFeedbackWithPacketBindingInput,
+  RecordMemoryFeedbackWithPacketBindingResult,
   RebuildMemoryApplicationCountersResult,
   ProposeReviewedHelpedMemoryCandidateInput,
   ProposeReviewedHelpedMemoryCandidateResult,
@@ -106,6 +109,8 @@ import {
   assertMemoryCoreInvariants,
   ensurePromotableMemoryCandidate,
   memoryPromotionMetadata,
+  packetFeedbackIdempotencyKey,
+  requirePacketFeedbackNote,
   memorySelectionDate,
   normalizedMemorySelectionTerms
 } from "./memory-repository-policy.js";
@@ -1992,6 +1997,114 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         antiMemoryCandidate,
         created: true
       };
+    });
+  }
+
+  // fallow-ignore-next-line complexity -- packet-bound feedback keeps project, issuance, selector, idempotency, event, counter, and outbox checks atomic
+  async recordMemoryFeedbackWithPacketBinding(
+    input: RecordMemoryFeedbackWithPacketBindingInput
+  ): Promise<RecordMemoryFeedbackWithPacketBindingResult> {
+    const note = requirePacketFeedbackNote(input);
+    const idempotencyKey = packetFeedbackIdempotencyKey(input);
+
+    // fallow-ignore-next-line complexity -- one transaction keeps binding, idempotency, event, counter, and outbox checks atomic
+    return this.db.transaction(async (tx) => {
+      const memoryRecord = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.memoryRecordId)
+      });
+      if (memoryRecord === undefined) {
+        throw new Error(`MemoryRecord not found: ${input.memoryRecordId}`);
+      }
+      if (memoryRecord.status !== "active") {
+        throw new Error(`MemoryRecord is not active: ${input.memoryRecordId}`);
+      }
+
+      const aggregate = await new DrizzleHarnessRunRepository(this.db)
+        .readHarnessRunAuthority(tx, input.runId);
+      if (aggregate === undefined) {
+        throw new Error(`Execution run not found: ${input.runId}`);
+      }
+      const projectId = aggregate.taskContract.projectId;
+      if (projectId === undefined || projectId !== memoryRecord.projectId) {
+        throw new Error("Execution run does not belong to the connected project");
+      }
+      const issuanceRow = await tx.query.decisionPacketIssuances.findFirst({
+        where: eq(decisionPacketIssuances.executionRunId, input.runId)
+      });
+      if (issuanceRow === undefined) {
+        throw new Error("Issued DecisionPacket is required");
+      }
+      const issuance = mapDecisionPacketIssuance(issuanceRow);
+      const authorization = authorizeIssuedDecisionPacketUsefulness({
+        aggregate,
+        issuance,
+        runId: input.runId,
+        runtimeProjectId: projectId,
+        callerPacketChecksum: input.packetChecksum,
+        callerPacketGeneratedAt: issuance.packetIdentity.generatedAt,
+        callerSourceRunLifecycleRevision: issuance.packetIdentity.sourceRunLifecycleRevision,
+        subjects: [{
+          kind: "memory_record",
+          id: input.memoryRecordId,
+          evidenceRefs: [`packet:${input.packetChecksum}`]
+        }]
+      });
+      if (!authorization.authorized || !isDecisionPacketUsefulnessSubjectSelected(issuance.packet, {
+        kind: "memory_record",
+        id: input.memoryRecordId
+      })) {
+        throw new Error(
+          `DecisionPacket did not authorize memory record feedback: ${authorization.authorized ? "record was not selected" : authorization.reason}`
+        );
+      }
+
+      const existing = await tx.query.memoryFeedbackEvents.findFirst({
+        where: eq(memoryFeedbackEvents.idempotencyKey, idempotencyKey)
+      });
+      if (existing !== undefined) {
+        return { feedbackEventId: existing.id, idempotentReplay: true };
+      }
+
+      const event = requireReturnedRow(
+        await tx.insert(memoryFeedbackEvents).values({
+          memoryRecordId: input.memoryRecordId,
+          executionRunId: input.runId,
+          runId: input.runId,
+          packetChecksum: input.packetChecksum,
+          outcome: input.outcome,
+          idempotencyKey,
+          eventType: input.outcome === "helped"
+            ? "strengthened"
+            : input.outcome === "hurt" ? "demoted" : "stale_detected",
+          direction: input.outcome === "helped" ? "positive" : "negative",
+          note: note ?? "Packet-bound MCP feedback: helped",
+          metadata: {
+            feedbackContext: {
+              provenance: "mcp_packet_bound",
+              runId: input.runId,
+              packetChecksum: input.packetChecksum,
+              packetGeneratedAt: issuance.packetIdentity.generatedAt,
+              sourceRunLifecycleRevision: issuance.packetIdentity.sourceRunLifecycleRevision
+            }
+          }
+        }).returning(),
+        "recordMemoryFeedbackWithPacketBinding"
+      );
+      await tx.update(memoryRecords).set(
+        input.outcome === "helped"
+          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1` }
+          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1` }
+      ).where(eq(memoryRecords.id, input.memoryRecordId));
+      await tx.insert(outboxEvents).values({
+        topic: "memory.feedback.created",
+        payload: {
+          memoryFeedbackEventId: event.id,
+          memoryRecordId: input.memoryRecordId,
+          executionRunId: input.runId,
+          packetChecksum: input.packetChecksum
+        }
+      });
+      return { feedbackEventId: event.id, idempotentReplay: false };
     });
   }
 

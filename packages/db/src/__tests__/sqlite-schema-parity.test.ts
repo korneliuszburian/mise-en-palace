@@ -29,8 +29,8 @@ describe("SQLite schema parity", () => {
 
     expect(pgTables).toHaveLength(51);
     expect(sqliteTables).toHaveLength(51);
-    expect(pgTables.reduce((count, table) => count + table.columns.length, 0)).toBe(666);
-    expect(sqliteTables.reduce((count, table) => count + table.columns.length, 0)).toBe(666);
+    expect(pgTables.reduce((count, table) => count + table.columns.length, 0)).toBe(670);
+    expect(sqliteTables.reduce((count, table) => count + table.columns.length, 0)).toBe(670);
 
     for (const pgTable of pgTables) {
       const sqliteTable = sqliteByName.get(pgTable.name);
@@ -63,12 +63,12 @@ describe("SQLite schema parity", () => {
       expect(sqliteCheckNames).toEqual(expect.arrayContaining(pgCheckNames));
     }
 
-    expect(pgTables.reduce((count, table) => count + table.indexes.length, 0)).toBe(215);
-    expect(sqliteTables.reduce((count, table) => count + table.indexes.length, 0)).toBe(213);
+    expect(pgTables.reduce((count, table) => count + table.indexes.length, 0)).toBe(217);
+    expect(sqliteTables.reduce((count, table) => count + table.indexes.length, 0)).toBe(215);
     expect(pgTables.reduce((count, table) => count + table.foreignKeys.length, 0)).toBe(115);
     expect(sqliteTables.reduce((count, table) => count + table.foreignKeys.length, 0)).toBe(115);
-    expect(pgTables.reduce((count, table) => count + table.checks.length, 0)).toBe(69);
-    expect(sqliteTables.reduce((count, table) => count + table.checks.length, 0)).toBe(133);
+    expect(pgTables.reduce((count, table) => count + table.checks.length, 0)).toBe(70);
+    expect(sqliteTables.reduce((count, table) => count + table.checks.length, 0)).toBe(134);
     expect(sqliteTables.flatMap((table) => table.checks)
       .filter((constraint) => constraint.name.endsWith("_enum_check"))).toHaveLength(63);
     expect(sqliteTables.flatMap((table) => table.checks).map((constraint) => constraint.name))

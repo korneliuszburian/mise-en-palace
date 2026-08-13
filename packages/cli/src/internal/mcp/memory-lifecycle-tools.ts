@@ -78,6 +78,14 @@ const parseLimit = (value: unknown, defaultValue: number, maximum: number): numb
   return value;
 };
 
+const parseFeedbackOutcome = (value: unknown): "helped" | "hurt" | "stale" => {
+  const outcome = requiredString(value, "outcome");
+  if (outcome !== "helped" && outcome !== "hurt" && outcome !== "stale") {
+    throw new Error("outcome must be one of helped, hurt, stale");
+  }
+  return outcome;
+};
+
 const targetFor = async (runtime: MemoryLifecycleToolRuntime): Promise<string> =>
   resolveTargetWorkspace({ cwd: runtime.cwd ?? process.cwd(), env: runtime.env });
 
@@ -348,5 +356,51 @@ export const runBriefTool = async (
     }
     return result({ kind: "krn.memory.brief.error.v1", error: error instanceof Error ? error.message : "brief failed" },
       error instanceof Error ? error.message : "brief failed", true);
+  }
+};
+
+export const runFeedbackTool = async (
+  _runtime: MemoryLifecycleToolRuntime,
+  context: MemoryLifecycleContext,
+  args: unknown
+): Promise<Record<string, unknown>> => {
+  try {
+    if (!isRecord(args)) throw new Error("feedback arguments must be an object");
+    assertOnlyKeys(args, ["memoryRecordId", "outcome", "runId", "packetChecksum", "note"], "feedback");
+    const memoryRecordId = requiredString(args["memoryRecordId"], "memoryRecordId");
+    const outcome = parseFeedbackOutcome(args["outcome"]);
+    const runId = requiredString(args["runId"], "runId");
+    const packetChecksum = requiredString(args["packetChecksum"], "packetChecksum");
+    const note = optionalString(args["note"], "note");
+    if ((outcome === "hurt" || outcome === "stale") && note === undefined) {
+      throw new Error(`feedback outcome ${outcome} requires note`);
+    }
+    const store = await context.getStore();
+    if (store.backend !== "sqlite") {
+      return result(
+        { kind: "krn.memory.feedback.error.v1", error: "sqlite_write_capability_required" },
+        "feedback is unavailable: SQLite write capability required",
+        true
+      );
+    }
+    const feedback = await store.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+      memoryRecordId,
+      outcome,
+      runId,
+      packetChecksum,
+      ...(note === undefined ? {} : { note })
+    });
+    const payload = {
+      kind: "krn.memory.feedback.v1",
+      feedbackEventId: feedback.feedbackEventId,
+      idempotentReplay: feedback.idempotentReplay
+    };
+    return result(payload, JSON.stringify(payload));
+  } catch (error) {
+    return result(
+      { kind: "krn.memory.feedback.error.v1", error: error instanceof Error ? error.message : "feedback failed" },
+      error instanceof Error ? error.message : "feedback failed",
+      true
+    );
   }
 };

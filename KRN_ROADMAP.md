@@ -884,10 +884,11 @@ not make the adapter or dashboard the product core.
 
 Current boundary: `mcp:decision-packet` is the bounded KRN MCP product wrapper
 over the CLI `DecisionPacket` contract and governed memory repository seams. The
-surface exposes exactly `krn_decision_packet`, `recall`, `brief`, and the
-SQLite-only candidate proposal tool `remember`. It must not add ranking policy,
-execute Codex, perform unconstrained capture, promote memory/source truth, or
-capture packet-bound feedback by side effect.
+surface exposes exactly `krn_decision_packet`, `recall`, `brief`, `remember`,
+and `feedback`. `remember` remains a SQLite-only candidate proposal; `feedback`
+is a SQLite-only packet-bound usefulness write. The surface must not add ranking
+policy, execute Codex, perform unconstrained capture, or promote memory/source
+truth.
 
 Current proof: a bounded target-repo harness can fetch `krn_decision_packet`,
 execute a fixture command, and return evidence/review/feedback through explicit
@@ -906,13 +907,15 @@ MCP product boundary decision (superseded by ADR 0007):
   deferred until a real consumer needs resource-style reads.
 - Auth and mutation boundary: `krn_decision_packet`, `recall`, and `brief` are
   read-only and idempotent; `remember` is an owner-local SQLite-only candidate
-  proposal and never creates a MemoryRecord or promotes source truth. No Codex
-  execution or packet-bound feedback capture occurs in this tranche.
+  proposal and never creates a MemoryRecord or promotes source truth; `feedback`
+  is an idempotent SQLite-only write requiring a real run, issued packet
+  checksum, and packet selection of the target record. `hurt` and `stale` also
+  require a note.
 - Server instructions: concise, self-contained, and focused on "fetch the
   packet, follow its return channels, do not treat MCP as authority."
 - The explicit abstention scorer now exists in code, so this scoped lifecycle
-  surface is authorized. Broader ranking policy, unconstrained capture,
-  PostgreSQL writes, and packet-bound feedback remain separately governed.
+  surface is authorized. Broader ranking policy, unconstrained capture, and
+  PostgreSQL writes remain separately governed.
 
 Rejected alternatives:
 
