@@ -109,7 +109,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), { content: "keep this", kind: "fact", owner: "operator", confidence: 90 });
     expect(output.isError).toBe(false);
@@ -142,7 +143,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), {
       content: "claim-backed proposal", kind: "fact", owner: "operator", confidence: 90,
@@ -185,7 +187,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), {
       content: "unverified proposal", kind: "fact", owner: "operator", confidence: 90,
@@ -203,7 +206,10 @@ describe("MCP memory lifecycle tools", () => {
     const store = {
       backend: "sqlite",
       projectRepository: { getProjectByRepoPath: async () => project },
-      memoryRepository: { listActiveMemory },
+      memoryRepository: {
+        listActiveMemory,
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
+      },
       withReadOnly: async (operation: () => Promise<unknown>) => operation()
     } as unknown as MemoryLifecycleStore;
     const recall = await runRecallTool(runtime(), context(store), { query: "risk" });
@@ -319,7 +325,13 @@ describe("MCP memory lifecycle tools", () => {
     const recordFeedback = vi.fn(async () => ({ feedbackEventId: "feedback-1", idempotentReplay: false }));
     const sqlite = await runFeedbackTool(runtime(), context({
       backend: "sqlite",
-      memoryRepository: { recordMemoryFeedbackWithPacketBinding: recordFeedback }
+      memoryRepository: {
+        createMemoryCandidate: async () => { throw new Error("unused"); },
+        getMemoryCandidateById: async () => undefined,
+        promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: recordFeedback
+      }
     }), {
       memoryRecordId: "record-1",
       outcome: "helped",

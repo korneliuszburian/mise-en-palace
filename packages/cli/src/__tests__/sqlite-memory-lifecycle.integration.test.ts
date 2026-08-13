@@ -337,7 +337,11 @@ describe("SQLite persisted memory lifecycle", () => {
       feedbackConnection.close();
     }
 
-    const feedbackStore = await openMemoryLifecycleStore({ kind: "sqlite", dbPath });
+    const feedbackStore = await openMemoryLifecycleStore({
+      kind: "sqlite",
+      dbPath,
+      storeIdentity: `sqlite:${dbPath}`
+    });
     try {
       const helped = await feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
         memoryRecordId: feedbackRecordId,
