@@ -157,7 +157,8 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
       if (record.status !== "active") throw new Error(`MemoryRecord is not active: ${input.memoryRecordId}`);
 
       const run = this.db.select({
-        projectId: taskContracts.projectId
+        projectId: taskContracts.projectId,
+        taskId: taskContracts.id
       }).from(executionRuns)
         .innerJoin(harnessPlans, eq(executionRuns.harnessPlanId, harnessPlans.id))
         .innerJoin(taskContracts, eq(harnessPlans.taskContractId, taskContracts.id))
@@ -182,6 +183,9 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
       });
       if (readback === undefined || readback.packetIdentity.checksum !== input.packetChecksum) {
         throw new Error("DecisionPacket issuance is corrupt or has an invalid checksum");
+      }
+      if (readback.packet.task.id !== run.taskId || readback.request.taskId !== run.taskId) {
+        throw new Error("DecisionPacket task identity does not match the execution run");
       }
       if (!isDecisionPacketUsefulnessSubjectSelected(readback.packet, {
         kind: "memory_record",
@@ -221,8 +225,8 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
       }).returning().all(), "recordMemoryFeedbackWithPacketBinding");
       this.db.update(memoryRecords).set(
         input.outcome === "helped"
-          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1` }
-          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1` }
+          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`, updatedAt: new Date() }
+          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`, updatedAt: new Date() }
       ).where(eq(memoryRecords.id, input.memoryRecordId)).run();
       this.db.insert(outboxEvents).values({
         topic: "memory.feedback.created",

@@ -2065,8 +2065,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
         return { feedbackEventId: existing.id, idempotentReplay: true };
       }
 
-      const event = requireReturnedRow(
-        await tx.insert(memoryFeedbackEvents).values({
+      const insertedEvents = await tx.insert(memoryFeedbackEvents).values({
           memoryRecordId: input.memoryRecordId,
           executionRunId: input.runId,
           runId: input.runId,
@@ -2087,13 +2086,21 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               sourceRunLifecycleRevision: issuance.packetIdentity.sourceRunLifecycleRevision
             }
           }
-        }).returning(),
-        "recordMemoryFeedbackWithPacketBinding"
-      );
+        }).onConflictDoNothing({ target: memoryFeedbackEvents.idempotencyKey }).returning();
+      const event = insertedEvents[0];
+      if (event === undefined) {
+        const replay = await tx.query.memoryFeedbackEvents.findFirst({
+          where: eq(memoryFeedbackEvents.idempotencyKey, idempotencyKey)
+        });
+        if (replay === undefined) {
+          throw new Error("Packet-bound feedback idempotency conflict could not be resolved");
+        }
+        return { feedbackEventId: replay.id, idempotentReplay: true };
+      }
       await tx.update(memoryRecords).set(
         input.outcome === "helped"
-          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1` }
-          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1` }
+          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`, updatedAt: new Date() }
+          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`, updatedAt: new Date() }
       ).where(eq(memoryRecords.id, input.memoryRecordId));
       await tx.insert(outboxEvents).values({
         topic: "memory.feedback.created",
@@ -2247,6 +2254,22 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       await tx.execute(sql`lock table "memory_applications" in share mode`);
       const { applicationRows, canonicalApplications } = await this.classifyMemoryApplications(tx);
       const counterState = this.memoryApplicationCounterState(canonicalApplications);
+      const packetFeedbackRows = await tx.select({
+        memoryRecordId: memoryFeedbackEvents.memoryRecordId,
+        outcome: memoryFeedbackEvents.outcome
+      }).from(memoryFeedbackEvents).where(and(
+        isNotNull(memoryFeedbackEvents.idempotencyKey),
+        isNotNull(memoryFeedbackEvents.outcome)
+      ));
+      for (const row of packetFeedbackRows) {
+        const counts = counterState.countsByMemoryRecord.get(row.memoryRecordId) ?? {
+          positiveFeedbackCount: 0,
+          negativeFeedbackCount: 0
+        };
+        if (row.outcome === "helped") counts.positiveFeedbackCount += 1;
+        if (row.outcome === "hurt" || row.outcome === "stale") counts.negativeFeedbackCount += 1;
+        counterState.countsByMemoryRecord.set(row.memoryRecordId, counts);
+      }
       await this.options.beforeCounterRebuildPersist?.();
       const rebuiltMemoryRecordCount = await this.persistMemoryApplicationCounters(
         counterState,

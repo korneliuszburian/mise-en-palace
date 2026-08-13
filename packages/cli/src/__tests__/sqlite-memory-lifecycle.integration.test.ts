@@ -272,9 +272,18 @@ describe("SQLite persisted memory lifecycle", () => {
     const feedbackConnection = await openKrnSqliteDatabase(dbPath);
     const feedbackRecordId = randomUUID();
     const packet = structuredClone(decisionPacketMcpFixture);
+    const runTask = feedbackConnection.client.prepare(`
+      select task_contracts.id as taskId
+      from execution_runs
+      join harness_plans on harness_plans.id = execution_runs.harness_plan_id
+      join task_contracts on task_contracts.id = harness_plans.task_contract_id
+      where execution_runs.id = ?
+    `).get(runId) as { taskId: string };
     packet.request.runId = runId;
     packet.request.projectId = persistedId(init.stdout, "Project ID");
+    packet.request.taskId = runTask.taskId;
     packet.packet.task.projectId = packet.request.projectId;
+    packet.packet.task.id = runTask.taskId;
     packet.packet.memoryRefs = [feedbackRecordId];
     packet.packet.brief.includedMemoryRecordIds = [feedbackRecordId];
     packet.packetIdentity.generatedAt = fixedNow;
@@ -346,6 +355,24 @@ describe("SQLite persisted memory lifecycle", () => {
       });
       expect(negative.idempotentReplay).toBe(false);
       expect(stale.idempotentReplay).toBe(false);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: "f".repeat(64)
+      })).rejects.toThrow(/checksum|issuance/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId: randomUUID(),
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/run|issuance/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: randomUUID(),
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/record/i);
     } finally {
       await feedbackStore.close();
     }

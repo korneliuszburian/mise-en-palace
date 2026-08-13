@@ -392,6 +392,15 @@ const memoryToolDefinitions = (): readonly JsonValue[] => [
       required: ["memoryRecordId", "outcome", "runId", "packetChecksum"],
       additionalProperties: false
     },
+    outputSchema: {
+      type: "object",
+      properties: {
+        kind: { const: "krn.memory.feedback.v1" },
+        feedbackEventId: { type: "string" },
+        idempotentReplay: { type: "boolean" }
+      },
+      required: ["kind", "feedbackEventId", "idempotentReplay"]
+    },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   }
 ];
