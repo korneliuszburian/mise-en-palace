@@ -57,13 +57,13 @@ describe("DecisionPacket official MCP client compatibility", () => {
         tools: { listChanged: false }
       });
       expect(client.getInstructions()).toContain(
-        "does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect"
+        "feedback without verified packet binding"
       );
 
       const listed = await client.listTools(undefined, { timeout: requestTimeoutMs });
-      expect(listed.tools).toHaveLength(4);
+      expect(listed.tools).toHaveLength(5);
       expect(listed.tools.map((tool) => tool.name)).toEqual([
-        "krn_decision_packet", "remember", "recall", "brief"
+        "krn_decision_packet", "remember", "recall", "brief", "feedback"
       ]);
       expect(listed.tools[0]).toMatchObject({
         name: "krn_decision_packet",
@@ -87,6 +87,20 @@ describe("DecisionPacket official MCP client compatibility", () => {
             "sourceRunUpdatedAt",
             "freshness"
           ]
+        }
+      });
+      expect(listed.tools[4]).toMatchObject({
+        name: "feedback",
+        annotations: {
+          readOnlyHint: false,
+          idempotentHint: true
+        },
+        inputSchema: {
+          required: ["memoryRecordId", "outcome", "runId", "packetChecksum"],
+          additionalProperties: false
+        },
+        outputSchema: {
+          required: ["kind", "feedbackEventId", "idempotentReplay"]
         }
       });
 

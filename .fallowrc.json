@@ -38,6 +38,7 @@
         "supersedeMemoryRecord",
         "recordMemoryApplication",
         "recordMemoryApplicationOnce",
+        "recordMemoryFeedbackWithPacketBinding",
         "createMemoryFeedbackEvent",
         "createAntiMemoryCandidate",
         "getAntiMemoryCandidateById",
@@ -52,7 +53,8 @@
         "createMemoryCandidate",
         "getMemoryCandidateById",
         "promoteReviewedMemoryCandidate",
-        "listActiveMemory"
+        "listActiveMemory",
+        "recordMemoryFeedbackWithPacketBinding"
       ]
     },
     {

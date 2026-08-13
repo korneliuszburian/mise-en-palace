@@ -13,11 +13,15 @@ The total tool set is exactly:
 - `krn_decision_packet` — read-only DecisionPacket retrieval;
 - `recall` — read-only active-memory retrieval;
 - `brief` — read-only deterministic, token-budgeted memory rendering;
-- `remember` — SQLite-only proposal of a `proposed` memory candidate.
+- `remember` — SQLite-only proposal of a `proposed` memory candidate;
+- `feedback` — SQLite-only packet-bound usefulness feedback for an active
+  memory record.
 
-There is no `feedback` tool in this tranche. Packet-bound feedback is deferred
-to Task 1.3, where session/run identity and evidence context can satisfy the
-existing application contract.
+`feedback` requires a real execution run, an issued DecisionPacket checksum, and
+proof that the packet selected the target memory record. `helped` requires the
+packet binding; `hurt` and `stale` additionally require a caller note as the
+minimal evidence context. The operation is idempotent over the run, packet,
+record, and outcome tuple and updates feedback-aware counters atomically.
 
 The server remains pinned to MCP protocol `2025-06-18`, newline-delimited JSON
 RPC over stdio, strict request and notification handling, bounded input/output,
@@ -54,7 +58,8 @@ boundary no longer describes the accepted product.
 
 ## Falsifiers
 
-The decision is false if the registry exposes a fifth lifecycle tool or
-`feedback`, `remember` writes through PostgreSQL, a proposal bypasses the
-review gate, read-only operations mutate domain rows/migration identity, or the
-server relaxes the pinned transport/session contract.
+The decision is false if the registry does not expose exactly these five tools,
+`feedback` accepts an unverified run/packet/record binding, `feedback` or
+`remember` writes through PostgreSQL, a proposal bypasses the review gate,
+read-only operations mutate domain rows/migration identity, or the server
+relaxes the pinned transport/session contract.

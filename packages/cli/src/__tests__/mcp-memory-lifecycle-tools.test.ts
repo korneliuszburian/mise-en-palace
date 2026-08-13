@@ -11,6 +11,7 @@ import type {
 import type { MemoryLifecycleStore } from "@krn/db";
 import {
   runBriefTool,
+  runFeedbackTool,
   runRecallTool,
   runRememberTool,
   type MemoryLifecycleContext,
@@ -108,7 +109,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), { content: "keep this", kind: "fact", owner: "operator", confidence: 90 });
     expect(output.isError).toBe(false);
@@ -141,7 +143,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), {
       content: "claim-backed proposal", kind: "fact", owner: "operator", confidence: 90,
@@ -184,7 +187,8 @@ describe("MCP memory lifecycle tools", () => {
         createMemoryCandidate,
         getMemoryCandidateById: async () => undefined,
         promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
-        listActiveMemory: async () => []
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
       }
     }), {
       content: "unverified proposal", kind: "fact", owner: "operator", confidence: 90,
@@ -202,7 +206,10 @@ describe("MCP memory lifecycle tools", () => {
     const store = {
       backend: "sqlite",
       projectRepository: { getProjectByRepoPath: async () => project },
-      memoryRepository: { listActiveMemory },
+      memoryRepository: {
+        listActiveMemory,
+        recordMemoryFeedbackWithPacketBinding: async () => ({ feedbackEventId: "unused", idempotentReplay: false })
+      },
       withReadOnly: async (operation: () => Promise<unknown>) => operation()
     } as unknown as MemoryLifecycleStore;
     const recall = await runRecallTool(runtime(), context(store), { query: "risk" });
@@ -276,5 +283,72 @@ describe("MCP memory lifecycle tools", () => {
     const brief = await runBriefTool(runtime(), context(store), { tokenBudget: 1 });
     expect(brief.isError).toBe(true);
     expect(brief.structuredContent).toMatchObject({ error: "budget_too_small_for_required_marker" });
+  });
+
+  it("rejects invalid feedback before acquiring the store", async () => {
+    const getStore = vi.fn(async () => {
+      throw new Error("store should not be acquired");
+    });
+    const output = await runFeedbackTool(runtime(), {
+      serverInstanceId: "server-1",
+      getStore,
+      close: async () => undefined
+    }, {
+      memoryRecordId: "record-1",
+      outcome: "unknown",
+      runId: "run-1",
+      packetChecksum: "checksum"
+    });
+    expect(output.isError).toBe(true);
+    expect(getStore).not.toHaveBeenCalled();
+  });
+
+  it("requires notes for negative packet-bound outcomes before store acquisition", async () => {
+    const getStore = vi.fn(async () => {
+      throw new Error("store should not be acquired");
+    });
+    const output = await runFeedbackTool(runtime(), {
+      serverInstanceId: "server-1",
+      getStore,
+      close: async () => undefined
+    }, {
+      memoryRecordId: "record-1",
+      outcome: "hurt",
+      runId: "run-1",
+      packetChecksum: "checksum"
+    });
+    expect(output.isError).toBe(true);
+    expect(getStore).not.toHaveBeenCalled();
+  });
+
+  it("returns the SQLite feedback result and keeps PostgreSQL writes disabled", async () => {
+    const recordFeedback = vi.fn(async () => ({ feedbackEventId: "feedback-1", idempotentReplay: false }));
+    const sqlite = await runFeedbackTool(runtime(), context({
+      backend: "sqlite",
+      memoryRepository: {
+        createMemoryCandidate: async () => { throw new Error("unused"); },
+        getMemoryCandidateById: async () => undefined,
+        promoteReviewedMemoryCandidate: async () => { throw new Error("unused"); },
+        listActiveMemory: async () => [],
+        recordMemoryFeedbackWithPacketBinding: recordFeedback
+      }
+    }), {
+      memoryRecordId: "record-1",
+      outcome: "helped",
+      runId: "run-1",
+      packetChecksum: "a".repeat(64)
+    });
+    expect(sqlite.isError).toBe(false);
+    expect(sqlite.structuredContent).toMatchObject({ feedbackEventId: "feedback-1", idempotentReplay: false });
+    expect(recordFeedback).toHaveBeenCalledWith(expect.objectContaining({ outcome: "helped" }));
+
+    const postgres = await runFeedbackTool(runtime(), context({ backend: "postgres" }), {
+      memoryRecordId: "record-1",
+      outcome: "helped",
+      runId: "run-1",
+      packetChecksum: "a".repeat(64)
+    });
+    expect(postgres.isError).toBe(true);
+    expect(postgres.structuredContent).toMatchObject({ error: "sqlite_write_capability_required" });
   });
 });

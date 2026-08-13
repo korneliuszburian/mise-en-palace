@@ -5,6 +5,24 @@ import type {
 import type {
   PromoteAntiMemoryCandidateInput
 } from "@krn/core/repositories/internal";
+import { createHash } from "node:crypto";
+import type { RecordMemoryFeedbackWithPacketBindingInput } from "@krn/core/repositories/internal";
+
+export const packetFeedbackIdempotencyKey = (
+  input: RecordMemoryFeedbackWithPacketBindingInput
+): string => createHash("sha256")
+  .update(`${input.runId}\0${input.packetChecksum}\0${input.memoryRecordId}\0${input.outcome}`)
+  .digest("hex");
+
+export const requirePacketFeedbackNote = (
+  input: RecordMemoryFeedbackWithPacketBindingInput
+): string | undefined => {
+  const note = input.note?.trim();
+  if ((input.outcome === "hurt" || input.outcome === "stale") && (note === undefined || note.length === 0)) {
+    throw new Error(`packet-bound ${input.outcome} feedback requires a note`);
+  }
+  return note;
+};
 
 interface MemoryCoreInvariantInput {
   summary: string;

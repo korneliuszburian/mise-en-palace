@@ -248,6 +248,19 @@ export interface RecordMemoryApplicationWithEffectsOnceResult extends RecordMemo
   antiMemoryCandidate?: AntiMemoryCandidate;
 }
 
+export interface RecordMemoryFeedbackWithPacketBindingInput {
+  memoryRecordId: MemoryRecord["id"];
+  outcome: Extract<MemoryApplicationOutcome, "helped" | "hurt" | "stale">;
+  runId: ExecutionRunId;
+  packetChecksum: string;
+  note?: string;
+}
+
+export interface RecordMemoryFeedbackWithPacketBindingResult {
+  feedbackEventId: MemoryFeedbackEvent["id"];
+  idempotentReplay: boolean;
+}
+
 export class MemoryApplicationIdentityConflictError extends Error {
   constructor(
     readonly memoryRecordId: MemoryRecord["id"],
@@ -377,6 +390,9 @@ export interface MemoryRepository {
   recordMemoryApplicationWithEffectsOnce(
     input: RecordMemoryApplicationWithEffectsOnceInput
   ): Promise<RecordMemoryApplicationWithEffectsOnceResult>;
+  recordMemoryFeedbackWithPacketBinding(
+    input: RecordMemoryFeedbackWithPacketBindingInput
+  ): Promise<RecordMemoryFeedbackWithPacketBindingResult>;
   rebuildMemoryApplicationCounters?(): Promise<RebuildMemoryApplicationCountersResult>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
@@ -411,6 +427,7 @@ export type MemoryCandidateReviewRepository = Pick<
   | "supersedeMemoryRecord"
   | "applyReviewedMemoryRevision"
   | "recordMemoryApplicationWithEffectsOnce"
+  | "recordMemoryFeedbackWithPacketBinding"
   | "createMemoryFeedbackEvent"
   | "listMemoryCandidates"
   | "createAntiMemoryCandidate"

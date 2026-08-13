@@ -407,7 +407,7 @@ describe("DecisionPacket MCP wrapper", () => {
         ...(params === undefined ? {} : { params })
       }, runtime())).resolves.toMatchObject({
         id: "initial-tools-list",
-        result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }] }
+        result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }, { name: "feedback" }] }
       });
     }
 
@@ -458,7 +458,7 @@ describe("DecisionPacket MCP wrapper", () => {
       id: "after-init",
       method: "tools/list"
     }, sessionRuntime)).resolves.toMatchObject({
-      result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }] }
+      result: { tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }, { name: "feedback" }] }
     });
   });
 
@@ -491,7 +491,7 @@ describe("DecisionPacket MCP wrapper", () => {
           name: "krn-decision-packet-mcp",
           title: "KRN DecisionPacket MCP"
         },
-        instructions: expect.stringContaining("does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect")
+        instructions: expect.stringContaining("feedback without verified packet binding")
       }
     });
 
@@ -517,7 +517,8 @@ describe("DecisionPacket MCP wrapper", () => {
           },
           { name: "remember" },
           { name: "recall" },
-          { name: "brief" }
+          { name: "brief" },
+          { name: "feedback" }
         ]
       }
     });
@@ -1298,7 +1299,13 @@ describe("DecisionPacket MCP wrapper", () => {
     expect(output).toHaveLength(2);
     expect(messages[0]).toMatchObject({
       result: {
-        tools: [{ name: "krn_decision_packet" }, { name: "remember" }, { name: "recall" }, { name: "brief" }]
+        tools: [
+          { name: "krn_decision_packet" },
+          { name: "remember" },
+          { name: "recall" },
+          { name: "brief" },
+          { name: "feedback" }
+        ]
       }
     });
     expect(JSON.stringify(toolCall)).toContain(

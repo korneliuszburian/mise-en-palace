@@ -29,7 +29,7 @@ import {
   countActivationSmokeMarkerRows,
   createSmokeHarnessScaffold
 } from "../../dev/smoke/db-smoke-support.js";
-import { memoryApplications, memoryRecords } from "../../schema/index.js";
+import { memoryApplications, memoryFeedbackEvents, memoryRecords } from "../../schema/index.js";
 
 const databaseUrl = process.env.KRN_DATABASE_URL?.trim();
 const postgresIt = it.skipIf(databaseUrl === undefined || databaseUrl.length === 0);
@@ -1313,6 +1313,18 @@ describe("DrizzleMemoryRepository", () => {
         .update(memoryRecords)
         .set({ updatedAt: rankingPeerInputs[index]!.updatedAt })
         .where(eq(memoryRecords.id, peer.id))));
+      await scaffold.db.insert(memoryFeedbackEvents).values({
+        memoryRecordId: memoryRecord.id,
+        executionRunId: executionRun.id,
+        runId: executionRun.id,
+        packetChecksum: "b".repeat(64),
+        outcome: "hurt",
+        idempotencyKey: `counter-rebuild-feedback:${marker}`,
+        eventType: "demoted",
+        direction: "negative",
+        note: "Packet-bound feedback must survive counter rebuild.",
+        metadata: { smokeId: marker }
+      });
       const beforeRebuildPeers = await Promise.all(rankingPeers.map((peer) =>
         scaffold.memoryRepository.getMemoryRecordById(peer.id)
       ));
@@ -1369,7 +1381,7 @@ describe("DrizzleMemoryRepository", () => {
         .listActiveMemory(scaffold.project.id, 100))
         .filter((record) => rankingPeers.some((peer) => peer.id === record.id))
         .map((record) => record.id);
-      expect(afterRebuild?.negativeFeedbackCount).toBe(1);
+      expect(afterRebuild?.negativeFeedbackCount).toBe(2);
       expect(afterRebuildPeers.map((peer) => peer?.updatedAt))
         .toEqual(beforeRebuildPeers.map((peer) => peer?.updatedAt));
       expect(afterRebuildOrder).toEqual(beforeRebuildOrder);
