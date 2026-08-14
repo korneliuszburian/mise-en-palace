@@ -29,6 +29,9 @@ export {
 export {
   openMemoryLifecycleStore
 } from "./memory-lifecycle-store.js";
+export {
+  openSqlitePlanPersistence
+} from "./sqlite-plan-persistence.js";
 export { sql } from "drizzle-orm";
 export type {
   BackendConfig,
@@ -49,6 +52,9 @@ export type {
 export type {
   MemoryLifecycleStore
 } from "./memory-lifecycle-store.js";
+export type {
+  SqlitePlanPersistence
+} from "./sqlite-plan-persistence.js";
 export type {
   SqliteMigrationReadinessReport
 } from "./sqlite-migration-readiness.js";

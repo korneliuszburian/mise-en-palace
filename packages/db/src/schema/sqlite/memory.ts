@@ -374,6 +374,10 @@ export const memoryFeedbackEvents = sqliteTable(
   "memory_feedback_events",
   {
     ...memoryRunAnchorColumns(),
+    runId: text("run_id"),
+    packetChecksum: text("packet_checksum"),
+    outcome: text("outcome"),
+    idempotencyKey: text("idempotency_key"),
     feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
       onDelete: "set null"
     }),
@@ -391,7 +395,16 @@ export const memoryFeedbackEvents = sqliteTable(
     index("memory_feedback_events_execution_run_id_idx").on(table.executionRunId),
     index("memory_feedback_events_feedback_delta_id_idx").on(table.feedbackDeltaId),
     index("memory_feedback_events_event_type_idx").on(table.eventType),
-    index("memory_feedback_events_direction_idx").on(table.direction)
+    index("memory_feedback_events_direction_idx").on(table.direction),
+    uniqueIndex("memory_feedback_events_idempotency_key_unique").on(table.idempotencyKey),
+    index("memory_feedback_events_memory_record_outcome_idx").on(
+      table.memoryRecordId,
+      table.outcome
+    ),
+    check(
+      "memory_feedback_events_packet_outcome_known",
+      sql`${table.outcome} IS NULL OR ${table.outcome} IN ('helped', 'hurt', 'stale')`
+    )
   ]
 );
 

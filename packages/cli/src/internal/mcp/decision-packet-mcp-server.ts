@@ -32,6 +32,7 @@ import {
   decisionPacketTransportBudget,
   measureDecisionPacketTransport
 } from "./decision-packet-transport-measurement.js";
+import type { MemoryLifecycleContext } from "./memory-lifecycle-tools.js";
 
 type JsonRpcId = string | number;
 
@@ -85,7 +86,37 @@ export interface DecisionPacketMcpRuntime {
   readonly runDecisionPacket?: (
     runtime: DecisionPacketCommandRuntime
   ) => Promise<DecisionPacketCommandResult>;
+  readonly memoryLifecycle?: MemoryLifecycleContext;
 }
+
+const memoryLifecycleContexts = new WeakMap<object, Promise<MemoryLifecycleContext>>();
+
+const memoryLifecycleFor = async (
+  runtime: DecisionPacketMcpRuntime
+): Promise<MemoryLifecycleContext> => {
+  if (runtime.memoryLifecycle !== undefined) return runtime.memoryLifecycle;
+  const key = runtime as object;
+  let context = memoryLifecycleContexts.get(key);
+  if (context === undefined) {
+    context = import("./memory-lifecycle-tools.js").then(({ createMemoryLifecycleContext }) =>
+      createMemoryLifecycleContext({
+        env: runtime.env,
+        cwd: process.cwd(),
+        now: runtime.now,
+        createId: runtime.createId
+      })
+    );
+    memoryLifecycleContexts.set(key, context);
+  }
+  return context;
+};
+
+const closeMemoryLifecycleFor = async (runtime: DecisionPacketMcpRuntime): Promise<void> => {
+  if (runtime.memoryLifecycle !== undefined) return;
+  const context = memoryLifecycleContexts.get(runtime as object);
+  if (context !== undefined) await (await context).close();
+  memoryLifecycleContexts.delete(runtime as object);
+};
 
 export interface DecisionPacketMcpSession {
   phase: "new" | "initialize_responded" | "ready";
@@ -289,7 +320,7 @@ const requestId = (
   message: JsonRpcRequest
 ): JsonRpcId | null => message.id === undefined ? null : message.id;
 
-const toolDefinition = (): JsonValue => ({
+const decisionPacketToolDefinition = (): JsonValue => ({
   name: decisionPacketToolName,
   title: "KRN DecisionPacket",
   description:
@@ -314,6 +345,71 @@ const toolDefinition = (): JsonValue => ({
   }
 });
 
+const memoryToolDefinitions = (): readonly JsonValue[] => [
+  {
+    name: "remember",
+    title: "KRN Remember",
+    description: "Propose a governed SQLite memory candidate; never creates a MemoryRecord.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string" }, kind: { type: "string", enum: ["fact", "preference", "constraint", "procedure", "risk"] },
+        owner: { type: "string" }, confidence: { type: "integer", minimum: 0, maximum: 100 },
+        summary: { type: "string" }, applicationGuidance: { type: "string" }, invalidationRule: { type: "string" },
+        validFrom: { type: "string" }, validUntil: { type: "string" }, sourceClaimIds: { type: "array", items: { type: "string" } }
+      }, required: ["content", "kind", "owner", "confidence"], additionalProperties: false
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
+  },
+  {
+    name: "recall", title: "KRN Recall", description: "Read active governed memory for the connected project.",
+    inputSchema: {
+      type: "object", properties: { query: { type: "string" }, limit: { type: "integer", minimum: 1, maximum: 64 } },
+      required: ["query"], additionalProperties: false
+    },
+    outputSchema: { type: "object", properties: { kind: { const: "krn.memory.recall.readback.v1" } }, required: ["kind"] },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  },
+  {
+    name: "brief", title: "KRN Memory Brief", description: "Read a deterministic, token-budgeted memory brief.",
+    inputSchema: {
+      type: "object", properties: { tokenBudget: { type: "integer", minimum: 1, maximum: 100000 } }, additionalProperties: false
+    },
+    outputSchema: { type: "object", properties: { kind: { const: "krn.memory.brief.v1" } }, required: ["kind"] },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  },
+  {
+    name: "feedback", title: "KRN Memory Feedback", description: "Record packet-bound usefulness feedback for an active memory record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        memoryRecordId: { type: "string" },
+        outcome: { type: "string", enum: ["helped", "hurt", "stale"] },
+        runId: { type: "string" },
+        packetChecksum: { type: "string" },
+        note: { type: "string" }
+      },
+      required: ["memoryRecordId", "outcome", "runId", "packetChecksum"],
+      additionalProperties: false
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        kind: { const: "krn.memory.feedback.v1" },
+        feedbackEventId: { type: "string" },
+        idempotentReplay: { type: "boolean" }
+      },
+      required: ["kind", "feedbackEventId", "idempotentReplay"]
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  }
+];
+
+const allToolDefinitions = (): readonly JsonValue[] => [
+  decisionPacketToolDefinition(),
+  ...memoryToolDefinitions()
+];
+
 const initializeResult = (
   requestedVersion: string
 ): JsonValue => {
@@ -332,7 +428,7 @@ const initializeResult = (
       version: serverVersion
     },
     instructions:
-      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback by side effect. Exact issuance identity remains structured; detailed operator readback stays on the CLI surface."
+      "Use krn_decision_packet to fetch a compact read-only DecisionPacket execution brief for an existing runId. Use recall and brief for governed reads; remember proposes SQLite candidates only; feedback records packet-bound SQLite usefulness outcomes. Treat KRN as context authority, not an executor: this server does not execute Codex, mutate target repos, promote memory/source truth, or capture feedback without verified packet binding. Exact issuance identity remains structured; detailed operator readback stays on the CLI surface."
   };
 };
 
@@ -403,7 +499,8 @@ const runToolCall = async (
     };
   }
 
-  if (params["name"] !== decisionPacketToolName) {
+  const toolName = params["name"];
+  if (toolName !== decisionPacketToolName && toolName !== "remember" && toolName !== "recall" && toolName !== "brief" && toolName !== "feedback") {
     return {
       kind: "protocol_error",
       error: {
@@ -414,6 +511,22 @@ const runToolCall = async (
   }
 
   const args = params["arguments"];
+
+  if (toolName === "remember" || toolName === "recall" || toolName === "brief" || toolName === "feedback") {
+    if (args !== undefined && !isRecord(args)) {
+      return { kind: "protocol_error", error: { code: -32602, message: `${toolName} arguments must be an object` } };
+    }
+    const memoryContext = await memoryLifecycleFor(runtime);
+    const tools = await import("./memory-lifecycle-tools.js");
+    const toolResult = toolName === "remember"
+      ? await tools.runRememberTool(runtime, memoryContext, args ?? {})
+      : toolName === "recall"
+        ? await tools.runRecallTool(runtime, memoryContext, args ?? {})
+        : toolName === "brief"
+          ? await tools.runBriefTool(runtime, memoryContext, args ?? {})
+          : await tools.runFeedbackTool(runtime, memoryContext, args ?? {});
+    return { kind: "result", result: toolResult as ToolCallResult };
+  }
 
   if (
     !isRecord(args) ||
@@ -540,7 +653,7 @@ const handleListToolsRequest = (message: JsonRpcRequest): JsonRpcResponse => {
   }
 
   return response(requestId(message), {
-    tools: [toolDefinition()]
+    tools: [...allToolDefinitions()]
   });
 };
 
@@ -623,6 +736,14 @@ export const serveDecisionPacketMcpStdio = async (
   output: WritableOutput,
   runtime: DecisionPacketMcpRuntime = defaultRuntime()
 ): Promise<void> => {
+  const serverRuntime: DecisionPacketMcpRuntime = runtime;
+  const shutdown = (): void => {
+    void closeMemoryLifecycleFor(serverRuntime).catch(() => {
+      process.exitCode = 1;
+    });
+  };
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
   let lineChunks: Buffer[] = [];
   let lineUtf8Bytes = 0;
   let discardingOversizeLine = false;
@@ -694,31 +815,37 @@ export const serveDecisionPacketMcpStdio = async (
       return;
     }
 
-    const reply = await handleDecisionPacketMcpMessage(parsed, runtime);
+    const reply = await handleDecisionPacketMcpMessage(parsed, serverRuntime);
     if (reply !== undefined) {
       output.write(`${JSON.stringify(reply)}\n`);
     }
   };
 
-  for await (const chunk of input) {
-    const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
-    let offset = 0;
+  try {
+    for await (const chunk of input) {
+      const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : chunk;
+      let offset = 0;
 
-    for (;;) {
-      const lineEnd = bytes.indexOf(0x0a, offset);
-      if (lineEnd === -1) {
-        appendLineBytes(bytes.subarray(offset));
-        break;
-      }
+      for (;;) {
+        const lineEnd = bytes.indexOf(0x0a, offset);
+        if (lineEnd === -1) {
+          appendLineBytes(bytes.subarray(offset));
+          break;
+        }
 
-      appendLineBytes(bytes.subarray(offset, lineEnd));
-      await processCompleteLine();
-      offset = lineEnd + 1;
+        appendLineBytes(bytes.subarray(offset, lineEnd));
+        await processCompleteLine();
+        offset = lineEnd + 1;
 
-      if (offset === bytes.byteLength) {
-        break;
+        if (offset === bytes.byteLength) {
+          break;
+        }
       }
     }
+  } finally {
+    process.removeListener("SIGINT", shutdown);
+    process.removeListener("SIGTERM", shutdown);
+    await closeMemoryLifecycleFor(serverRuntime);
   }
 };
 

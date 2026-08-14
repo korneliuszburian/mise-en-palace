@@ -81,6 +81,12 @@ import type {
 import type {
   BaseCommandRuntime
 } from "./command-runtime-support.js";
+import type { BackendKind } from "@krn/db";
+import {
+  openSqlitePlanPersistence,
+  resolveBackendConfig
+} from "@krn/db";
+import { resolveTargetWorkspace } from "./target-workspace.js";
 import {
   memoryRecordToKnowledgeReadModel
 } from "./memory-record-knowledge-read-model.js";
@@ -92,6 +98,7 @@ import {
 export interface PlanCommandRuntime extends BaseCommandRuntime {
   cwd?: string;
   persist: boolean;
+  backend?: BackendKind;
   format?: "text" | "json";
   projectId?: string;
   repo?: string;
@@ -157,6 +164,13 @@ interface CompilerRuntimeResolution {
       "issueDecisionPacketForExecutionRun" | "listFeedbackDeltasForSubjects" | "listFeedbackDeltasForProject"
     >>;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
+  persistCompiledPlan?: (input: {
+    result: CompiledHarnessPlan;
+    packet: DecisionPacket;
+    command: string;
+    targetReadModel: TargetActivationReadModel | undefined;
+    targetOwnerFileRecall: TargetOwnerFileRecall | undefined;
+  }) => Promise<PersistedPlanOutput>;
   close(): Promise<void>;
 }
 
@@ -566,6 +580,69 @@ const persistedCompilerRuntime = async (
   };
 };
 
+const sqliteCompilerRuntime = async (
+  runtime: PlanCommandRuntime
+): Promise<CompilerRuntimeResolution> => {
+  const targetWorkspace = await resolveTargetWorkspace({
+    cwd: runtime.cwd ?? process.cwd(),
+    env: runtime.env,
+    ...(runtime.repo === undefined ? {} : { repo: runtime.repo })
+  });
+  const config = resolveBackendConfig({
+    backend: "sqlite",
+    env: runtime.env,
+    targetWorkspace
+  });
+  if (config.kind !== "sqlite") {
+    throw new Error("SQLite plan resolved a non-SQLite backend");
+  }
+  const persistence = await openSqlitePlanPersistence(
+    config,
+    targetWorkspace,
+    runtime.projectId
+  );
+  const noStore = createNoStoreCompilerDependencies(runtime);
+  const compilerDependencies: HarnessCompilerDependencies = {
+    ...noStore,
+    memoryRepository: {
+      ...noStore.memoryRepository,
+      listActiveMemory: persistence.memoryRepository.listActiveMemory.bind(
+        persistence.memoryRepository
+      )
+    },
+    sourceRepository: {
+      ...noStore.sourceRepository,
+      listClaimsForProject: persistence.sourceRepository.listClaimsForProject.bind(
+        persistence.sourceRepository
+      )
+    }
+  };
+
+  return {
+    workspaceId: persistence.workspaceId,
+    projectId: persistence.projectId,
+    persistenceLabel: "enabled (SQLite, explicit --persist)",
+    compilerDependencies,
+    persistCompiledPlan: (input) => persistence.persist({
+      operatorIntent: input.result.operatorIntent,
+      taskContract: input.result.taskContract,
+      harnessPlan: input.result.harnessPlan,
+      contextAssembly: input.result.contextAssembly,
+      evidenceContract: input.result.evidenceContract,
+      packet: input.packet,
+      metadata: {
+        command: input.command,
+        ...(input.targetReadModel === undefined ? {} : {
+          targetReadModel: input.targetReadModel
+        })
+      }
+    }),
+    async close() {
+      persistence.close();
+    }
+  };
+};
+
 const optionalProjectScopedMetadata = (
   projectScopedMetadata: ProjectScopedPlanMetadata | undefined
 ): Pick<CompilerRuntimeResolution, "projectScopedMetadata"> | Record<string, never> => (
@@ -579,6 +656,10 @@ const resolveCompilerRuntime = async (
 ): Promise<CompilerRuntimeResolution> => {
   if ((runtime.projectId !== undefined || runtime.repo !== undefined) && !runtime.persist) {
     throw new Error("krn plan --project or --repo requires --persist");
+  }
+
+  if (runtime.persist && runtime.backend === "sqlite") {
+    return sqliteCompilerRuntime(runtime);
   }
 
   return runtime.persist
@@ -649,7 +730,8 @@ const formatTargetOwnerFilesLine = (ownerFileRecall: TargetOwnerFileRecall): str
 );
 
 const formatPersistedIdentityLines = (
-  persistedIdentity: PersistedPlanIdentity | undefined
+  persistedIdentity: PersistedPlanIdentity | undefined,
+  packetIdentity: DecisionPacketContractReadback["packetIdentity"] | undefined
 ): string[] => (
   persistedIdentity === undefined
     ? []
@@ -660,7 +742,13 @@ const formatPersistedIdentityLines = (
         `taskContract: ${persistedIdentity.taskContractId}`,
         `harnessPlan: ${persistedIdentity.harnessPlanId}`,
         `contextAssembly: ${persistedIdentity.contextAssemblyId}`,
-        `executionRun: ${persistedIdentity.executionRunId}`
+        `executionRun: ${persistedIdentity.executionRunId}`,
+        ...(packetIdentity === undefined
+          ? []
+          : [
+              `packetChecksum: ${packetIdentity.checksum}`,
+              `packetGeneratedAt: ${packetIdentity.generatedAt}`
+            ])
       ]
 );
 
@@ -826,7 +914,8 @@ const formatPlanSummary = (
   knowledgeSelection: KnowledgePlanSelection,
   projectScopedMetadata?: ProjectScopedPlanMetadata,
   targetReadModel?: TargetActivationReadModel,
-  persistedIdentity?: PersistedPlanIdentity
+  persistedIdentity?: PersistedPlanIdentity,
+  packetIdentity?: DecisionPacketContractReadback["packetIdentity"]
 ): string => {
   const lines = [
     "KRN Plan",
@@ -844,7 +933,7 @@ const formatPlanSummary = (
     `Next action: ${nextAction}`,
     "",
     executionBrief,
-    ...formatPersistedIdentityLines(persistedIdentity)
+    ...formatPersistedIdentityLines(persistedIdentity, packetIdentity)
   ];
 
   return lines.join("\n");
@@ -1242,6 +1331,16 @@ const createPersistedPlanOutput = async (
   targetReadModel: TargetActivationReadModel | undefined,
   targetOwnerFileRecall: TargetOwnerFileRecall | undefined
 ): Promise<PersistedPlanOutput | undefined> => {
+  if (compilerRuntime.persistCompiledPlan !== undefined) {
+    return compilerRuntime.persistCompiledPlan({
+      result,
+      packet: decisionPacketForCompiledPlan(result),
+      command,
+      targetReadModel,
+      targetOwnerFileRecall
+    });
+  }
+
   const executionRun =
     compilerRuntime.harnessRunRepository === undefined
       ? undefined
@@ -1356,7 +1455,8 @@ export const runPlanCommand = async (
         knowledgeSelection,
         compilerRuntime.projectScopedMetadata,
         targetReadModel,
-        persistedPlan?.identity
+        persistedPlan?.identity,
+        persistedPlan?.issuance.packetIdentity
       )
     };
   } finally {

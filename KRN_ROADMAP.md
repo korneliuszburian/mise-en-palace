@@ -882,17 +882,26 @@ DecisionPacket and returning evidence/feedback. CLI keeps the contract local,
 scriptable, and testable; the current MCP wrapper proves transport only and must
 not make the adapter or dashboard the product core.
 
-Current boundary: `mcp:decision-packet` is the minimal read-only KRN MCP product
-wrapper over the CLI `DecisionPacket` contract. It must not add selection
-policy, execute Codex, mutate target repositories, promote memory/source truth,
-or capture feedback by side effect.
+Current boundary: `mcp:decision-packet` is the bounded KRN MCP product wrapper
+over the CLI `DecisionPacket` contract and governed memory repository seams. The
+surface exposes exactly `krn_decision_packet`, `recall`, `brief`, `remember`,
+and `feedback`. `remember` remains a SQLite-only candidate proposal; `feedback`
+is a SQLite-only packet-bound usefulness write. The surface must not add ranking
+policy, execute Codex, perform unconstrained capture, or promote memory/source
+truth.
 
 Current proof: a bounded target-repo harness can fetch `krn_decision_packet`,
 execute a fixture command, and return evidence/review/feedback through explicit
 channels with packet checksum binding. This proves the minimal consumer loop; it
 does not prove broad MCP product readiness.
 
-MCP product boundary decision:
+SQLite dogfooding path: `krn plan --backend sqlite --persist` now persists the
+operator intent, task contract, harness plan, context assembly, execution run,
+and issued DecisionPacket in the governed `.krn/memory.db` artifact. Its returned
+`runId` and packet checksum can feed the SQLite-only `remember`/review/`feedback`
+loop without a PostgreSQL service.
+
+MCP product boundary decision (superseded by ADR 0007):
 
 - Product tool name: `krn_decision_packet`.
 - Transport role: MCP wraps the proven CLI `DecisionPacket` contract; it does
@@ -902,13 +911,17 @@ MCP product boundary decision:
   proof/non-proof boundary, and explicit evidence/feedback return channels.
 - Initial resources: none. A `krn://runs/{runId}/decision-packet` resource is
   deferred until a real consumer needs resource-style reads.
-- Auth and mutation boundary: read-only, idempotent, no target-repo writes, no
-  Codex execution, no memory/source promotion, no feedback capture by side
-  effect.
+- Auth and mutation boundary: `krn_decision_packet`, `recall`, and `brief` are
+  read-only and idempotent; `remember` is an owner-local SQLite-only candidate
+  proposal and never creates a MemoryRecord or promotes source truth; `feedback`
+  is an idempotent SQLite-only write requiring a real run, issued packet
+  checksum, and packet selection of the target record. `hurt` and `stale` also
+  require a note.
 - Server instructions: concise, self-contained, and focused on "fetch the
   packet, follow its return channels, do not treat MCP as authority."
-- Blocker before any broader MCP surface: the packet must expose an explicit
-  abstention scorer so MCP does not turn weak memory into confident guidance.
+- The explicit abstention scorer now exists in code, so this scoped lifecycle
+  surface is authorized. Broader ranking policy, unconstrained capture, and
+  PostgreSQL writes remain separately governed.
 
 Rejected alternatives:
 

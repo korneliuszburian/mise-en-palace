@@ -10,16 +10,25 @@ import {
   or,
   sql
 } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import type {
   MemoryCandidate,
   MemoryRecord,
   ProjectId
+} from "@krn/core";
+import {
+  isDecisionPacketUsefulnessSubjectSelected,
+  parseDecisionPacketContractReadback
 } from "@krn/core";
 import type {
   ActiveMemorySelectionOptions,
   CreateMemoryCandidateInput,
   MemoryRepository,
   PromoteMemoryCandidateInput
+} from "@krn/core/repositories/internal";
+import type {
+  RecordMemoryFeedbackWithPacketBindingInput,
+  RecordMemoryFeedbackWithPacketBindingResult
 } from "@krn/core/repositories/internal";
 
 import type {
@@ -30,7 +39,15 @@ import {
   outboxEvents
 } from "../schema/sqlite/events.js";
 import {
+  decisionPacketIssuances,
+  executionRuns,
+  harnessPlans,
+  operatorIntents,
+  taskContracts
+} from "../schema/sqlite/harness.js";
+import {
   memoryCandidates,
+  memoryFeedbackEvents,
   memoryRecords,
   memoryRecordVersions
 } from "../schema/sqlite/memory.js";
@@ -39,7 +56,9 @@ import {
   ensurePromotableMemoryCandidate,
   memorySelectionDate,
   normalizedMemorySelectionTerms,
-  memoryPromotionMetadata
+  memoryPromotionMetadata,
+  packetFeedbackIdempotencyKey,
+  requirePacketFeedbackNote
 } from "./memory-repository-policy.js";
 import {
   mapMemoryCandidate,
@@ -48,7 +67,11 @@ import {
 
 export type SqliteMemoryLifecycleRepositoryPort = Pick<
   MemoryRepository,
-  "createMemoryCandidate" | "getMemoryCandidateById" | "promoteReviewedMemoryCandidate" | "listActiveMemory"
+  | "createMemoryCandidate"
+  | "getMemoryCandidateById"
+  | "promoteReviewedMemoryCandidate"
+  | "listActiveMemory"
+  | "recordMemoryFeedbackWithPacketBinding"
 >;
 
 const requireRow = <T>(rows: readonly T[], operation: string): T => {
@@ -61,6 +84,9 @@ const requireRow = <T>(rows: readonly T[], operation: string): T => {
 
 const smokePayload = (metadata: Record<string, unknown> | undefined): Record<string, string> =>
   typeof metadata?.smokeId === "string" ? { smokeId: metadata.smokeId } : {};
+
+const packetSha256Hex = (value: string): string =>
+  createHash("sha256").update(value).digest("hex");
 
 export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRepositoryPort {
   constructor(
@@ -113,6 +139,121 @@ export class SqliteMemoryLifecycleRepository implements SqliteMemoryLifecycleRep
       where: eq(memoryCandidates.id, id)
     }).sync();
     return row === undefined ? undefined : mapMemoryCandidate(row);
+  }
+
+  // fallow-ignore-next-line complexity -- packet-bound feedback keeps project, issuance, selector, idempotency, event, counter, and outbox checks atomic
+  async recordMemoryFeedbackWithPacketBinding(
+    input: RecordMemoryFeedbackWithPacketBindingInput
+  ): Promise<RecordMemoryFeedbackWithPacketBindingResult> {
+    const note = requirePacketFeedbackNote(input);
+    const idempotencyKey = packetFeedbackIdempotencyKey(input);
+    // fallow-ignore-next-line complexity -- one transaction keeps binding, idempotency, event, counter, and outbox checks atomic
+    const task = this.connection?.client.transaction(() => {
+      const record = this.db.select({
+        projectId: memoryRecords.projectId,
+        status: memoryRecords.status
+      }).from(memoryRecords).where(eq(memoryRecords.id, input.memoryRecordId)).get();
+      if (record === undefined) throw new Error(`MemoryRecord not found: ${input.memoryRecordId}`);
+      if (record.status !== "active") throw new Error(`MemoryRecord is not active: ${input.memoryRecordId}`);
+
+      const run = this.db.select({
+        projectId: taskContracts.projectId,
+        taskId: taskContracts.id
+      }).from(executionRuns)
+        .innerJoin(harnessPlans, eq(executionRuns.harnessPlanId, harnessPlans.id))
+        .innerJoin(taskContracts, eq(harnessPlans.taskContractId, taskContracts.id))
+        .innerJoin(operatorIntents, eq(taskContracts.operatorIntentId, operatorIntents.id))
+        .where(eq(executionRuns.id, input.runId)).get();
+      if (run === undefined) throw new Error(`Execution run not found: ${input.runId}`);
+      if (run.projectId !== record.projectId) throw new Error("Execution run does not belong to the connected project");
+
+      const issuance = this.db.select({
+        packetChecksum: decisionPacketIssuances.packetChecksum,
+        packetGeneratedAt: decisionPacketIssuances.packetGeneratedAt,
+        sourceRunLifecycleRevision: decisionPacketIssuances.sourceRunLifecycleRevision,
+        readback: decisionPacketIssuances.readback
+      }).from(decisionPacketIssuances)
+        .where(eq(decisionPacketIssuances.executionRunId, input.runId)).get();
+      if (issuance === undefined) throw new Error("Issued DecisionPacket is required");
+      if (issuance.packetChecksum !== input.packetChecksum) throw new Error("DecisionPacket checksum mismatch");
+      let parsedReadback: unknown = issuance.readback;
+      if (typeof issuance.readback === "string") {
+        const parsedJson: unknown = JSON.parse(issuance.readback);
+        parsedReadback = parsedJson;
+      }
+      const readback = parseDecisionPacketContractReadback({
+        value: parsedReadback,
+        expectedRunId: input.runId,
+        sha256Hex: packetSha256Hex
+      });
+      if (readback === undefined || readback.packetIdentity.checksum !== input.packetChecksum) {
+        throw new Error("DecisionPacket issuance is corrupt or has an invalid checksum");
+      }
+      if (readback.packet.task.id !== run.taskId || readback.request.taskId !== run.taskId) {
+        throw new Error("DecisionPacket task identity does not match the execution run");
+      }
+      if (
+        issuance.packetGeneratedAt.getTime() !== Date.parse(readback.packetIdentity.generatedAt) ||
+        issuance.sourceRunLifecycleRevision !== readback.packetIdentity.sourceRunLifecycleRevision ||
+        readback.request.projectId !== run.projectId ||
+        readback.packet.task.projectId !== run.projectId
+      ) {
+        throw new Error("DecisionPacket issuance identity does not match the execution run");
+      }
+      if (!isDecisionPacketUsefulnessSubjectSelected(readback.packet, {
+        kind: "memory_record",
+        id: input.memoryRecordId
+      })) {
+        throw new Error("DecisionPacket did not select this memory record");
+      }
+
+      const existing = this.db.select({ id: memoryFeedbackEvents.id })
+        .from(memoryFeedbackEvents)
+        .where(eq(memoryFeedbackEvents.idempotencyKey, idempotencyKey))
+        .get();
+      if (existing !== undefined) return { feedbackEventId: existing.id, idempotentReplay: true };
+
+      const eventType = input.outcome === "helped"
+        ? "strengthened"
+        : input.outcome === "hurt" ? "demoted" : "stale_detected";
+      const event = requireRow(this.db.insert(memoryFeedbackEvents).values({
+        memoryRecordId: input.memoryRecordId,
+        executionRunId: input.runId,
+        runId: input.runId,
+        packetChecksum: input.packetChecksum,
+        outcome: input.outcome,
+        idempotencyKey,
+        eventType,
+        direction: input.outcome === "helped" ? "positive" : "negative",
+        note: note ?? "Packet-bound MCP feedback: helped",
+        metadata: {
+          feedbackContext: {
+            provenance: "mcp_packet_bound",
+            runId: input.runId,
+            packetChecksum: input.packetChecksum,
+            packetGeneratedAt: readback.packetIdentity.generatedAt,
+            sourceRunLifecycleRevision: issuance.sourceRunLifecycleRevision
+          }
+        }
+      }).returning().all(), "recordMemoryFeedbackWithPacketBinding");
+      this.db.update(memoryRecords).set(
+        input.outcome === "helped"
+          ? { positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`, updatedAt: new Date() }
+          : { negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`, updatedAt: new Date() }
+      ).where(eq(memoryRecords.id, input.memoryRecordId)).run();
+      this.db.insert(outboxEvents).values({
+        topic: "memory.feedback.created",
+        payload: {
+          memoryFeedbackEventId: event.id,
+          memoryRecordId: input.memoryRecordId,
+          executionRunId: input.runId,
+          packetChecksum: input.packetChecksum
+        }
+      }).run();
+      return { feedbackEventId: event.id, idempotentReplay: false };
+    });
+    if (task === undefined) throw new Error("SQLite memory writes require an owned store connection");
+    return task.immediate();
   }
 
   async promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord> {

@@ -38,6 +38,7 @@
         "supersedeMemoryRecord",
         "recordMemoryApplication",
         "recordMemoryApplicationOnce",
+        "recordMemoryFeedbackWithPacketBinding",
         "createMemoryFeedbackEvent",
         "createAntiMemoryCandidate",
         "getAntiMemoryCandidateById",
@@ -52,7 +53,8 @@
         "createMemoryCandidate",
         "getMemoryCandidateById",
         "promoteReviewedMemoryCandidate",
-        "listActiveMemory"
+        "listActiveMemory",
+        "recordMemoryFeedbackWithPacketBinding"
       ]
     },
     {
@@ -68,7 +70,8 @@
       "implements": "SqliteSourceClaimRepositoryPort",
       "members": [
         "getSourceClaimById",
-        "getSourceClaimForProject"
+        "getSourceClaimForProject",
+        "listClaimsForProject"
       ]
     },
     {

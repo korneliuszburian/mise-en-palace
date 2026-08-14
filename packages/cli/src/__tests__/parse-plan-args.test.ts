@@ -45,6 +45,20 @@ describe("parsePlanArgs", () => {
       });
   });
 
+  it("accepts the explicit SQLite persistence backend", () => {
+    expect(parsePlanArgs(["--task", "dogfood", "--persist", "--backend", "sqlite"]))
+      .toEqual({
+        command: {
+          kind: "plan",
+          task: "dogfood",
+          persist: true,
+          backend: "sqlite",
+          verificationCommands: [],
+          format: "text"
+        }
+      });
+  });
+
   it("parses an explicit target repo and rejects competing project identity", () => {
     expect(parsePlanArgs(["--repo", " ../krn-seo ", "--task", "review target", "--persist"]))
       .toEqual({

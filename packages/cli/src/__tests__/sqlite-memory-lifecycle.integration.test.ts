@@ -19,8 +19,13 @@ import {
 
 import {
   migrateSqliteDatabase,
-  openKrnSqliteDatabase
+  openKrnSqliteDatabase,
+  openMemoryLifecycleStore
 } from "@krn/db";
+import {
+  bindDecisionPacketFixtureIdentity,
+  decisionPacketMcpFixture
+} from "./support/decision-packet-mcp-fixture.js";
 import {
   runCli
 } from "../run-cli.js";
@@ -263,5 +268,146 @@ describe("SQLite persisted memory lifecycle", () => {
     expect(doctor).toMatchObject({ exitCode: 0, stderr: "" });
     expect(doctor.stdout).toContain("Memory store readiness: ready");
     expect(doctor.stdout).toContain("Activation readiness: runtime_unverified");
+
+    const feedbackConnection = await openKrnSqliteDatabase(dbPath);
+    const feedbackRecordId = randomUUID();
+    const unselectedRecordId = randomUUID();
+    const packet = structuredClone(decisionPacketMcpFixture);
+    const runTask = feedbackConnection.client.prepare(`
+      select task_contracts.id as taskId
+      from execution_runs
+      join harness_plans on harness_plans.id = execution_runs.harness_plan_id
+      join task_contracts on task_contracts.id = harness_plans.task_contract_id
+      where execution_runs.id = ?
+    `).get(runId) as { taskId: string };
+    packet.request.runId = runId;
+    packet.request.projectId = persistedId(init.stdout, "Project ID");
+    packet.request.taskId = runTask.taskId;
+    packet.packet.task.projectId = packet.request.projectId;
+    packet.packet.task.id = runTask.taskId;
+    packet.packet.memoryRefs = [feedbackRecordId];
+    packet.packet.brief.includedMemoryRecordIds = [feedbackRecordId];
+    packet.packetIdentity.generatedAt = fixedNow;
+    packet.packetIdentity.sourceRunLifecycleRevision = 1;
+    packet.packetIdentity.sourceRunUpdatedAt = fixedNow;
+    const boundPacket = bindDecisionPacketFixtureIdentity(packet);
+    delete (boundPacket as { readModel?: unknown }).readModel;
+    try {
+      feedbackConnection.client.prepare(`
+        insert into memory_records
+          (id, project_id, key, kind, status, summary, body, owner, confidence,
+           application_guidance, source_lineage, is_user_preference, valid_from,
+           positive_feedback_count, negative_feedback_count, metadata)
+        values (?, ?, 'feedback-fixture', 'fact', 'active', 'Feedback fixture',
+          'Feedback fixture body', 'integration-test', 90, 'Use the feedback fixture',
+          ?, 0, ?, 0, 0, '{}')
+      `).run(
+        feedbackRecordId,
+        packet.request.projectId,
+        JSON.stringify([{ sourceId: "source-feedback-fixture" }]),
+        Date.parse(fixedNow)
+      );
+      feedbackConnection.client.prepare(`
+        insert into memory_records
+          (id, project_id, key, kind, status, summary, body, owner, confidence,
+           application_guidance, source_lineage, is_user_preference, valid_from,
+           positive_feedback_count, negative_feedback_count, metadata)
+        values (?, ?, 'unselected-feedback-fixture', 'fact', 'active', 'Unselected fixture',
+          'Unselected fixture body', 'integration-test', 90, 'Do not use the unselected fixture',
+          ?, 0, ?, 0, 0, '{}')
+      `).run(
+        unselectedRecordId,
+        packet.request.projectId,
+        JSON.stringify([{ sourceId: "source-unselected-feedback-fixture" }]),
+        Date.parse(fixedNow)
+      );
+      feedbackConnection.client.prepare(`
+        insert into decision_packet_issuances
+          (execution_run_id, packet_checksum, packet_generated_at,
+           source_run_lifecycle_revision, readback)
+        values (?, ?, ?, ?, ?)
+      `).run(
+        runId,
+        boundPacket.packetIdentity.checksum,
+        Date.parse(fixedNow),
+        1,
+        JSON.stringify(boundPacket)
+      );
+    } finally {
+      feedbackConnection.close();
+    }
+
+    const feedbackStore = await openMemoryLifecycleStore({
+      kind: "sqlite",
+      dbPath,
+      storeIdentity: `sqlite:${dbPath}`
+    });
+    try {
+      const helped = await feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      });
+      const replay = await feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      });
+      expect(helped).toMatchObject({ idempotentReplay: false, feedbackEventId: expect.any(String) });
+      expect(replay).toEqual({ feedbackEventId: helped.feedbackEventId, idempotentReplay: true });
+
+      const negative = await feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "hurt",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum,
+        note: "The fixture was harmful."
+      });
+      const stale = await feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "stale",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum,
+        note: "The fixture is stale."
+      });
+      expect(negative.idempotentReplay).toBe(false);
+      expect(stale.idempotentReplay).toBe(false);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: "f".repeat(64)
+      })).rejects.toThrow(/checksum|issuance/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: feedbackRecordId,
+        outcome: "helped",
+        runId: randomUUID(),
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/run|issuance/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: randomUUID(),
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/record/i);
+      await expect(feedbackStore.memoryRepository.recordMemoryFeedbackWithPacketBinding({
+        memoryRecordId: unselectedRecordId,
+        outcome: "helped",
+        runId,
+        packetChecksum: boundPacket.packetIdentity.checksum
+      })).rejects.toThrow(/select/i);
+    } finally {
+      await feedbackStore.close();
+    }
+    const counters = await openKrnSqliteDatabase(dbPath);
+    try {
+      expect(counters.client.prepare(
+        "select positive_feedback_count as positive, negative_feedback_count as negative from memory_records where id = ?"
+      ).get(feedbackRecordId)).toEqual({ positive: 1, negative: 2 });
+    } finally {
+      counters.close();
+    }
   }, 30_000);
 });

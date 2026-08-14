@@ -23,7 +23,7 @@ import {
 
 export type SqliteSourceClaimRepositoryPort = Pick<
   SourceRepository,
-  "getSourceClaimById" | "getSourceClaimForProject"
+  "getSourceClaimById" | "getSourceClaimForProject" | "listClaimsForProject"
 >;
 
 export class SqliteSourceClaimRepository implements SqliteSourceClaimRepositoryPort {
@@ -44,5 +44,18 @@ export class SqliteSourceClaimRepository implements SqliteSourceClaimRepositoryP
       .where(and(eq(sourceClaims.id, id), eq(sourceArtifacts.projectId, projectId)))
       .get();
     return row === undefined ? undefined : mapSourceClaim(row.claim);
+  }
+
+  async listClaimsForProject(
+    projectId: ProjectId,
+    limit: number
+  ): Promise<SourceClaim[]> {
+    return this.db.select({ claim: sourceClaims })
+      .from(sourceClaims)
+      .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
+      .where(eq(sourceArtifacts.projectId, projectId))
+      .limit(limit)
+      .all()
+      .map(({ claim }) => mapSourceClaim(claim));
   }
 }

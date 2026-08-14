@@ -41,6 +41,6 @@
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "22.20.1",
     "drizzle-kit": "^0.31.10",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   }
 }

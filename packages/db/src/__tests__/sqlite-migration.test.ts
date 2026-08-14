@@ -13,7 +13,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   inspectSqliteMigrationReadiness,
   migrateSqliteDatabase,
-  openKrnSqliteDatabase
+  openKrnSqliteDatabase,
+  openMemoryLifecycleStore
 } from "../index.js";
 
 const openedPaths: string[] = [];
@@ -61,6 +62,49 @@ describe("SQLite migration assets", () => {
       schemaPresent: false,
       repositoryReachabilityReady: false
     });
+  });
+
+  it("preserves legacy feedback rows while adding packet-bound columns", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "krn-sqlite-feedback-migration-"));
+    const dbPath = path.join(directory, ".krn", "memory.db");
+    const connection = await openKrnSqliteDatabase(dbPath, { createParent: true });
+    try {
+      connection.client.exec(`
+        create table memory_feedback_events (
+          id text primary key not null,
+          memory_record_id text not null,
+          execution_run_id text,
+          feedback_delta_id text,
+          event_type text,
+          direction text not null,
+          note text not null,
+          reason text,
+          evidence_ref text,
+          metadata text default '{}' not null,
+          created_at integer default 0 not null
+        );
+        insert into memory_feedback_events
+          (id, memory_record_id, event_type, direction, note, metadata, created_at)
+        values ('legacy-feedback', 'legacy-record', 'corrected', 'correction', 'legacy note', '{}', 1);
+      `);
+      const migration = await readFile(
+        new URL("../sqlite-migrations/0001_packet_bound_feedback.sql", import.meta.url),
+        "utf8"
+      );
+      for (const statement of migration.split("--> statement-breakpoint")) {
+        if (statement.trim().length > 0) connection.client.exec(statement);
+      }
+      expect(connection.client.prepare(
+        "select id, note, outcome, idempotency_key from memory_feedback_events where id = ?"
+      ).get("legacy-feedback")).toEqual({
+        id: "legacy-feedback",
+        note: "legacy note",
+        outcome: null,
+        idempotency_key: null
+      });
+    } finally {
+      connection.close();
+    }
   });
 
   it("rejects a same-count migration history with a tampered identity", async () => {
@@ -156,6 +200,38 @@ describe("SQLite migration assets", () => {
         .toThrow();
     } finally {
       connection.close();
+    }
+  });
+
+  it("serializes concurrent lifecycle read-only scopes on one SQLite store", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "krn-sqlite-read-only-queue-"));
+    const dbPath = path.join(directory, ".krn", "memory.db");
+    const store = await openMemoryLifecycleStore({
+      kind: "sqlite",
+      dbPath,
+      storeIdentity: `sqlite:${dbPath}`
+    });
+    const events: string[] = [];
+    try {
+      const first = store.withReadOnly(async () => {
+        events.push("first:start");
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        events.push("first:end");
+      });
+      const second = store.withReadOnly(async () => {
+        events.push("second:start");
+        events.push("second:end");
+      });
+
+      await Promise.all([first, second]);
+      expect(events).toEqual([
+        "first:start",
+        "first:end",
+        "second:start",
+        "second:end"
+      ]);
+    } finally {
+      await store.close();
     }
   });
 });
