@@ -92,6 +92,7 @@ export type CliCommand =
       kind: "plan";
       task: string;
       persist: boolean;
+      backend?: BackendKind;
       projectId?: string;
       repo?: string;
       verificationCommands: readonly string[];

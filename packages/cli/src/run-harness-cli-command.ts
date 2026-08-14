@@ -147,6 +147,7 @@ const runPlanCliCommand = (
     now: context.now,
     createId: context.createId,
     persist: command.persist,
+    ...(command.backend === undefined ? {} : { backend: command.backend }),
     verificationCommands: command.verificationCommands,
     format: command.format,
     ...(command.projectId === undefined ? {} : { projectId: command.projectId }),

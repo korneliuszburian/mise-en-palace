@@ -63,3 +63,7 @@ The decision is false if the registry does not expose exactly these five tools,
 `remember` writes through PostgreSQL, a proposal bypasses the review gate,
 read-only operations mutate domain rows/migration identity, or the server
 relaxes the pinned transport/session contract.
+
+The persisted `krn plan --backend sqlite --persist` path is the local dogfooding
+entry point for this surface: it issues the run and DecisionPacket identities
+that `feedback` requires, without requiring `KRN_DATABASE_URL`.

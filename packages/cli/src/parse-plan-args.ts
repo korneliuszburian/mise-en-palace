@@ -3,7 +3,7 @@ import type {
 } from "./parse-args.js";
 
 const defaultPlanUsage =
-  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--verification <command>]... [--persist] [--json]";
+  "Usage: krn plan [--project <project-id>|--repo <path>] --task \"...\" [--verification <command>]... [--persist] [--backend sqlite|postgres] [--json]";
 
 export const formatPlanUsage = (): string => `${defaultPlanUsage}\n`;
 
@@ -24,6 +24,7 @@ interface PlanArgsState {
   repo?: string;
   verificationCommands: string[];
   format: "text" | "json";
+  backend?: "sqlite" | "postgres";
 }
 
 type PlanStringField = "projectId" | "repo" | "task" | "verificationCommand";
@@ -100,6 +101,7 @@ const parseStringOptionStep = (
   };
 };
 
+// fallow-ignore-next-line complexity -- the closed plan argv grammar keeps backend, persistence, and repeated verification options fail-closed in one parser
 const parsePlanArgStep = (
   rest: readonly string[],
   index: number,
@@ -122,6 +124,17 @@ const parsePlanArgStep = (
       kind: "parsed",
       nextIndex: index
     };
+  }
+
+  if (rest[index] === "--backend" || rest[index]?.startsWith("--backend=") === true) {
+    const arg = rest[index];
+    const inline = arg?.startsWith("--backend=") === true ? arg.slice("--backend=".length) : undefined;
+    const value = parsedOptionValue(inline ?? rest[index + 1]);
+    if (value !== "sqlite" && value !== "postgres") {
+      return planParseError(usage);
+    }
+    state.backend = value;
+    return { kind: "parsed", nextIndex: inline === undefined ? index + 1 : index };
   }
 
   const verificationStep = parseStringOptionStep(
@@ -207,6 +220,7 @@ export const parsePlanArgs = (
       persist: state.persist,
       verificationCommands: state.verificationCommands,
       format: state.format,
+      ...(state.backend === undefined ? {} : { backend: state.backend }),
       ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
       ...(state.repo === undefined ? {} : { repo: state.repo })
     }
