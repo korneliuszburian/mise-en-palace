@@ -1,0 +1,38 @@
+{
+  "contract": "EvidenceSpineV1",
+  "source": "MUZG bindCodexPlanningResult",
+  "plan": {
+    "kind": "evidence_spine_plan",
+    "version": "1",
+    "task_id": "evidence-adapter-001",
+    "plan_id": "1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be",
+    "context_packet_sha256": "b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162"
+  },
+  "attempt": {
+    "kind": "evidence_spine_attempt",
+    "version": "1",
+    "task_id": "evidence-adapter-001",
+    "plan_id": "1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be",
+    "context_packet_sha256": "b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162",
+    "attempt_id": "attempt-evidence-adapter-001-1",
+    "attempt_number": 1,
+    "evidence_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "verifier": "passed"
+  },
+  "receipt": {
+    "kind": "evidence_spine_receipt",
+    "version": "1",
+    "task_id": "evidence-adapter-001",
+    "plan_id": "1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be",
+    "context_packet_sha256": "b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162",
+    "attempt_id": "attempt-evidence-adapter-001-1",
+    "attempt_number": 1,
+    "evidence_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "verifier": "passed"
+  },
+  "wire": {
+    "plan": "{\"v\":1,\"k\":\"p\",\"t\":\"evidence-adapter-001\",\"r\":\"1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be\",\"c\":\"b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162\"}",
+    "attempt": "{\"v\":1,\"k\":\"a\",\"t\":\"evidence-adapter-001\",\"r\":\"1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be\",\"c\":\"b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162\",\"i\":\"attempt-evidence-adapter-001-1\",\"n\":1,\"e\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"s\":\"passed\"}",
+    "receipt": "{\"v\":1,\"k\":\"q\",\"t\":\"evidence-adapter-001\",\"r\":\"1b42f8ffe639cdcff37703be94efa8d641c77c154e53e069d9585ab8a29382be\",\"c\":\"b8290becef56aed373e2f6b18ed3b677c9c8316b35c29348e390eda243298162\",\"i\":\"attempt-evidence-adapter-001-1\",\"n\":1,\"e\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"s\":\"passed\"}"
+  }
+}
