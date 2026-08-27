@@ -337,6 +337,19 @@ describe("SQLite persisted memory lifecycle", () => {
       feedbackConnection.close();
     }
 
+    const packetReadback = await runCli([
+      "decision",
+      "packet",
+      "--run-id",
+      runId,
+      "--json"
+    ], runtime);
+    expect(packetReadback).toMatchObject({ exitCode: 0, stderr: "" });
+    expect(JSON.parse(packetReadback.stdout)).toMatchObject({
+      packetIdentity: { checksum: boundPacket.packetIdentity.checksum },
+      packet: { task: { id: runTask.taskId } }
+    });
+
     const feedbackStore = await openMemoryLifecycleStore({
       kind: "sqlite",
       dbPath,
@@ -401,6 +414,59 @@ describe("SQLite persisted memory lifecycle", () => {
     } finally {
       await feedbackStore.close();
     }
+    const beforeRunId = randomUUID();
+    const beforePacket = structuredClone(decisionPacketMcpFixture);
+    beforePacket.request.runId = beforeRunId;
+    beforePacket.request.projectId = packet.request.projectId;
+    beforePacket.request.taskId = runTask.taskId;
+    beforePacket.packet.task.projectId = packet.request.projectId;
+    beforePacket.packet.task.id = runTask.taskId;
+    beforePacket.packet.memoryRefs = [feedbackRecordId, unselectedRecordId];
+    beforePacket.packet.brief.includedMemoryRecordIds = [feedbackRecordId, unselectedRecordId];
+    beforePacket.packetIdentity.generatedAt = fixedNow;
+    beforePacket.packetIdentity.sourceRunLifecycleRevision = 1;
+    beforePacket.packetIdentity.sourceRunUpdatedAt = fixedNow;
+    const boundBeforePacket = bindDecisionPacketFixtureIdentity(beforePacket);
+    delete (boundBeforePacket as { readModel?: unknown }).readModel;
+    const beforeConnection = await openKrnSqliteDatabase(dbPath);
+    try {
+      const plan = beforeConnection.client.prepare("select harness_plan_id as harnessPlanId from execution_runs where id = ?")
+        .get(runId) as { harnessPlanId: string };
+      beforeConnection.client.prepare(`
+        insert into execution_runs (id, harness_plan_id, adapter, status, lifecycle_revision, metadata)
+        values (?, ?, 'integration-test', 'planned', 1, '{}')
+      `).run(beforeRunId, plan.harnessPlanId);
+      beforeConnection.client.prepare(`
+        insert into decision_packet_issuances
+          (execution_run_id, packet_checksum, packet_generated_at, source_run_lifecycle_revision, readback)
+        values (?, ?, ?, 1, ?)
+      `).run(beforeRunId, boundBeforePacket.packetIdentity.checksum, Date.parse(fixedNow), JSON.stringify(boundBeforePacket));
+    } finally {
+      beforeConnection.close();
+    }
+    const packetDiff = await runCli([
+      "packet",
+      "diff",
+      "--before-run",
+      beforeRunId,
+      "--after-run",
+      runId,
+      "--json"
+    ], runtime);
+    expect(packetDiff).toMatchObject({ exitCode: 0, stderr: "" });
+    expect(JSON.parse(packetDiff.stdout)).toMatchObject({
+      commonMemoryRecords: [feedbackRecordId],
+      addedMemoryRecords: [],
+      removedMemoryRecords: [unselectedRecordId],
+      memoryRecordSummaries: expect.arrayContaining([
+        { id: feedbackRecordId, summary: "Feedback fixture" },
+        { id: unselectedRecordId, summary: "Unselected fixture" }
+      ]),
+      verdict: "selection_changed",
+      feedbackEvents: expect.arrayContaining([
+        expect.objectContaining({ memoryRecordId: feedbackRecordId, summary: "Feedback fixture", outcome: "helped" })
+      ])
+    });
     const counters = await openKrnSqliteDatabase(dbPath);
     try {
       expect(counters.client.prepare(

@@ -32,6 +32,7 @@ import {
 import {
   runSourceCliCommand
 } from "./run-source-cli-command.js";
+import { runPacketDiffCommand } from "./run-packet-diff-command.js";
 
 interface CliCommandDispatchContext {
   cwd: string;
@@ -217,9 +218,28 @@ const runBrainAdapter: CliCommandAdapter = async (command, context) => {
     context
   );
 };
+const runPacketAdapter: CliCommandAdapter = async (command, context) => {
+  if (command.kind !== "packetDiff") {
+    return undefined;
+  }
+
+  return readbackCommandResult(
+    () => runPacketDiffCommand({
+      cwd: context.cwd,
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      beforeRun: command.beforeRun,
+      afterRun: command.afterRun
+    }),
+    "Unknown packet diff error",
+    context
+  );
+};
 
 const cliCommandAdapters: readonly CliCommandAdapter[] = [
   runBrainAdapter,
+  runPacketAdapter,
   runProjectAdapter,
   runSourceAdapter,
   runMemoryAdapter,

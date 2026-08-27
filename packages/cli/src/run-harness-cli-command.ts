@@ -215,6 +215,7 @@ const runReadbackHarnessCommand = (
   if (command.kind === "decisionPacket") {
     return runDecisionPacketCommand({
       env: context.env,
+      cwd: context.cwd,
       now: context.now,
       createId: context.createId,
       runId: command.runId,

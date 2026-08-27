@@ -53,6 +53,7 @@ import {
 import {
   parseSourceArgs
 } from "./parse-source-args.js";
+import { parsePacketArgs } from "./parse-packet-args.js";
 import {
   parseRegisteredTopLevelCommand
 } from "./cli-command-registry.js";
@@ -101,6 +102,7 @@ export type CliCommand =
   | {
       kind: "planHelp";
     }
+  | { kind: "packetDiff"; beforeRun: string; afterRun: string }
   | {
       kind: "doctor";
       backend?: BackendKind;
@@ -667,6 +669,7 @@ const usage = [
   "krn run eval-evidence --project-id <project-id> [--run-id <id>] [--candidate-id <id>] [--json]",
   "krn run eval-promotion-eligibility --project-id <project-id> [--run-id <id>] [--candidate-id <id>] [--json]",
   "krn decision packet --run-id <id> [--json]",
+  "krn packet diff --before-run <run-id> --after-run <run-id> --json",
   "krn memory search --query \"...\" [--project <project-id>] [--json]",
   "krn memory recall [--fixture-read-model-file <path>|--fixture-decision-file <path>|--fixture-catalog-file <path>] [--text <query>] [--json|--html]",
   "krn memory seed --file <catalog.json> [--persist] [--dry-run]",
@@ -733,6 +736,7 @@ const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
   codex: parseCodexArgs,
   source: parseSourceArgs,
   memory: parseMemoryArgs,
+  packet: parsePacketArgs,
   plan: (rest) => parsePlanArgs(rest, usage)
 };
 

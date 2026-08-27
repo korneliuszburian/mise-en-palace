@@ -150,6 +150,36 @@ not prove a Memory Core advantage.
 **Retirement:** Retire only when the product boundary changes through an owned
 architecture decision with a named consumer and falsifier.
 
+## Enum migration partial-apply drift
+
+**Trigger:** `pnpm db:ready` or a DB smoke reports `Migrations identity:
+mismatched` (expected N+1, applied N) or a migration fails with
+`ALTER TYPE ... ADD VALUE '...' ...` / `enum label ... already exists`.
+
+**Safe action:** Postgres enum `ADD VALUE` cannot be rolled back in a
+transaction. If the migration transaction aborts after the `ADD VALUE`, the enum
+change persists but the migration row is not recorded; re-running fails with
+"already exists" and readiness fails closed ("Memory store is not ready").
+Verify the enum value is actually present
+(`SELECT enum_range(NULL::<enum>);`); if present, record the applied migration
+row in `drizzle.__drizzle_migrations` (`hash` = sha256 of the SQL file,
+`created_at` = the journal `when`), then re-run `pnpm db:ready`. Do not drop,
+recreate, or reset the enum/DB when only the tracking row is missing.
+
+**Evidence / non-proof:** 2026-08-12 fresh DB was migrated while the wired
+checkout ran older code (60 migrations); origin/main expects 61. Migration 0060
+(`ALTER TYPE usefulness_application_subject_kind ADD VALUE 'context_inclusion'
+BEFORE 'source_claim'`) then failed "already exists"; `enum_range` confirmed the
+value present; inserting the row (sha256 `c8a821c4...` @ journal `1784506440425`)
+restored identity verified 61/61 and the decision-packet return-loop smoke
+passed. Bead sgv90.5 ("expected 60, applied 61") was the same class of drift.
+Non-proof: this proves the tracking row was missing, not that every enum-touching
+migration is safe on a fresh DB or that the migration is idempotent.
+
+**Retirement:** Retire when every enum-touching migration is made idempotent
+(guarded `DO` block) and a fresh-DB migrate plus re-run verification pass
+without manual row repair.
+
 ## Protected Fallow invocation
 
 **Trigger:** `quality:fallow:ci` would run from an active disposable worktree,

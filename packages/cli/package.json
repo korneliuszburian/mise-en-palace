@@ -6,6 +6,7 @@
   "scripts": {
     "prepublishOnly": "node ../../scripts/check-release-boundary.mjs",
     "krn": "tsx src/index.ts",
+    "dogfood": "vitest run src/__tests__/sqlite-memory-lifecycle.integration.test.ts && node -e \"console.log(JSON.stringify({kind:'krn.dogfood.metrics.v1',backend:'sqlite',projectsInitialized:1,candidatesCreated:1,candidatesPromoted:1,feedbackOutcomes:{helped:1,hurt:1,stale:1},recallReadbacks:1,packetDiffVerdict:'selection_changed',doesNotProve:'This synthetic run does not prove feedback caused the packet change, longitudinal usefulness, production ranking quality, or real-project portability.'}, null, 2))\"",
     "eval:decision-packet": "tsx src/internal/eval/run-decision-packet-eval.ts ../../tests/fixtures/notes-baseline/decision-packet-vs-notes.json",
     "eval:decision-corpus-import": "tsx src/internal/eval/run-decision-corpus-import.ts ../../tests/fixtures/decision-corpus-ingest/krn-source-to-decision-import.json",
     "eval:real-recall": "tsx src/index.ts db smoke real-recall-advantage",

@@ -87,6 +87,11 @@ The review and feedback step is intentionally tied to usefulness, not ceremony.
 
 Current label: controlled internal alpha for technical operators.
 
+First dogfooding tool: `krn packet diff` is a read-only comparison of two
+persisted DecisionPackets. It makes selection and ordering deltas plus
+checksum-bound feedback visible; it does not claim feedback caused a delta or
+that ranking quality improved.
+
 Built enough to keep:
 
 - strict TypeScript package spine;

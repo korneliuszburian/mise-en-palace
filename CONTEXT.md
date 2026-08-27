@@ -24,6 +24,7 @@ this index stays short so it can be read every session.
 | CLI argument forwarding | [Entrypoint arguments](docs/CONTEXT_GOTCHAS.md#entrypoint-arguments) | Verify what `pnpm` forwards before treating an argument failure as product behavior. |
 | Fallow from worktrees | [Protected Fallow invocation](docs/CONTEXT_GOTCHAS.md#protected-fallow-invocation) | Never run Fallow from an uncommitted disposable `/tmp/mise-en-palace-*` worktree; commit first and use a protected persistent checkout. |
 | Scope control | [Memory Core boundary](docs/CONTEXT_GOTCHAS.md#memory-core-boundary) | Improve governed context/evidence; do not grow an operator/executor platform without a consumer falsifier. |
+| DB migration drift | [Enum migration partial-apply drift](docs/CONTEXT_GOTCHAS.md#enum-migration-partial-apply-drift) | Postgres `ALTER TYPE ADD VALUE` cannot roll back; a drifted enum row needs the tracking row recorded, not a DB reset. |
 
 ## Language
 
