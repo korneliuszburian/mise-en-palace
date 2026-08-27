@@ -52,6 +52,57 @@ describe("SQLite persisted plan", () => {
       expect(output.handoff.identity.executionRunId).toBeTruthy();
       expect(output.handoff.packetIdentity.checksum).toMatch(/^[0-9a-f]{64}$/);
 
+      const packet = await runCli([
+        "decision",
+        "packet",
+        "--run-id",
+        output.handoff.identity.executionRunId,
+        "--json"
+      ], {
+        cwd: canonicalTarget,
+        env: { INIT_CWD: canonicalTarget },
+        now: () => "2026-08-13T12:00:01.000Z",
+        createId: (prefix) => `${prefix}-${Math.random().toString(16).slice(2)}`
+      });
+      expect(packet.exitCode, packet.stderr || packet.stdout).toBe(0);
+      const packetOutput = JSON.parse(packet.stdout) as {
+        packetIdentity: { checksum: string };
+        packet: { task: { id: string } };
+      };
+      expect(packetOutput.packetIdentity.checksum).toBe(output.handoff.packetIdentity.checksum);
+      expect(packetOutput.packet.task.id).toBeTruthy();
+
+      const tamper = await openKrnSqliteDatabase(config.dbPath);
+      try {
+        const stored = tamper.client.prepare(
+          "select readback from decision_packet_issuances where execution_run_id = ?"
+        ).get(output.handoff.identity.executionRunId) as { readback: string };
+        const tamperedReadback = JSON.parse(stored.readback) as {
+          packet: { task: { title: string } };
+        };
+        tamperedReadback.packet.task.title = "tampered";
+        tamper.client.prepare(
+          "update decision_packet_issuances set readback = ? where execution_run_id = ?"
+        ).run(JSON.stringify(tamperedReadback), output.handoff.identity.executionRunId);
+      } finally {
+        tamper.close();
+      }
+
+      const rejectedPacket = await runCli([
+        "decision",
+        "packet",
+        "--run-id",
+        output.handoff.identity.executionRunId,
+        "--json"
+      ], {
+        cwd: canonicalTarget,
+        env: { INIT_CWD: canonicalTarget },
+        now: () => "2026-08-13T12:00:02.000Z",
+        createId: (prefix) => `${prefix}-${Math.random().toString(16).slice(2)}`
+      });
+      expect(rejectedPacket.exitCode).toBe(1);
+      expect(rejectedPacket.stderr).toContain("No valid SQLite DecisionPacket issuance found");
+
       const verify = await openKrnSqliteDatabase(config.dbPath, { readonly: true, fileMustExist: true });
       try {
         expect(verify.client.prepare("select count(*) as count from execution_runs").get()).toEqual({ count: 1 });
