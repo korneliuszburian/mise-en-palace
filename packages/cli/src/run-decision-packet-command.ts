@@ -72,7 +72,8 @@ const parseStoredReadback = (value: unknown): unknown => {
   }
 
   try {
-    return JSON.parse(value) as unknown;
+    const parsed: unknown = JSON.parse(value);
+    return parsed;
   } catch {
     return undefined;
   }
@@ -118,8 +119,11 @@ export const runDecisionPacketCommand = async (
   const requestedBackend = runtime.env.KRN_DB_BACKEND?.trim();
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
-  if (requestedBackend === "sqlite" ||
-    (requestedBackend === undefined && (databaseUrl === undefined || databaseUrl.length === 0))) {
+  const implicitSqlite = requestedBackend === undefined &&
+    (databaseUrl === undefined || databaseUrl.length === 0);
+  const hasCanonicalTarget = runtime.env.INIT_CWD?.trim() !== undefined;
+
+  if (requestedBackend === "sqlite" || (implicitSqlite && hasCanonicalTarget)) {
     const targetWorkspace = await resolveTargetWorkspace({
       cwd: runtime.cwd ?? process.cwd(),
       env: runtime.env
